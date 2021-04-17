@@ -1,0 +1,29 @@
+/* Provide sufficient contrast against white background */
+a {
+  color: #0366d6;
+}
+
+body {
+    background-color: oldlace;
+}
+
+code {
+  color: #E01A76;
+}
+
+.btn-primary {
+  color: #fff;
+  background-color: #1b6ec2;
+  border-color: #1861ac;
+}
+
+html {
+    overflow-y: scroll;
+}
+
+.new-container {
+    width: 100%;
+    max-width: 85vw;
+    margin-right: auto;
+    margin-left: auto;
+}

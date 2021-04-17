@@ -1,0 +1,27 @@
+﻿* Add a summary+context on the main search page for the first few search results for each work
+  * Similar to Acrobat Reader
+  * I'm not certain I see how this would look, I'll give it a shot, but it might need iteration
+* Add an optional "notes" field for each translation - display beside the entity in the "individual work search"
+
+* Obtain Author Types
+* Obtain Permission: Max, Chris, Prof.
+
+
+* General search:
+  * Full Text
+  * Case Sensitive
+  * Diacritics
+  * Hyphens!
+
+* Add Analytics - helps justify the effort/cost - Google Analytics is the standard and shouldn't need a GDPR cookie warning if we don't track users between sessions
+    * We'll likely want a privacy policy since we're now collecting user data, so this will be lower priority for me
+
+Done (for changelog)
+* Diacritics are ignored in the general search
+* Change dates to: 1600-current year
+* Add buttons for specific date ranges/author types
+* The visuals of the site have been improved
+* Allow the main search page to be filtered: 
+  * Chronological order 
+  * Alphabetical
+  * A priority order will likely be out of scope unless it can be well-defined.

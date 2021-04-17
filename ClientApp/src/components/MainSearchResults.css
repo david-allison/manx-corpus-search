@@ -1,0 +1,35 @@
+﻿.full-search-results {
+    width: 100%;
+}
+
+thead div {
+    outline: none;
+    cursor: pointer;
+    vertical-align: top;
+    width: max-content;
+    user-select: none;
+}
+
+thead div:after {
+    content: '⯆';
+    display: inline-block;
+    margin-left: 0.3em;
+    margin-right: 0.2em;
+    visibility: hidden;
+}
+
+thead div.ascending::after {
+    content: '⯆';
+    display: inline-block;
+    margin-left: 0.3em;
+    margin-right: 0.2em;
+    visibility: visible;
+}
+
+thead div.descending::after {
+    content: '⯅';
+    display: inline-block;
+    margin-left: 0.3em;
+    margin-right: 0.2em;
+    visibility: visible;
+}
