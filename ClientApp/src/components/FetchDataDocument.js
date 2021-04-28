@@ -45,23 +45,23 @@ export class FetchDataDocument extends Component {
                     </tr>
                 </thead>
                 <tbody>
-                    {response.results.map(forecast =>
+                    {response.results.map(line =>
                     {
-                        const link = process.env.PUBLIC_URL + "Coyrle%20Sodjey%20G%20as%20B.pdf#page=" + forecast.page
+                        const link = process.env.PUBLIC_URL + "Coyrle%20Sodjey%20G%20as%20B.pdf#page=" + line.page
                         const eng = [...englishhi, " " + value + " "];
                         const manx = [...manxhi, " " + value + " "];
                         const englishHighlight = fullTextSearch ? [value] : eng
                         const manxHighlight = fullTextSearch ? [value] : manx
 
                         // TODO: replace \n with <br/>: https://kevinsimper.medium.com/react-newline-to-break-nl2br-a1c240ba746
-                        let englishText = forecast.english.split('\n').map((item, key) => {
+                        let englishText = line.english.split('\n').map((item, key) => {
                             return <span key={key}><Highlighter
                                 highlightClassName="textHighlight"
                                 searchWords={englishHighlight}
                                 autoEscape={true}
                                 textToHighlight={item} /><br /></span>
                         })
-                        let manxText = forecast.manx.split('\n').map((item, key) => {
+                        let manxText = line.manx.split('\n').map((item, key) => {
                             return <span key={key}><Highlighter
                                 highlightClassName="textHighlight"
                                 searchWords={manxHighlight}
@@ -69,7 +69,7 @@ export class FetchDataDocument extends Component {
                                 textToHighlight={item} /><br /></span>
                         })
 
-                            return <tr key={forecast.date}>
+                            return <tr key={line.date}>
                                 <td>
                                     {manxText}
                                 </td>
@@ -77,8 +77,8 @@ export class FetchDataDocument extends Component {
                                     { englishText }
                                 </td>
                                 <td>
-                                    {forecast.page != null &&
-                                        <a href={link} target="_blank">p{forecast.page}</a> }
+                                    {line.page != null &&
+                                        <a href={link} target="_blank">p{line.page}</a> }
 
                                 </td>
                             </tr>;
