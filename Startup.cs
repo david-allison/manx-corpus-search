@@ -287,7 +287,7 @@ namespace Codex_API
                 "pk INTEGER PRIMARY KEY AUTOINCREMENT, " +
                 "english varchar, " +
                 "manx varchar, " +
-                "work id, " +
+                "work int, " +
                 "page int NULLABLE, " +
                 "normalizedManx varchar, " +
                 "normalizedEnglish varchar, " +
