@@ -255,7 +255,8 @@ namespace Codex_API
             conn.Execute("INSERT INTO [works] (id, name, ident, startdate, enddate) VALUES (@id, @name, @ident, @startdate, @enddate)", workParams);
 
 
-            var parameters = data.Where(d => !string.IsNullOrWhiteSpace(d.English) || !string.IsNullOrWhiteSpace(d.Manx)).Select(u =>
+            var validData = data.Where(d => !string.IsNullOrWhiteSpace(d.English) || !string.IsNullOrWhiteSpace(d.Manx)).ToList();
+            var parameters = validData.Select(u =>
             {
                 var param = new DynamicParameters();
                 param.Add("manx", u.Manx);
@@ -269,6 +270,8 @@ namespace Codex_API
             }).ToList();
 
             conn.Execute("INSERT INTO [translations] (manx, english, page, work, normalizedManx, normalizedEnglish, notes) VALUES (@manx, @english, @page, @work, @manx2, @english2, @notes)", parameters);
+
+            WordFrequencyService.AddDocument(documentId, validData);
         }
 
         private static void SetupSqlite()
@@ -294,6 +297,8 @@ namespace Codex_API
                 "notes varchar NULLABLE, " +
                 "FOREIGN KEY(work) REFERENCES works(id)" +
                 ")");
+
+            WordFrequencyService.CreateTable(conn);
 
         }
 
