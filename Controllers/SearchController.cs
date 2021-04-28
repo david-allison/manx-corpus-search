@@ -58,7 +58,8 @@ group by work";
 select 
     translations.english as english,
     translations.manx as manx,
-    translations.page as page
+    translations.page as page,
+    translations.notes as notes
 from 
     translations 
 join works on works.id = translations.work
@@ -71,7 +72,8 @@ where
 select 
     translations.english as english,
     translations.manx as manx,
-    translations.page as page
+    translations.page as page,
+    translations.notes as notes
 from 
     translations 
 join works on works.id = translations.work

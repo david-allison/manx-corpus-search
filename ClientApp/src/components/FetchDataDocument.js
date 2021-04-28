@@ -69,7 +69,7 @@ export class FetchDataDocument extends Component {
                                 textToHighlight={item} /><br /></span>
                         })
 
-                            return <tr key={line.date}>
+                            return <><tr key={line.date}>
                                 <td>
                                     {manxText}
                                 </td>
@@ -81,7 +81,9 @@ export class FetchDataDocument extends Component {
                                         <a href={link} target="_blank">p{line.page}</a> }
 
                                 </td>
-                            </tr>;
+                            </tr>
+                            {line.notes ? <tr><td colspan="3" className="noteRow">{line.notes}</td></tr> : null}
+                            </>;
                         }
                     )}
                 </tbody>

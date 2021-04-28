@@ -143,6 +143,7 @@ namespace Codex_API
             public string English { get; set; }
             public string Manx { get; set; }
             public int? Page { get; set; }
+            public string Notes { get; set; }
 
             public string NormalizedEnglish 
             { 
@@ -170,6 +171,7 @@ namespace Codex_API
                 Map(m => m.English);
                 Map(m => m.Manx);
                 Map(m => m.Page).Optional();
+                Map(m => m.Notes).Optional();
             }
         }
 
@@ -280,10 +282,11 @@ namespace Codex_API
                 param.Add("english2", u.NormalizedEnglish);
                 param.Add("work", documentId);
                 param.Add("page", u.Page);
+                param.Add("notes", u.Notes);
                 return param;
             }).ToList();
 
-            conn.Execute("INSERT INTO [translations] (manx, english, page, work, normalizedManx, normalizedEnglish) VALUES (@manx, @english, @page, @work, @manx2, @english2)", parameters);
+            conn.Execute("INSERT INTO [translations] (manx, english, page, work, normalizedManx, normalizedEnglish, notes) VALUES (@manx, @english, @page, @work, @manx2, @english2, @notes)", parameters);
         }
 
         private static void SetupSqlite()
@@ -306,6 +309,7 @@ namespace Codex_API
                 "page int NULLABLE, " +
                 "normalizedManx varchar, " +
                 "normalizedEnglish varchar, " +
+                "notes varchar NULLABLE, " +
                 "FOREIGN KEY(work) REFERENCES works(id)" +
                 ")");
 
@@ -317,7 +321,8 @@ namespace Codex_API
             using (var csv = new CsvReader(reader, CultureInfo.InvariantCulture))
             {
                 csv.Context.RegisterClassMap<DocumentLineMap>();
-                return csv.GetRecords<DocumentLine>().ToList();
+                List<DocumentLine> results = csv.GetRecords<DocumentLine>().ToList();
+                return results;
             }
         }
     }

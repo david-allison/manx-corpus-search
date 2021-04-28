@@ -1,3 +1,10 @@
 ﻿mark.textHighlight {
     background-color: yellow;
 }
+
+.noteRow {
+    background-color: aliceblue;
+    font-size: small;
+    padding: 0.15rem;
+    text-align: center;
+}
