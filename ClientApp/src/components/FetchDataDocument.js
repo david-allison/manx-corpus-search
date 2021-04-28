@@ -32,18 +32,6 @@ export class FetchDataDocument extends Component {
         this.populateData();
     }
 
-    static renderGeneralTable(forecasts, value) {
-        return (
-            <div>
-                {forecasts.map(forecast => {
-                    return <div><h1>{forecast.documentName}</h1>{forecast.count} { forecast.ident }
-                        </div>;
-                }
-                )}
-            </div>
-        );
-    }
-
     static renderForecastsTable(response, value, fullTextSearch, manxhi, englishhi) {
         return (
             <div>
