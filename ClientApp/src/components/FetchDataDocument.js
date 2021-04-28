@@ -131,11 +131,11 @@ export class FetchDataDocument extends Component {
     }
 
     handleChange1(event) {
-        this.setState({ english: event.target.checked }, () => this.populateData());
+        this.setState({ searchEnglish: event.target.checked }, () => this.populateData());
     }
 
     handleChange2(event) {
-        this.setState({ manx: event.target.checked }, () => this.populateData());
+        this.setState({ searchManx: event.target.checked }, () => this.populateData());
     }
 
     handleChange3(event) {
