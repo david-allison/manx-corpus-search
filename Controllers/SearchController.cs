@@ -168,7 +168,7 @@ where
                 Manx = manx,
                 English = english,
                 FullText = fullTextSearch,
-                MinDate = DateTimeUtil.FromYear(minDate),
+                MinDate = DateTimeUtil.FromYear(Math.Max(1, minDate)),
                 MaxDate = DateTimeUtil.FromYear(maxDate)
             };
             if (!searchQuery.IsValid())
@@ -178,17 +178,17 @@ where
             }
 
             var param = new DynamicParameters();
-            param.Add("manx", getParam(query, manx, fullTextSearch));
-            param.Add("english", getParam(query, english, fullTextSearch));
-            param.Add("minDate", new DateTime(Math.Max(1, minDate), 1, 1));
-            param.Add("maxDate", new DateTime(maxDate, 1, 1));
+            param.Add("manx", getParam(searchQuery.Query, searchQuery.Manx, searchQuery.FullText));
+            param.Add("english", getParam(searchQuery.Query, searchQuery.English, searchQuery.FullText));
+            param.Add("minDate", searchQuery.MinDate);
+            param.Add("maxDate", searchQuery.MaxDate);
             // on a general search - search for " " + phrase + " " in the normalized output - this ensures all full words are obtained without punctuation issues.
             // On a Fulltext search - we're not looking for words, so search the actual output.
-            var results = await conn.QueryAsync<QueryDocumentResult>(fullTextSearch ? SEARCH_GENERAL_FULLTEXT : SEARCH_GENERAL, param);
+            var results = await conn.QueryAsync<QueryDocumentResult>(searchQuery.FullText ? SEARCH_GENERAL_FULLTEXT : SEARCH_GENERAL, param);
 
-            if (manx)
+            if (searchQuery.Manx)
             {
-                EnrichWithSample(query, results, fullTextSearch);
+                EnrichWithSample(searchQuery.Query, results, searchQuery.FullText);
             }
             
 
