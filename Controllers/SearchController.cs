@@ -1,5 +1,6 @@
 ﻿using Codex_API.Extensions;
 using Codex_API.Model;
+using Codex_API.Service;
 using Dapper;
 using Microsoft.AspNetCore.Mvc;
 using System;
@@ -18,42 +19,6 @@ namespace Codex_API.Controllers
     {
         public static string PUNCTUATION_REGEX = "[,.;!?\\-\\s]";
 
-
-        private const string SEARCH_GENERAL = @"select 
-works.name as DocumentName, 
-works.ident, 
-works.startdate,
-works.enddate,
-count() as count
-from 
-    translations
-join works on works.id = translations.work
-where 
-    ((@manx IS NOT NULL AND normalizedManx like @manx) OR 
-    (@english IS NOT NULL AND normalizedEnglish like @english))
-    AND
-    (enddate is NULL OR enddate >= @minDate) 
-    AND
-    (startdate is NULL OR startdate <= @maxDate) 
-group by work";
-
-        private const string SEARCH_GENERAL_FULLTEXT = @"select 
-works.name as DocumentName, 
-works.ident, 
-works.startdate,
-works.enddate,
-count() as count,
-from 
-    translations
-join works on works.id = translations.work
-where 
-    ((@manx IS NOT NULL AND manx like @manx) OR 
-    (@english IS NOT NULL AND english like @english))
-    AND
-    (enddate is NULL OR enddate >= @minDate) 
-    AND
-    (startdate is NULL OR startdate <= @maxDate) 
-group by work";
 
         private const string SEARCH_SPECIFIC_WORK = @"
 select 
@@ -177,19 +142,7 @@ where
                 return ret;
             }
 
-            var param = new DynamicParameters();
-            param.Add("manx", getParam(searchQuery.Query, searchQuery.Manx, searchQuery.FullText));
-            param.Add("english", getParam(searchQuery.Query, searchQuery.English, searchQuery.FullText));
-            param.Add("minDate", searchQuery.MinDate);
-            param.Add("maxDate", searchQuery.MaxDate);
-            // on a general search - search for " " + phrase + " " in the normalized output - this ensures all full words are obtained without punctuation issues.
-            // On a Fulltext search - we're not looking for words, so search the actual output.
-            var results = await conn.QueryAsync<QueryDocumentResult>(searchQuery.FullText ? SEARCH_GENERAL_FULLTEXT : SEARCH_GENERAL, param);
-
-            if (searchQuery.Manx)
-            {
-                EnrichWithSample(searchQuery.Query, results, searchQuery.FullText);
-            }
+            var results = await OverviewSearchService.CorpusSearch(searchQuery); 
             
 
             ret.EnrichResults(results);
@@ -198,48 +151,8 @@ where
             return ret;
         }
 
-        private void EnrichWithSample(string query, IEnumerable<QueryDocumentResult> toEnrich, bool fullTextSearch)
-        {
-            try
-            {
-                EnrichWithSampleInternal(query, toEnrich, fullTextSearch);
-            }
-            catch
-            {
-                // TODO: Log
-            }
-        }
-
-        private static void EnrichWithSampleInternal(string query, IEnumerable<QueryDocumentResult> toEnrich, bool fullTextSearch)
-        {
-            // This is really lazy - no point in thinking until we move to a word-based model
-            string table = fullTextSearch ? "manx" : "normalizedManx";
-            string sql = $@"
-select
-    translations.manx as manx,
-    works.ident
-from
-    translations
-join works on works.id = translations.work
-where 
-    works.ident in @ids 
-AND
-    translations.{table} like @query
-group by works.ident";
-
-
-            var dict = toEnrich.ToDictionary(x => x.Ident);
-
-            var results = conn.Query<(string, string)>(sql, new { ids = dict.Keys, query = getParam(query, true, fullTextSearch) });
-
-            foreach (var v in results)
-            {
-                dict[v.Item2].Sample = v.Item1;
-            }
-        }
-
-
-        private static string getParam(string query, bool use, bool fullTextSearch)
+       
+        public static string getParam(string query, bool use, bool fullTextSearch)
         {
             if (!use)
             {
@@ -254,8 +167,6 @@ group by works.ident";
             {
                 return "% " + query + " %";
             }
-
-            
         }
 
         public class QueryDocumentResult : Countable
