@@ -1,4 +1,6 @@
-﻿using Dapper;
+﻿using Codex_API.Extensions;
+using Codex_API.Model;
+using Dapper;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
@@ -161,12 +163,15 @@ where
                 Query = query,
             };
 
-            if (string.IsNullOrWhiteSpace(query) || query.Length > 30)
+            var searchQuery = new CorpusSearchQuery(query)
             {
-                ret.EnrichWithTime(sw);
-                return ret;
-            }
-            if (!manx && !english)
+                Manx = manx,
+                English = english,
+                FullText = fullTextSearch,
+                MinDate = DateTimeUtil.FromYear(minDate),
+                MaxDate = DateTimeUtil.FromYear(maxDate)
+            };
+            if (!searchQuery.IsValid())
             {
                 ret.EnrichWithTime(sw);
                 return ret;
