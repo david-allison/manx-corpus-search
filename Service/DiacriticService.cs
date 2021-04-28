@@ -19,7 +19,7 @@ namespace Codex_API.Service
             ['ø'] = "o",
             ['ö'] = "o",
             ['ẁ'] = "w",
-            ['ç'] = "c",
+            ['ç'] = "c", // check this one: c or ch?
             ['ỳ'] = "y",
             ['ê'] = "e",
             ['ô'] = "o",

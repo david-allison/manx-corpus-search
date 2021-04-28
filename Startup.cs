@@ -272,6 +272,8 @@ namespace Codex_API
             conn.Execute("INSERT INTO [translations] (manx, english, page, work, normalizedManx, normalizedEnglish, notes) VALUES (@manx, @english, @page, @work, @manx2, @english2, @notes)", parameters);
 
             WordFrequencyService.AddDocument(documentId, validData);
+
+            WordNormalizationService.AddDocument(validData);
         }
 
         private static void SetupSqlite()
@@ -298,8 +300,8 @@ namespace Codex_API
                 "FOREIGN KEY(work) REFERENCES works(id)" +
                 ")");
 
+            WordNormalizationService.CreateTable(conn);
             WordFrequencyService.CreateTable(conn);
-
         }
 
         public static List<DocumentLine> LoadCsv(string path)
