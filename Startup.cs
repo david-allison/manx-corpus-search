@@ -114,30 +114,6 @@ namespace Codex_API
             }
         }
 
-        private void old_unused()
-        {
-            /* var manx = Fockleyr.DictionaryModule.loadManxDictionary();
-             var english = Fockleyr.DictionaryModule.loadEnglishDictionary();
-
-             ManxDictionary = new Dictionary<string, IList<string>>(manx.Translations.Count);
-             EnglishDictionary = new Dictionary<string, IList<string>>(english.Translations.Count);
-
-             foreach (var translation in english.Translations.ToList())
-             {
-                 EnglishDictionary.Add(translation.Key, translation.Value);
-             }
-
-             foreach (var translation in manx.Translations.ToList())
-             {
-
-                 ManxDictionary.Add(translation.Key, translation.Value);
-             }*/
-
-
-            // File.WriteAllText(, Newtonsoft.Json.JsonConvert.SerializeObject(ManxDictionary));
-            // File.WriteAllText("C:\\Users\\David\\Downloads\\Dictionary\\english.json", Newtonsoft.Json.JsonConvert.SerializeObject(EnglishDictionary));
-        }
-
         public class DocumentLine
         {
             public string English { get; set; }

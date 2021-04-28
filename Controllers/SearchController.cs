@@ -4,7 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using static Codex_API.Startup;
 
@@ -234,16 +233,6 @@ group by works.ident";
             }
         }
 
-
-        private static string getParamNew(string query, bool use)
-        {
-            if (!use)
-            {
-                return null;
-            }
-
-            return "%" + query + "%";
-        }
 
         private static string getParam(string query, bool use, bool fullTextSearch)
         {
