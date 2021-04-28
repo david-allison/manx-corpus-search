@@ -121,21 +121,27 @@ namespace Codex_API
             public int? Page { get; set; }
             public string Notes { get; set; }
 
-            public string NormalizedEnglish 
-            { 
+            // TODO: NBSP?
+            public string NormalizedEnglish
+            {
                 get
                 {
-                    return " " + Regex.Replace(English, SearchController.PUNCTUATION_REGEX, " ") + " ";
-                } 
+                    string handled = English.RemovePunctuation(" ").RemoveNewLines().NormalizeMicrosoftWordQuotes().RemoveBrackets().RemoveDoubleQuotes();
+                    return " " + handled + " ";
+                }
             }
 
             public string NormalizedManx
             {
                 get
                 {
-                    string noPunctuation = Regex.Replace(Manx, SearchController.PUNCTUATION_REGEX, " ");
-                    string noDiacritics = DiacriticService.Replace(noPunctuation);
-                    return " " + noDiacritics + " ";
+                    string handled = Manx.RemovePunctuation(" ")
+                        .RemoveNewLines()
+                        .NormalizeMicrosoftWordQuotes()
+                        .RemoveBrackets()
+                        .RemoveColon() //example: "gra:"
+                        .RemoveDoubleQuotes();
+                    return " " + handled + " ";
                 }
             }
         }
