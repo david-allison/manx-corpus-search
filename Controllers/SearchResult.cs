@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Codex_API.Model;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -41,10 +42,5 @@ namespace Codex_API.Controllers
     public interface ITimedResult
     {
         public string TimeTaken { get; set; }
-    }
-
-    public interface Countable
-    {
-        public int Count { get; }
     }
 }
