@@ -12,6 +12,28 @@ namespace Codex_API.Controllers
     [Route("[controller]")]
     public class AnalysisController
     {
+
+        [HttpGet("WordCount")]
+        public async Task<WordCountResult> WordCount()
+        {
+            var query = "select manx, sum(count) from wordfreq group by manx";
+
+            var result = await Startup.conn.QueryAsync<(int, int)>(query);
+
+            return new WordCountResult()
+            {
+                EnglishWords = result.Where(x => x.Item1 == 0).Sum(x => x.Item2),
+                ManxWords = result.Where(x => x.Item1 == 1).Sum(x => x.Item2),
+            };
+        }
+
+        public class WordCountResult
+        {
+            public int ManxWords { get; set; }
+            public int EnglishWords { get; set; }
+        }
+
+
         /// <summary>
         /// Obtains a list of manx words which are not in the dictionary.
         /// </summary>
