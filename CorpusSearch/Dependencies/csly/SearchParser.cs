@@ -58,10 +58,10 @@ namespace Codex_API.Dependencies.csly
             return new AndExpression(left, right);
         }
 
-        [Production("expression : NOT expression")]
-        public Expression NotExpression(Token<ExpressionToken> operatorToken, Expression left)
+        [Production("expression : subexpression NOT expression")]
+        public Expression NotExpression(Expression left, Token<ExpressionToken> operatorToken, Expression right)
         {
-            return new NotExpression(left);
+            return new NotExpression(left, right);
         }
 
         [Production("subexpression : LPAREN expression RPAREN")]

@@ -2,16 +2,18 @@
 {
     public class NotExpression : Expression
     {
-        private Expression left;
+        public Expression Left { get; }
+        public Expression Right { get; }
 
-        public NotExpression(Expression left) : base("not")
+        public NotExpression(Expression left, Expression right) : base("not")
         {
-            this.left = left;
+            this.Left = left;
+            this.Right = right;
         }
 
         public override string ToString()
         {
-            return $"[{base.ToString()} {left}]";
+            return $"{Left} [{base.ToString()} {Right}]";
         }
     }
 }

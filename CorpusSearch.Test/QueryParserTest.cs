@@ -107,8 +107,6 @@ namespace Codex_API.Test
                 "hid"            // 0: sperstring
             );
 
-            Assert.Inconclusive("not implemented");
-
             var result = Query("hi not world");
 
             Assert.That(result.NumberOfMatches, Is.EqualTo(1));

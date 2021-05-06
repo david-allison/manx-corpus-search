@@ -76,6 +76,12 @@ namespace Codex_API.Dependencies
                 case AdjacentWordExpression e:
                     var queries = e.Words.Select(ToManx);
                     return new SpanNearQuery(queries.ToArray(), 0, true);
+                case NotExpression e:
+                    // This also feels inefficient: we want a "not" for the document, and the easiest way seems to be a "not near the span"
+                    SpanQuery l = ToSpanQueryInner(e.Left);
+                    SpanQuery r = ToSpanQueryInner(e.Right);
+                    var notNear = new SpanNearQuery(new[] { l, r }, int.MaxValue, false);
+                    return new SpanNotQuery(l, notNear);
                 case WrappedExpression w:
                     return ToSpanQueryInner(w.Wrapped);
                 default:
