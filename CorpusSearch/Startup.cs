@@ -14,9 +14,8 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Collections.Generic;
-using System.Text.RegularExpressions;
-using Codex_API.Controllers;
 using Codex_API.Service;
+using Codex_API.Model;
 
 namespace Codex_API
 {
@@ -135,15 +134,23 @@ namespace Codex_API
             {
                 get
                 {
-                    string handled = Manx.RemovePunctuation(" ")
-                        .RemoveNewLines()
-                        .NormalizeMicrosoftWordQuotes()
-                        .RemoveBrackets()
-                        .RemoveColon() //example: "gra:"
-                        .RemoveDoubleQuotes();
+                    string handled = NormalizeManx(Manx);
                     return " " + handled + " ";
                 }
             }
+
+        }
+
+
+        public static string NormalizeManx(string manx)
+        {
+            string handled = manx.RemovePunctuation(" ")
+                .RemoveNewLines()
+                .NormalizeMicrosoftWordQuotes()
+                .RemoveBrackets()
+                .RemoveColon() //example: "gra:"
+                .RemoveDoubleQuotes();
+            return handled;
         }
 
         public class DocumentLineMap : ClassMap<DocumentLine>
@@ -207,7 +214,7 @@ namespace Codex_API
             return Path.Combine(path);
         }
 
-        public class Document
+        public class Document : IDocument
         {
             public string Name { get; set; }
             public string Ident { get; set; }

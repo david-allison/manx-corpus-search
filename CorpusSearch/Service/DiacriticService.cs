@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace Codex_API.Service
@@ -44,6 +45,30 @@ namespace Codex_API.Service
             ['ĵ'] = "j",
             ['ﬆ'] = "st",
         };
+
+        private static readonly ILookup<string, char> reverseMap;
+
+        static DiacriticService() 
+        {
+            reverseMap = diacriticMap.ToLookup(x => x.Value, x => x.Key);
+        }
+
+        /// <summary>
+        /// TODO: This doesn't do st or ae
+        /// </summary>
+        /// <param name="input"></param>
+        /// <returns></returns>
+        public static IList<string> Replace(char input)
+        {
+            var ret = diacriticMap.GetValueOrDefault(input, null);
+            if (ret != null)
+            {
+                return new[] { ret };
+            }
+
+            return reverseMap[input.ToString()].Select(x => x.ToString()).ToList();
+
+        }
 
         public static string Replace(string input)
         {

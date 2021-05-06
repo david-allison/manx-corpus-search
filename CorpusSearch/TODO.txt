@@ -3,8 +3,10 @@
   * I'm not certain I see how this would look, I'll give it a shot, but it might need iteration
 * Add an optional "notes" field for each translation - display beside the entity in the "individual work search"
 
+DiacriticService doesn't handle 'st' or 'ae' 
+
 * Obtain Author Types
-* Obtain Permission: Max, Chris, Prof.
+* Obtain Permission: Chris, Prof.
 
 
 * General search:
