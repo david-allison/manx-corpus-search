@@ -41,7 +41,7 @@ namespace Codex_API.Dependencies.csly
         }
 
         [Production("expression : subexpression")]
-        public Expression OrExpression(Expression left)
+        public Expression ToExpression(Expression left)
         {
             return left;
         }
