@@ -309,6 +309,29 @@ namespace Codex_API.Test
             Assert.That(result.DocumentResults[0].EndDate, Is.EqualTo(null));
         }
 
+        [Test]
+        public void TestCount()
+        {
+            // 1: aigney
+            // 2.1: aegey, arrey
+            // 2.2: ""
+            // 2.3: aigney aigney
+            // 3: aigney
+            this.AddManxDoc("1", "Cha vel eh laccal gerjagh ta goaill soylley jeh aigney booiagh.");
+            this.AddManxDoc("2", "Ayns yn ynnyd shen va thunnag ny hoie guirr, freayl arrey gys yinnagh ny hêin aegey çheet ass ny hoohyn. ", 
+                "V’ee goaill toshiaght dy aase skee son va’n feallagh veggey tra liauyr çheet ass ny hoohyn.",
+                "aigney aigney"
+                );
+            this.AddManxDoc("3", "Cha vel eh laccal gerjagh ta goaill soylley jeh aigney booiagh.");
+
+            var result = Query("a*y");
+
+            Assert.That(result.NumberOfDocuments, Is.EqualTo(3));
+            Assert.That(result.NumberOfSegments, Is.EqualTo(4));
+            Assert.That(result.NumberOfMatches, Is.EqualTo(6));
+        }
+
+
         private ScanResult Query(string query, ScanOptions options)
         {
             return new Searcher(luceneIndex, parser).Scan(query, options);

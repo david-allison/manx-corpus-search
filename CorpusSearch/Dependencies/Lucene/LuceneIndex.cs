@@ -102,6 +102,7 @@ namespace Codex_API
 
             int totalMatches = 0;
             var spanQuery = (SpanQuery)query.Rewrite(reader);
+            SpanCollection spanCollection = new();
             foreach (var leaf in reader.Leaves)
             {
                 var dict = new Dictionary<Term, TermContext>();
@@ -109,6 +110,7 @@ namespace Codex_API
 
                 while (spans.MoveNext())
                 {
+                    spanCollection.Add(leaf.DocBase + spans.Doc, new Span(spans.Start, spans.End));
                     totalMatches++;
                 }
             }
@@ -119,21 +121,32 @@ namespace Codex_API
             var documentMapping = distinctDocuments.ToDictionary(x => x, x => reader.Document(x));
 
             // A collection of Lucene documents, each refers to the first sample in a distinct Corpus Document
-            var corpusDocuments = documentMapping.DistinctBy(x => x.Value.GetField(DOCUMENT_IDENT)?.GetStringValue()).Select(x => x.Value);
+            var corpusDocuments = documentMapping.DistinctBy(x => x.Value.GetField(DOCUMENT_IDENT)?.GetStringValue());
 
-            var samples = corpusDocuments.Select(x =>
+            // key: ident of corpus document, value: docIds of each segment
+            var corpusDocumentMapping = documentMapping.ToLookup(x => x.Value.GetField(DOCUMENT_IDENT).GetStringValue(), x => x.Key);
+
+            var samples = corpusDocuments.Select(kvp =>
             {
-                string maybeStartDate = x.GetField(DOCUMENT_CREATED_START)?.GetStringValue();
-                string maybeEndDate = x.GetField(DOCUMENT_CREATED_END)?.GetStringValue();
+                var doc = kvp.Value;
+                int docId = kvp.Key;
+
+                string maybeStartDate = doc.GetField(DOCUMENT_CREATED_START)?.GetStringValue();
+                string maybeEndDate = doc.GetField(DOCUMENT_CREATED_END)?.GetStringValue();
 
                 DateTime? startDate = maybeStartDate != null ? DateTime.Parse(maybeStartDate) : null;
                 DateTime? endDate = maybeEndDate != null ? DateTime.Parse(maybeEndDate) : null;
+
+                var ident = doc.GetField(DOCUMENT_IDENT).GetStringValue();
+
                 return new QueryDocumentResult
                 {
-                    Ident = x.GetField(DOCUMENT_IDENT).GetStringValue(),
-                    Sample = x.GetField(DOCUMENT_REAL_MANX).GetStringValue(),
+                    Ident = ident,
+                    DocumentName = doc.GetField(DOCUMENT_NAME).GetStringValue(),
+                    Sample = doc.GetField(DOCUMENT_REAL_MANX).GetStringValue(),
                     EndDate = endDate,
                     StartDate = startDate,
+                    Count = corpusDocumentMapping[ident].Sum(docIdForIdent => spanCollection.GetCount(docIdForIdent))
                 };
             });
 
