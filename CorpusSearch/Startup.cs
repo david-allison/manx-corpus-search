@@ -16,11 +16,15 @@ using System.Collections.Generic;
 using Codex_API.Service;
 using Codex_API.Model;
 using Codex_API.Dependencies.CsvHelper;
+using Codex_API.Dependencies.csly;
+using Codex_API.Dependencies;
 
 namespace Codex_API
 {
     public partial class Startup
     {
+        public static Searcher searcher;
+
         public static Dictionary<string, IList<string>> EnglishDictionary { get; set; }
         public static Dictionary<string, IList<string>> ManxDictionary { get; set; }
 
@@ -66,6 +70,10 @@ namespace Codex_API
                 // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
                 app.UseHsts();
             }
+
+            var luceneIndex = LuceneIndex.GetInstance();
+            var parser = SearchParser.GetParser();
+            Startup.searcher = new Searcher(luceneIndex, parser);
 
             SetupDatabase();
 
@@ -196,7 +204,9 @@ namespace Codex_API
 
         private static void AddDocument(Document document)
         {
-            List<DocumentLine> data = document.LoadLocalFile(); 
+            List<DocumentLine> data = document.LoadLocalFile();
+
+            searcher.AddDocument(document, data);
 
             DocumentAddedCount++;
 

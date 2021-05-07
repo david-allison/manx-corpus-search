@@ -5,6 +5,7 @@ using Lucene.Net.Index;
 using Lucene.Net.Search.Spans;
 using sly.parser;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace Codex_API.Dependencies
@@ -105,6 +106,11 @@ namespace Codex_API.Dependencies
             {
                 return new SpanTermQuery(term);
             }
+        }
+
+        internal void AddDocument(IDocument document, IEnumerable<DocumentLine> data)
+        {
+            this.luceneSearch.Add(document, data);
         }
     }
 }

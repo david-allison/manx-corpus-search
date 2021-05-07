@@ -2,7 +2,7 @@
 
 namespace Codex_API.Model
 {
-    internal class CorpusSearchQuery
+    public class CorpusSearchQuery
     {
         public string Query { get; }
 
