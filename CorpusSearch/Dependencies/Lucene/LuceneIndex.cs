@@ -6,6 +6,7 @@ using Lucene.Net.Search;
 using Lucene.Net.Search.Spans;
 using Lucene.Net.Store;
 using Lucene.Net.Util;
+using MoreLinq;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -17,6 +18,8 @@ namespace Codex_API
     {
         private const string DOCUMENT_NAME = "name";
         private const string DOCUMENT_IDENT = "ident";
+        private const string DOCUMENT_NORMALIZED_MANX = "manx";
+        private const string DOCUMENT_REAL_MANX = "real_manx";
 
         private IndexWriter indexWriter;
 
@@ -62,7 +65,8 @@ namespace Codex_API
                     // StringField indexes but doesn't tokenize
                     new StringField(DOCUMENT_NAME, document.Name, Field.Store.YES),
                     new StringField(DOCUMENT_IDENT, document.Ident, Field.Store.YES),
-                    new Field("manx", line.NormalizedManx , fieldType)
+                    new StringField(DOCUMENT_REAL_MANX, line.Manx, Field.Store.YES),
+                    new Field(DOCUMENT_NORMALIZED_MANX, line.NormalizedManx , fieldType),
                 };
 
                 indexWriter.AddDocument(doc);
@@ -99,13 +103,28 @@ namespace Codex_API
             var distinctDocuments = hits.Select(x => x.Doc).Distinct();
             var luceneDocumentCount = distinctDocuments.Count();
 
-            var corpusDocumentCount = distinctDocuments.Select(x => reader.Document(x)).Select(x => x.GetField(DOCUMENT_NAME)).Distinct().Count();
+            var documentMapping = distinctDocuments.ToDictionary(x => x, x => reader.Document(x));
+
+            // A collection of Lucene documents, each refers to the first sample in a distinct Corpus Document
+            var corpusDocuments = documentMapping.DistinctBy(x => x.Value.GetField(DOCUMENT_IDENT)?.GetStringValue()).Select(x => x.Value);
+
+            var samples = corpusDocuments.Select(x =>
+            {
+                return new QueryDocumentResult
+                {
+                    Ident = x.GetField(DOCUMENT_IDENT).GetStringValue(),
+                    Sample = x.GetField(DOCUMENT_REAL_MANX).GetStringValue(),
+                };
+            });
+
+            var corpusDocumentCount = corpusDocuments.Count();
 
             return new ScanResult
             {
                 NumberOfMatches = totalMatches,
                 NumberOfSegments = luceneDocumentCount,
                 NumberOfDocuments = corpusDocumentCount,
+                DocumentResults = samples.ToList(),
             };
         }
 

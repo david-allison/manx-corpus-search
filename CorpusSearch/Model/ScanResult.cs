@@ -1,4 +1,4 @@
-﻿using Codex_API.Model;
+﻿using System.Collections.Generic;
 
 namespace Codex_API.Model
 {
@@ -18,6 +18,8 @@ namespace Codex_API.Model
         /// <summary>A document is the concept of a document in the corpus search</summary>
         /// <example>two files: [["hello"], ["hello", "hello hello"]] would return 2 documents</example>
         public int NumberOfDocuments { get; internal set; }
+        
+        /// <summary>Result information on a per-document granularity</summary>
+        public List<QueryDocumentResult> DocumentResults { get; internal set; }
     }
-
 }

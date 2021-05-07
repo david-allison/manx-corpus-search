@@ -176,6 +176,36 @@ namespace Codex_API.Test
             Assert.That(withoutDiacritics2.NumberOfMatches, Is.EqualTo(1), "facade should be only match");
         }
 
+        [Test]
+        public void TestSample()
+        {
+            this.AddManxDoc("1",
+                "Big list of evil strings",
+                "list of this is cool"
+            );
+            this.AddManxDoc("2",
+                "maybe not as interesting",
+                "this list is still valid,,, and"
+            );
+
+            var result = Query("list");
+
+            Assert.That(result.DocumentResults, Has.Count.EqualTo(2));
+
+            {
+                var sample = result.DocumentResults[0];
+                Assert.That(sample.Ident, Is.EqualTo("1"));
+                Assert.That(sample.Sample, Is.EqualTo("Big list of evil strings"));
+            }
+
+            {
+                var sample = result.DocumentResults[1];
+                Assert.That(sample.Ident, Is.EqualTo("2"));
+                Assert.That(sample.Sample, Is.EqualTo("this list is still valid,,, and"));
+            }
+            
+        }
+
         private ScanResult Query(string query, ScanOptions options)
         {
             return new Searcher(luceneIndex, parser).Scan(query, options);
