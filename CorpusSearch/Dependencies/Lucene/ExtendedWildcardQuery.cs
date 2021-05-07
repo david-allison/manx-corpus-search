@@ -1,16 +1,21 @@
 ﻿using Codex_API.Service;
 using Lucene.Net.Index;
 using Lucene.Net.Search;
-using Lucene.Net.Util;
 using Lucene.Net.Util.Automaton;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
 namespace Codex_API.Dependencies.Lucene
 {
-    public class ManxQuery : AutomatonQuery
+    /// <summary>
+    /// Extends WildcardQuery to handle a "+"
+    /// </summary>
+    public class ExtendedWildcardQuery: AutomatonQuery
     {
-        public ManxQuery(Term term) : base(GetTerm(term), ToAutomaton(term))
+        public static ISet<char> RelevantChars = new HashSet<char>() { '+', '?', '*' };
+
+        public ExtendedWildcardQuery(Term term) : base(GetTerm(term), ToAutomaton(term))
         {
         }
 
@@ -56,21 +61,15 @@ namespace Codex_API.Dependencies.Lucene
                     continue;
                 }
 
-                var replacementArr = DiacriticService.Replace(c);
-                if (replacementArr != null)
-                {
-                    var replacements = replacementArr.Concat(new string[] { c.ToString() });
-                    automata.Add(BasicAutomata.MakeStringUnion(replacements.Select(x => new BytesRef(x)).ToArray()));
-                }
-                else
-                {
-                    automata.Add(BasicAutomata.MakeChar(c));
-                }
+                automata.Add(BasicAutomata.MakeChar(c));
             }
 
-            var ret = BasicOperations.Concatenate(automata);
+            return BasicOperations.Concatenate(automata);
+        }
 
-            return ret;
+        public static bool AppliesTo(string value)
+        {
+            return value.Any(RelevantChars.Contains);
         }
     }
 }

@@ -97,6 +97,10 @@ namespace Codex_API.Dependencies
                 var manx = new ManxQuery(term);
                 return new SpanMultiTermQueryWrapper<ManxQuery>(manx);
             }
+            else if (ExtendedWildcardQuery.AppliesTo(value))
+            {
+                return new SpanMultiTermQueryWrapper<ExtendedWildcardQuery>(new ExtendedWildcardQuery(term)); 
+            }
             else
             {
                 return new SpanTermQuery(term);

@@ -5,8 +5,6 @@ using static Codex_API.Test.TestUtils.DocumentStorageExtensions;
 
 namespace Codex_API.Test
 {
-
-
     [TestFixture]
     public class QueryParserTest : QueryBase
     {
@@ -204,6 +202,89 @@ namespace Codex_API.Test
                 Assert.That(sample.Sample, Is.EqualTo("this list is still valid,,, and"));
             }
             
+        }
+
+        [Test]
+        public void TestWildcardAtEnd()
+        {
+            this.AddManxDoc("1",
+               "san andreas",     // exact match
+               "sand and tonio",  // matches *
+               "sa n an"          // no match: * should not match space
+            );
+
+            var result = Query("san*");
+
+            Assert.That(result.NumberOfMatches, Is.EqualTo(2));
+            Assert.That(result.NumberOfSegments, Is.EqualTo(2));
+        }
+
+        [Test]
+        public void TestWildcardInMiddle()
+        {
+            this.AddManxDoc("1",
+               "san andreas",     // 1: exact match with 1 char
+               "saan andreas",    // 1: exact match with 2 chars
+               "sn",              // 1: no chars
+               "sa n an"          // 0: * should not match space
+            );
+
+            var result = Query("s*n");
+
+            Assert.That(result.NumberOfMatches, Is.EqualTo(3));
+            Assert.That(result.NumberOfSegments, Is.EqualTo(3));
+        }
+
+        [Test]
+        public void TestWildChar()
+        {
+            this.AddManxDoc("1",
+               "san andreas",     // 1: exact match with 1 char
+               "saan andreas",    // 0: 2 chars
+               "sn",              // 0: no chars
+               "sa n an"          // 0: ? should not match space
+            );
+
+            var result = Query("s?n");
+
+            Assert.That(result.NumberOfMatches, Is.EqualTo(1));
+            Assert.That(result.NumberOfSegments, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void TestPlus()
+        {
+            // one or more characters
+
+            this.AddManxDoc("1",
+               "san andreas",     // 1: exact match with 1 char
+               "saan andreas",    // 1: 2 chars
+               "sn",              // 0: no chars
+               "sa n an"          // 0: ? should not match space
+            );
+
+            var result = Query("s+n");
+
+            Assert.That(result.NumberOfMatches, Is.EqualTo(2));
+            Assert.That(result.NumberOfSegments, Is.EqualTo(2));
+        }
+
+        [Test]
+        public void TestPlusNoDiacritics()
+        {
+            // one or more characters
+
+            this.AddManxDoc("1",
+               "san andreas",     // 1: exact match with 1 char
+               "saan andreas",    // 1: 2 chars
+               "sn",              // 0: no chars
+               "sa n an"          // 0: ? should not match space
+            );
+
+            var result = Query("s+n", new ScanOptions { NormalizeDiacritics = false });
+
+            Assert.That(result.NumberOfMatches, Is.EqualTo(2));
+            Assert.That(result.NumberOfSegments, Is.EqualTo(2));
         }
 
         private ScanResult Query(string query, ScanOptions options)

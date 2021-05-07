@@ -14,10 +14,6 @@ namespace Codex_API.Dependencies.csly
         INT = 1,
         [Lexeme("\\s", IsSkippable = true)] // TODO: WS TODO: also ',', '?', '*', '(', ')', ':', '^', '"'
         WS = 2,
-        [Lexeme("\\*")]
-        STAR = 4,
-        [Lexeme("\\?")]
-        ONECHAR = 5,
         [Lexeme("\\(")]
         LPAREN = 6,
         [Lexeme("\\)")]
@@ -28,7 +24,7 @@ namespace Codex_API.Dependencies.csly
         OR = 9, 
         [Lexeme("not")]
         NOT = 10,
-        [Lexeme("[^\\s\\(\\)\\*\\?]+")] // not whitespace or brackets or ? or *
+        [Lexeme("[^\\s\\(\\)]+")] // not whitespace or brackets
         TOKEN = 11,
     }
 
