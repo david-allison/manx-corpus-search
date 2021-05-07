@@ -132,8 +132,6 @@ namespace Codex_API.Test
         [Test]
         public void DiacriticMatchIsDefault()
         {
-            // TODO: I think this wants to be like a modified WildcardQuery - match all like the wildcards?
-
             this.AddManxDoc("1",
                 "facade",       // 0: matches first
                 "façade"        // 1: perfect match
