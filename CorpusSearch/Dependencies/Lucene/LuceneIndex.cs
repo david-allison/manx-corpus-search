@@ -16,6 +16,7 @@ namespace Codex_API
     public class LuceneIndex
     {
         private const string DOCUMENT_NAME = "name";
+        private const string DOCUMENT_IDENT = "ident";
 
         private IndexWriter indexWriter;
 
@@ -60,6 +61,7 @@ namespace Codex_API
                 {
                     // StringField indexes but doesn't tokenize
                     new StringField(DOCUMENT_NAME, document.Name, Field.Store.YES),
+                    new StringField(DOCUMENT_IDENT, document.Ident, Field.Store.YES),
                     new Field("manx", line.NormalizedManx , fieldType)
                 };
 

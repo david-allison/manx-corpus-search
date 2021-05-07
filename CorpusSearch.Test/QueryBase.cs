@@ -35,6 +35,7 @@ namespace Codex_API.Test
             }
 
             public string Name { get; set; }
+            public string Ident => Name;
         }
     }
 }
