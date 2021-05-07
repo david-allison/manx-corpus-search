@@ -1,4 +1,6 @@
-﻿namespace Codex_API.Model
+﻿using System;
+
+namespace Codex_API.Model
 {
     public class ScanOptions
     {
@@ -8,5 +10,7 @@
         /// Whether we want 'ç' to match 'c' (and other diacritics)
         /// </summary>
         public bool NormalizeDiacritics { get; set; } = true;
+        public DateTime MaxDate { get; internal set; }
+        public DateTime MinDate { get; internal set; }
     }
 }
