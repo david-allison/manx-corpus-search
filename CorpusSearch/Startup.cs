@@ -1,6 +1,5 @@
 using Codex_API.Services;
 using CsvHelper;
-using CsvHelper.Configuration;
 using Dapper;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -16,10 +15,11 @@ using System.Linq;
 using System.Collections.Generic;
 using Codex_API.Service;
 using Codex_API.Model;
+using Codex_API.Dependencies.CsvHelper;
 
 namespace Codex_API
 {
-    public class Startup
+    public partial class Startup
     {
         public static Dictionary<string, IList<string>> EnglishDictionary { get; set; }
         public static Dictionary<string, IList<string>> ManxDictionary { get; set; }
@@ -113,57 +113,6 @@ namespace Codex_API
             }
         }
 
-        public class DocumentLine
-        {
-            public string English { get; set; }
-            public string Manx { get; set; }
-            public int? Page { get; set; }
-            public string Notes { get; set; }
-
-            // TODO: NBSP?
-            public string NormalizedEnglish
-            {
-                get
-                {
-                    string handled = English.RemovePunctuation(" ").RemoveNewLines().NormalizeMicrosoftWordQuotes().RemoveBrackets().RemoveDoubleQuotes();
-                    return " " + handled + " ";
-                }
-            }
-
-            public string NormalizedManx
-            {
-                get
-                {
-                    string handled = NormalizeManx(Manx);
-                    return " " + handled + " ";
-                }
-            }
-
-        }
-
-
-        public static string NormalizeManx(string manx)
-        {
-            string handled = manx.RemovePunctuation(" ")
-                .RemoveNewLines()
-                .NormalizeMicrosoftWordQuotes()
-                .RemoveBrackets()
-                .RemoveColon() //example: "gra:"
-                .RemoveDoubleQuotes();
-            return handled;
-        }
-
-        public class DocumentLineMap : ClassMap<DocumentLine>
-        {
-            public DocumentLineMap()
-            {
-                Map(m => m.English);
-                Map(m => m.Manx);
-                Map(m => m.Page).Optional();
-                Map(m => m.Notes).Optional();
-            }
-        }
-
         internal static void SetupDatabase()
         {
             SetupSqlite();
@@ -241,7 +190,7 @@ namespace Codex_API
 
             internal virtual List<DocumentLine> LoadLocalFile()
             {
-                return LoadCsv(GetLocalFile("Resources", CsvFileName));
+                return CsvHelperUtils.LoadCsv(GetLocalFile("Resources", CsvFileName));
             }
         }
 
@@ -309,17 +258,6 @@ namespace Codex_API
 
             WordNormalizationService.CreateTable(conn);
             WordFrequencyService.CreateTable(conn);
-        }
-
-        public static List<DocumentLine> LoadCsv(string path)
-        {
-            using (var reader = new StreamReader(path))
-            using (var csv = new CsvReader(reader, CultureInfo.InvariantCulture))
-            {
-                csv.Context.RegisterClassMap<DocumentLineMap>();
-                List<DocumentLine> results = csv.GetRecords<DocumentLine>().ToList();
-                return results;
-            }
         }
     }
 }

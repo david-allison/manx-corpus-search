@@ -53,12 +53,14 @@ namespace Codex_API
             return new LuceneIndex(writer);
         }
 
-        public void Add(IDocument document, IEnumerable<Startup.DocumentLine> data)
+        public void Add(IDocument document, IEnumerable<DocumentLine> data)
         {
-            var fieldType = new FieldType(TextField.TYPE_STORED);
-            fieldType.StoreTermVectorPositions = true;
-            fieldType.StoreTermVectors = true;
-            fieldType.StoreTermVectorOffsets = true;
+            var fieldType = new FieldType(TextField.TYPE_STORED)
+            {
+                StoreTermVectorPositions = true,
+                StoreTermVectors = true,
+                StoreTermVectorOffsets = true
+            };
 
             foreach (var line in data)
             {

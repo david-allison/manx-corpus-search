@@ -1,4 +1,5 @@
-﻿using Codex_API.Services;
+﻿using Codex_API.Model;
+using Codex_API.Services;
 using Dapper;
 using MoreLinq;
 using System;

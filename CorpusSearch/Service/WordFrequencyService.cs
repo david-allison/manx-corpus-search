@@ -1,4 +1,5 @@
-﻿using Codex_API.Services;
+﻿using Codex_API.Model;
+using Codex_API.Services;
 using Dapper;
 using Microsoft.Data.Sqlite;
 using System;
@@ -21,7 +22,7 @@ namespace Codex_API.Service
                 ")");
         }
 
-        internal static void AddDocument(int documentId, List<Startup.DocumentLine> validData)
+        internal static void AddDocument(int documentId, List<DocumentLine> validData)
         {
 
             var normalizedManxWords = validData.SelectMany(x => x.NormalizedManx.Split(" ", StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))

@@ -29,7 +29,7 @@ namespace Codex_API.Test
 
         protected void AddDocument(IDocument doc, params Line[] data)
         {
-            luceneIndex.Add(doc, data.Select(x => new Startup.DocumentLine() { English = x.English, Manx = x.Manx }));
+            luceneIndex.Add(doc, data.Select(x => new DocumentLine() { English = x.English, Manx = x.Manx }));
         }
 
         protected class TestDocument : IDocument

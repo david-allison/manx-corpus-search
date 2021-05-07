@@ -1,9 +1,7 @@
-﻿using Lucene.Net.Analysis;
+﻿using Codex_API.Model;
+using Lucene.Net.Analysis;
 using Lucene.Net.Analysis.TokenAttributes;
-using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 
 namespace Codex_API.Dependencies.Lucene
 {
@@ -22,7 +20,7 @@ namespace Codex_API.Dependencies.Lucene
             {
                 var term = new string(this.termAtt.Buffer).Substring(0, termAtt.Length);
 
-                var newContent = Startup.NormalizeManx(term);
+                var newContent = DocumentLine.NormalizeManx(term);
 
                 termAtt.ResizeBuffer(newContent.Length);
                 termAtt.SetLength(newContent.Length);

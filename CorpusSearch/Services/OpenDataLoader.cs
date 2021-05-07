@@ -1,4 +1,6 @@
-﻿using Newtonsoft.Json;
+﻿using Codex_API.Dependencies.CsvHelper;
+using Codex_API.Model;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -105,7 +107,7 @@ namespace Codex_API.Services
 
         internal override List<DocumentLine> LoadLocalFile()
         {
-            return LoadCsv(FullCsvPath);
+            return CsvHelperUtils.LoadCsv(FullCsvPath);
         }
 
 
