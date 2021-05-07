@@ -142,8 +142,9 @@ where
                 return ret;
             }
 
-            var results = await OverviewSearchService.CorpusSearch(searchQuery); 
-            
+            var results = await OverviewSearchService.CorpusSearch(searchQuery);
+
+            results = results.OrderBy(x => x.StartDate);
 
             ret.EnrichResults(results);
             ret.EnrichWithTime(sw);
