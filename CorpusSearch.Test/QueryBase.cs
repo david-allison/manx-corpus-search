@@ -1,10 +1,9 @@
 ﻿using Codex_API.Dependencies.csly;
 using Codex_API.Model;
 using Codex_API.Test.TestUtils;
-using Lucene.Net.Index;
 using NUnit.Framework;
+using System;
 using System.Linq;
-using static Codex_API.LuceneIndex;
 
 namespace Codex_API.Test
 {
@@ -13,6 +12,7 @@ namespace Codex_API.Test
     {
         protected LuceneIndex luceneIndex;
         protected SearchParser parser;
+        protected DateTime DOC_DATE = new DateTime(2212, 10, 10);
 
         [SetUp]
         public void setUp()
@@ -23,19 +23,32 @@ namespace Codex_API.Test
 
         public void AddDocument(string name, params Line[] data)
         {
-            luceneIndex.Add(new TestDocument(name), data.Select(x => new Startup.DocumentLine() { English = x.English, Manx = x.Manx }));
+            var doc = new TestDocument(name, DOC_DATE);
+            AddDocument(doc, data);
         }
 
-
-        private class TestDocument : IDocument
+        protected void AddDocument(IDocument doc, params Line[] data)
         {
-            public TestDocument(string name)
+            luceneIndex.Add(doc, data.Select(x => new Startup.DocumentLine() { English = x.English, Manx = x.Manx }));
+        }
+
+        protected class TestDocument : IDocument
+        {
+            public TestDocument(string name, DateTime? dateTime)
             {
                 Name = name;
+                this.date = dateTime;
             }
 
+
             public string Name { get; set; }
+
+            private readonly DateTime? date;
+
             public string Ident => Name;
+
+            public DateTime? CreatedCircaStart => date;
+            public DateTime? CreatedCircaEnd => date;
         }
     }
 }

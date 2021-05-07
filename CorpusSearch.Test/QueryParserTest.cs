@@ -1,5 +1,6 @@
 ﻿using Codex_API.Dependencies;
 using Codex_API.Model;
+using Codex_API.Test.TestUtils;
 using NUnit.Framework;
 using static Codex_API.Test.TestUtils.DocumentStorageExtensions;
 
@@ -283,6 +284,29 @@ namespace Codex_API.Test
 
             Assert.That(result.NumberOfMatches, Is.EqualTo(2));
             Assert.That(result.NumberOfSegments, Is.EqualTo(2));
+        }
+
+        [Test]
+        public void TestDate()
+        {
+            this.AddManxDoc("1", "data");
+
+            var result = Query("data");
+
+            Assert.That(result.DocumentResults[0].StartDate, Is.EqualTo(DOC_DATE));
+            Assert.That(result.DocumentResults[0].EndDate, Is.EqualTo(DOC_DATE));
+        }
+
+        [Test]
+        public void TestNullDate()
+        {
+            var docWithNoDate = new TestDocument("1", null);
+            AddDocument(docWithNoDate, new Line { Manx = "data" });
+
+            var result = Query("data");
+
+            Assert.That(result.DocumentResults[0].StartDate, Is.EqualTo(null));
+            Assert.That(result.DocumentResults[0].EndDate, Is.EqualTo(null));
         }
 
         private ScanResult Query(string query, ScanOptions options)

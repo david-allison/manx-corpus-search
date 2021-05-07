@@ -20,6 +20,8 @@ namespace Codex_API
         private const string DOCUMENT_IDENT = "ident";
         private const string DOCUMENT_NORMALIZED_MANX = "manx";
         private const string DOCUMENT_REAL_MANX = "real_manx";
+        private const string DOCUMENT_CREATED_START = "created_start";
+        private const string DOCUMENT_CREATED_END = "created_end";
 
         private IndexWriter indexWriter;
 
@@ -69,6 +71,15 @@ namespace Codex_API
                     new Field(DOCUMENT_NORMALIZED_MANX, line.NormalizedManx , fieldType),
                 };
 
+                void AddField(string key, string value)
+                {
+                    // ArgumentNullException if the value is null
+                    if (value == null) { return; }
+                    doc.Add(new StringField(key, value, Field.Store.YES));
+                }
+                
+                AddField(DOCUMENT_CREATED_START, document.CreatedCircaStart?.ToString());
+                AddField(DOCUMENT_CREATED_END, document.CreatedCircaEnd?.ToString());
                 indexWriter.AddDocument(doc);
             }
 
@@ -110,10 +121,17 @@ namespace Codex_API
 
             var samples = corpusDocuments.Select(x =>
             {
+                string maybeStartDate = x.GetField(DOCUMENT_CREATED_START)?.GetStringValue();
+                string maybeEndDate = x.GetField(DOCUMENT_CREATED_END)?.GetStringValue();
+
+                DateTime? startDate = maybeStartDate != null ? DateTime.Parse(maybeStartDate) : null;
+                DateTime? endDate = maybeEndDate != null ? DateTime.Parse(maybeEndDate) : null;
                 return new QueryDocumentResult
                 {
                     Ident = x.GetField(DOCUMENT_IDENT).GetStringValue(),
                     Sample = x.GetField(DOCUMENT_REAL_MANX).GetStringValue(),
+                    EndDate = endDate,
+                    StartDate = startDate,
                 };
             });
 
