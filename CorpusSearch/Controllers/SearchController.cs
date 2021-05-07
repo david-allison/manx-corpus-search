@@ -134,7 +134,7 @@ where
                 English = english,
                 FullText = fullTextSearch,
                 MinDate = DateTimeUtil.FromYear(Math.Max(1, minDate)),
-                MaxDate = DateTimeUtil.FromYear(maxDate)
+                MaxDate = DateTimeUtil.FromYearMax(maxDate)
             };
             if (!searchQuery.IsValid())
             {
