@@ -79,11 +79,11 @@ export class Home extends Component {
     }
 
     handleManxChange(event) {
-        this.setState({ searchManx: event.target.checked }, () => this.populateData());
+        this.setState({ searchManx: event.target.checked, searchEnglish: !event.target.checked }, () => this.populateData());
     }
 
     handleEnglishChange(event) {
-        this.setState({ searchEnglish: event.target.checked }, () => this.populateData());
+        this.setState({ searchEnglish: event.target.checked, searchManx: !event.target.checked }, () => this.populateData());
     }
 
     render() {
@@ -99,8 +99,8 @@ export class Home extends Component {
 
                     <div className="search-language">
                         Language: 
-                        <label htmlFor="manxSearch" id="manxSearchLabel">Manx</label> <input id="manxSearch" type="checkbox" defaultChecked={this.state.searchManx} onChange={this.handleManxChange} />
-                        <label htmlFor="englishSearch">English</label> <input id="englishSearch" type="checkbox" defaultChecked={this.state.searchEnglish} onChange={this.handleEnglishChange} /><br />
+                        <label htmlFor="manxSearch" id="manxSearchLabel">Manx</label> <input id="manxSearch" type="checkbox" checked={this.state.searchManx} defaultChecked={this.state.searchManx} onChange={this.handleManxChange} />
+                        <label htmlFor="englishSearch">English</label> <input id="englishSearch" type="checkbox" checked={this.state.searchEnglish}  defaultChecked={this.state.searchEnglish} onChange={this.handleEnglishChange} /><br />
                     </div>
 
                     <Typography id="range-output" gutterBottom>
