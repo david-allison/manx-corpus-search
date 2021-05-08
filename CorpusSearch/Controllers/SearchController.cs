@@ -49,7 +49,14 @@ namespace Codex_API.Controllers
         public async Task<SearchWorkResult> SearchWork(string workIdent, string query = null, bool manx = true, bool english = true, bool fullTextSearch = false)
         {
             var sw = Stopwatch.StartNew();
-            SearchWorkResult ret = await DocumentSearchService.SearchWork(workIdent, query, manx, english, fullTextSearch);
+            var workQuery = new CorpusSearchWorkQuery(query)
+            {
+                Ident = workIdent,
+                Manx = manx,
+                English = english,
+                FullText = fullTextSearch,
+            };
+            SearchWorkResult ret = await DocumentSearchService.SearchWork(workQuery);
             ret.EnrichWithTime(sw);
             return ret;
         }

@@ -41,34 +41,34 @@ where
 
 
 
-        public static async Task<SearchWorkResult> SearchWork(string workIdent, string query, bool manx, bool english, bool fullTextSearch)
+        public static async Task<SearchWorkResult> SearchWork(CorpusSearchWorkQuery workQuery)
         {
             var workNameParam = new DynamicParameters();
-            workNameParam.Add("ident", workIdent);
+            workNameParam.Add("ident", workQuery.Ident);
             var title = await Startup.conn.QuerySingleAsync<string>("SELECT name FROM works where ident = @ident", workNameParam);
 
             SearchWorkResult ret = SearchWorkResult.Empty(title);
-            if (string.IsNullOrWhiteSpace(query) || string.IsNullOrEmpty(workIdent) || query.Length > 30)
+            if (string.IsNullOrWhiteSpace(workQuery.Query) || string.IsNullOrEmpty(workQuery.Ident) || workQuery.Query.Length > 30)
             {
                 return SearchWorkResult.Empty(title);
             }
-            if (!manx && !english)
+            if (!workQuery.Manx && !workQuery.English)
             {
                 return SearchWorkResult.Empty(title);
             }
 
             var param = new DynamicParameters();
-            param.Add("manx", getParam(query, manx, fullTextSearch));
-            param.Add("english", getParam(query, english, fullTextSearch));
-            param.Add("workIdent", workIdent);
+            param.Add("manx", getParam(workQuery.Query, workQuery.Manx, workQuery.FullText));
+            param.Add("english", getParam(workQuery.Query, workQuery.English, workQuery.FullText));
+            param.Add("workIdent", workQuery.Ident);
 
-            var results = await Startup.conn.QueryAsync<DocumentLine>(fullTextSearch ? SEARCH_SPECIFIC_WORK_FULLTEXT : SEARCH_SPECIFIC_WORK, param);
+            var results = await Startup.conn.QueryAsync<DocumentLine>(workQuery.FullText ? SEARCH_SPECIFIC_WORK_FULLTEXT : SEARCH_SPECIFIC_WORK, param);
 
-            if (!fullTextSearch)
+            if (!workQuery.FullText)
             {
                 // Search English, and you get Manx
-                var manxTranslations = Startup.EnglishDictionary.GetValueOrDefault(query.ToLowerInvariant(), new List<string>());
-                var englishTranslations = Startup.ManxDictionary.GetValueOrDefault(query.ToLowerInvariant(), new List<string>());
+                var manxTranslations = Startup.EnglishDictionary.GetValueOrDefault(workQuery.Query.ToLowerInvariant(), new List<string>());
+                var englishTranslations = Startup.ManxDictionary.GetValueOrDefault(workQuery.Query.ToLowerInvariant(), new List<string>());
 
                 ret.ManxTranslations.AddRange(manxTranslations.Select(x => " " + x + " "));
                 ret.EnglishTranslations.AddRange(englishTranslations.Select(x => " " + x + " "));
