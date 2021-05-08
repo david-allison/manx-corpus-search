@@ -117,23 +117,7 @@ namespace Codex_API.Dependencies.csly
 
         internal ParseResult<ExpressionToken, Expression> Parse(string expression)
         {
-            var r = parser.Parse(expression);
-            
-            if (!r.IsError && r.Result != null)
-            {
-                Console.WriteLine($"result of <{expression}>  is {r.Result}");
-                // outputs : result of <42 + 42>  is 84"
-            }
-            else
-            {
-                if (r.Errors != null && r.Errors.Any())
-                {
-                    // display errors
-                    r.Errors.ForEach(error => Console.WriteLine(error.ErrorMessage));
-                }
-            }
-
-            return r;
+            return parser.Parse(expression);
         }
     }
 }

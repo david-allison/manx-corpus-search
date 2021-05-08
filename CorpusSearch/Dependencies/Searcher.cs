@@ -44,7 +44,7 @@ namespace Codex_API.Dependencies
         {
             if (!parsed.IsOk || parsed.Result == null)
             {
-                throw new ArgumentException(string.Join(",", parsed.Errors.Select(x => x.ErrorMessage)));
+                throw new ArgumentException("failed to parse query: " + string.Join(",", parsed.Errors.Select(x => x.ErrorMessage)));
             }
 
             return ToSpanQuery(parsed.Result, searchOptions);
