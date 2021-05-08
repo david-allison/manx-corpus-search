@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Codex_API.Dependencies.Lucene
 {
@@ -38,6 +39,11 @@ namespace Codex_API.Dependencies.Lucene
                 return;
             }
             lookup.Add(docId, span);
+        }
+
+        internal List<int> DistinctDocuments()
+        {
+            return counts.Keys.ToList();
         }
     }
 

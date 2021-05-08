@@ -97,8 +97,6 @@ namespace Codex_API
         public static ScanResult Scan(IndexReader reader, SpanQuery query)
         {
             var searcher = new IndexSearcher(reader);
-            var hits = searcher.Search(query, int.MaxValue).ScoreDocs;
-
 
             int totalMatches = 0;
             var spanQuery = (SpanQuery)query.Rewrite(reader);
@@ -115,7 +113,7 @@ namespace Codex_API
                 }
             }
 
-            var distinctDocuments = hits.Select(x => x.Doc).Distinct();
+            var distinctDocuments = spanCollection.DistinctDocuments();
             var luceneDocumentCount = distinctDocuments.Count();
 
             var documentMapping = distinctDocuments.ToDictionary(x => x, x => reader.Document(x));
