@@ -1,14 +1,12 @@
 ﻿using Codex_API.Extensions;
 using Codex_API.Model;
 using Codex_API.Service;
-using Dapper;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
-using static Codex_API.Startup;
 
 namespace Codex_API.Controllers
 {
@@ -18,36 +16,6 @@ namespace Codex_API.Controllers
     public partial class SearchController : ControllerBase
     {
         public static string PUNCTUATION_REGEX = "[,.;!?\\-\\s]";
-
-
-        private const string SEARCH_SPECIFIC_WORK = @"
-select 
-    translations.english as english,
-    translations.manx as manx,
-    translations.page as page,
-    translations.notes as notes
-from 
-    translations 
-join works on works.id = translations.work
-where 
-    works.ident = @workIdent 
-        AND 
-    ((@manx IS NOT NULL AND normalizedManx like @manx) OR (@english IS NOT NULL AND normalizedEnglish like @english))";
-
-        private const string SEARCH_SPECIFIC_WORK_FULLTEXT = @"
-select 
-    translations.english as english,
-    translations.manx as manx,
-    translations.page as page,
-    translations.notes as notes
-from 
-    translations 
-join works on works.id = translations.work
-where 
-    works.ident = @workIdent 
-        AND 
-    ((@manx IS NOT NULL AND manx like @manx) OR (@english IS NOT NULL AND english like @english))";
-
 
         [HttpGet]
         public string Get()
@@ -81,40 +49,7 @@ where
         public async Task<SearchWorkResult> SearchWork(string workIdent, string query = null, bool manx = true, bool english = true, bool fullTextSearch = false)
         {
             var sw = Stopwatch.StartNew();
-            var workNameParam = new DynamicParameters();
-            workNameParam.Add("ident", workIdent);
-            var title = await conn.QuerySingleAsync<string>("SELECT name FROM works where ident = @ident", workNameParam);
-
-            var ret = SearchWorkResult.Empty(title);
-            if (string.IsNullOrWhiteSpace(query) || string.IsNullOrEmpty(workIdent) || query.Length > 30)
-            {
-                ret.EnrichWithTime(sw);
-                return SearchWorkResult.Empty(title);
-            }
-            if (!manx && !english)
-            {
-                ret.EnrichWithTime(sw);
-                return SearchWorkResult.Empty(title);
-            }
-
-            var param = new DynamicParameters();
-            param.Add("manx", getParam(query, manx, fullTextSearch));
-            param.Add("english", getParam(query, english, fullTextSearch));
-            param.Add("workIdent", workIdent);
-
-            var results = await conn.QueryAsync<DocumentLine>(fullTextSearch ? SEARCH_SPECIFIC_WORK_FULLTEXT : SEARCH_SPECIFIC_WORK, param);
-
-            if (!fullTextSearch)
-            {
-                // Search English, and you get Manx
-                var manxTranslations = EnglishDictionary.GetValueOrDefault(query.ToLowerInvariant(), new List<string>());
-                var englishTranslations = ManxDictionary.GetValueOrDefault(query.ToLowerInvariant(), new List<string>());
-
-                ret.ManxTranslations.AddRange(manxTranslations.Select(x => " " + x + " "));
-                ret.EnglishTranslations.AddRange(englishTranslations.Select(x => " " + x + " "));
-            }
-
-            ret.EnrichResults(results);
+            SearchWorkResult ret = await DocumentSearchService.SearchWork(workIdent, query, manx, english, fullTextSearch);
             ret.EnrichWithTime(sw);
             return ret;
         }
