@@ -46,13 +46,10 @@ where
             string title = await WorkService.GetTitleFromIdent(workQuery.Ident);
 
             SearchWorkResult ret = SearchWorkResult.Empty(title);
-            if (string.IsNullOrWhiteSpace(workQuery.Query) || string.IsNullOrEmpty(workQuery.Ident) || workQuery.Query.Length > 30)
+
+            if (!workQuery.IsValid())
             {
-                return SearchWorkResult.Empty(title);
-            }
-            if (!workQuery.Manx && !workQuery.English)
-            {
-                return SearchWorkResult.Empty(title);
+                return ret;
             }
 
             var param = new DynamicParameters();
