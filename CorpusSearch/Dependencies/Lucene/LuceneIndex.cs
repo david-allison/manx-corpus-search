@@ -99,6 +99,63 @@ namespace Codex_API
             return Scan(reader, query);
         }
 
+
+        internal SearchResult Search(string ident, SpanQuery query)
+        {
+            // TODO: Copied from Scan
+            using var reader = indexWriter.GetReader(applyAllDeletes: true);
+            var searcher = new IndexSearcher(reader);
+
+            ISet<int> acceptDocs = GetDocsForIdent(searcher, ident);
+
+            int totalMatches = 0;
+            var spanQuery = (SpanQuery)query.Rewrite(reader);
+            SpanCollection spanCollection = new();
+            foreach (var leaf in reader.Leaves)
+            {
+                var dict = new Dictionary<Term, TermContext>();
+                var spans = spanQuery.GetSpans(leaf, null, dict);
+
+                while (spans.MoveNext())
+                {
+                    var docId = leaf.DocBase + spans.Doc;
+                    // TODO PERF: Inefficient - should be able to use GetSpans(?, acceptDocs, ?) - need to read documents to understand it
+                    if (!acceptDocs.Contains(docId))
+                    {
+                        continue;
+                    }
+                    spanCollection.Add(leaf.DocBase + spans.Doc, new Span(spans.Start, spans.End));
+                    totalMatches++;
+                }
+            }
+
+            var docs = spanCollection.DistinctDocuments().Select(x =>
+            {
+                var manx = searcher.Doc(x).GetField(DOCUMENT_REAL_MANX).GetStringValue();
+                var english = searcher.Doc(x).GetField(DOCUMENT_REAL_ENGLISH).GetStringValue();
+                // TODO: page & notes
+                return new DocumentLine
+                {
+                    English = english,
+                    Manx = manx
+                };
+            }).ToList();
+
+            return new SearchResult
+            {
+                Lines = docs,
+            };
+        }
+
+        private ISet<int> GetDocsForIdent(IndexSearcher searcher, string ident)
+        {
+            var query = new TermQuery(new Term(DOCUMENT_IDENT, ident));
+
+            // TODO: See if IBits will help here? 
+            var ret = searcher.Search(query, int.MaxValue).ScoreDocs.Select(x => x.Doc);
+            return new HashSet<int>(ret);
+        }
+
         public static ScanResult Scan(IndexReader reader, SpanQuery query)
         {
             var searcher = new IndexSearcher(reader);

@@ -22,6 +22,21 @@ namespace Codex_API.Dependencies
             this.parser = parser;
         }
 
+        internal SearchResult SearchWork(string ident, string query, SearchOptions options)
+        {
+            // HACK: use the ScanOptions as they're the same for now
+            var scanOptionsHack = new ScanOptions { SearchType = options.Type };
+
+            // parse the string into a Result<Expression>
+            var parsed = parser.Parse(query);
+
+            // Convert the result to a Lucene Span Query (or throw ArgumentException)
+            SpanQuery spanQuery = ToSpanQuery(parsed, scanOptionsHack);
+
+            return luceneSearch.Search(ident, spanQuery);
+
+        }
+
         public ScanResult Scan(string query)
         {
             return Scan(query, ScanOptions.Default);
