@@ -32,6 +32,8 @@ namespace Codex_API.Controllers
 
             public List<string> ManxTranslations { get; set; } = new List<string>();
             public List<string> EnglishTranslations { get; set; } = new List<string>();
+            /// <summary>The total number of matches (multiple matches per line)</summary>
+            public int TotalMatches { get; internal set; } = -1;
 
             internal static SearchWorkResult Empty(string title)
             {

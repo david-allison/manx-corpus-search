@@ -22,6 +22,8 @@ namespace Codex_API.Service
             var results = Startup.searcher.SearchWork(workQuery.Ident, workQuery.Query, ToSearchOptions(workQuery));
 
             ret.EnrichResults(results.Lines);
+            // Handles more than one result per document line
+            ret.TotalMatches = results.TotalMatches;
 
             return ret;
         }

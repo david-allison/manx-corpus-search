@@ -144,6 +144,7 @@ namespace Codex_API
             return new SearchResult
             {
                 Lines = docs,
+                TotalMatches = spanCollection.GetTotalCount(),
             };
         }
 

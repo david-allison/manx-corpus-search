@@ -45,6 +45,11 @@ namespace Codex_API.Dependencies.Lucene
         {
             return counts.Keys.ToList();
         }
+
+        internal int GetTotalCount()
+        {
+            return counts.Values.Sum();
+        }
     }
 
     public class Span

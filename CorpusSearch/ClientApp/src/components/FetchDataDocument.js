@@ -35,7 +35,7 @@ export class FetchDataDocument extends Component {
     static renderForecastsTable(response, value, fullTextSearch, manxhi, englishhi) {
         return (
             <div>
-                Returned { response.numberOfResults} matches [{response.timeTaken}]
+                { response.totalMatches} results ({ response.numberOfResults} lines) [{response.timeTaken}]
             <table className='table table-striped' aria-labelledby="tabelLabel">
                 <thead>
                     <tr>
