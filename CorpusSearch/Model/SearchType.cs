@@ -7,5 +7,7 @@ namespace Codex_API.Model
 {
     public enum SearchType
     {
+        Manx,
+        English
     }
 }

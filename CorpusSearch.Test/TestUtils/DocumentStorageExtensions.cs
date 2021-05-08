@@ -6,7 +6,7 @@ namespace Codex_API.Test.TestUtils
     {
         public static void AddManxDoc(this IDocumentStorage target, string document, params string[] manx)
         {
-            target.AddDocument(document, manx.Select(x => new Line { Manx = x }).ToArray());
+            target.AddDocument(document, manx.Select(x => new Line { Manx = x, English = "" }).ToArray());
         }
     }
 }

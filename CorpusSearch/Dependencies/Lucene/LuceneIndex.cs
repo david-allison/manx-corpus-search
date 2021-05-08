@@ -16,12 +16,14 @@ namespace Codex_API
 {
     public class LuceneIndex
     {
-        private const string DOCUMENT_NAME = "name";
-        private const string DOCUMENT_IDENT = "ident";
-        private const string DOCUMENT_NORMALIZED_MANX = "manx";
-        private const string DOCUMENT_REAL_MANX = "real_manx";
-        private const string DOCUMENT_CREATED_START = "created_start";
-        private const string DOCUMENT_CREATED_END = "created_end";
+        public const string DOCUMENT_NAME = "name";
+        public const string DOCUMENT_IDENT = "ident";
+        public const string DOCUMENT_NORMALIZED_MANX = "manx";
+        public const string DOCUMENT_REAL_MANX = "real_manx";
+        public const string DOCUMENT_NORMALIZED_ENGLISH = "english";
+        public const string DOCUMENT_REAL_ENGLISH = "real_english";
+        public const string DOCUMENT_CREATED_START = "created_start";
+        public const string DOCUMENT_CREATED_END = "created_end";
 
         private IndexWriter indexWriter;
 
@@ -70,7 +72,10 @@ namespace Codex_API
                     new StringField(DOCUMENT_NAME, document.Name, Field.Store.YES),
                     new StringField(DOCUMENT_IDENT, document.Ident, Field.Store.YES),
                     new StringField(DOCUMENT_REAL_MANX, line.Manx, Field.Store.YES),
+                    new StringField(DOCUMENT_REAL_ENGLISH, line.English, Field.Store.YES),
                     new Field(DOCUMENT_NORMALIZED_MANX, line.NormalizedManx , fieldType),
+                    // TODO: Confirm that the analyzer that we use is also appropriate for English
+                    new Field(DOCUMENT_NORMALIZED_ENGLISH, line.NormalizedEnglish, fieldType),
                 };
 
                 void AddField(string key, string value)

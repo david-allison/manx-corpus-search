@@ -40,6 +40,7 @@ namespace Codex_API.Service
 
             options.MaxDate = searchQuery.MaxDate;
             options.MinDate = searchQuery.MinDate;
+            options.SearchType = searchQuery.Manx ? SearchType.Manx : SearchType.English;
 
             return options;
         }

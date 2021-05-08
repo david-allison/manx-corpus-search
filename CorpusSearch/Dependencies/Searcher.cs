@@ -92,7 +92,7 @@ namespace Codex_API.Dependencies
 
         private static SpanQuery ManxTermQuery(string value, ScanOptions searchOptions)
         {
-            Term term = new Term("manx", value);
+            Term term = new Term(GetTermKey(searchOptions), value);
             if (searchOptions.NormalizeDiacritics)
             {
                 var manx = new ManxQuery(term);
@@ -105,6 +105,16 @@ namespace Codex_API.Dependencies
             else
             {
                 return new SpanTermQuery(term);
+            }
+        }
+
+        private static string GetTermKey(ScanOptions searchOptions)
+        {
+            switch (searchOptions.SearchType)
+            {
+                case SearchType.Manx: return LuceneIndex.DOCUMENT_NORMALIZED_MANX;
+                case SearchType.English: return LuceneIndex.DOCUMENT_NORMALIZED_ENGLISH;
+                default: throw new ArgumentException("Unhandlded case: " + searchOptions.SearchType);
             }
         }
 

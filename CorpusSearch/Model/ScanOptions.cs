@@ -12,5 +12,6 @@ namespace Codex_API.Model
         public bool NormalizeDiacritics { get; set; } = true;
         public DateTime MaxDate { get; internal set; }
         public DateTime MinDate { get; internal set; }
+        public SearchType SearchType { get; internal set; }
     }
 }
