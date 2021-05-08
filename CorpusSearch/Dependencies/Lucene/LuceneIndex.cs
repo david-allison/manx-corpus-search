@@ -18,6 +18,8 @@ namespace Codex_API
     {
         public const string DOCUMENT_NAME = "name";
         public const string DOCUMENT_IDENT = "ident";
+        public const string DOCUMENT_NOTES = "notes";
+        public const string DOCUMENT_PAGE = "page";
         public const string DOCUMENT_NORMALIZED_MANX = "manx";
         public const string DOCUMENT_REAL_MANX = "real_manx";
         public const string DOCUMENT_NORMALIZED_ENGLISH = "english";
@@ -87,6 +89,9 @@ namespace Codex_API
                 
                 AddField(DOCUMENT_CREATED_START, document.CreatedCircaStart?.ToString());
                 AddField(DOCUMENT_CREATED_END, document.CreatedCircaEnd?.ToString());
+                AddField(DOCUMENT_NOTES, line.Notes);
+                AddField(DOCUMENT_PAGE, line.Page.ToString());
+
                 indexWriter.AddDocument(doc);
             }
 
@@ -131,13 +136,22 @@ namespace Codex_API
 
             var docs = spanCollection.DistinctDocuments().Select(x =>
             {
-                var manx = searcher.Doc(x).GetField(DOCUMENT_REAL_MANX).GetStringValue();
-                var english = searcher.Doc(x).GetField(DOCUMENT_REAL_ENGLISH).GetStringValue();
-                // TODO: page & notes
+                var document = searcher.Doc(x);
+                var manx = document.GetField(DOCUMENT_REAL_MANX).GetStringValue();
+                var english = document.GetField(DOCUMENT_REAL_ENGLISH).GetStringValue();
+
+                int pageAsInt = 0;
+                int.TryParse(document.GetField(DOCUMENT_PAGE)?.GetStringValue(), out pageAsInt);
+
+
+                string notes = document.GetField(DOCUMENT_NOTES)?.GetStringValue();
+
                 return new DocumentLine
                 {
                     English = english,
-                    Manx = manx
+                    Manx = manx,
+                    Page = pageAsInt != 0 ? pageAsInt : null,
+                    Notes = notes,
                 };
             }).ToList();
 
