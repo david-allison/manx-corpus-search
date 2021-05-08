@@ -43,9 +43,7 @@ where
 
         public static async Task<SearchWorkResult> SearchWork(CorpusSearchWorkQuery workQuery)
         {
-            var workNameParam = new DynamicParameters();
-            workNameParam.Add("ident", workQuery.Ident);
-            var title = await Startup.conn.QuerySingleAsync<string>("SELECT name FROM works where ident = @ident", workNameParam);
+            string title = await WorkService.GetTitleFromIdent(workQuery.Ident);
 
             SearchWorkResult ret = SearchWorkResult.Empty(title);
             if (string.IsNullOrWhiteSpace(workQuery.Query) || string.IsNullOrEmpty(workQuery.Ident) || workQuery.Query.Length > 30)
