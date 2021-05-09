@@ -41,7 +41,11 @@ namespace CorpusSearch
 
             services.AddControllersWithViews();
 
-            services.AddSingleton(s => SetupSqliteConnection());
+            services.AddSingleton(provider => LuceneIndex.GetInstance());
+            services.AddSingleton(provider => SearchParser.GetParser());
+            services.AddSingleton<Searcher>();
+
+            services.AddSingleton(provider => SetupSqliteConnection());
             services.AddSingleton<WorkService>();
             services.AddSingleton<DocumentSearchService2>();
             services.AddSingleton<OverviewSearchService2>();
@@ -66,8 +70,10 @@ namespace CorpusSearch
             return conn;
         }
 
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, SqliteConnection sqliteConnection, WorkService workService)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, SqliteConnection sqliteConnection, WorkService workService, Searcher searcher)
         {
+            Startup.searcher = searcher;
+
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
@@ -79,11 +85,9 @@ namespace CorpusSearch
                 app.UseHsts();
             }
 
-            var luceneIndex = LuceneIndex.GetInstance();
-            var parser = SearchParser.GetParser();
-            Startup.searcher = new Searcher(luceneIndex, parser);
 
-            SetupDatabase(sqliteConnection, workService);
+
+            SetupDatabase(sqliteConnection, workService, searcher);
 
             SetupDictionaries();
 
@@ -129,7 +133,7 @@ namespace CorpusSearch
             }
         }
 
-        internal static void SetupDatabase(SqliteConnection connection, WorkService workService)
+        internal static void SetupDatabase(SqliteConnection connection, WorkService workService, Searcher searcher)
         {
             SetupSqlite(connection);
 
@@ -138,7 +142,7 @@ namespace CorpusSearch
             {
                 List<Document> closedSourceDocument = ClosedDataLoader.LoadDocumentsFromFile().Cast<Document>().ToList();
                 Console.WriteLine($"Loaded {closedSourceDocument.Count} documents");
-                AddDocuments(closedSourceDocument, workService);
+                AddDocuments(closedSourceDocument, workService, searcher);
             }
             catch (Exception e)
             {
@@ -151,7 +155,7 @@ namespace CorpusSearch
             {
                 List<Document> ossDocuments = OpenDataLoader.LoadDocumentsFromFile().Cast<Document>().ToList();
                 Console.WriteLine($"Loaded {ossDocuments.Count} documents");
-                AddDocuments(ossDocuments, workService);
+                AddDocuments(ossDocuments, workService, searcher);
             }
             catch (Exception e)
             {
@@ -159,11 +163,11 @@ namespace CorpusSearch
             }
         }
 
-        private static void AddDocuments(List<Document> documents, WorkService workService)
+        private static void AddDocuments(List<Document> documents, WorkService workService, Searcher searcher)
         {
             foreach (var document in documents)
             {
-                AddDocument(document, workService);
+                AddDocument(document, workService, searcher);
             }
         }
 
@@ -208,7 +212,7 @@ namespace CorpusSearch
             }
         }
 
-        private static void AddDocument(Document document, WorkService workService)
+        private static void AddDocument(Document document, WorkService workService, Searcher searcher)
         {
             List<DocumentLine> data = document.LoadLocalFile();
 
