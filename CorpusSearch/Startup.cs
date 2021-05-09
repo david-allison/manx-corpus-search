@@ -43,6 +43,8 @@ namespace CorpusSearch
 
             services.AddControllersWithViews();
 
+            services.AddSingleton(SetupSqliteConnection());
+
             // In production, the React files will be served from this directory
             services.AddSpaStaticFiles(configuration =>
             {
@@ -50,7 +52,20 @@ namespace CorpusSearch
             });
         }
 
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+        private static SqliteConnection SetupSqliteConnection()
+        {
+            var connectionString = new SqliteConnectionStringBuilder()
+            {
+                Mode = SqliteOpenMode.Memory
+            };
+            SQLitePCL.Batteries.Init();
+
+            conn = new SqliteConnection(connectionString.ToString());
+            conn.Open();
+            return conn;
+        }
+
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, SqliteConnection sqliteConnection)
         {
             if (env.IsDevelopment())
             {
@@ -67,7 +82,7 @@ namespace CorpusSearch
             var parser = SearchParser.GetParser();
             Startup.searcher = new Searcher(luceneIndex, parser);
 
-            SetupDatabase();
+            SetupDatabase(sqliteConnection);
 
             SetupDictionaries();
 
@@ -113,9 +128,9 @@ namespace CorpusSearch
             }
         }
 
-        internal static void SetupDatabase()
+        internal static void SetupDatabase(SqliteConnection connection)
         {
-            SetupSqlite();
+            SetupSqlite(connection);
 
 
             try
@@ -203,16 +218,8 @@ namespace CorpusSearch
             WorkService.AddWork(document);
         }
 
-        private static void SetupSqlite()
+        private static void SetupSqlite(SqliteConnection conn)
         {
-            var connectionString = new SqliteConnectionStringBuilder()
-            {
-                Mode = SqliteOpenMode.Memory
-            };
-            SQLitePCL.Batteries.Init();
-
-            conn = new SqliteConnection(connectionString.ToString());
-            conn.Open();
             conn.ExecSql("create table works (" +
                 "id int PRIMARY KEY, " +
                 "name varchar, " +
