@@ -10,7 +10,8 @@ namespace Codex_API.Service
     {
         public static async Task<SearchWorkResult> SearchWork(CorpusSearchWorkQuery workQuery)
         {
-            string title = await WorkService.GetTitleFromIdent(workQuery.Ident);
+            IDocument document = await WorkService.ByIdent(workQuery.Ident);
+            string title = document.Name;
 
             SearchWorkResult ret = SearchWorkResult.Empty(title);
 

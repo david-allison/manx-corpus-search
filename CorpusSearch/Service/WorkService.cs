@@ -13,9 +13,10 @@ namespace Codex_API.Service
         /// <remarks>Might be better as SQL - might not as a constant ID is useful</remarks>
         private static int DocumentAddedCount { get; set; } = 0;
 
-        public static async Task<string> GetTitleFromIdent(string ident)
+        /// <summary>Given an ident, get the document or throw</summary>
+        public static async Task<IDocument> ByIdent(string ident)
         {
-            return await Startup.conn.QuerySingleAsync<string>("SELECT name FROM works where ident = @ident", new { ident });
+            return await Startup.conn.QuerySingleAsync<WorkServiceDocument>("SELECT name, ident, startDate as CreatedCircaStart, endDate as CreatedCircaEnd FROM works where ident = @ident", new { ident });
         }
 
         internal static void AddWork(IDocument document)
