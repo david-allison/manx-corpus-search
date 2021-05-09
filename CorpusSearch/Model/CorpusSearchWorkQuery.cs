@@ -14,7 +14,6 @@ namespace CorpusSearch.Model
         public string Ident { get; set; }
         public bool Manx { get; set; }
         public bool English { get; set; }
-        public bool FullText { get; set; }
 
         internal bool IsValid()
         {

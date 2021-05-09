@@ -13,7 +13,6 @@ namespace CorpusSearch.Model
 
         public bool Manx { get; internal set; }
         public bool English { get; internal set; }
-        public bool FullText { get; internal set; }
         public DateTime MinDate { get; internal set; }
         public DateTime MaxDate { get; internal set; }
         public bool CaseSensitive { get; internal set; }

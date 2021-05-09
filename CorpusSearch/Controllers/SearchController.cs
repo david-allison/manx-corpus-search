@@ -52,7 +52,7 @@ namespace CorpusSearch.Controllers
         }
 
         [HttpGet("SearchWork/{workIdent}/{query}")]
-        public async Task<SearchWorkResult> SearchWork(string workIdent, string query = null, bool manx = true, bool english = true, bool fullTextSearch = false)
+        public async Task<SearchWorkResult> SearchWork(string workIdent, string query = null, bool manx = true, bool english = true)
         {
             var sw = Stopwatch.StartNew();
             var workQuery = new CorpusSearchWorkQuery(query)
@@ -60,7 +60,6 @@ namespace CorpusSearch.Controllers
                 Ident = workIdent,
                 Manx = manx,
                 English = english,
-                FullText = fullTextSearch,
             };
             SearchWorkResult ret = await DocumentSearchService2.SearchWork(workQuery);
             ret.EnrichWithTime(sw);
@@ -68,7 +67,7 @@ namespace CorpusSearch.Controllers
         }
 
         [HttpGet("Search/{query}")]
-        public async Task<QueryDocumentSearchResult> SearchCorpus(string query, bool manx = true, bool english = true, bool fullTextSearch = false, int minDate = 1600, int maxDate = 2100)
+        public async Task<QueryDocumentSearchResult> SearchCorpus(string query, bool manx = true, bool english = true, int minDate = 1600, int maxDate = 2100)
         {
             var sw = Stopwatch.StartNew();
             QueryDocumentSearchResult ret = new QueryDocumentSearchResult()
@@ -80,7 +79,6 @@ namespace CorpusSearch.Controllers
             {
                 Manx = manx,
                 English = english,
-                FullText = fullTextSearch,
                 MinDate = DateTimeUtil.FromYear(Math.Max(1, minDate)),
                 MaxDate = DateTimeUtil.FromYearMax(maxDate)
             };
@@ -98,24 +96,6 @@ namespace CorpusSearch.Controllers
             ret.EnrichWithTime(sw);
             ret.NumberOfDocuments = ret.Results.Count;
             return ret;
-        }
-
-       
-        public static string getParam(string query, bool use, bool fullTextSearch)
-        {
-            if (!use)
-            {
-                return null;
-            }
-
-            if (fullTextSearch)
-            {
-                return "%" + query + "%";
-            }
-            else
-            {
-                return "% " + query + " %";
-            }
         }
 
         public class QueryDocumentSearchResult : IResultContainer<QueryDocumentResult>, ITimedResult

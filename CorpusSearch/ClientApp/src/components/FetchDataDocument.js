@@ -19,20 +19,18 @@ export class FetchDataDocument extends Component {
             value: q,
             searchManx: true,
             searchEnglish: false,
-            fullTextSearch: false,
         };
 
         this.handleChange = this.handleChange.bind(this);
         this.handleChange1 = this.handleChange1.bind(this);
         this.handleChange2 = this.handleChange2.bind(this);
-        this.handleChange3 = this.handleChange3.bind(this);
     }
 
     componentDidMount() {
         this.populateData();
     }
 
-    static renderForecastsTable(response, value, fullTextSearch, manxhi, englishhi) {
+    static renderForecastsTable(response, value, manxhi, englishhi) {
         return (
             <div>
                 { response.totalMatches} results ({ response.numberOfResults} lines) [{response.timeTaken}]
@@ -49,8 +47,8 @@ export class FetchDataDocument extends Component {
                     {
                         const eng = [...englishhi, " " + value + " "];
                         const manx = [...manxhi, " " + value + " "];
-                        const englishHighlight = fullTextSearch ? [value] : eng
-                        const manxHighlight = fullTextSearch ? [value] : manx
+                        const englishHighlight = eng
+                        const manxHighlight = manx
 
                         // TODO: replace \n with <br/>: https://kevinsimper.medium.com/react-newline-to-break-nl2br-a1c240ba746
                         let englishText = line.english.split('\n').map((item, key) => {
@@ -94,7 +92,7 @@ export class FetchDataDocument extends Component {
     render() {
         let contents = this.state.loading
             ? <p></p>
-            : FetchDataDocument.renderForecastsTable(this.state.forecasts, this.state.value, this.state.fullTextSearch, this.state.manxHighlights, this.state.englishHighlights);
+            : FetchDataDocument.renderForecastsTable(this.state.forecasts, this.state.value, this.state.manxHighlights, this.state.englishHighlights);
 
         return (
             <div>
@@ -103,14 +101,13 @@ export class FetchDataDocument extends Component {
                 <input type="text" id="corpus-search-box" value={this.state.value} onChange={this.handleChange} />
                 <label for="manxSearch">Manx</label> <input id="manxSearch" type="checkbox" defaultChecked={this.state.searchManx} onChange={this.handleChange2} /><br/>
                 <label for="englishSearch">English</label> <input id="englishSearch" type="checkbox" defaultChecked={this.state.searchEnglish} onChange={this.handleChange1} /><br/>
-                <label for="fullTextSearch">Full Text Search</label> <input id="fullTextSearch" type="checkbox" defaultChecked={this.state.fullTextSearch} onChange={this.handleChange3} />
                 {contents}
             </div>
         );
     }
 
     async populateData() {
-        const response = await fetch(`search/searchWork/${this.state.docId}/${encodeURIComponent(this.state.value)}?english=${this.state.searchEnglish}&manx=${this.state.searchManx}&fullTextSearch=${this.state.fullTextSearch}`);
+        const response = await fetch(`search/searchWork/${this.state.docId}/${encodeURIComponent(this.state.value)}?english=${this.state.searchEnglish}&manx=${this.state.searchManx}`);
         const data = await response.json();
         this.setState({ forecasts: data, title: data.title, loading: false, manxHighlights: data.manxTranslations, englishHighlights: data.englishTranslations });
     }
@@ -125,9 +122,5 @@ export class FetchDataDocument extends Component {
 
     handleChange2(event) {
         this.setState({ searchManx: event.target.checked }, () => this.populateData());
-    }
-
-    handleChange3(event) {
-        this.setState({ fullTextSearch: event.target.checked }, () => this.populateData());
     }
 }
