@@ -12,7 +12,6 @@ using System.IO;
 using System.Linq;
 using System.Collections.Generic;
 using CorpusSearch.Model;
-using CorpusSearch.Dependencies.CsvHelper;
 using CorpusSearch.Dependencies.csly;
 using CorpusSearch.Dependencies;
 using CorpusSearch.Service;
@@ -167,7 +166,7 @@ namespace CorpusSearch
             }
         }
 
-        private static string GetLocalFile(params string[] inputPath)
+        public static string GetLocalFile(params string[] inputPath)
         {
             String[] path = new string[inputPath.Length + 1];
             path[0] = AppDomain.CurrentDomain.BaseDirectory;
@@ -177,35 +176,6 @@ namespace CorpusSearch
             }
 
             return Path.Combine(path);
-        }
-
-        public class Document : IDocument
-        {
-            public string Name { get; set; }
-            public string Ident { get; set; }
-            /// <summary>
-            /// The time that the manx translation was created.
-            /// </summary>
-            public DateTime? Created {set
-                {
-                    CreatedCircaEnd = value;
-                    CreatedCircaStart = value;
-                }
-            }
-
-            public string CsvFileName { get; set; }
-
-            /// <summary>Optional HTTP link to a PDF file (not a relative path)</summary>
-            /// <remarks>Ensure that #page=n works on PC for a link like this</remarks>
-            /// <remarks>I'm currenlty hosting these on Google Drive: I don't expect this to be a problem given small search volumes, but we may need a more permanent form of storage</remarks>
-            public string ExternalPdfLink { get; set; }
-            public DateTime? CreatedCircaStart { get; set; }
-            public DateTime? CreatedCircaEnd { get; set; }
-
-            internal virtual List<DocumentLine> LoadLocalFile()
-            {
-                return CsvHelperUtils.LoadCsv(GetLocalFile("Resources", CsvFileName));
-            }
         }
 
         private static void AddDocument(Document document, WorkService workService, Searcher searcher)

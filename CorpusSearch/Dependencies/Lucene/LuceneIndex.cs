@@ -12,6 +12,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
+using LuceneDocument = Lucene.Net.Documents.Document;
+
 namespace CorpusSearch
 {
     public class LuceneIndex
@@ -68,7 +70,7 @@ namespace CorpusSearch
 
             foreach (var line in data)
             {
-                var doc = new Document
+                var doc = new LuceneDocument
                 {
                     // StringField indexes but doesn't tokenize
                     new StringField(DOCUMENT_NAME, document.Name, Field.Store.YES),
