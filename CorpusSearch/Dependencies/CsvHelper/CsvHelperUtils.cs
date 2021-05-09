@@ -1,11 +1,11 @@
-﻿using Codex_API.Model;
+﻿using CorpusSearch.Model;
 using CsvHelper;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
 
-namespace Codex_API.Dependencies.CsvHelper
+namespace CorpusSearch.Dependencies.CsvHelper
 {
     public class CsvHelperUtils
     {

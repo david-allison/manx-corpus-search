@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Codex_API.Dependencies.Lucene
+namespace CorpusSearch.Dependencies.Lucene
 {
     /// <summary>
     /// A collection of token spans per document

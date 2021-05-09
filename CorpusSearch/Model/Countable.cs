@@ -1,4 +1,4 @@
-﻿namespace Codex_API.Model
+﻿namespace CorpusSearch.Model
 {
     public interface Countable
     {

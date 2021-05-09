@@ -1,9 +1,9 @@
-﻿using Codex_API.Model;
+﻿using CorpusSearch.Model;
 using Lucene.Net.Analysis;
 using Lucene.Net.Analysis.TokenAttributes;
 using System.Linq;
 
-namespace Codex_API.Dependencies.Lucene
+namespace CorpusSearch.Dependencies.Lucene
 {
     public sealed class ManxTokenFilter : TokenFilter
     {

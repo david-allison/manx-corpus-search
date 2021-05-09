@@ -1,6 +1,6 @@
 ﻿using System.Linq;
 
-namespace Codex_API.Test.TestUtils
+namespace CorpusSearch.Test.TestUtils
 {
     public static class DocumentStorageExtensions
     {

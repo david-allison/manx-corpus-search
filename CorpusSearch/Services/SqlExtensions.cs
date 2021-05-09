@@ -1,7 +1,7 @@
 ﻿using Microsoft.Data.Sqlite;
 using System;
 
-namespace Codex_API.Services
+namespace CorpusSearch.Services
 {
     public static class SqlExtensions
     {

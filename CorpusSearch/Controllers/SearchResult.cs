@@ -1,10 +1,10 @@
-﻿using Codex_API.Model;
+﻿using CorpusSearch.Model;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 
-namespace Codex_API.Controllers
+namespace CorpusSearch.Controllers
 {
     public static class ResultExtension
     {

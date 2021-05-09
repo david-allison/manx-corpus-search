@@ -1,9 +1,9 @@
-﻿using Codex_API.Model;
+﻿using CorpusSearch.Model;
 using Dapper;
 using System;
 using System.Threading.Tasks;
 
-namespace Codex_API.Service
+namespace CorpusSearch.Service
 {
     public class WorkService
     {

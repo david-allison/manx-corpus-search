@@ -1,10 +1,10 @@
-﻿using Codex_API.Controllers;
-using Codex_API.Model;
+﻿using CorpusSearch.Controllers;
+using CorpusSearch.Model;
 using System;
 using System.Threading.Tasks;
-using static Codex_API.Controllers.SearchController;
+using static CorpusSearch.Controllers.SearchController;
 
-namespace Codex_API.Service
+namespace CorpusSearch.Service
 {
     public class DocumentSearchService2
     {

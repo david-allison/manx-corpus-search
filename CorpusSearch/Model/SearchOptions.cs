@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace Codex_API.Model
+namespace CorpusSearch.Model
 {
     public class SearchOptions
     {

@@ -1,4 +1,4 @@
-﻿namespace Codex_API.Test.TestUtils
+﻿namespace CorpusSearch.Test.TestUtils
 {
     public interface IDocumentStorage
     {

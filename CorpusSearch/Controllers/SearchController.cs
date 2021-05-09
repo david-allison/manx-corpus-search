@@ -1,6 +1,6 @@
-﻿using Codex_API.Extensions;
-using Codex_API.Model;
-using Codex_API.Service;
+﻿using CorpusSearch.Extensions;
+using CorpusSearch.Model;
+using CorpusSearch.Service;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
@@ -8,7 +8,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace Codex_API.Controllers
+namespace CorpusSearch.Controllers
 {
     // TODO: Handle a search for a word at the end of a sentence
     [ApiController]

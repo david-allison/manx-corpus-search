@@ -1,6 +1,6 @@
 ﻿using Lucene.Net.Util;
 
-namespace Codex_API.Dependencies.csly
+namespace CorpusSearch.Dependencies.csly
 {
     internal class StringExpression : Expression
     {

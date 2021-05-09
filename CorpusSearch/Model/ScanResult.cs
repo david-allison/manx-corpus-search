@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace Codex_API.Model
+namespace CorpusSearch.Model
 {
     /// <summary>A "search" on the front page: provides a summary of results, </summary>
     public delegate ScanResult Scan(string query, ScanOptions options);

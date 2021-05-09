@@ -1,5 +1,5 @@
-﻿using Codex_API.Dependencies.Lucene;
-using Codex_API.Model;
+﻿using CorpusSearch.Dependencies.Lucene;
+using CorpusSearch.Model;
 using Lucene.Net.Documents;
 using Lucene.Net.Index;
 using Lucene.Net.Search;
@@ -12,7 +12,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-namespace Codex_API
+namespace CorpusSearch
 {
     public class LuceneIndex
     {

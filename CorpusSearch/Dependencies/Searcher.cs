@@ -1,6 +1,6 @@
-﻿using Codex_API.Dependencies.csly;
-using Codex_API.Dependencies.Lucene;
-using Codex_API.Model;
+﻿using CorpusSearch.Dependencies.csly;
+using CorpusSearch.Dependencies.Lucene;
+using CorpusSearch.Model;
 using Lucene.Net.Index;
 using Lucene.Net.Search.Spans;
 using sly.parser;
@@ -8,7 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Codex_API.Dependencies
+namespace CorpusSearch.Dependencies
 {
     public class Searcher
     {

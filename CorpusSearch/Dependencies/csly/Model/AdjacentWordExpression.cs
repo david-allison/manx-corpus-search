@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 
-namespace Codex_API.Dependencies.csly
+namespace CorpusSearch.Dependencies.csly
 {
     public class AdjacentWordExpression : Expression
     {

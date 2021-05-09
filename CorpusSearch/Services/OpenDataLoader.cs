@@ -1,13 +1,13 @@
-﻿using Codex_API.Dependencies.CsvHelper;
-using Codex_API.Model;
+﻿using CorpusSearch.Dependencies.CsvHelper;
+using CorpusSearch.Model;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using static Codex_API.Startup;
+using static CorpusSearch.Startup;
 
-namespace Codex_API.Services
+namespace CorpusSearch.Services
 {
     public class OpenDataLoader
     {

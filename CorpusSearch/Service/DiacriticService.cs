@@ -2,7 +2,7 @@
 using System.Linq;
 using System.Text;
 
-namespace Codex_API.Service
+namespace CorpusSearch.Service
 {
     public class DiacriticService
     {

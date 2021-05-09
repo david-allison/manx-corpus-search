@@ -1,7 +1,7 @@
-﻿using Codex_API.Model;
+﻿using CorpusSearch.Model;
 using CsvHelper.Configuration;
 
-namespace Codex_API.Dependencies.CsvHelper
+namespace CorpusSearch.Dependencies.CsvHelper
 {
     public class DocumentLineMap : ClassMap<DocumentLine>
     {

@@ -1,4 +1,4 @@
-﻿using Codex_API.Service;
+﻿using CorpusSearch.Service;
 using Lucene.Net.Index;
 using Lucene.Net.Search;
 using Lucene.Net.Util;
@@ -6,7 +6,7 @@ using Lucene.Net.Util.Automaton;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Codex_API.Dependencies.Lucene
+namespace CorpusSearch.Dependencies.Lucene
 {
     public class ManxQuery : AutomatonQuery
     {

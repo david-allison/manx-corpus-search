@@ -1,4 +1,4 @@
-using Codex_API.Services;
+using CorpusSearch.Services;
 using Dapper;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -11,13 +11,13 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Collections.Generic;
-using Codex_API.Model;
-using Codex_API.Dependencies.CsvHelper;
-using Codex_API.Dependencies.csly;
-using Codex_API.Dependencies;
-using Codex_API.Service;
+using CorpusSearch.Model;
+using CorpusSearch.Dependencies.CsvHelper;
+using CorpusSearch.Dependencies.csly;
+using CorpusSearch.Dependencies;
+using CorpusSearch.Service;
 
-namespace Codex_API
+namespace CorpusSearch
 {
     public partial class Startup
     {

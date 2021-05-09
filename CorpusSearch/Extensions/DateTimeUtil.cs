@@ -1,5 +1,5 @@
 ﻿using System;
-namespace Codex_API.Extensions
+namespace CorpusSearch.Extensions
 {
     public static class DateTimeUtil
     {

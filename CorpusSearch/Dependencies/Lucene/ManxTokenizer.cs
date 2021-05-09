@@ -3,7 +3,7 @@ using Lucene.Net.Util;
 using System.IO;
 using System.Linq;
 
-namespace Codex_API.Dependencies.Lucene
+namespace CorpusSearch.Dependencies.Lucene
 {
     public sealed class ManxTokenizer : CharTokenizer
     {

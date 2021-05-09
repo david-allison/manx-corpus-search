@@ -1,10 +1,10 @@
-﻿using Codex_API.Dependencies;
-using Codex_API.Model;
-using Codex_API.Test.TestUtils;
+﻿using CorpusSearch.Dependencies;
+using CorpusSearch.Model;
+using CorpusSearch.Test.TestUtils;
 using NUnit.Framework;
-using static Codex_API.Test.TestUtils.DocumentStorageExtensions;
+using static CorpusSearch.Test.TestUtils.DocumentStorageExtensions;
 
-namespace Codex_API.Test
+namespace CorpusSearch.Test
 {
     [TestFixture]
     public class QueryParserTest : QueryBase

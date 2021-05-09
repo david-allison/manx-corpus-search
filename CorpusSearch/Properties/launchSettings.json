@@ -15,7 +15,7 @@
         "ASPNETCORE_ENVIRONMENT": "Development"
       }
     },
-    "Codex_API": {
+    "CorpusSearch": {
       "commandName": "Project",
       "launchBrowser": true,
       "environmentVariables": {

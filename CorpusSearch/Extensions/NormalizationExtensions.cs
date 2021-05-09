@@ -1,8 +1,8 @@
-﻿using Codex_API.Controllers;
-using Codex_API.Service;
+﻿using CorpusSearch.Controllers;
+using CorpusSearch.Service;
 using System.Text.RegularExpressions;
 
-namespace Codex_API.Services
+namespace CorpusSearch.Services
 {
     public static class NormalizationExtensions
     {

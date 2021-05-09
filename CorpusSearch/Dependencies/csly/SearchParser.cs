@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace Codex_API.Dependencies.csly
+namespace CorpusSearch.Dependencies.csly
 {
     public enum ExpressionToken
     {

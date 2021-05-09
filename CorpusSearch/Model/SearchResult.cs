@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace Codex_API.Model
+namespace CorpusSearch.Model
 {
     public class SearchResult
     {

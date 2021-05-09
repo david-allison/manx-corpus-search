@@ -2,7 +2,7 @@
 using Lucene.Net.Util;
 using System.IO;
 
-namespace Codex_API.Dependencies.Lucene
+namespace CorpusSearch.Dependencies.Lucene
 {
     public class ManxAnalyzer : Analyzer
     {

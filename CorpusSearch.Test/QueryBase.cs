@@ -1,11 +1,11 @@
-﻿using Codex_API.Dependencies.csly;
-using Codex_API.Model;
-using Codex_API.Test.TestUtils;
+﻿using CorpusSearch.Dependencies.csly;
+using CorpusSearch.Model;
+using CorpusSearch.Test.TestUtils;
 using NUnit.Framework;
 using System;
 using System.Linq;
 
-namespace Codex_API.Test
+namespace CorpusSearch.Test
 {
     [TestFixture]
     public class QueryBase : IDocumentStorage

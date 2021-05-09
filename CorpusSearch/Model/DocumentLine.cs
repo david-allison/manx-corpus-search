@@ -1,6 +1,6 @@
-﻿using Codex_API.Services;
+﻿using CorpusSearch.Services;
 
-namespace Codex_API.Model
+namespace CorpusSearch.Model
 {
     public class DocumentLine
     {

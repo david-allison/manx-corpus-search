@@ -1,4 +1,4 @@
-﻿namespace Codex_API.Dependencies.csly
+﻿namespace CorpusSearch.Dependencies.csly
 {
     public class AndExpression : Expression
     {
