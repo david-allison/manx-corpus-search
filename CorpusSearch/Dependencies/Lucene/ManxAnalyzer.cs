@@ -10,8 +10,6 @@ namespace CorpusSearch.Dependencies.Lucene
         {
             Tokenizer tokenizer = new ManxTokenizer(LuceneVersion.LUCENE_48, reader);
 
-            new ManxTokenFilter(tokenizer);
-
             return new TokenStreamComponents(tokenizer, new ManxTokenFilter(tokenizer));
         }
     }
