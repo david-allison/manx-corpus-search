@@ -8,9 +8,16 @@ namespace CorpusSearch.Service
 {
     public class DocumentSearchService2
     {
-        public static async Task<SearchWorkResult> SearchWork(CorpusSearchWorkQuery workQuery)
+        private readonly WorkService workService;
+
+        public DocumentSearchService2(WorkService workService)
         {
-            IDocument document = await WorkService.ByIdent(workQuery.Ident);
+            this.workService = workService;
+        }
+
+        public async Task<SearchWorkResult> SearchWork(CorpusSearchWorkQuery workQuery)
+        {
+            IDocument document = await workService.ByIdent(workQuery.Ident);
             string title = document.Name;
 
             SearchWorkResult ret = SearchWorkResult.Empty(title);

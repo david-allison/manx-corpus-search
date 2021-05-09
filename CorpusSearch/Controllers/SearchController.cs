@@ -16,6 +16,12 @@ namespace CorpusSearch.Controllers
     public partial class SearchController : ControllerBase
     {
         public static string PUNCTUATION_REGEX = "[,.;!?\\-\\s]";
+        private readonly DocumentSearchService2 documentSearchService;
+
+        public SearchController(DocumentSearchService2 documentSearchService)
+        {
+            this.documentSearchService = documentSearchService;
+        }
 
         [HttpGet]
         public string Get()
@@ -61,7 +67,7 @@ namespace CorpusSearch.Controllers
                 Manx = manx,
                 English = english,
             };
-            SearchWorkResult ret = await DocumentSearchService2.SearchWork(workQuery);
+            SearchWorkResult ret = await documentSearchService.SearchWork(workQuery);
             ret.EnrichWithTime(sw);
             return ret;
         }

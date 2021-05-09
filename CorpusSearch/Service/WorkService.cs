@@ -1,5 +1,6 @@
 ﻿using CorpusSearch.Model;
 using Dapper;
+using Microsoft.Data.Sqlite;
 using System;
 using System.Threading.Tasks;
 
@@ -7,6 +8,13 @@ namespace CorpusSearch.Service
 {
     public class WorkService
     {
+        private readonly SqliteConnection conn;
+
+        public WorkService(SqliteConnection connection)
+        {
+            this.conn = connection;
+        }
+
         /// <summary>
         /// The auto-incrementing ID of the documents
         /// </summary>
@@ -14,9 +22,9 @@ namespace CorpusSearch.Service
         private static int DocumentAddedCount { get; set; } = 0;
 
         /// <summary>Given an ident, get the document or throw</summary>
-        public static async Task<IDocument> ByIdent(string ident)
+        public async Task<IDocument> ByIdent(string ident)
         {
-            return await Startup.conn.QuerySingleAsync<WorkServiceDocument>("SELECT " +
+            return await conn.QuerySingleAsync<WorkServiceDocument>("SELECT " +
                 "name, " +
                 "ident, " +
                 "startDate as CreatedCircaStart, " +
@@ -25,7 +33,7 @@ namespace CorpusSearch.Service
                 "FROM works where ident = @ident", new { ident });
         }
 
-        internal static void AddWork(IDocument document)
+        internal void AddWork(IDocument document)
         {
             DocumentAddedCount++;
             int documentId = DocumentAddedCount;
@@ -36,7 +44,7 @@ namespace CorpusSearch.Service
             workParams.Add("startdate", document.CreatedCircaStart);
             workParams.Add("enddate", document.CreatedCircaEnd);
             workParams.Add("pdfLink", document.ExternalPdfLink);
-            Startup.conn.Execute("INSERT INTO [works] (id, name, ident, startdate, enddate, pdfLink) VALUES (@id, @name, @ident, @startdate, @enddate, @pdfLink)", workParams);
+            conn.Execute("INSERT INTO [works] (id, name, ident, startdate, enddate, pdfLink) VALUES (@id, @name, @ident, @startdate, @enddate, @pdfLink)", workParams);
         }
 
         private class WorkServiceDocument : IDocument
