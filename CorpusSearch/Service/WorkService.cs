@@ -16,7 +16,13 @@ namespace Codex_API.Service
         /// <summary>Given an ident, get the document or throw</summary>
         public static async Task<IDocument> ByIdent(string ident)
         {
-            return await Startup.conn.QuerySingleAsync<WorkServiceDocument>("SELECT name, ident, startDate as CreatedCircaStart, endDate as CreatedCircaEnd FROM works where ident = @ident", new { ident });
+            return await Startup.conn.QuerySingleAsync<WorkServiceDocument>("SELECT " +
+                "name, " +
+                "ident, " +
+                "startDate as CreatedCircaStart, " +
+                "endDate as CreatedCircaEnd, " +
+                "pdfLink as ExternalPdfLink " +
+                "FROM works where ident = @ident", new { ident });
         }
 
         internal static void AddWork(IDocument document)
@@ -29,7 +35,8 @@ namespace Codex_API.Service
             workParams.Add("ident", document.Ident);
             workParams.Add("startdate", document.CreatedCircaStart);
             workParams.Add("enddate", document.CreatedCircaEnd);
-            Startup.conn.Execute("INSERT INTO [works] (id, name, ident, startdate, enddate) VALUES (@id, @name, @ident, @startdate, @enddate)", workParams);
+            workParams.Add("pdfLink", document.ExternalPdfLink);
+            Startup.conn.Execute("INSERT INTO [works] (id, name, ident, startdate, enddate, pdfLink) VALUES (@id, @name, @ident, @startdate, @enddate, @pdfLink)", workParams);
         }
 
         private class WorkServiceDocument : IDocument
@@ -38,6 +45,7 @@ namespace Codex_API.Service
             public string Ident { get; set; }
             public DateTime? CreatedCircaStart { get; set; }
             public DateTime? CreatedCircaEnd { get; set; }
+            public string ExternalPdfLink { get; set; }
         }
     }
 }

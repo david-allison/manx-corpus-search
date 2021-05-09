@@ -20,6 +20,8 @@ namespace Codex_API.Service
                 return ret;
             }
 
+            ret.PdfLink = document.ExternalPdfLink;
+
             var results = Startup.searcher.SearchWork(workQuery.Ident, workQuery.Query, ToSearchOptions(workQuery));
 
             ret.EnrichResults(results.Lines);

@@ -10,5 +10,8 @@ namespace Codex_API.Model
 
         public DateTime? CreatedCircaStart { get; }
         public DateTime? CreatedCircaEnd { get; }
+
+        /// <summary>(optional) link to PDF</summary>
+        public string ExternalPdfLink { get; }
     }
 }

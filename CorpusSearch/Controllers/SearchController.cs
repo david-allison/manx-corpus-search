@@ -34,6 +34,10 @@ namespace Codex_API.Controllers
             public List<string> EnglishTranslations { get; set; } = new List<string>();
             /// <summary>The total number of matches (multiple matches per line)</summary>
             public int TotalMatches { get; internal set; } = -1;
+            /// <summary>
+            /// Optional link to external PDF
+            /// </summary>
+            public string PdfLink { get; internal set; }
 
             internal static SearchWorkResult Empty(string title)
             {

@@ -99,8 +99,6 @@ namespace Codex_API.Services
 
         public string LocationOnDisk { get; set; }
 
-        public string FullPdfPath => Path.Combine(LocationOnDisk, PdfFileName);
-
         public string FullCsvPath => Path.Combine(LocationOnDisk, CsvFileName);
 
         public string LicenseLink => Path.Combine(LocationOnDisk, "license.txt");

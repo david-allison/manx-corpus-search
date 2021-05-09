@@ -47,7 +47,6 @@ export class FetchDataDocument extends Component {
                 <tbody>
                     {response.results.map(line =>
                     {
-                        const link = process.env.PUBLIC_URL + "Coyrle%20Sodjey%20G%20as%20B.pdf#page=" + line.page
                         const eng = [...englishhi, " " + value + " "];
                         const manx = [...manxhi, " " + value + " "];
                         const englishHighlight = fullTextSearch ? [value] : eng
@@ -77,8 +76,8 @@ export class FetchDataDocument extends Component {
                                     { englishText }
                                 </td>
                                 <td>
-                                    {line.page != null &&
-                                        <a href={link} target="_blank">p{line.page}</a> }
+                                    {line.page != null && response.pdfLink &&
+                                        <a href={response.pdfLink + "#page=" + line.page} target="_blank">p{line.page}</a> }
 
                                 </td>
                             </tr>

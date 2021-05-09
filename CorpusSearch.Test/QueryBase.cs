@@ -49,6 +49,8 @@ namespace Codex_API.Test
 
             public DateTime? CreatedCircaStart => date;
             public DateTime? CreatedCircaEnd => date;
+
+            public string ExternalPdfLink => null;
         }
     }
 }

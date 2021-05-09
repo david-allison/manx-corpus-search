@@ -179,12 +179,10 @@ namespace Codex_API
 
             public string CsvFileName { get; set; }
 
-            /// <summary>
-            /// Optional PDF link
-            /// </summary>
-            /// <remarks>TDO: Currently unused - hardcoded link</remarks>
-            /// <remarks>Needs URLEncoding. Maybe on the server-side?</remarks>
-            public string PdfFileName { get; set; }
+            /// <summary>Optional HTTP link to a PDF file (not a relative path)</summary>
+            /// <remarks>Ensure that #page=n works on PC for a link like this</remarks>
+            /// <remarks>I'm currenlty hosting these on Google Drive: I don't expect this to be a problem given small search volumes, but we may need a more permanent form of storage</remarks>
+            public string ExternalPdfLink { get; set; }
             public DateTime? CreatedCircaStart { get; set; }
             public DateTime? CreatedCircaEnd { get; set; }
 
@@ -215,7 +213,13 @@ namespace Codex_API
 
             conn = new SqliteConnection(connectionString.ToString());
             conn.Open();
-            conn.ExecSql("create table works (id int PRIMARY KEY, name varchar, ident varchar, startdate datetime DEFAULT NULL, enddate datetime DEFAULT NULL)");
+            conn.ExecSql("create table works (" +
+                "id int PRIMARY KEY, " +
+                "name varchar, " +
+                "ident varchar, " +
+                "startdate datetime DEFAULT NULL, " +
+                "enddate datetime DEFAULT NULL," +
+                "pdfLink varchar DEFAULT NULL)");
         }
     }
 }
