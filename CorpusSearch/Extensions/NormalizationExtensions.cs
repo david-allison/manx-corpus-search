@@ -6,9 +6,15 @@ namespace CorpusSearch.Services
 {
     public static class NormalizationExtensions
     {
-        public static string RemovePunctuation(this string target, string replacement)
+        public static string RemovePunctuation(this string target, string replacement, bool allowQuestionMark)
         {
-            return Regex.Replace(target, SearchController.PUNCTUATION_REGEX, replacement);
+            var regexString = SearchController.PUNCTUATION_REGEX;
+            if (allowQuestionMark)
+            {
+                regexString = regexString.Replace("?", "");
+            }
+
+            return Regex.Replace(target, regexString, replacement);
         }
 
         public static string RemoveNewLines(this string target)

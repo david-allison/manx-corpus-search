@@ -3,6 +3,7 @@ using CorpusSearch.Dependencies.Lucene;
 using CorpusSearch.Model;
 using Lucene.Net.Index;
 using Lucene.Net.Search.Spans;
+using Lucene.Net.Util;
 using sly.parser;
 using System;
 using System.Collections.Generic;
@@ -107,7 +108,7 @@ namespace CorpusSearch.Dependencies
 
         private static SpanQuery ManxTermQuery(string value, ScanOptions searchOptions)
         {
-            Term term = new Term(GetTermKey(searchOptions), value);
+            Term term = new Term(GetTermKey(searchOptions), GetTerm(value, searchOptions));
             if (searchOptions.NormalizeDiacritics)
             {
                 var manx = new ManxQuery(term);
@@ -120,6 +121,16 @@ namespace CorpusSearch.Dependencies
             else
             {
                 return new SpanTermQuery(term);
+            }
+        }
+
+        private static string GetTerm(string value, ScanOptions searchOptions)
+        {
+            switch (searchOptions.SearchType)
+            {
+                case SearchType.Manx: return DocumentLine.NormalizeManx(value, allowQuestionMark: true);
+                case SearchType.English: return DocumentLine.NormalizeEnglish(value, allowQuestionMark: true);
+                default: throw new ArgumentException("Unhandlded case: " + searchOptions.SearchType);
             }
         }
 

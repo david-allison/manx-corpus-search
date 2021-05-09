@@ -14,7 +14,7 @@ namespace CorpusSearch.Model
         {
             get
             {
-                string handled = English.RemovePunctuation(" ").RemoveNewLines().NormalizeMicrosoftWordQuotes().RemoveBrackets().RemoveDoubleQuotes();
+                string handled = NormalizeEnglish(English);
                 return " " + handled + " ";
             }
         }
@@ -28,9 +28,14 @@ namespace CorpusSearch.Model
             }
         }
 
-        public static string NormalizeManx(string manx)
+        public static string NormalizeEnglish(string english, bool allowQuestionMark = false)
         {
-            string handled = manx.RemovePunctuation(" ")
+            return english.RemovePunctuation(" ", allowQuestionMark).RemoveNewLines().NormalizeMicrosoftWordQuotes().RemoveBrackets().RemoveDoubleQuotes();
+        }
+
+        public static string NormalizeManx(string manx, bool allowQuestionMark = false)
+        {
+            string handled = manx.RemovePunctuation(" ", allowQuestionMark)
                 .RemoveNewLines()
                 .NormalizeMicrosoftWordQuotes()
                 .RemoveBrackets()

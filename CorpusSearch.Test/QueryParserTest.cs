@@ -331,6 +331,15 @@ namespace CorpusSearch.Test
             Assert.That(result.NumberOfMatches, Is.EqualTo(6));
         }
 
+        [Test]
+        public void TestSmartQuotes()
+        {
+            // on copy/pasting smart quotes, a normal quote should be searched for.
+            this.AddManxDoc("1", "t’ayndoo");
+            var result = Query("t’ayndoo");
+            Assert.That(result.NumberOfDocuments, Is.EqualTo(1));
+        }
+
 
         private ScanResult Query(string query, ScanOptions options)
         {
