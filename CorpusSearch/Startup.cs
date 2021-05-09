@@ -15,6 +15,7 @@ using Codex_API.Model;
 using Codex_API.Dependencies.CsvHelper;
 using Codex_API.Dependencies.csly;
 using Codex_API.Dependencies;
+using Codex_API.Service;
 
 namespace Codex_API
 {
@@ -26,12 +27,6 @@ namespace Codex_API
         public static Dictionary<string, IList<string>> ManxDictionary { get; set; }
 
         public static SqliteConnection conn { get; set; }
-
-        /// <summary>
-        /// The auto-incrementing ID of the documents
-        /// </summary>
-        /// <remarks>Might be better as SQL - might not as a constant ID is useful</remarks>
-        private static int DocumentAddedCount { get; set; } = 0;
 
 
         public Startup(IConfiguration configuration)
@@ -205,17 +200,9 @@ namespace Codex_API
 
             searcher.AddDocument(document, data);
 
-            DocumentAddedCount++;
 
-            int documentId = DocumentAddedCount;
 
-            var workParams = new DynamicParameters();
-            workParams.Add("id", documentId);
-            workParams.Add("name", document.Name);
-            workParams.Add("ident", document.Ident);
-            workParams.Add("startdate", document.CreatedCircaStart);
-            workParams.Add("enddate", document.CreatedCircaEnd);
-            conn.Execute("INSERT INTO [works] (id, name, ident, startdate, enddate) VALUES (@id, @name, @ident, @startdate, @enddate)", workParams);
+            WorkService.AddWork(document);
         }
 
         private static void SetupSqlite()
