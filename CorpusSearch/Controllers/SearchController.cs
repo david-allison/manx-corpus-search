@@ -17,10 +17,12 @@ namespace CorpusSearch.Controllers
     {
         public static string PUNCTUATION_REGEX = "[,.;!?\\-\\s]";
         private readonly DocumentSearchService2 documentSearchService;
+        private readonly OverviewSearchService2 overviewSearchService;
 
-        public SearchController(DocumentSearchService2 documentSearchService)
+        public SearchController(DocumentSearchService2 documentSearchService, OverviewSearchService2 overviewSearchService)
         {
             this.documentSearchService = documentSearchService;
+            this.overviewSearchService = overviewSearchService;
         }
 
         [HttpGet]
@@ -94,7 +96,7 @@ namespace CorpusSearch.Controllers
                 return ret;
             }
 
-            var results = await OverviewSearchService2.CorpusSearch(searchQuery);
+            var results = await overviewSearchService.CorpusSearch(searchQuery);
 
             results = results.OrderBy(x => x.StartDate);
 

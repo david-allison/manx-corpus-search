@@ -1,5 +1,6 @@
 ﻿using CorpusSearch.Model;
 using Dapper;
+using Microsoft.Data.Sqlite;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,7 +10,14 @@ namespace CorpusSearch.Service
 {
     public class OverviewSearchService2
     {
-        public static async Task<IEnumerable<QueryDocumentResult>> CorpusSearch(CorpusSearchQuery searchQuery)
+        private readonly SqliteConnection conn;
+
+        public OverviewSearchService2(SqliteConnection connection)
+        {
+            this.conn = connection;
+        }
+
+        public async Task<IEnumerable<QueryDocumentResult>> CorpusSearch(CorpusSearchQuery searchQuery)
         {
             var result = Startup.searcher.Scan(searchQuery.Query, ToScanOptions(searchQuery));
 
@@ -24,9 +32,9 @@ namespace CorpusSearch.Service
         }
 
         /// <summary>Returns all the identifiers which are valid for the date range</summary>
-        private static async Task<ISet<string>> GetValidIdents(CorpusSearchQuery searchQuery)
+        private async Task<ISet<string>> GetValidIdents(CorpusSearchQuery searchQuery)
         {
-            var results = await Startup.conn.QueryAsync<string>(@"select ident from works where 
+            var results = await conn.QueryAsync<string>(@"select ident from works where 
     (enddate is NULL OR enddate >= @minDate) 
     AND
     (startdate is NULL OR startdate <= @maxDate) 

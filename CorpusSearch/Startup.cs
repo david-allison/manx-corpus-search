@@ -26,8 +26,6 @@ namespace CorpusSearch
         public static Dictionary<string, IList<string>> EnglishDictionary { get; set; }
         public static Dictionary<string, IList<string>> ManxDictionary { get; set; }
 
-        public static SqliteConnection conn { get; set; }
-
 
         public Startup(IConfiguration configuration)
         {
@@ -44,8 +42,9 @@ namespace CorpusSearch
             services.AddControllersWithViews();
 
             services.AddSingleton(s => SetupSqliteConnection());
-            services.AddSingleton(s => new WorkService(s.GetRequiredService<SqliteConnection>()));
+            services.AddSingleton<WorkService>();
             services.AddSingleton<DocumentSearchService2>();
+            services.AddSingleton<OverviewSearchService2>();
 
             // In production, the React files will be served from this directory
             services.AddSpaStaticFiles(configuration =>
@@ -62,7 +61,7 @@ namespace CorpusSearch
             };
             SQLitePCL.Batteries.Init();
 
-            conn = new SqliteConnection(connectionString.ToString());
+            var conn = new SqliteConnection(connectionString.ToString());
             conn.Open();
             return conn;
         }
