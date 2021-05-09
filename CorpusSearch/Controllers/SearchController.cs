@@ -58,7 +58,7 @@ namespace Codex_API.Controllers
                 English = english,
                 FullText = fullTextSearch,
             };
-            SearchWorkResult ret = await DocumentSearchService.SearchWork(workQuery);
+            SearchWorkResult ret = await DocumentSearchService2.SearchWork(workQuery);
             ret.EnrichWithTime(sw);
             return ret;
         }
@@ -86,7 +86,7 @@ namespace Codex_API.Controllers
                 return ret;
             }
 
-            var results = await OverviewSearchService.CorpusSearch(searchQuery);
+            var results = await OverviewSearchService2.CorpusSearch(searchQuery);
 
             results = results.OrderBy(x => x.StartDate);
 

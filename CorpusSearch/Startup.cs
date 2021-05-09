@@ -1,5 +1,4 @@
 using Codex_API.Services;
-using CsvHelper;
 using Dapper;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -9,11 +8,9 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Collections.Generic;
-using Codex_API.Service;
 using Codex_API.Model;
 using Codex_API.Dependencies.CsvHelper;
 using Codex_API.Dependencies.csly;
@@ -219,27 +216,6 @@ namespace Codex_API
             workParams.Add("startdate", document.CreatedCircaStart);
             workParams.Add("enddate", document.CreatedCircaEnd);
             conn.Execute("INSERT INTO [works] (id, name, ident, startdate, enddate) VALUES (@id, @name, @ident, @startdate, @enddate)", workParams);
-
-
-            var validData = data.Where(d => !string.IsNullOrWhiteSpace(d.English) || !string.IsNullOrWhiteSpace(d.Manx)).ToList();
-            var parameters = validData.Select(u =>
-            {
-                var param = new DynamicParameters();
-                param.Add("manx", u.Manx);
-                param.Add("english", u.English);
-                param.Add("manx2", u.NormalizedManx);
-                param.Add("english2", u.NormalizedEnglish);
-                param.Add("work", documentId);
-                param.Add("page", u.Page);
-                param.Add("notes", u.Notes);
-                return param;
-            }).ToList();
-
-            conn.Execute("INSERT INTO [translations] (manx, english, page, work, normalizedManx, normalizedEnglish, notes) VALUES (@manx, @english, @page, @work, @manx2, @english2, @notes)", parameters);
-
-            WordFrequencyService.AddDocument(documentId, validData);
-
-            WordNormalizationService.AddDocument(validData);
         }
 
         private static void SetupSqlite()
@@ -252,22 +228,7 @@ namespace Codex_API
 
             conn = new SqliteConnection(connectionString.ToString());
             conn.Open();
-            /*            conn.CreateFunction<string, string, bool>("REGEXP", (s1, s2) => System.Text.RegularExpressions.Regex.IsMatch(s2, s1), true);*/
             conn.ExecSql("create table works (id int PRIMARY KEY, name varchar, ident varchar, startdate datetime DEFAULT NULL, enddate datetime DEFAULT NULL)");
-            conn.ExecSql("create table translations (" +
-                "pk INTEGER PRIMARY KEY AUTOINCREMENT, " +
-                "english varchar, " +
-                "manx varchar, " +
-                "work int, " +
-                "page int NULLABLE, " +
-                "normalizedManx varchar, " +
-                "normalizedEnglish varchar, " +
-                "notes varchar NULLABLE, " +
-                "FOREIGN KEY(work) REFERENCES works(id)" +
-                ")");
-
-            WordNormalizationService.CreateTable(conn);
-            WordFrequencyService.CreateTable(conn);
         }
     }
 }
