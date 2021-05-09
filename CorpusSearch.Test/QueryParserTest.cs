@@ -301,7 +301,7 @@ namespace Codex_API.Test
         public void TestNullDate()
         {
             var docWithNoDate = new TestDocument("1", null);
-            AddDocument(docWithNoDate, new Line { Manx = "data" });
+            AddDocument(docWithNoDate, new Line { Manx = "data", English = "" });
 
             var result = Query("data");
 
