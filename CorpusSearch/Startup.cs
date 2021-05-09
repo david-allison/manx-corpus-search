@@ -21,8 +21,6 @@ namespace CorpusSearch
 {
     public partial class Startup
     {
-        public static Searcher searcher;
-
         public static Dictionary<string, IList<string>> EnglishDictionary { get; set; }
         public static Dictionary<string, IList<string>> ManxDictionary { get; set; }
 
@@ -72,8 +70,6 @@ namespace CorpusSearch
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env, SqliteConnection sqliteConnection, WorkService workService, Searcher searcher)
         {
-            Startup.searcher = searcher;
-
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();

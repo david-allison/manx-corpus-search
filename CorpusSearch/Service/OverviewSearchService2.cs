@@ -1,4 +1,5 @@
-﻿using CorpusSearch.Model;
+﻿using CorpusSearch.Dependencies;
+using CorpusSearch.Model;
 using Dapper;
 using Microsoft.Data.Sqlite;
 using System;
@@ -11,15 +12,17 @@ namespace CorpusSearch.Service
     public class OverviewSearchService2
     {
         private readonly SqliteConnection conn;
+        private readonly Searcher searcher;
 
-        public OverviewSearchService2(SqliteConnection connection)
+        public OverviewSearchService2(SqliteConnection connection, Searcher searcher)
         {
             this.conn = connection;
+            this.searcher = searcher;
         }
 
         public async Task<IEnumerable<QueryDocumentResult>> CorpusSearch(CorpusSearchQuery searchQuery)
         {
-            var result = Startup.searcher.Scan(searchQuery.Query, ToScanOptions(searchQuery));
+            var result = searcher.Scan(searchQuery.Query, ToScanOptions(searchQuery));
 
             var docResults = result.DocumentResults;
 

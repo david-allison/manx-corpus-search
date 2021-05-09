@@ -1,4 +1,5 @@
 ﻿using CorpusSearch.Controllers;
+using CorpusSearch.Dependencies;
 using CorpusSearch.Model;
 using System;
 using System.Threading.Tasks;
@@ -9,10 +10,12 @@ namespace CorpusSearch.Service
     public class DocumentSearchService2
     {
         private readonly WorkService workService;
+        private readonly Searcher searcher;
 
-        public DocumentSearchService2(WorkService workService)
+        public DocumentSearchService2(WorkService workService, Searcher searcher)
         {
             this.workService = workService;
+            this.searcher = searcher;
         }
 
         public async Task<SearchWorkResult> SearchWork(CorpusSearchWorkQuery workQuery)
@@ -29,7 +32,7 @@ namespace CorpusSearch.Service
 
             ret.PdfLink = document.ExternalPdfLink;
 
-            var results = Startup.searcher.SearchWork(workQuery.Ident, workQuery.Query, ToSearchOptions(workQuery));
+            var results = searcher.SearchWork(workQuery.Ident, workQuery.Query, ToSearchOptions(workQuery));
 
             ret.EnrichResults(results.Lines);
             // Handles more than one result per document line
