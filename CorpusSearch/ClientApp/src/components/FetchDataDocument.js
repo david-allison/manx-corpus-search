@@ -15,15 +15,15 @@ export class FetchDataDocument extends Component {
             forecasts: [],
             loading: true,
             title: "Work Search",
-            docId: this.props.match.params.docId,
+            docIdent: this.props.match.params.docId,
             value: q,
             searchManx: true,
             searchEnglish: false,
         };
 
-        this.handleChange = this.handleChange.bind(this);
-        this.handleChange1 = this.handleChange1.bind(this);
-        this.handleChange2 = this.handleChange2.bind(this);
+        this.onQueryChanged = this.onQueryChanged.bind(this);
+        this.onSearchEnglishChanged = this.onSearchEnglishChanged.bind(this);
+        this.onSearchManxChanged = this.onSearchManxChanged.bind(this);
     }
 
     componentDidMount() {
@@ -98,29 +98,29 @@ export class FetchDataDocument extends Component {
             <div>
                 <h1 id="tabelLabel" ><Link to={`/?q=${this.state.value}`} style={{ textDecoration: 'none' }}>⇦</Link>  { this.state.title }</h1>
 
-                <input type="text" id="corpus-search-box" value={this.state.value} onChange={this.handleChange} />
-                <label for="manxSearch">Manx</label> <input id="manxSearch" type="checkbox" defaultChecked={this.state.searchManx} onChange={this.handleChange2} /><br/>
-                <label for="englishSearch">English</label> <input id="englishSearch" type="checkbox" defaultChecked={this.state.searchEnglish} onChange={this.handleChange1} /><br/>
+                <input type="text" id="corpus-search-box" value={this.state.value} onChange={this.onQueryChanged} />
+                <label for="manxSearch">Manx</label> <input id="manxSearch" type="checkbox" defaultChecked={this.state.searchManx} onChange={this.onSearchManxChanged} /><br/>
+                <label for="englishSearch">English</label> <input id="englishSearch" type="checkbox" defaultChecked={this.state.searchEnglish} onChange={this.onSearchEnglishChanged} /><br/>
                 {contents}
             </div>
         );
     }
 
     async populateData() {
-        const response = await fetch(`search/searchWork/${this.state.docId}/${encodeURIComponent(this.state.value)}?english=${this.state.searchEnglish}&manx=${this.state.searchManx}`);
+        const response = await fetch(`search/searchWork/${this.state.docIdent}/${encodeURIComponent(this.state.value)}?english=${this.state.searchEnglish}&manx=${this.state.searchManx}`);
         const data = await response.json();
         this.setState({ forecasts: data, title: data.title, loading: false, manxHighlights: data.manxTranslations, englishHighlights: data.englishTranslations });
     }
 
-    handleChange(event) {
+    onQueryChanged(event) {
         this.setState({ value: event.target.value }, () => this.populateData());
     }
 
-    handleChange1(event) {
+    onSearchEnglishChanged(event) {
         this.setState({ searchEnglish: event.target.checked }, () => this.populateData());
     }
 
-    handleChange2(event) {
+    onSearchManxChanged(event) {
         this.setState({ searchManx: event.target.checked }, () => this.populateData());
     }
 }
