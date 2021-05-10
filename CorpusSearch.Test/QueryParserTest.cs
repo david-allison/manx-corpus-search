@@ -351,6 +351,23 @@ namespace CorpusSearch.Test
             Assert.That(result.NumberOfDocuments, Is.EqualTo(1));
         }
 
+        [Test]
+        public void TestDiacriticsSpacing()
+        {
+            // aggwish -> 	latin small letter g and a combining breve (̆ )
+            this.AddManxDoc("1", "agğwish er y Chiarn");
+            var result = Query("agg");
+            Assert.That(result.NumberOfDocuments, Is.EqualTo(0));
+
+
+            var result2 = Query("agğwish");
+            Assert.That(result2.NumberOfDocuments, Is.EqualTo(1));
+
+
+            var result3 = Query("aggwish");
+            Assert.That(result3.NumberOfDocuments, Is.EqualTo(1));
+        }
+
 
         private ScanResult Query(string query, ScanOptions options)
         {

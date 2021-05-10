@@ -6,47 +6,51 @@ namespace CorpusSearch.Service
 {
     public class DiacriticService
     {
-        private static Dictionary<char, string> diacriticMap = new Dictionary<char, string>
+        private static Dictionary<string, string> diacriticMap = new()
         {
-            ['á'] = "a",
-            ['é'] = "e",
-            ['í'] = "i",
-            ['ó'] = "o",
-            ['ú'] = "u",
-            ['ẃ'] = "w",
-            ['ï'] = "i",
-            ['â'] = "a",
-            ['ý'] = "y",
-            ['ø'] = "o",
-            ['ö'] = "o",
-            ['ẁ'] = "w",
-            ['ç'] = "c", // check this one: c or ch?
-            ['ỳ'] = "y",
-            ['ê'] = "e",
-            ['ô'] = "o",
-            ['ŷ'] = "y",
-            ['ǎ'] = "a",
-            ['ì'] = "i",
-            ['ě'] = "e",
-            ['ë'] = "e",
-            ['ŵ'] = "w",
-            ['û'] = "u",
-            ['ò'] = "o",
-            ['æ'] = "ae",
-            ['ǔ'] = "u",
-            ['œ'] = "oe",
-            ['ù'] = "u",
-            ['è'] = "e",
-            ['ǒ'] = "o",
-            ['ŕ'] = "r",
-            ['ǐ'] = "i",
-            ['à'] = "a",
-            ['î'] = "i",
-            ['ĵ'] = "j",
-            ['ﬆ'] = "st",
+            ["á"] = "a",
+            ["é"] = "e",
+            ["í"] = "i",
+            ["ó"] = "o",
+            ["ú"] = "u",
+            ["ẃ"] = "w",
+            ["ï"] = "i",
+            ["â"] = "a",
+            ["ý"] = "y",
+            ["ø"] = "o",
+            ["ö"] = "o",
+            ["ẁ"] = "w",
+            ["ç"] = "c", // check this one: c or ch?
+            ["ỳ"] = "y",
+            ["ê"] = "e",
+            ["ô"] = "o",
+            ["ŷ"] = "y",
+            ["ǎ"] = "a",
+            ["ì"] = "i",
+            ["ě"] = "e",
+            ["ë"] = "e",
+            ["ŵ"] = "w",
+            ["û"] = "u",
+            ["ò"] = "o",
+            ["æ"] = "ae",
+            ["ǔ"] = "u",
+            ["œ"] = "oe",
+            ["ù"] = "u",
+            ["è"] = "e",
+            ["ǒ"] = "o",
+            ["ŕ"] = "r",
+            ["ǐ"] = "i",
+            ["à"] = "a",
+            ["î"] = "i",
+            ["ĵ"] = "j",
+            ["ﬆ"] = "st",
+            ["ğ"] = "g",  // two characters
         };
 
-        private static readonly ILookup<string, char> reverseMap;
+        /// <summary>
+        /// string to diacritic
+        /// </summary>
+        private static readonly ILookup<string, string> reverseMap;
 
         static DiacriticService() 
         {
@@ -60,7 +64,7 @@ namespace CorpusSearch.Service
         /// <returns></returns>
         public static IList<string> Replace(char input)
         {
-            var ret = diacriticMap.GetValueOrDefault(input, null);
+            var ret = diacriticMap.GetValueOrDefault(input.ToString(), null);
             if (ret != null)
             {
                 return new[] { ret };
@@ -76,7 +80,7 @@ namespace CorpusSearch.Service
 
             foreach (var c in input)
             {
-                output.Append(diacriticMap.GetValueOrDefault(c, c.ToString()));
+                output.Append(diacriticMap.GetValueOrDefault(c.ToString(), c.ToString()));
             }
 
             return output.ToString();
