@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
 import './MainSearchResults.css'
 
@@ -60,7 +60,7 @@ function findFirst(string, query) {
     // assume per-word
     let index = searchable.indexOf(" " + query + " ");
 
-    if (index == -1) {
+    if (index === -1) {
         return string;
     }
 
@@ -69,7 +69,7 @@ function findFirst(string, query) {
     var lastSpace = false;
     while (startIndex > 0 && count < 5) {
         startIndex--;
-        if (string[startIndex] == ' ') {
+        if (string[startIndex] === ' ') {
             if (!lastSpace) {
                 count++;
             }
@@ -84,7 +84,7 @@ function findFirst(string, query) {
     lastSpace = false;
     while (endIndex < string.length && count < 5) {
         endIndex++;
-        if (string[endIndex] == ' ') {
+        if (string[endIndex] === ' ') {
             if (!lastSpace) {
                 count++;
             }

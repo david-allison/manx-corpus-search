@@ -73,6 +73,7 @@ export class Home extends Component {
                 // No-op for now.
                 break;
             case 4:
+            default:
                 this.handleDateChangeCommitted(null, [1600, Home.currentYear]);
                 break;
         }

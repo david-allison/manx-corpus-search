@@ -1,4 +1,4 @@
-﻿import './FetchDataDocument.css';
+import './FetchDataDocument.css';
 
 import React, { Component } from 'react';
 import qs from "qs";
@@ -75,7 +75,7 @@ export class FetchDataDocument extends Component {
                                 </td>
                                 <td>
                                     {line.page != null && response.pdfLink &&
-                                        <a href={response.pdfLink + "#page=" + line.page} target="_blank">p{line.page}</a> }
+                                        <a href={response.pdfLink + "#page=" + line.page} target="_blank" rel="noreferrer">p{line.page}</a> }
 
                                 </td>
                             </tr>
