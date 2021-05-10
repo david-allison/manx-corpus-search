@@ -40,7 +40,7 @@ jobs:
         run: ssh -tt david2@209.97.129.212 'cd ~/corpus-search-data-private && git pull origin master && cp -r ~/corpus-search-data-private/ClosedData /var/www/manx-corpus/CorpusSearch'
       
       - name: Build
-        run: ssh -t david2@209.97.129.212 'cd /var/www/manx-corpus/ && dotnet build && dotnet publish'
+        run: ssh -tt david2@209.97.129.212 'cd /var/www/manx-corpus/ && dotnet build && dotnet publish'
 
       - name: Restart Service
-        run: ssh -t david2@209.97.129.212 'sudo /bin/systemctl start manx-corpus.service'
+        run: ssh -tt david2@209.97.129.212 'sudo /bin/systemctl start manx-corpus.service'
