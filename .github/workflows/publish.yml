@@ -11,6 +11,7 @@ jobs:
       NUGET_XMLDOC_MODE: skip
     name: Publish
     runs-on: ubuntu-latest
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v2.1.0
       - run: dotnet test
