@@ -1,5 +1,6 @@
 ﻿using Lucene.Net.Analysis.Util;
 using Lucene.Net.Util;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 
@@ -23,6 +24,12 @@ namespace CorpusSearch.Dependencies.Lucene
         {
             char cc = (char)c;
             bool ret = char.IsLetterOrDigit(cc) || cc == '-' || cc == '\'';
+
+            if (!ret)
+            {
+                ret = CharUnicodeInfo.GetUnicodeCategory(cc) == UnicodeCategory.NonSpacingMark;
+            }
+
             return ret;
         }
     }
