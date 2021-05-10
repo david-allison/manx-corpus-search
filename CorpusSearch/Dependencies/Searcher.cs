@@ -144,6 +144,11 @@ namespace CorpusSearch.Dependencies
             }
         }
 
+        internal void OnAllDocumentsAdded()
+        {
+            luceneSearch.Compact();
+        }
+
         internal void AddDocument(IDocument document, IEnumerable<DocumentLine> data)
         {
             this.luceneSearch.Add(document, data);
