@@ -30,7 +30,7 @@ namespace CorpusSearch.Model
 
         public static string NormalizeEnglish(string english, bool allowQuestionMark = false)
         {
-            return english.RemovePunctuation(" ", allowQuestionMark).RemoveNewLines().NormalizeMicrosoftWordQuotes().RemoveBrackets().RemoveDoubleQuotes();
+            return english.RemovePunctuation(" ", allowQuestionMark).RemoveNewLines().NormalizeMicrosoftWordQuotes().RemoveBrackets().RemoveDoubleQuotes().ToLower();
         }
 
         public static string NormalizeManx(string manx, bool allowQuestionMark = false)
@@ -40,7 +40,8 @@ namespace CorpusSearch.Model
                 .NormalizeMicrosoftWordQuotes()
                 .RemoveBrackets()
                 .RemoveColon() //example: "gra:"
-                .RemoveDoubleQuotes();
+                .RemoveDoubleQuotes()
+                .ToLower();
             return handled;
         }
 

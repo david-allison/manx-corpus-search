@@ -44,6 +44,17 @@ namespace CorpusSearch.Test
         }
 
         [Test]
+        public void TestSearchForCaps()
+        {
+            // TODO: We will fix this later once I write an optional case sensitive span query, but for now, this works.
+            this.AddManxDoc("1", "	dy ve beaghey ayns aggle Yee, as jeaghyn son");
+
+            var result = Query("Aggle");
+
+            Assert.That(result.NumberOfDocuments, Is.EqualTo(1));
+        }
+
+        [Test]
         public void SearchMultipleWordsInCorrectOrder()
         {
             this.AddManxDoc("1", 
