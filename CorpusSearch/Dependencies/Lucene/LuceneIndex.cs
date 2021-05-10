@@ -100,6 +100,11 @@ namespace CorpusSearch
             indexWriter.Flush(triggerMerge: false, applyAllDeletes: false);
         }
 
+        public void Compact()
+        {
+            indexWriter.ForceMerge(1);
+        }
+
         public ScanResult Scan(SpanQuery query)
         {
             using var reader = indexWriter.GetReader(applyAllDeletes: true);

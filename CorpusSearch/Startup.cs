@@ -156,6 +156,10 @@ namespace CorpusSearch
             {
                 Console.WriteLine($"Failed loading documents: {e}");
             }
+
+            var stopWatch = System.Diagnostics.Stopwatch.StartNew();
+            searcher.OnAllDocumentsAdded();
+            Console.WriteLine($"compacted in {stopWatch.ElapsedMilliseconds}");
         }
 
         private static void AddDocuments(List<Document> documents, WorkService workService, Searcher searcher)
