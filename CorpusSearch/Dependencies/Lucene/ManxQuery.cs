@@ -71,6 +71,11 @@ namespace CorpusSearch.Dependencies.Lucene
             // allow any number of trailing question marks
             automata.Add(BasicOperations.Optional(BasicOperations.Repeat(BasicAutomata.MakeChar('?'))));
 
+            // allow a trailing dash: 'da cre-erbee' should match 'da cre'
+            var dashThenAnyChar = BasicOperations.Concatenate(BasicAutomata.MakeChar('-'), BasicAutomata.MakeAnyString());
+
+            automata.Add(BasicOperations.Optional(dashThenAnyChar));
+
             var ret = BasicOperations.Concatenate(automata);
 
             return ret;

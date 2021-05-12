@@ -15,7 +15,7 @@ namespace CorpusSearch.Controllers
     [Route("[controller]")]
     public partial class SearchController : ControllerBase
     {
-        public static string PUNCTUATION_REGEX = "[,.;!?\\-\\s]";
+        public static string PUNCTUATION_REGEX = "[,.;!?\\s]";
         private readonly DocumentSearchService2 documentSearchService;
         private readonly OverviewSearchService2 overviewSearchService;
 

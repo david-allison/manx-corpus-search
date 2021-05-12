@@ -120,6 +120,7 @@ namespace CorpusSearch.Dependencies
             }
             else
             {
+                // TODO: This does not handle trailing question marks and some forms of dashes
                 return new SpanTermQuery(term);
             }
         }
