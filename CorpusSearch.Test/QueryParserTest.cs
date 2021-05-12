@@ -416,6 +416,34 @@ namespace CorpusSearch.Test
         }
 
 
+        [Test, Ignore("Fails: Converted to a dash, which is a valid character")]
+        public void TestQuestionMarkInstance()
+        {
+            this.AddManxDoc("1", "da?—Cre");
+
+            var resultDa = Query(@"da");
+            var resultCre = Query(@"cre");
+            var resultQuestion = Query(@"*?*");
+
+            Assert.That(resultDa.NumberOfSegments, Is.EqualTo(1));
+            Assert.That(resultCre.NumberOfSegments, Is.EqualTo(1));
+            Assert.That(resultQuestion.NumberOfSegments, Is.EqualTo(0));
+        }
+
+        [Test]
+        public void TestDashes()
+        {
+            this.AddManxDoc("1", "da cre-erbee");
+
+            var resultDa = Query(@"da");
+            var resultCre = Query(@"cre");
+            var resultCreErbee = Query(@"cre-erbee");
+
+            Assert.That(resultDa.NumberOfSegments, Is.EqualTo(1), "could not find 'da'");
+            Assert.That(resultCre.NumberOfSegments, Is.EqualTo(1), "could not find 'cre'");
+            Assert.That(resultCreErbee.NumberOfSegments, Is.EqualTo(1), "could not find 'cre-erbee'");
+        }
+
         private ScanResult Query(string query, ScanOptions options)
         {
             return new Searcher(luceneIndex, parser).Scan(query, options);
