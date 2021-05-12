@@ -16,23 +16,36 @@ namespace CorpusSearch.Dependencies.Lucene
 
         public override bool IncrementToken()
         {
-            while (this.m_input.IncrementToken())
+            while (m_input.IncrementToken())
             {
                 var term = new string(this.termAtt.Buffer).Substring(0, termAtt.Length);
 
-                var newContent = DocumentLine.NormalizeManx(term);
-
-                termAtt.ResizeBuffer(newContent.Length);
-                termAtt.SetLength(newContent.Length);
-                foreach (var (c, i) in newContent.Select((x, i) => (x, i)))
+                string newContent;
+                // trailing ? as a question mark
+                if (term.EndsWith("?") && !term.EndsWith("??"))
                 {
-                    termAtt.Buffer[i] = c;
+                    newContent = DocumentLine.NormalizeManx(term.TrimEnd('?'), allowQuestionMark: true);
+                }
+                else
+                {
+                    newContent = DocumentLine.NormalizeManx(term, allowQuestionMark: true);
                 }
 
+                HandleContentChange(newContent, termAtt);
 
                 return true;
             }
             return false;
+        }
+
+        private static void HandleContentChange(string newContent, ICharTermAttribute termAtt)
+        {
+            termAtt.ResizeBuffer(newContent.Length);
+            termAtt.SetLength(newContent.Length);
+            foreach (var (c, i) in newContent.Select((x, i) => (x, i)))
+            {
+                termAtt.Buffer[i] = c;
+            }
         }
     }
 }

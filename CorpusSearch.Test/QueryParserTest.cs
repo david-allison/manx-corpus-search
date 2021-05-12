@@ -252,10 +252,10 @@ namespace CorpusSearch.Test
                "san andreas",     // 1: exact match with 1 char
                "saan andreas",    // 0: 2 chars
                "sn",              // 0: no chars
-               "sa n an"          // 0: ? should not match space
+               "sa n an"          // 0: _ should not match space
             );
 
-            var result = Query("s?n");
+            var result = Query("s_n");
 
             Assert.That(result.NumberOfMatches, Is.EqualTo(1));
             Assert.That(result.NumberOfSegments, Is.EqualTo(1));
@@ -366,6 +366,53 @@ namespace CorpusSearch.Test
 
             var result3 = Query("aggwish");
             Assert.That(result3.NumberOfDocuments, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void TestEscapeQuestionMarks()
+        {
+            // #15 - Rob used "???" to mark unknown phrases
+            // two issues:
+            // ??? was stripped as it was a non-token character
+            // ??? matched everything
+
+            // To fix this: 
+            // * use _ as the single character wildcard
+            // * Don't strip multiple instances of '??'
+
+            this.AddManxDoc("1", "???", "and");
+
+            var result = Query(@"???");
+
+            Assert.That(result.NumberOfSegments, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void TrailingQuestionMarkIsSkipped()
+        {
+            // #15 - We want to search for '???'
+            // ??? was stripped as it was a non-token character
+            // So, we want to keep that, but we do want to strip a trailing '?'
+
+            this.AddManxDoc("1", "erbee", "erbee?");
+
+            var result = Query(@"erbee");
+
+            Assert.That(result.NumberOfSegments, Is.EqualTo(2));
+        }
+
+        [Test]
+        public void TrailingDoubleQuestionMarkIsNotSkipped()
+        {
+            // #15 - We want to search for '???'
+            // ??? was stripped as it was a non-token character
+            // So, we want to keep that, but we do want to strip a trailing '?'
+
+            this.AddManxDoc("1", "erbee??");
+
+            var result = Query(@"erbee");
+
+            Assert.That(result.NumberOfSegments, Is.EqualTo(1));
         }
 
 
