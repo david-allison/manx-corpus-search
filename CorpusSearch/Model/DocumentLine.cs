@@ -33,7 +33,7 @@ namespace CorpusSearch.Model
             return english.RemovePunctuation(" ", allowQuestionMark).RemoveNewLines().NormalizeMicrosoftWordQuotes().RemoveBrackets().RemoveDoubleQuotes().ToLower();
         }
 
-        public static string NormalizeManx(string manx, bool allowQuestionMark = false)
+        public static string NormalizeManx(string manx, bool allowQuestionMark = true)
         {
             string handled = manx.RemovePunctuation(" ", allowQuestionMark)
                 .RemoveNewLines()

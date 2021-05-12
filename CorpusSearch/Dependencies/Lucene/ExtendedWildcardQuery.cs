@@ -13,7 +13,7 @@ namespace CorpusSearch.Dependencies.Lucene
     /// </summary>
     public class ExtendedWildcardQuery: AutomatonQuery
     {
-        public static ISet<char> RelevantChars = new HashSet<char>() { '+', '?', '*' };
+        public static ISet<char> RelevantChars = new HashSet<char>() { '+', '_', '*' };
 
         public ExtendedWildcardQuery(Term term) : base(GetTerm(term), ToAutomaton(term))
         {
@@ -47,7 +47,7 @@ namespace CorpusSearch.Dependencies.Lucene
                 }
                 
                 // single char
-                if (c ==  '?')
+                if (c == '_')
                 {
                     automata.Add(BasicAutomata.MakeAnyChar());
                     continue;

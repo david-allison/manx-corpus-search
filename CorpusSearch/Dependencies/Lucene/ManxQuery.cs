@@ -42,7 +42,7 @@ namespace CorpusSearch.Dependencies.Lucene
                 }
                 
                 // single char
-                if (c ==  '?')
+                if (c ==  '_')
                 {
                     automata.Add(BasicAutomata.MakeAnyChar());
                     continue;
@@ -67,6 +67,9 @@ namespace CorpusSearch.Dependencies.Lucene
                     automata.Add(BasicAutomata.MakeChar(c));
                 }
             }
+
+            // allow any number of trailing question marks
+            automata.Add(BasicOperations.Optional(BasicOperations.Repeat(BasicAutomata.MakeChar('?'))));
 
             var ret = BasicOperations.Concatenate(automata);
 

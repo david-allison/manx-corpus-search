@@ -23,7 +23,8 @@ namespace CorpusSearch.Dependencies.Lucene
         protected override bool IsTokenChar(int c)
         {
             char cc = (char)c;
-            bool ret = char.IsLetterOrDigit(cc) || cc == '-' || cc == '\'';
+            bool ret = char.IsLetterOrDigit(cc) || cc == '-' || cc == '\'' 
+                || cc == '?'; // #15 - we need '???' or '?' as a token, but want to strip a question mark [token] + '?' i the token filter
 
             if (!ret)
             {
