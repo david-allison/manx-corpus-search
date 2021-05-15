@@ -22,6 +22,7 @@ namespace CorpusSearch
         public const string DOCUMENT_IDENT = "ident";
         public const string DOCUMENT_NOTES = "notes";
         public const string DOCUMENT_PAGE = "page";
+        public const string DOCUMENT_LINE_NUMBER = "line_number";
         public const string DOCUMENT_NORMALIZED_MANX = "manx";
         public const string DOCUMENT_REAL_MANX = "real_manx";
         public const string DOCUMENT_NORMALIZED_ENGLISH = "english";
@@ -77,6 +78,7 @@ namespace CorpusSearch
                     new StringField(DOCUMENT_IDENT, document.Ident, Field.Store.YES),
                     new StringField(DOCUMENT_REAL_MANX, line.Manx, Field.Store.YES),
                     new StringField(DOCUMENT_REAL_ENGLISH, line.English, Field.Store.YES),
+                    new Int32Field(DOCUMENT_LINE_NUMBER, line.CsvLineNumber, Field.Store.YES),
                     new Field(DOCUMENT_NORMALIZED_MANX, line.NormalizedManx , fieldType),
                     // TODO: Confirm that the analyzer that we use is also appropriate for English
                     new Field(DOCUMENT_NORMALIZED_ENGLISH, line.NormalizedEnglish, fieldType),
@@ -152,6 +154,7 @@ namespace CorpusSearch
 
 
                 string notes = document.GetField(DOCUMENT_NOTES)?.GetStringValue();
+                int lineNumber = document.GetField(DOCUMENT_LINE_NUMBER)?.GetInt32Value() ?? -1;
 
                 return new DocumentLine
                 {
@@ -159,6 +162,7 @@ namespace CorpusSearch
                     Manx = manx,
                     Page = pageAsInt != 0 ? pageAsInt : null,
                     Notes = notes,
+                    CsvLineNumber = lineNumber,
                 };
             }).ToList();
 
