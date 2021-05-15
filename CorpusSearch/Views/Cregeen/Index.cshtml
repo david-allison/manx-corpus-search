@@ -1,0 +1,105 @@
+﻿@using CorpusSearch.Model.Dictionary;
+@using CorpusSearch.Service;
+@{
+    ViewData["Title"] = "Index";
+}
+
+<script>
+    function search() {
+        var query = document.getElementById("searchInput").value;
+        window.location.href = `/Dictionary/Cregeen/${query}`;
+        return false;
+    }
+    function search() {
+        var query = document.getElementById("searchInput").value;
+        window.location.href = `/Dictionary/Cregeen/${query}`;
+        return false;
+    }
+</script>
+
+<h2>Cregeen's Dictionary</h2>
+
+<input type="text" id="searchInput" onkeyup="if (event.keyCode == 13) { search() }" style="width:90%" value="@ViewData["query"]?.ToString()" />
+<input type="submit" id="searchButton" onclick="search()" value="Search" />
+<br />
+
+<script>
+    var input = document.getElementById("searchInput");
+    input.focus();
+    input.select();
+</script>
+
+<div style="text-align:center">
+    @{
+        // Display large "A-Y" buttons
+        foreach (var k in CregeenDictionaryService.LetterLookup.Keys.Where(x => x != ' '))
+        {
+            <a style="font-size:xx-large;margin-left:5px;margin-right:5px" href="/Dictionary/Cregeen/@k">@k</a>
+        }
+        <br />
+    }
+</div>
+
+<hr />
+
+@{
+    void RenderEntry(CregeenEntry entry, int depth)
+    {
+        var elDepth = depth * 30 + "px";
+        <p style="margin-left: @elDepth;"> @Html.Raw(entry.HeadingHtml)</p>
+        <p style="margin-left: @elDepth;"> @Html.Raw(entry.EntryHtml)</p>
+
+
+        foreach (var child in entry.SafeChildren)
+        {
+            RenderEntry(child, depth + 1);
+        }
+    }
+
+    var entries = CregeenDictionaryService.GetEntries();
+
+    var dict = CregeenDictionaryService.LetterLookup;
+
+    IEnumerable<CregeenEntry> search;
+    var query = ViewData["query"]?.ToString();
+    if (String.IsNullOrWhiteSpace(query) || (query.Length == 1 && !dict.ContainsKey(query[0])))
+    {
+        query = "A";
+    }
+
+    int entryCount = 0;
+    if (query.Length == 1)
+    {
+        var start = char.ToUpperInvariant(query[0]);
+        var end = (char)(start + 1);
+
+        if (end == 'X') { end = 'Y'; }
+        if (!dict.ContainsKey(end)) { end = ' '; }
+
+        search = entries.SkipWhile(x => x.Words.First() != dict[start]).TakeWhile(x => x.Words.First() != dict[end]);
+    }
+    else
+    {
+        // "bhir"; // "baa";
+        search = entries.SelectMany(x => x.FilterTo(query));
+
+        entryCount = entries.Sum(x => x.ChildrenRecursive.Count(x => x.Words.Contains(query)));
+    }
+
+    if (entryCount != 0)
+    {
+        string res = entryCount == 1 ? "result" : "results";
+        <p>@entryCount @res</p>
+    }
+
+
+    foreach (var entry in search)
+    {
+        RenderEntry(entry, 0);
+    }
+
+    if (!search.Any())
+    {
+        <p>No results</p>
+    }
+}

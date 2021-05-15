@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
-import { Container, Navbar } from 'reactstrap'
+import { Container, Navbar, NavbarToggler, NavItem, NavLink, Collapse } from 'reactstrap'
+import { Link } from 'react-router-dom';
 import './NavMenu.css';
 import logo from '../corpus.png'
 
@@ -19,26 +20,32 @@ export class NavMenu extends Component {
     this.setState({
       collapsed: !this.state.collapsed
     });
-  }
+    }
     
-/*            <NavbarBrand tag={Link} to="/">Corpus Search</NavbarBrand>
+/*<NavbarBrand tag={Link} to="/">Corpus Search</NavbarBrand>*/
+    
+  render () {
+    return (
+      <header>
+
+        <Navbar className="navbar-expand-sm navbar-toggleable-sm ng-white border-bottom box-shadow mb-3" light>
+
+          <Container>
+            <img src={logo} alt="Manx Corpus Search Logo" height="100px" />
+
                 <NavbarToggler onClick={this.toggleNavbar} className="mr-2" />
                 <Collapse className="d-sm-inline-flex flex-sm-row-reverse" isOpen={!this.state.collapsed} navbar>
                     <ul className="navbar-nav flex-grow">
                         <NavItem>
                             <NavLink tag={Link} className="text-dark" to="/">Home</NavLink>
                         </NavItem>
+                            <NavItem>
+                                <a className="text-dark nav-link"href="/Dictionary/Cregeen">Dictionary</a>
+
+                        </NavItem>
                     </ul>
-                </Collapse>*/
-  render () {
-    return (
-      <header>
-        <Navbar className="navbar-expand-sm navbar-toggleable-sm ng-white border-bottom box-shadow mb-3" light>
-
-          <Container>
-            <img src={logo} alt="Manx Corpus Search Logo" height="100px" />
-
-          </Container>
+                    </Collapse>
+                </Container>
         </Navbar>
       </header>
     );

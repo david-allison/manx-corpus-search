@@ -18,11 +18,14 @@ namespace CorpusSearch.Controllers
         public static string PUNCTUATION_REGEX = "[,.;!?\\s]";
         private readonly DocumentSearchService2 documentSearchService;
         private readonly OverviewSearchService2 overviewSearchService;
+        private readonly CregeenDictionaryService[] dictionaryServices;
 
-        public SearchController(DocumentSearchService2 documentSearchService, OverviewSearchService2 overviewSearchService)
+        public SearchController(DocumentSearchService2 documentSearchService, OverviewSearchService2 overviewSearchService, CregeenDictionaryService dictionaryService)
         {
             this.documentSearchService = documentSearchService;
             this.overviewSearchService = overviewSearchService;
+            // TODO: We'll eventually want multiple dictionary services.
+            this.dictionaryServices = new[] { dictionaryService };
         }
 
         [HttpGet]
@@ -47,6 +50,9 @@ namespace CorpusSearch.Controllers
             /// </summary>
             public string PdfLink { get; internal set; }
 
+            /// <summary>A list of the dictionaries that the word is defined in</summary>
+            public List<string> DefinedInDictionaries { get; set; } = new List<string>();
+
             internal static SearchWorkResult Empty(string title)
             {
                 var ret = new SearchWorkResult
@@ -70,6 +76,9 @@ namespace CorpusSearch.Controllers
                 English = english,
             };
             SearchWorkResult ret = await documentSearchService.SearchWork(workQuery);
+
+            ret.DefinedInDictionaries = dictionaryServices.Where(x => x.ContainsWordExact(query)).Select(x => x.Identifier).ToList();
+
             ret.EnrichWithTime(sw);
             return ret;
         }
@@ -100,6 +109,7 @@ namespace CorpusSearch.Controllers
 
             results = results.OrderBy(x => x.StartDate);
 
+            ret.DefinedInDictionaries = dictionaryServices.Where(x => x.ContainsWordExact(query)).Select(x => x.Identifier).ToList();
             ret.EnrichResults(results);
             ret.EnrichWithTime(sw);
             ret.NumberOfDocuments = ret.Results.Count;
@@ -113,6 +123,7 @@ namespace CorpusSearch.Controllers
             public List<QueryDocumentResult> Results { get; set; }
             public int NumberOfResults { get; set; }
             public string TimeTaken { get; set; }
+            public List<string> DefinedInDictionaries { get; internal set; } = new List<string>();
         }
     }
 }
