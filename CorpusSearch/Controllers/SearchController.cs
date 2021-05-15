@@ -77,7 +77,7 @@ namespace CorpusSearch.Controllers
             };
             SearchWorkResult ret = await documentSearchService.SearchWork(workQuery);
 
-            ret.DefinedInDictionaries = dictionaryServices.Where(x => x.ContainsWordExact(query)).Select(x => x.Identifier).ToList();
+            ret.DefinedInDictionaries = dictionaryServices.Where(x => x.ContainsWordExact(query.Trim())).Select(x => x.Identifier).ToList();
 
             ret.EnrichWithTime(sw);
             return ret;
@@ -109,7 +109,7 @@ namespace CorpusSearch.Controllers
 
             results = results.OrderBy(x => x.StartDate);
 
-            ret.DefinedInDictionaries = dictionaryServices.Where(x => x.ContainsWordExact(query)).Select(x => x.Identifier).ToList();
+            ret.DefinedInDictionaries = dictionaryServices.Where(x => x.ContainsWordExact(query.Trim())).Select(x => x.Identifier).ToList();
             ret.EnrichResults(results);
             ret.EnrichWithTime(sw);
             ret.NumberOfDocuments = ret.Results.Count;
