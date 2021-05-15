@@ -55,7 +55,7 @@ namespace CorpusSearch.Service
             {
                 var entries = GetEntries();
                 var allEntries = entries.SelectMany(x => x.ChildrenRecursive).SelectMany(x => x.Words);
-                allWords = new HashSet<string>(allEntries);
+                allWords = new HashSet<string>(allEntries, StringComparer.InvariantCultureIgnoreCase);
             } 
             catch (Exception e)
             {
