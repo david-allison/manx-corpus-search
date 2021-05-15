@@ -43,5 +43,9 @@ jobs:
       - name: Build
         run: ssh -tt david2@209.97.129.212 'cd /var/www/manx-corpus/ && dotnet build && dotnet publish'
 
+      - name: Upload Cregeen Dictionary
+        run: ssh -tt david2@209.97.129.212 'cd /var/www/manx-corpus/CorpusSearch/bin/Debug/net5.0/publish/Resources && ./var/www/manx-corpus/.github/scripts/download_cregeen.sh'
+        continue-on-error: true
+        
       - name: Restart Service
         run: ssh -tt david2@209.97.129.212 'sudo /bin/systemctl start manx-corpus.service'

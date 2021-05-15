@@ -41,7 +41,7 @@ namespace CorpusSearch
             services.AddSingleton(provider => LuceneIndex.GetInstance());
             services.AddSingleton(provider => SearchParser.GetParser());
             services.AddSingleton<Searcher>();
-
+            services.AddSingleton(provider => CregeenDictionaryService.Init());
             services.AddSingleton(provider => SetupSqliteConnection());
             services.AddSingleton<WorkService>();
             services.AddSingleton<DocumentSearchService2>();
