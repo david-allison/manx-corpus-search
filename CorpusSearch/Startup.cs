@@ -200,8 +200,10 @@ namespace CorpusSearch
                 "name varchar, " +
                 "ident varchar, " +
                 "startdate datetime DEFAULT NULL, " +
-                "enddate datetime DEFAULT NULL," +
-                "pdfLink varchar DEFAULT NULL)");
+                "enddate datetime DEFAULT NULL, " +
+                "pdfLink varchar DEFAULT NULL, " +
+                "github varchar DEFAULT NULL, " +
+                "path varchar DEFAULT NULL)");
         }
     }
 }

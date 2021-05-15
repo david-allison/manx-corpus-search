@@ -19,13 +19,15 @@ namespace CorpusSearch.Controllers
         private readonly DocumentSearchService2 documentSearchService;
         private readonly OverviewSearchService2 overviewSearchService;
         private readonly CregeenDictionaryService[] dictionaryServices;
+        private readonly WorkService workService;
 
-        public SearchController(DocumentSearchService2 documentSearchService, OverviewSearchService2 overviewSearchService, CregeenDictionaryService dictionaryService)
+        public SearchController(DocumentSearchService2 documentSearchService, OverviewSearchService2 overviewSearchService, CregeenDictionaryService dictionaryService, WorkService workService)
         {
             this.documentSearchService = documentSearchService;
             this.overviewSearchService = overviewSearchService;
             // TODO: We'll eventually want multiple dictionary services.
             this.dictionaryServices = new[] { dictionaryService };
+            this.workService = workService;
         }
 
         [HttpGet]
@@ -53,6 +55,10 @@ namespace CorpusSearch.Controllers
             /// <summary>A list of the dictionaries that the word is defined in</summary>
             public List<string> DefinedInDictionaries { get; set; } = new List<string>();
 
+            /// <summary>https uri to the file on GitHub</summary>
+            /// <remarks>This views the file, as "edit" on GitHub does not handle line numbers</remarks>
+            public string GitHubLink { get; set; }
+
             internal static SearchWorkResult Empty(string title)
             {
                 var ret = new SearchWorkResult
@@ -77,6 +83,7 @@ namespace CorpusSearch.Controllers
             };
             SearchWorkResult ret = await documentSearchService.SearchWork(workQuery);
 
+            ret.GitHubLink = (await this.workService.ByIdent(workIdent))?.GetGitHubLink();
             ret.DefinedInDictionaries = dictionaryServices.Where(x => x.ContainsWordExact(query.Trim())).Select(x => x.Identifier).ToList();
 
             ret.EnrichWithTime(sw);

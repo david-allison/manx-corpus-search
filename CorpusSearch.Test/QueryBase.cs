@@ -51,6 +51,10 @@ namespace CorpusSearch.Test
             public DateTime? CreatedCircaEnd => date;
 
             public string ExternalPdfLink => null;
+
+            public string GitHubRepo => null;
+
+            public string RelativeCsvPath => null;
         }
     }
 }

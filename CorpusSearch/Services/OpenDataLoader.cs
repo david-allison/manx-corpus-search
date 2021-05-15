@@ -5,7 +5,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using static CorpusSearch.Startup;
 
 namespace CorpusSearch.Services
 {
@@ -18,9 +17,13 @@ namespace CorpusSearch.Services
         public static List<OpenSourceDocument> LoadDocumentsFromFile()
         {
             var paths = GetJsonPaths();
-            return paths
+            var ret = paths
                 .Select(ToDocument)
                 .ToList();
+
+            ret.ForEach(x => x.GitHubRepo = "david-allison-1/manx-search-data");
+
+            return ret;
 
         }
 
@@ -108,14 +111,24 @@ namespace CorpusSearch.Services
             return CsvHelperUtils.LoadCsv(FullCsvPath);
         }
 
+        private string RelativeLocationOnDisk 
+        { 
+            get
+            {
+                if (LocationOnDisk.StartsWith(AppDomain.CurrentDomain.BaseDirectory))
+                {
+                    return LocationOnDisk.Substring(AppDomain.CurrentDomain.BaseDirectory.Length);
+                }
+                return LocationOnDisk;
+            } 
+        }
+
+        public override string GitHubRepo { get; set; }
+        public override string RelativeCsvPath => RelativeLocationOnDisk + "\\" + CsvFileName;
 
         public override string ToString()
         {
-            if (LocationOnDisk.StartsWith(AppDomain.CurrentDomain.BaseDirectory))
-            {
-                return LocationOnDisk.Substring(AppDomain.CurrentDomain.BaseDirectory.Length) + "\\manifest.json";
-            }
-            return LocationOnDisk + "\\manifest.json";
+            return RelativeLocationOnDisk + "\\manifest.json";
         }
     }
 }

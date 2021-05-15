@@ -76,7 +76,9 @@ export class FetchDataDocument extends Component {
                                 <td>
                                     {line.page != null && response.pdfLink &&
                                         <a href={response.pdfLink + "#page=" + line.page} target="_blank" rel="noreferrer">p{line.page}</a> }
-
+                                    {response.gitHubLink && <a href={response.gitHubLink + "#L" + line.csvLineNumber}>
+                                        edit
+                                    </a>}
                                 </td>
                             </tr>
                             {line.notes ? <tr><td colspan="3" className="noteRow">{line.notes}</td></tr> : null}
