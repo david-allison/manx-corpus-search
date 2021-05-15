@@ -28,6 +28,9 @@ namespace CorpusSearch.Model
             }
         }
 
+        /// <summary>The Line Number in the CSV</summary>
+        public int CsvLineNumber { get; set; }
+
         public static string NormalizeEnglish(string english, bool allowQuestionMark = false)
         {
             return english.RemovePunctuation(" ", allowQuestionMark).RemoveNewLines().NormalizeMicrosoftWordQuotes().RemoveBrackets().RemoveDoubleQuotes().ToLower();
