@@ -17,8 +17,8 @@ export class FetchDataDocument extends Component {
             title: "Work Search",
             docIdent: this.props.match.params.docId,
             value: q,
-            searchManx: true,
-            searchEnglish: false,
+            searchManx: props.location.state ? props.location.state.searchManx : true,
+            searchEnglish: props.location.state ? props.location.state.searchEnglish : false,
         };
 
         this.onQueryChanged = this.onQueryChanged.bind(this);
@@ -99,8 +99,8 @@ export class FetchDataDocument extends Component {
                 <h1 id="tabelLabel" ><Link to={`/?q=${this.state.value}`} style={{ textDecoration: 'none' }}>⇦</Link>  { this.state.title }</h1>
 
                 <input type="text" id="corpus-search-box" value={this.state.value} onChange={this.onQueryChanged} />
-                <label for="manxSearch">Manx</label> <input id="manxSearch" type="checkbox" defaultChecked={this.state.searchManx} checked={this.state.searchManx} onChange={this.onSearchManxChanged} /><br/>
-                <label for="englishSearch">English</label> <input id="englishSearch" type="checkbox" defaultChecked={this.state.searchEnglish} checked={this.state.searchEnglish}  onChange={this.onSearchEnglishChanged} /><br/>
+                <label for="manxSearch">Manx</label> <input id="manxSearch" type="checkbox" checked={this.state.searchManx} onChange={this.onSearchManxChanged} /><br/>
+                <label for="englishSearch">English</label> <input id="englishSearch" type="checkbox" checked={this.state.searchEnglish}  onChange={this.onSearchEnglishChanged} /><br/>
                 {contents}
             </div>
         );

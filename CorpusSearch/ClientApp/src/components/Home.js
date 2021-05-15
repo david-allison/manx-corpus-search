@@ -37,7 +37,7 @@ export class Home extends Component {
         this.populateData();
     }
     //<MainSearchResults products={response.results} />
-    static renderGeneralTable(response, value) {
+    static renderGeneralTable(response, value, searchManx, searchEnglish) {
         let query = response.query ? response.query : '';
         return (
             <div>
@@ -45,7 +45,7 @@ export class Home extends Component {
                 Returned { response.numberOfResults} matches in { response.numberOfDocuments} texts [{response.timeTaken }] for query '{ query  }'
                 <br /><br />
                 { response.definedInDictionaries && <><DictionaryLink query={ query } dictionaries={ response.definedInDictionaries }/><br/><br/></> }
-                <MainSearchResults query={query} results={response.results} />
+                <MainSearchResults query={query} results={response.results} manx={ searchManx } english={ searchEnglish }/>
 
             </div>
         );
@@ -92,7 +92,7 @@ export class Home extends Component {
     render() {
         let searchResults = this.state.loading
             ? <p></p>
-            : Home.renderGeneralTable(this.state.forecasts, this.state.value);
+            : Home.renderGeneralTable(this.state.forecasts, this.state.value, this.state.searchManx, this.state.searchEnglish);
 
         return (
             <div>

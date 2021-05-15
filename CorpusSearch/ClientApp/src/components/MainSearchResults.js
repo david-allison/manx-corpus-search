@@ -151,7 +151,13 @@ export default function MainSearchResults(props) {
                         <td>{getFullYear(result.startDate, result.endDate) }</td>
                         <td>{result.documentName}</td>
                         <td>{result.count}</td>
-                        <td><Link to={`/docs/${result.ident}?q=${query}`}>Browse</Link></td>
+                            <td>
+                                <Link to={{
+                                    pathname: `/docs/${result.ident}`,
+                                    search: `?q=${query}`,
+                                    state: { searchManx: props.manx, searchEnglish: props.english },
+                                }}>Browse</Link>
+                            </td>
                     </tr>
                     <tr>
                         <td></td>
