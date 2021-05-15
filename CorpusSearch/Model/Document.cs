@@ -4,7 +4,7 @@ using CorpusSearch.Dependencies.CsvHelper;
 
 namespace CorpusSearch.Model
 {
-    public class Document : IDocument
+    public abstract class Document : IDocument
     {
         public string Name { get; set; }
         public string Ident { get; set; }
@@ -28,6 +28,8 @@ namespace CorpusSearch.Model
         public string ExternalPdfLink { get; set; }
         public DateTime? CreatedCircaStart { get; set; }
         public DateTime? CreatedCircaEnd { get; set; }
+        public abstract string GitHubRepo { get; set; }
+        public abstract string RelativeCsvPath { get; }
 
         internal virtual List<DocumentLine> LoadLocalFile()
         {
