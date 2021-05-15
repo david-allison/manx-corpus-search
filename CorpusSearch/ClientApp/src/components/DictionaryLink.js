@@ -2,11 +2,6 @@ import React, { Component } from 'react';
 
 export class DictionaryLink extends Component {
 
-    constructor(props) {
-        super(props);
-    }
-
-
     render() {
         return <>
             <strong>Defined in</strong>: {
