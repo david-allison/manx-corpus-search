@@ -20,13 +20,12 @@ export class Home extends Component {
             value: q ?? '',
             searchManx: true,
             searchEnglish: false,
-            dateRange: [1600, Home.currentYear]
+            dateRange: [1500, Home.currentYear]
         };
 
         this.handleChange = this.handleChange.bind(this);
         this.handleDateChange = this.handleDateChange.bind(this);
         this.handleDateChangeCommitted = this.handleDateChangeCommitted.bind(this);
-        this.handleButton = this.handleButton.bind(this);
 
         this.handleManxChange = this.handleManxChange.bind(this);
         this.handleEnglishChange = this.handleEnglishChange.bind(this);
@@ -94,7 +93,7 @@ export class Home extends Component {
 
                         <Slider
                             value={this.state.dateRange}
-                            min={ 1600 }
+                            min={ 1500 }
                             max={ Home.currentYear }
                             valueLabelDisplay="auto"
                             onChange={this.handleDateChange}
