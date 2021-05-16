@@ -2,6 +2,7 @@
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 
@@ -9,7 +10,7 @@ namespace CorpusSearch.Service
 {
     public class CregeenDictionaryService
     {
-        public readonly static Dictionary<char, string> LetterLookup = new()
+        public readonly static Dictionary<char, string> LetterLookup = new Dictionary<char, string>(new CaseInsensitiveCharComparer())
         {
             [' '] = "  ",
             ['A'] = "aa-",
@@ -83,6 +84,12 @@ namespace CorpusSearch.Service
         public bool ContainsWordExact(string s)
         {
             return allWords.Contains(s);
+        }
+
+        private class CaseInsensitiveCharComparer : IEqualityComparer<char>
+        {
+            public bool Equals(char x, char y) => char.ToUpperInvariant(x) == char.ToUpperInvariant(y);
+            public int GetHashCode([DisallowNull] char c) => char.ToUpperInvariant(c).GetHashCode();
         }
     }
 }
