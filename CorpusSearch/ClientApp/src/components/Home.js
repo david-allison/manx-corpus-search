@@ -59,28 +59,6 @@ export class Home extends Component {
         this.setState({ dateRange: value }, () => this.populateData());
     }
 
-    handleButton(value) {
-        console.log(Home.currentYear);
-        switch (value) {
-            case 0:
-                this.handleDateChangeCommitted(null, [0, 1600]);
-                break;
-            case 1:
-                this.handleDateChangeCommitted(null, [1600, 1908]);
-                break;
-            case 2:
-                this.handleDateChangeCommitted(null, [1908, Home.currentYear]);
-                break;
-            case 3:
-                // No-op for now.
-                break;
-            case 4:
-            default:
-                this.handleDateChangeCommitted(null, [1600, Home.currentYear]);
-                break;
-        }
-    }
-
     handleManxChange(event) {
         this.setState({ searchManx: event.target.checked, searchEnglish: !event.target.checked }, () => this.populateData());
     }
@@ -106,21 +84,13 @@ export class Home extends Component {
                         <label htmlFor="englishSearch">English</label> <input id="englishSearch" type="checkbox" checked={this.state.searchEnglish}  defaultChecked={this.state.searchEnglish} onChange={this.handleEnglishChange} /><br />
                     </div>
 
-                    <Typography id="range-output" gutterBottom>
-                        Dates: {this.state.dateRange[0]}&ndash;{this.state.dateRange[1]}
-                    </Typography>
-                    <div className="search-buttons">
-
-                        <button onClick={() => this.handleButton(0)}>Pre 1600</button>
-                        <button onClick={() => this.handleButton(1)}>1600-1908</button>
-                        <button onClick={() => this.handleButton(2)}>Native speakers post 1908</button>
-                        <button onClick={() => this.handleButton(3)} style={{color: "red"} }>Second language</button>
-                        <button onClick={() => this.handleButton(4)}>Reset</button>
-                    </div>
-
                     <details className="advanced-options">
                         <summary>Advanced Options</summary>
 
+
+                        <Typography id="range-output" gutterBottom>
+                            Dates: {this.state.dateRange[0]}&ndash;{this.state.dateRange[1]}
+                        </Typography>
 
                         <Slider
                             value={this.state.dateRange}
