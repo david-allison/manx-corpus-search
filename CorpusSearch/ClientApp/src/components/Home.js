@@ -1,4 +1,4 @@
-﻿import './Home.css';
+import './Home.css';
 
 import React, { Component } from 'react';
 import qs from "qs";
