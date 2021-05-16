@@ -1,4 +1,4 @@
-import './Home.css';
+﻿import './Home.css';
 
 import React, { Component } from 'react';
 import qs from "qs";
@@ -74,7 +74,8 @@ export class Home extends Component {
         return (
             <div>
                 <div className="search-options">
-                    <input id="corpus-search-box" placeholder="Enter search term" type="text" value={this.state.value} onChange={this.handleChange} />
+                    <a style={{"float":"right"}} href="https://github.com/david-allison-1/manx-corpus-search/blob/master/CorpusSearch/Docs/searching.md#searching" target="_blank" rel="noreferrer">Search Help ℹ</a>
+                    <input id="corpus-search-box" placeholder="Enter search term" type="text" value={this.state.value} onChange={this.handleChange} /> 
 
 
                     <div className="search-language">
