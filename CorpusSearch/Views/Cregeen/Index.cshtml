@@ -43,17 +43,22 @@
 <hr />
 
 @{
+    bool renderRecursive = true;
     void RenderEntry(CregeenEntry entry, int depth)
     {
         var elDepth = depth * 30 + "px";
         <p style="margin-left: @elDepth;"> @Html.Raw(entry.HeadingHtml)</p>
         <p style="margin-left: @elDepth;"> @Html.Raw(entry.EntryHtml)</p>
 
-
+        if (!renderRecursive)
+        {
+            return;
+        }
         foreach (var child in entry.SafeChildren)
         {
             RenderEntry(child, depth + 1);
         }
+
     }
 
     var entries = CregeenDictionaryService.GetEntries();
@@ -80,10 +85,10 @@
     }
     else
     {
-        // "bhir"; // "baa";
-        search = entries.SelectMany(x => x.FilterTo(query));
+        search = CregeenDictionaryService.FuzzySearch(query, entries);
 
-        entryCount = entries.Sum(x => x.ChildrenRecursive.Count(x => x.Words.Contains(query)));
+        entryCount = search.Count();
+        renderRecursive = false;
     }
 
     if (entryCount != 0)

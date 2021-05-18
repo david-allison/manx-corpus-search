@@ -19,9 +19,14 @@ namespace CorpusSearch.Model.Dictionary
 
         public List<CregeenEntry> ChildrenRecursive => new[] { this }.Concat(SafeChildren.SelectMany(x => x.ChildrenRecursive)).ToList();
 
+        public bool ContainsWordExact(string word)
+        {
+            return Words.Any(x => x == word);
+        }
+
         public IList<CregeenEntry> FilterTo(string search)
         {
-            if (Words.Any(x => x == search))
+            if (ContainsWordExact(search))
             {
                 return new[] { this };
             }
