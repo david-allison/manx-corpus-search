@@ -80,6 +80,14 @@ namespace CorpusSearch.Service
             return JsonConvert.DeserializeObject<List<CregeenEntry>>(text);
         }
 
+        public static bool IsValidSearch(string query)
+        {
+            return !string.IsNullOrWhiteSpace(query) // invalid if whitespace
+                && (query.Length > 1 // valid if longer than 1 char
+                        || LetterLookup.ContainsKey(query[0]) // valid if 1 char and in the lookup
+                    );
+        }
+
         /// <summary>Whether the dictionary contains the provided word (no fuzziness)</summary>
         public bool ContainsWordExact(string s)
         {
