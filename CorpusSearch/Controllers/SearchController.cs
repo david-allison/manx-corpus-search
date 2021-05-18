@@ -35,6 +35,32 @@ namespace CorpusSearch.Controllers
             return "a";
         }
 
+        /// <summary>
+        /// Map from source language to words in said language (thunnag): ["en"] => "duck", "duckling"
+        /// </summary>
+        public class Translations : Dictionary<string, IList<string>>
+        {
+            public static Translations FromManx(string query)
+            {
+                var results = Startup.ManxToEnglishDictionary.GetValueOrDefault(query, new List<string>());
+                var ret = new Translations
+                {
+                    { "en", results }
+                };
+                return ret;
+            }
+
+            public static Translations FromEnglish(string query)
+            {
+                var results = Startup.EnglishToManxDictionary.GetValueOrDefault(query, new List<string>());
+                var ret = new Translations
+                {
+                    { "gv", results }
+                };
+                return ret;
+            }
+        }
+
         public class SearchWorkResult : IResultContainer<DocumentLine>, ITimedResult
         {
             public List<DocumentLine> Results { get; set; } = new List<DocumentLine>();
@@ -42,8 +68,7 @@ namespace CorpusSearch.Controllers
             public string TimeTaken { get; set; }
             public string Title { get; set; }
 
-            public List<string> ManxTranslations { get; set; } = new List<string>();
-            public List<string> EnglishTranslations { get; set; } = new List<string>();
+            public Translations Translations { get; set; } = new Translations();
             /// <summary>The total number of matches (multiple matches per line)</summary>
             public int TotalMatches { get; internal set; } = -1;
             /// <summary>
@@ -82,6 +107,15 @@ namespace CorpusSearch.Controllers
             };
             SearchWorkResult ret = await documentSearchService.SearchWork(workQuery);
 
+            if (manx)
+            {
+                ret.Translations = Translations.FromManx(query);
+            }
+            else if (english)
+            {
+                ret.Translations = Translations.FromEnglish(query);
+            }
+
             ret.GitHubLink = (await this.workService.ByIdent(workIdent))?.GetGitHubLink();
             ret.DefinedInDictionaries = DictionaryLookup(query);
 
@@ -114,6 +148,16 @@ namespace CorpusSearch.Controllers
             var results = await overviewSearchService.CorpusSearch(searchQuery);
 
             results = results.OrderBy(x => x.StartDate);
+            
+            if (manx)
+            {
+                ret.Translations = Translations.FromManx(query);
+            } 
+            else if (english)
+            {
+                ret.Translations = Translations.FromEnglish(query);
+            }
+
             ret.DefinedInDictionaries = DictionaryLookup(query);
             ret.EnrichResults(results);
             ret.EnrichWithTime(sw);
@@ -137,6 +181,7 @@ namespace CorpusSearch.Controllers
             public int NumberOfResults { get; set; }
             public string TimeTaken { get; set; }
             public Dictionary<string, List<string>> DefinedInDictionaries { get; internal set; } = new();
+            public Translations Translations { get; set; } = new Translations();
         }
     }
 }

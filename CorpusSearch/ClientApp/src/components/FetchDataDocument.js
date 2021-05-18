@@ -94,7 +94,7 @@ export class FetchDataDocument extends Component {
     render() {
         let contents = this.state.loading
             ? <p></p>
-            : FetchDataDocument.renderForecastsTable(this.state.forecasts, this.state.value, this.state.manxHighlights, this.state.englishHighlights);
+            : FetchDataDocument.renderForecastsTable(this.state.forecasts, this.state.value, [], []); // TODO: Add highlights back in based on data.translations
 
         return (
             <div>
@@ -111,7 +111,7 @@ export class FetchDataDocument extends Component {
     async populateData() {
         const response = await fetch(`search/searchWork/${this.state.docIdent}/${encodeURIComponent(this.state.value)}?english=${this.state.searchEnglish}&manx=${this.state.searchManx}`);
         const data = await response.json();
-        this.setState({ forecasts: data, title: data.title, loading: false, manxHighlights: data.manxTranslations, englishHighlights: data.englishTranslations });
+        this.setState({ forecasts: data, title: data.title, loading: false, translations: data.translations });
     }
 
     onQueryChanged(event) {

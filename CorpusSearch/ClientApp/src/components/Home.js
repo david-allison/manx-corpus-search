@@ -6,6 +6,7 @@ import Slider from '@material-ui/core/Slider';
 import Typography from '@material-ui/core/Typography';
 import MainSearchResults from './MainSearchResults'
 import { DictionaryLink } from './DictionaryLink'
+import { TranslationList } from './TranslationList'
 
 export class Home extends Component {
     static displayName = Home.name;
@@ -42,8 +43,10 @@ export class Home extends Component {
             <div>
                 <hr />
                 Returned { response.numberOfResults} matches in { response.numberOfDocuments} texts [{response.timeTaken }] for query '{ query  }'
-                <br /><br />
+                <br />
                 { response.definedInDictionaries && <><DictionaryLink query={ query } dictionaries={ response.definedInDictionaries }/><br/></> }
+                { response.translations && <><TranslationList translations={response.translations} /></ >}
+                <br /><br />
                 <MainSearchResults query={query} results={response.results} manx={ searchManx } english={ searchEnglish }/>
 
             </div>
