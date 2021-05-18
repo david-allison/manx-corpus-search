@@ -47,9 +47,10 @@
     void RenderEntry(CregeenEntry entry, int depth)
     {
         var elDepth = depth * 30 + "px";
-        <p style="margin-left: @elDepth;"> @Html.Raw(entry.HeadingHtml)</p>
-        <p style="margin-left: @elDepth;"> @Html.Raw(entry.EntryHtml)</p>
-
+        <p>
+            <span style="margin-left: @elDepth;" class="word"> @Html.Raw(entry.HeadingHtml)</span>; 
+            <span class="entry"> @Html.Raw(entry.EntryHtml)</span>
+        </p>
         if (!renderRecursive)
         {
             return;
@@ -101,7 +102,7 @@
     foreach (var entry in search)
     {
         RenderEntry(entry, 0);
-        <hr/>
+        <hr />
     }
 
     if (!search.Any())
