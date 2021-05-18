@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
+using System.Web;
 
 namespace CorpusSearch.Service
 {
@@ -103,7 +104,7 @@ namespace CorpusSearch.Service
 
                 yield return new DictionarySummary
                 {
-                    Summary = doc.DocumentNode.InnerText
+                    Summary = HttpUtility.HtmlDecode(doc.DocumentNode.InnerText),
                 };
             }
         }
