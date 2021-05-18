@@ -20,8 +20,8 @@ namespace CorpusSearch
 {
     public partial class Startup
     {
-        public static Dictionary<string, IList<string>> EnglishDictionary { get; set; }
-        public static Dictionary<string, IList<string>> ManxDictionary { get; set; }
+        public static Dictionary<string, IList<string>> EnglishToManxDictionary { get; set; }
+        public static Dictionary<string, IList<string>> ManxToEnglishDictionary { get; set; }
 
 
         public Startup(IConfiguration configuration)
@@ -120,11 +120,11 @@ namespace CorpusSearch
             // files sourced from https://www.learnmanx.com/page_342285.html - TODO; confirm copyright
             using (FileStream manx = File.OpenRead(GetLocalFile("Resources", "manx.json")))
             {
-                ManxDictionary = System.Text.Json.JsonSerializer.DeserializeAsync<Dictionary<string, IList<string>>>(manx).Result;
+                ManxToEnglishDictionary = System.Text.Json.JsonSerializer.DeserializeAsync<Dictionary<string, IList<string>>>(manx).Result;
             }
             using (FileStream english = File.OpenRead(GetLocalFile("Resources", "english.json")))
             {
-                EnglishDictionary = System.Text.Json.JsonSerializer.DeserializeAsync<Dictionary<string, IList<string>>>(english).Result;
+                EnglishToManxDictionary = System.Text.Json.JsonSerializer.DeserializeAsync<Dictionary<string, IList<string>>>(english).Result;
             }
         }
 
