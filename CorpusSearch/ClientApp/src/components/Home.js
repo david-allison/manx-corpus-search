@@ -30,6 +30,7 @@ export class Home extends Component {
 
         this.handleManxChange = this.handleManxChange.bind(this);
         this.handleEnglishChange = this.handleEnglishChange.bind(this);
+        this.getQuery = this.getQuery.bind(this);
 
     }
 
@@ -37,7 +38,7 @@ export class Home extends Component {
         this.populateData();
     }
     //<MainSearchResults products={response.results} />
-    static renderGeneralTable(response, value, searchManx, searchEnglish) {
+    static renderGeneralTable(response, searchManx, searchEnglish) {
         let query = response.query ? response.query : '';
         return (
             <div>
@@ -72,7 +73,7 @@ export class Home extends Component {
     render() {
         let searchResults = this.state.loading
             ? <p></p>
-            : Home.renderGeneralTable(this.state.forecasts, this.state.value, this.state.searchManx, this.state.searchEnglish);
+            : Home.renderGeneralTable(this.state.forecasts, this.state.searchManx, this.state.searchEnglish);
 
         return (
             <div>
@@ -112,8 +113,12 @@ export class Home extends Component {
         );
     }
 
+    getQuery() {
+        return this.state.value;
+    }
+
     async populateData() {
-        const response = await fetch(`search/search/${encodeURIComponent(this.state.value)}?minDate=${this.state.dateRange[0]}&maxDate=${this.state.dateRange[1]}&manx=${this.state.searchManx}&english=${this.state.searchEnglish}`);
+        const response = await fetch(`search/search/${encodeURIComponent(this.getQuery())}?minDate=${this.state.dateRange[0]}&maxDate=${this.state.dateRange[1]}&manx=${this.state.searchManx}&english=${this.state.searchEnglish}`);
         const data = await response.json();
 
         // Handle C# casting an empty list to null
@@ -121,7 +126,7 @@ export class Home extends Component {
             data.results = [];
         }
 
-        if (data.query === this.state.value) {
+        if (data.query === this.getQuery()) {
             this.setState({ forecasts: data, loading: false });
         }
     }
