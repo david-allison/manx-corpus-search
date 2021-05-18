@@ -21,15 +21,18 @@ export class Home extends Component {
             value: q ?? '',
             searchManx: true,
             searchEnglish: false,
-            dateRange: [1500, Home.currentYear]
+            dateRange: [1500, Home.currentYear],
+            matchPhrase: false,
         };
 
         this.handleChange = this.handleChange.bind(this);
         this.handleDateChange = this.handleDateChange.bind(this);
         this.handleDateChangeCommitted = this.handleDateChangeCommitted.bind(this);
-
+        
         this.handleManxChange = this.handleManxChange.bind(this);
         this.handleEnglishChange = this.handleEnglishChange.bind(this);
+        this.handleMatchPhraseChange = this.handleMatchPhraseChange.bind(this);
+
         this.getQuery = this.getQuery.bind(this);
 
     }
@@ -70,6 +73,10 @@ export class Home extends Component {
         this.setState({ searchEnglish: event.target.checked, searchManx: !event.target.checked }, () => this.populateData());
     }
 
+    handleMatchPhraseChange(event) {
+        this.setState({ matchPhrase: event.target.checked }, () => this.populateData());
+    }
+
     render() {
         let searchResults = this.state.loading
             ? <p></p>
@@ -85,7 +92,8 @@ export class Home extends Component {
                     <div className="search-language">
                         Language: 
                         <label htmlFor="manxSearch" id="manxSearchLabel">Manx</label> <input id="manxSearch" type="checkbox" checked={this.state.searchManx} defaultChecked={this.state.searchManx} onChange={this.handleManxChange} />
-                        <label htmlFor="englishSearch">English</label> <input id="englishSearch" type="checkbox" checked={this.state.searchEnglish}  defaultChecked={this.state.searchEnglish} onChange={this.handleEnglishChange} /><br />
+                        <label htmlFor="englishSearch">English</label> <input id="englishSearch" type="checkbox" checked={this.state.searchEnglish} defaultChecked={this.state.searchEnglish} onChange={this.handleEnglishChange} /> 
+                        <label style={{ "paddingLeft": "5px" }} htmlFor="matchPhrase">Match Phrase</label> <input id="matchPhrase" type="checkbox" checked={this.state.matchPhrase} onChange={this.handleMatchPhraseChange} /><br />
                     </div>
 
                     <details className="advanced-options">
@@ -114,7 +122,7 @@ export class Home extends Component {
     }
 
     getQuery() {
-        return this.state.value;
+        return this.state.matchPhrase ? "*" + this.state.value + "*" : this.state.value;
     }
 
     async populateData() {
