@@ -7,7 +7,7 @@ export class DictionaryLink extends Component {
             {
             Object.keys(this.props.dictionaries).map(dictionaryName =>
                 <>
-                    <a href={`/Dictionary/${dictionaryName}/${this.props.query}`} target="_blank" rel="noreferrer" style={{"font-weight":"bold"}}>{dictionaryName}</a>
+                    <a href={`/Dictionary/${dictionaryName}/${this.props.query}`} target="_blank" rel="noreferrer" style={{"fontWeight":"bold"}}>{dictionaryName}</a>
                     : {this.props.dictionaries[dictionaryName]}<br/>
                 </>
             )
