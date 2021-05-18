@@ -88,6 +88,36 @@ namespace CorpusSearch.Service
                     );
         }
 
+        public static List<CregeenEntry> FuzzySearch(string query, IEnumerable<CregeenEntry> entries)
+        {
+            HashSet<CregeenEntry> cregeenEntries = new HashSet<CregeenEntry>(FuzzySearchInternal(query, entries));
+
+            return FuzzySearchInternal(query, entries).Distinct().ToList();
+        }
+
+        private static IEnumerable<CregeenEntry> FuzzySearchInternal(string query, IEnumerable<CregeenEntry> entryData)
+        {
+            var flatEntries = entryData.SelectMany(x => x.ChildrenRecursive);
+
+            // exact match
+            foreach (var e in flatEntries.Where(x => x.ContainsWordExact(query)))
+            {
+                yield return e;
+            }
+
+            // Prefix
+            foreach (var e in flatEntries.Where(x => x.Words.Where(x => x.StartsWith(query)).Any()))
+            {
+                yield return e;
+            }
+
+            // Contains
+            foreach (var e in flatEntries.Where(x => x.Words.Where(x => x.Contains(query)).Any()))
+            {
+                yield return e;
+            }
+        }
+
         /// <summary>Whether the dictionary contains the provided word (no fuzziness)</summary>
         public bool ContainsWordExact(string s)
         {
