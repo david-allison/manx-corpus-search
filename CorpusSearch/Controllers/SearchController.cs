@@ -18,15 +18,14 @@ namespace CorpusSearch.Controllers
         public static string PUNCTUATION_REGEX = "[,.;!?\\s]";
         private readonly DocumentSearchService2 documentSearchService;
         private readonly OverviewSearchService2 overviewSearchService;
-        private readonly CregeenDictionaryService[] dictionaryServices;
+        private readonly ISearchDictionary[] dictionaryServices;
         private readonly WorkService workService;
 
-        public SearchController(DocumentSearchService2 documentSearchService, OverviewSearchService2 overviewSearchService, CregeenDictionaryService dictionaryService, WorkService workService)
+        public SearchController(DocumentSearchService2 documentSearchService, OverviewSearchService2 overviewSearchService, IEnumerable<ISearchDictionary> dictionaryServices, WorkService workService)
         {
             this.documentSearchService = documentSearchService;
             this.overviewSearchService = overviewSearchService;
-            // TODO: We'll eventually want multiple dictionary services.
-            this.dictionaryServices = new[] { dictionaryService };
+            this.dictionaryServices = dictionaryServices.ToArray();
             this.workService = workService;
         }
 
@@ -53,7 +52,7 @@ namespace CorpusSearch.Controllers
             public string PdfLink { get; internal set; }
 
             /// <summary>A list of the dictionaries that the word is defined in</summary>
-            public List<string> DefinedInDictionaries { get; set; } = new List<string>();
+            public Dictionary<string, List<string>> DefinedInDictionaries { get; set; } = new();
 
             /// <summary>https uri to the file on GitHub</summary>
             /// <remarks>This views the file, as "edit" on GitHub does not handle line numbers</remarks>
@@ -84,7 +83,7 @@ namespace CorpusSearch.Controllers
             SearchWorkResult ret = await documentSearchService.SearchWork(workQuery);
 
             ret.GitHubLink = (await this.workService.ByIdent(workIdent))?.GetGitHubLink();
-            ret.DefinedInDictionaries = dictionaryServices.Where(x => x.ContainsWordExact(query.Trim())).Select(x => x.Identifier).ToList();
+            ret.DefinedInDictionaries = DictionaryLookup(query);
 
             ret.EnrichWithTime(sw);
             return ret;
@@ -115,12 +114,19 @@ namespace CorpusSearch.Controllers
             var results = await overviewSearchService.CorpusSearch(searchQuery);
 
             results = results.OrderBy(x => x.StartDate);
-
-            ret.DefinedInDictionaries = dictionaryServices.Where(x => x.ContainsWordExact(query.Trim())).Select(x => x.Identifier).ToList();
+            ret.DefinedInDictionaries = DictionaryLookup(query);
             ret.EnrichResults(results);
             ret.EnrichWithTime(sw);
             ret.NumberOfDocuments = ret.Results.Count;
             return ret;
+        }
+
+        private Dictionary<string, List<string>> DictionaryLookup(string query)
+        {
+            var lookup = dictionaryServices.ToDictionary(x => x.Identifier, x => x.GetSummaries(query));
+            return lookup
+                    .Where(x => x.Value.Any()) // where there are results
+                    .ToDictionary(x => x.Key, x => x.Value.Select(x => x.Summary).ToList()); // extract the summary
         }
 
         public class QueryDocumentSearchResult : IResultContainer<QueryDocumentResult>, ITimedResult
@@ -130,7 +136,7 @@ namespace CorpusSearch.Controllers
             public List<QueryDocumentResult> Results { get; set; }
             public int NumberOfResults { get; set; }
             public string TimeTaken { get; set; }
-            public List<string> DefinedInDictionaries { get; internal set; } = new List<string>();
+            public Dictionary<string, List<string>> DefinedInDictionaries { get; internal set; } = new();
         }
     }
 }

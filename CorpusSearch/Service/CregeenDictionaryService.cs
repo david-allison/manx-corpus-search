@@ -1,4 +1,5 @@
 ﻿using CorpusSearch.Model.Dictionary;
+using HtmlAgilityPack;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -8,7 +9,7 @@ using System.Linq;
 
 namespace CorpusSearch.Service
 {
-    public class CregeenDictionaryService
+    public class CregeenDictionaryService : ISearchDictionary
     {
         public readonly static Dictionary<char, string> LetterLookup = new Dictionary<char, string>(new CaseInsensitiveCharComparer())
         {
@@ -40,10 +41,12 @@ namespace CorpusSearch.Service
         };
 
         private readonly ISet<string> allWords;
+        private readonly IList<CregeenEntry> allEntries;
 
-        public CregeenDictionaryService(ISet<string> allWords)
+        public CregeenDictionaryService(ISet<string> allWords, IList<CregeenEntry> entries)
         {
             this.allWords = allWords;
+            this.allEntries = entries;
         }
 
         public string Identifier => "Cregeen";
@@ -52,9 +55,10 @@ namespace CorpusSearch.Service
         {
             HashSet<string> allWords;
 
+            IList<CregeenEntry> entries = new List<CregeenEntry>();
             try
             {
-                var entries = GetEntries();
+                entries = GetEntries();
                 var allEntries = entries.SelectMany(x => x.ChildrenRecursive).SelectMany(x => x.Words);
                 allWords = new HashSet<string>(allEntries, StringComparer.InvariantCultureIgnoreCase);
             } 
@@ -65,7 +69,7 @@ namespace CorpusSearch.Service
                 allWords = new HashSet<string>();
             }
             
-            return new CregeenDictionaryService(allWords);
+            return new CregeenDictionaryService(allWords, entries);
         }
 
         /// <summary>Loads the tree of entries from Cregeen</summary>
@@ -122,6 +126,24 @@ namespace CorpusSearch.Service
         public bool ContainsWordExact(string s)
         {
             return allWords.Contains(s);
+        }
+
+        public IEnumerable<DictionarySummary> GetSummaries(string query)
+        {
+            if (!ContainsWordExact(query)) { yield break; }
+
+            var entries = this.allEntries.SelectMany(x => x.ChildrenRecursive).ToList();
+
+            foreach (var valid in entries.Where(e => e.Words.Contains(query, StringComparer.InvariantCultureIgnoreCase)))
+            {
+                HtmlDocument doc = new();
+                doc.LoadHtml(valid.EntryHtml);
+
+                yield return new DictionarySummary
+                {
+                    Summary = doc.DocumentNode.InnerText
+                };
+            }
         }
 
         private class CaseInsensitiveCharComparer : IEqualityComparer<char>
