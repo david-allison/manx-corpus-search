@@ -62,7 +62,7 @@
 
     IEnumerable<CregeenEntry> search;
     var query = ViewData["query"]?.ToString();
-    if (String.IsNullOrWhiteSpace(query) || (query.Length == 1 && !dict.ContainsKey(query[0])))
+    if (!CregeenDictionaryService.IsValidSearch(query))
     {
         query = "A";
     }
