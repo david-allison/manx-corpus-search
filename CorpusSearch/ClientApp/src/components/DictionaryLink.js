@@ -4,9 +4,12 @@ export class DictionaryLink extends Component {
 
     render() {
         return <>
-            <strong>Defined in</strong>: {
-            this.props.dictionaries.map(dictionaryName =>
-                <><a href={`/Dictionary/${dictionaryName}/${this.props.query}`} target="_blank" rel="noreferrer">{ dictionaryName }</a>, </>
+            {
+            Object.keys(this.props.dictionaries).map(dictionaryName =>
+                <>
+                    <a href={`/Dictionary/${dictionaryName}/${this.props.query}`} target="_blank" rel="noreferrer" style={{"font-weight":"bold"}}>{dictionaryName}</a>
+                    : {this.props.dictionaries[dictionaryName]}<br/>
+                </>
             )
         }
         </>

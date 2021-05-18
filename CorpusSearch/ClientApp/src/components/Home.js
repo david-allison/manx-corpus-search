@@ -43,7 +43,7 @@ export class Home extends Component {
                 <hr />
                 Returned { response.numberOfResults} matches in { response.numberOfDocuments} texts [{response.timeTaken }] for query '{ query  }'
                 <br /><br />
-                { response.definedInDictionaries && <><DictionaryLink query={ query } dictionaries={ response.definedInDictionaries }/><br/><br/></> }
+                { response.definedInDictionaries && <><DictionaryLink query={ query } dictionaries={ response.definedInDictionaries }/><br/></> }
                 <MainSearchResults query={query} results={response.results} manx={ searchManx } english={ searchEnglish }/>
 
             </div>
