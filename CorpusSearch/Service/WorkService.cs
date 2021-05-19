@@ -31,7 +31,8 @@ namespace CorpusSearch.Service
                 "endDate as CreatedCircaEnd, " +
                 "pdfLink as ExternalPdfLink, " +
                 "github as GitHubRepo, " +
-                "path as RelativeCsvPath " +
+                "path as RelativeCsvPath, " +
+                "notes as Notes " +
                 "FROM works where ident = @ident", new { ident });
         }
 
@@ -48,7 +49,8 @@ namespace CorpusSearch.Service
             workParams.Add("pdfLink", document.ExternalPdfLink);
             workParams.Add("github", document.GitHubRepo);
             workParams.Add("path", document.RelativeCsvPath);
-            conn.Execute("INSERT INTO [works] (id, name, ident, startdate, enddate, pdfLink, github, path) VALUES (@id, @name, @ident, @startdate, @enddate, @pdfLink, @github, @path)", workParams);
+            workParams.Add("notes", document.Notes);
+            conn.Execute("INSERT INTO [works] (id, name, ident, startdate, enddate, pdfLink, github, path, notes) VALUES (@id, @name, @ident, @startdate, @enddate, @pdfLink, @github, @path, @notes)", workParams);
         }
 
         private class WorkServiceDocument : IDocument
@@ -60,6 +62,7 @@ namespace CorpusSearch.Service
             public string ExternalPdfLink { get; set; }
             public string GitHubRepo { get; set; }
             public string RelativeCsvPath { get; set; }
+            public object Notes { get; set; }
         }
     }
 }

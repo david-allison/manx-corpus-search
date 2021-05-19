@@ -31,6 +31,8 @@ namespace CorpusSearch.Model
         public abstract string GitHubRepo { get; set; }
         public abstract string RelativeCsvPath { get; }
 
+        public object Notes { get; set; }
+
         internal virtual List<DocumentLine> LoadLocalFile()
         {
             return CsvHelperUtils.LoadCsv(Startup.GetLocalFile("Resources", CsvFileName));

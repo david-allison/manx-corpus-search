@@ -204,7 +204,8 @@ namespace CorpusSearch
                 "enddate datetime DEFAULT NULL, " +
                 "pdfLink varchar DEFAULT NULL, " +
                 "github varchar DEFAULT NULL, " +
-                "path varchar DEFAULT NULL)");
+                "path varchar DEFAULT NULL, " +
+                "notes varchar DEFAULT NULL)");
         }
     }
 }

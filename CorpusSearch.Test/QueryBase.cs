@@ -55,6 +55,8 @@ namespace CorpusSearch.Test
             public string GitHubRepo => null;
 
             public string RelativeCsvPath => null;
+
+            public object Notes => null;
         }
     }
 }
