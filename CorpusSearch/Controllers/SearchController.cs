@@ -82,6 +82,7 @@ namespace CorpusSearch.Controllers
             /// <summary>https uri to the file on GitHub</summary>
             /// <remarks>This views the file, as "edit" on GitHub does not handle line numbers</remarks>
             public string GitHubLink { get; set; }
+            public object Notes { get; internal set; }
 
             internal static SearchWorkResult Empty(string title)
             {

@@ -17,6 +17,7 @@ namespace CorpusSearch.Model
 
         public string GitHubRepo { get; }
         public string RelativeCsvPath { get; }
+        object Notes { get; }
     }
 
     public static class IDocumentExtensions
