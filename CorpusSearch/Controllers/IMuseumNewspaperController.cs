@@ -8,6 +8,7 @@ namespace CorpusSearch.Controllers
     public class IMuseumNewspaperController : Controller
     {
         [HttpGet("Image/V1")]
+        [HttpGet("Chunk/V1")]
         public IActionResult Image([FromQuery] string newspaper, [FromQuery] string date, [FromQuery] string id)
         {
             try
