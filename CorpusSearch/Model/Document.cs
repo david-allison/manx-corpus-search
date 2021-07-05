@@ -33,6 +33,8 @@ namespace CorpusSearch.Model
 
         public string Notes { get; set; }
 
+        public string Source { get; set; }
+
         internal virtual List<DocumentLine> LoadLocalFile()
         {
             return CsvHelperUtils.LoadCsv(Startup.GetLocalFile("Resources", CsvFileName));

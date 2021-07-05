@@ -35,7 +35,9 @@ export class FetchDataDocument extends Component {
             <div>
                 { response.totalMatches} results ({ response.numberOfResults} lines) [{response.timeTaken}]
 
-                { response.notes && <><br /><br />{ response.notes }</> }
+                { response.notes && <><br /><br />{response.notes}</>}
+
+                { response.source && <><br /><br />{response.source}</>}
             <table className='table table-striped' aria-labelledby="tabelLabel">
                 <thead>
                     <tr>
