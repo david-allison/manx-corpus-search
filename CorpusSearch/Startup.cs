@@ -1,9 +1,7 @@
 using CorpusSearch.Services;
-using Dapper;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.SpaServices.ReactDevelopmentServer;
-using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -43,7 +41,6 @@ namespace CorpusSearch
             services.AddSingleton<Searcher>();
             services.AddSingleton(provider => CregeenDictionaryService.Init());
             services.AddSingleton<ISearchDictionary>(provider => provider.GetService<CregeenDictionaryService>());
-            services.AddSingleton(provider => SetupSqliteConnection());
             services.AddSingleton<WorkService>();
             services.AddSingleton<DocumentSearchService2>();
             services.AddSingleton<OverviewSearchService2>();
@@ -55,20 +52,7 @@ namespace CorpusSearch
             });
         }
 
-        private static SqliteConnection SetupSqliteConnection()
-        {
-            var connectionString = new SqliteConnectionStringBuilder()
-            {
-                Mode = SqliteOpenMode.Memory
-            };
-            SQLitePCL.Batteries.Init();
-
-            var conn = new SqliteConnection(connectionString.ToString());
-            conn.Open();
-            return conn;
-        }
-
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, SqliteConnection sqliteConnection, WorkService workService, Searcher searcher)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, WorkService workService, Searcher searcher)
         {
             if (env.IsDevelopment())
             {
@@ -83,7 +67,7 @@ namespace CorpusSearch
 
 
 
-            SetupDatabase(sqliteConnection, workService, searcher);
+            SetupDatabase(workService, searcher);
 
             SetupDictionaries();
 
@@ -129,11 +113,8 @@ namespace CorpusSearch
             }
         }
 
-        internal static void SetupDatabase(SqliteConnection connection, WorkService workService, Searcher searcher)
+        internal static void SetupDatabase(WorkService workService, Searcher searcher)
         {
-            SetupSqlite(connection);
-
-
             try
             {
                 List<Document> closedSourceDocument = ClosedDataLoader.LoadDocumentsFromFile().Cast<Document>().ToList();
@@ -189,24 +170,7 @@ namespace CorpusSearch
 
             searcher.AddDocument(document, data);
 
-
-
             workService.AddWork(document);
-        }
-
-        private static void SetupSqlite(SqliteConnection conn)
-        {
-            conn.ExecSql("create table works (" +
-                "id int PRIMARY KEY, " +
-                "name varchar, " +
-                "ident varchar, " +
-                "startdate datetime DEFAULT NULL, " +
-                "enddate datetime DEFAULT NULL, " +
-                "pdfLink varchar DEFAULT NULL, " +
-                "github varchar DEFAULT NULL, " +
-                "path varchar DEFAULT NULL, " +
-                "notes varchar DEFAULT NULL, " +
-                "source varchar DEFAULT NULL)");
         }
     }
 }

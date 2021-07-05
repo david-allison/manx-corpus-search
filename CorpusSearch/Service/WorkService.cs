@@ -1,71 +1,36 @@
 ﻿using CorpusSearch.Model;
-using Dapper;
-using Microsoft.Data.Sqlite;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace CorpusSearch.Service
 {
     public class WorkService
     {
-        private readonly SqliteConnection conn;
-
-        public WorkService(SqliteConnection connection)
-        {
-            this.conn = connection;
-        }
-
-        /// <summary>
-        /// The auto-incrementing ID of the documents
-        /// </summary>
-        /// <remarks>Might be better as SQL - might not as a constant ID is useful</remarks>
-        private static int DocumentAddedCount { get; set; } = 0;
+        private Dictionary<string, IDocument> documentByIdent = new();
 
         /// <summary>Given an ident, get the document or throw</summary>
-        public async Task<IDocument> ByIdent(string ident)
+        public Task<IDocument> ByIdent(string ident)
         {
-            return await conn.QuerySingleAsync<WorkServiceDocument>("SELECT " +
-                "name, " +
-                "ident, " +
-                "startDate as CreatedCircaStart, " +
-                "endDate as CreatedCircaEnd, " +
-                "pdfLink as ExternalPdfLink, " +
-                "github as GitHubRepo, " +
-                "path as RelativeCsvPath, " +
-                "notes as Notes, " +
-                "source as Source " +
-                "FROM works where ident = @ident", new { ident });
+            return Task.FromResult(documentByIdent[ident]);
         }
 
         internal void AddWork(IDocument document)
         {
-            DocumentAddedCount++;
-            int documentId = DocumentAddedCount;
-            var workParams = new DynamicParameters();
-            workParams.Add("id", documentId);
-            workParams.Add("name", document.Name);
-            workParams.Add("ident", document.Ident);
-            workParams.Add("startdate", document.CreatedCircaStart);
-            workParams.Add("enddate", document.CreatedCircaEnd);
-            workParams.Add("pdfLink", document.ExternalPdfLink);
-            workParams.Add("github", document.GitHubRepo);
-            workParams.Add("path", document.RelativeCsvPath);
-            workParams.Add("notes", document.Notes);
-            workParams.Add("source", document.Source);
-            conn.Execute("INSERT INTO [works] (id, name, ident, startdate, enddate, pdfLink, github, path, notes, source) VALUES (@id, @name, @ident, @startdate, @enddate, @pdfLink, @github, @path, @notes, @source)", workParams);
+            documentByIdent.Add(document.Ident, document);
         }
 
-        private class WorkServiceDocument : IDocument
+        internal Task<List<string>> GetIdentsBetween(DateTime minDate, DateTime maxDate)
         {
-            public string Name { get; set; }
-            public string Ident { get; set; }
-            public DateTime? CreatedCircaStart { get; set; }
-            public DateTime? CreatedCircaEnd { get; set; }
-            public string ExternalPdfLink { get; set; }
-            public string GitHubRepo { get; set; }
-            public string RelativeCsvPath { get; set; }
-            public string Notes { get; set; }
-            public string Source { get; set; }
+            List<string> results = documentByIdent.Where(x =>
+                (x.Value.CreatedCircaEnd == null || x.Value.CreatedCircaEnd >= minDate)
+                &&
+                (x.Value.CreatedCircaStart == null || x.Value.CreatedCircaStart <= maxDate)
+                )
+                .Select(x => x.Key)
+                .ToList();
+            return Task.FromResult(results);
         }
     }
 }

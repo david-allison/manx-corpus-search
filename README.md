@@ -22,7 +22,6 @@ To add/modify documents, see: [manx-search-data](https://github.com/david-alliso
 * Query Search Syntax: [csly](https://github.com/b3b00/csly)
 * CSV: [CsvHelper](https://github.com/JoshClose/CsvHelper)
 * JSON: Newtonsoft.Json
-* SQL: Dapper & SQLite (to be decomissioned)
 
 ## Aims
 
