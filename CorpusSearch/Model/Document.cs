@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using CorpusSearch.Dependencies.CsvHelper;
+using Newtonsoft.Json;
 
 namespace CorpusSearch.Model
 {
@@ -34,6 +35,14 @@ namespace CorpusSearch.Model
         public string Notes { get; set; }
 
         public string Source { get; set; }
+
+        [JsonExtensionData]
+        public IDictionary<string, object> ExtensionData { get; set; } = new Dictionary<string, object>();
+
+        public object GetExtensionData(string key)
+        {
+            return ExtensionData[key];
+        }
 
         internal virtual List<DocumentLine> LoadLocalFile()
         {
