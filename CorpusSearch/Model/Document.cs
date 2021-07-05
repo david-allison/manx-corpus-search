@@ -31,7 +31,7 @@ namespace CorpusSearch.Model
         public abstract string GitHubRepo { get; set; }
         public abstract string RelativeCsvPath { get; }
 
-        public object Notes { get; set; }
+        public string Notes { get; set; }
 
         internal virtual List<DocumentLine> LoadLocalFile()
         {
