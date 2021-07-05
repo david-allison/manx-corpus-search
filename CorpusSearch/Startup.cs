@@ -205,7 +205,8 @@ namespace CorpusSearch
                 "pdfLink varchar DEFAULT NULL, " +
                 "github varchar DEFAULT NULL, " +
                 "path varchar DEFAULT NULL, " +
-                "notes varchar DEFAULT NULL)");
+                "notes varchar DEFAULT NULL, " +
+                "source varchar DEFAULT NULL)");
         }
     }
 }

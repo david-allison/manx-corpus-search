@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Web;
 
 namespace CorpusSearch.Model
@@ -18,6 +20,7 @@ namespace CorpusSearch.Model
         public string GitHubRepo { get; }
         public string RelativeCsvPath { get; }
         string Notes { get; }
+        string Source { get; }
     }
 
     public static class IDocumentExtensions
