@@ -62,7 +62,7 @@ namespace CorpusSearch.Service
             public string ExternalPdfLink { get; set; }
             public string GitHubRepo { get; set; }
             public string RelativeCsvPath { get; set; }
-            public object Notes { get; set; }
+            public string Notes { get; set; }
         }
     }
 }

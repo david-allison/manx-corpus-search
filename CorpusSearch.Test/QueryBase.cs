@@ -56,7 +56,7 @@ namespace CorpusSearch.Test
 
             public string RelativeCsvPath => null;
 
-            public object Notes => null;
+            public string Notes => null;
         }
     }
 }
