@@ -39,6 +39,36 @@ namespace CorpusSearch.Service
             }
         }
 
+        /// <summary>A component consists of one or more chunks</summary>
+        /// <remarks>Typically what we're after whn viewing, this is one or more items of Manx text</remarks>
+        public class NewspaperComponent
+        {
+            public string ComponentId { get; set; }
+
+            public NewspaperReference Reference { get; set; }
+            public string Href => Reference.Href;
+
+            internal static NewspaperComponent FromOrThrow(string newspaper, string date, string componentId)
+            {
+                if (!NewspaperNameToId.ContainsValue(newspaper))
+                {
+                    throw new ArgumentException($"'{newspaper}' is not a valid newspaper reference. Example: 'MNH' refers to Mona's Herald");
+                }
+
+                DateTime d = DateTime.Parse(date);
+
+                return new NewspaperComponent()
+                {
+                    ComponentId = componentId,
+                    Reference = new NewspaperReference()
+                    {
+                        Date = d,
+                        NewspaperIdentifier = newspaper
+                    }
+                };
+            }
+        }
+
         /// <summary>A reference to an issue of a newspaper, with an optional page</summary>
         /// <remarks>It is not easy to obtain a browsable source from this style of reference</remarks>
         public class NewspaperReference
@@ -49,7 +79,7 @@ namespace CorpusSearch.Service
             public string NewspaperIdentifier { get; set; }
 
             public int? Page { get; set; }
-            public string Href => $"{NewspaperIdentifier}%2F{Date.Year}%2F{Date.Month}%2F{Date.Day}";
+            public string Href => $"{NewspaperIdentifier}%2F{Date.Year}%2F{Date.Month:D2}%2F{Date.Day:D2}";
         }
 
         // Obtained from https://www.imuseum.im/Olive/APA/IsleofMan/get.res?id=page.Scripts&kind=script&uq=20210325071104&for=%7E%2Fdefault.aspx&mode=group
