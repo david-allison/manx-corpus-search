@@ -59,6 +59,11 @@ namespace CorpusSearch.Test
             public string Notes => null;
 
             public string Source => null;
+
+            public object GetExtensionData(string key)
+            {
+                return null;
+            }
         }
     }
 }
