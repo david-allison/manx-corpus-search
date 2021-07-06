@@ -1,6 +1,8 @@
 ﻿using CorpusSearch.Controllers;
 using CorpusSearch.Model;
+using Newtonsoft.Json.Linq;
 using System;
+using System.Collections.Generic;
 using static CorpusSearch.Service.IMuseumNewspaperService;
 
 namespace CorpusSearch.Service
@@ -17,34 +19,51 @@ namespace CorpusSearch.Service
                     return;
                 }
 
-                string componentId = (string)document.GetExtensionData("mnhNewsComponent");
-                if (document.CreatedCircaEnd != document.CreatedCircaStart)
+
+                foreach (var componentId in GetNewspaperComponents(document))
                 {
-                    return;
+                    if (document.CreatedCircaEnd != document.CreatedCircaStart)
+                    {
+                        continue;
+                    }
+                    if (document.CreatedCircaStart == null)
+                    {
+                        continue;
+                    }
+
+                    DateTime date = document.CreatedCircaStart.Value;
+
+                    string newspaperId = IMuseumNewspaperService.ParseNewspaperId(document.Source);
+
+                    var component = NewspaperComponent.FromOrThrow(newspaperId, date, componentId);
+
+
+                    SourceLink link = new SourceLink
+                    {
+                        Text = "Article",
+                        Url = component.ToLocalUrl(),
+                    };
+
+                    result.SourceLinks.Add(link);
                 }
-                if (document.CreatedCircaStart == null)
-                {
-                    return;
-                }
-
-                DateTime date = document.CreatedCircaStart.Value;
-
-                string newspaperId = IMuseumNewspaperService.ParseNewspaperId(document.Source);
-
-                var component = NewspaperComponent.FromOrThrow(newspaperId, date, componentId);
-
-
-                SourceLink link = new SourceLink
-                {
-                    Text = "Article",
-                    Url = component.ToLocalUrl(),
-                };
-
-                result.SourceLinks.Add(link);
 
             } catch
             {
 
+            }
+        }
+
+        /// <summary>Sometimes the Newspaper doesn't handle a component correctly, so we use an array </summary>
+        private IEnumerable<string> GetNewspaperComponents(IDocument document)
+        {
+            try
+            {
+                JArray componentIds = (JArray)document.GetExtensionData("mnhNewsComponent");
+                return componentIds.ToObject<List<string>>();
+            } catch
+            {
+                string componentId = (string)document.GetExtensionData("mnhNewsComponent");
+                return new[] { componentId };
             }
         }
     }
