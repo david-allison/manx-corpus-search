@@ -37,7 +37,7 @@ export class FetchDataDocument extends Component {
 
                 { response.notes && <><br /><br />{response.notes}</>}
 
-                { response.source && <><br /><br />{response.source}</>} { response.sourceLinks && <>{response.sourceLinks.map(x => <a rel="noreferrer" href={x.url}>{x.text}</a>)}</>}
+                { response.source && <><br /><br />{response.source}</>} { response.sourceLinks && <>{response.sourceLinks.map(x => <>| <a rel="noreferrer" href={x.url}>{x.text}</a> </>)}</>}
             <table className='table table-striped' aria-labelledby="tabelLabel">
                 <thead>
                     <tr>
