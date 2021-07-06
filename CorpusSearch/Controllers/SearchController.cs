@@ -84,6 +84,7 @@ namespace CorpusSearch.Controllers
             public string GitHubLink { get; set; }
             public object Notes { get; internal set; }
             public string Source { get; set; }
+            public List<SourceLink> SourceLinks { get; internal set; } = new List<SourceLink>();
 
             internal static SearchWorkResult Empty(string title)
             {
