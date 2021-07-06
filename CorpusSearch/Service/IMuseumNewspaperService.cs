@@ -1,4 +1,5 @@
-﻿using System;
+﻿using MoreLinq;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -50,22 +51,32 @@ namespace CorpusSearch.Service
 
             internal static NewspaperComponent FromOrThrow(string newspaper, string date, string componentId)
             {
+                DateTime d = DateTime.Parse(date);
+                return FromOrThrow(newspaper, d, componentId);
+            }
+
+            internal static NewspaperComponent FromOrThrow(string newspaper, DateTime date, string componentId)
+            {
                 if (!NewspaperNameToId.ContainsValue(newspaper))
                 {
                     throw new ArgumentException($"'{newspaper}' is not a valid newspaper reference. Example: 'MNH' refers to Mona's Herald");
                 }
 
-                DateTime d = DateTime.Parse(date);
 
                 return new NewspaperComponent()
                 {
                     ComponentId = componentId,
                     Reference = new NewspaperReference()
                     {
-                        Date = d,
+                        Date = date,
                         NewspaperIdentifier = newspaper
                     }
                 };
+            }
+
+            internal string ToLocalUrl()
+            {
+                return $"/IMuseumNewspaper/Component/V1?newspaper={Reference.NewspaperIdentifier}&date={Reference.Date:yyyy-MM-dd}&id={ComponentId}";
             }
         }
 
@@ -130,5 +141,16 @@ namespace CorpusSearch.Service
             ["Unter Uns"] = "UNU",
             ["Werden"] = "WER",
         };
+
+        internal static string ParseNewspaperId(string source)
+        {
+            string key = NewspaperNameToId.Select(x => (x.Key, source.IndexOf(x.Key)))
+                .Where(x => x.Item2 != -1)
+                .MinBy(x => x.Item2)
+                .Single()
+                .Key;
+
+            return NewspaperNameToId[key];
+        }
     }
 }
