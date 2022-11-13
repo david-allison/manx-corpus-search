@@ -140,7 +140,7 @@ export class Home extends Component {
     }
 
     handleChange(event) {
-        this.props.history.replace(`/?q=${event.target.value}`)
+        this.props.navigation(`/?q=${event.target.value}`, { replace: true })
         this.setState({ value: event.target.value }, () => this.populateData());
     }
 }
