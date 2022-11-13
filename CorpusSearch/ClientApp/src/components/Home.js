@@ -2,8 +2,8 @@ import './Home.css';
 
 import React, { Component } from 'react';
 import qs from "qs";
-import Slider from '@material-ui/core/Slider';
-import Typography from '@material-ui/core/Typography';
+import Slider from '@mui/material/Slider';
+import Typography from '@mui/material/Typography';
 import MainSearchResults from './MainSearchResults'
 import { DictionaryLink } from './DictionaryLink'
 import { TranslationList } from './TranslationList'
