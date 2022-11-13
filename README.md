@@ -33,3 +33,9 @@ To add/modify documents, see: [manx-search-data](https://github.com/david-alliso
 ## Deployment
 
 Deployable on a $5 DigitalOcean droplet. See GitHub actions
+
+## Server requirements
+
+- git
+- dotnet-sdk-6.0
+- TODO
