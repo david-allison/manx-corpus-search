@@ -37,8 +37,9 @@ jobs:
       - name: Pull and Copy Open Data
         run: ssh -tt david2@209.97.129.212 'cd ~/manx-search-data && git pull origin master && cp -r ~/manx-search-data/OpenData /var/www/manx-corpus/CorpusSearch'
       
-      # - name: Pull and Copy Private Data
-      #   run: ssh -tt david2@209.97.129.212 'cd ~/corpus-search-data-private && git pull origin master && cp -r ~/corpus-search-data-private/ClosedData /var/www/manx-corpus/CorpusSearch'
+      - name: Pull and Copy Private Data
+        # TODO: Update:  && git pull origin master && 
+        run: ssh -tt david2@209.97.129.212 'cd ~/corpus-search-data-private && cp -r ~/corpus-search-data-private/ClosedData /var/www/manx-corpus/CorpusSearch'
       
       - name: Build
         run: ssh -tt david2@209.97.129.212 'cd /var/www/manx-corpus/ && dotnet build'
