@@ -1,5 +1,9 @@
 import React, { Component } from 'react';
-import { Route } from 'react-router';
+import {
+    Route,
+    Routes,
+    useLocation, useNavigate
+} from "react-router-dom";
 import { Layout } from './components/Layout';
 import { Home } from './components/Home';
 import { FetchDataDocument } from './components/FetchDataDocument';
@@ -10,10 +14,25 @@ export default class App extends Component {
 
   render () {
     return (
-      <Layout>
-        <Route exact path='/' component={Home} />
-        <Route path='/docs/:docId' component={FetchDataDocument} />
-      </Layout>
+          <Layout>
+              <Routes>
+                  <Route exact path='/' element={<HomeHOC/>} />
+                  <Route path='/docs/:docId' element={<FetchDataDocumentHOC/>} />
+              </Routes>
+          </Layout>
     );
   }
+}
+
+const HomeHOC = props => {
+    const location = useLocation()
+    const navigation = useNavigate()
+
+    return <Home location={location} navigation={navigation} {...props} />
+}
+
+const FetchDataDocumentHOC = props => {
+    const location = useLocation()
+
+    return <FetchDataDocument location={location}  {...props} />
 }
