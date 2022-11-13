@@ -16,6 +16,7 @@ export default class App extends Component {
     return (
           <Layout>
               <Routes>
+                  {/* @ts-expect-error TS(2322): Type '{ exact: true; path: string; element: Elemen... Remove this comment to see the full error message */}
                   <Route exact path='/' element={<HomeHOC/>} />
                   <Route path='/docs/:docId' element={<FetchDataDocumentHOC/>} />
               </Routes>
@@ -24,14 +25,14 @@ export default class App extends Component {
   }
 }
 
-const HomeHOC = props => {
+const HomeHOC = (props: any) => {
     const location = useLocation()
     const navigation = useNavigate()
 
     return <Home location={location} navigation={navigation} {...props} />
 }
 
-const FetchDataDocumentHOC = props => {
+const FetchDataDocumentHOC = (props: any) => {
     const location = useLocation()
     const match = useMatch('/docs/:docId')
 
