@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import {
     Route,
     Routes,
-    useLocation, useNavigate
+    useLocation, useMatch, useNavigate
 } from "react-router-dom";
 import { Layout } from './components/Layout';
 import { Home } from './components/Home';
@@ -33,6 +33,7 @@ const HomeHOC = props => {
 
 const FetchDataDocumentHOC = props => {
     const location = useLocation()
+    const match = useMatch('/docs/:docId')
 
-    return <FetchDataDocument location={location}  {...props} />
+    return <FetchDataDocument location={location} match={match}  {...props} />
 }
