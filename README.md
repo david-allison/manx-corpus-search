@@ -6,12 +6,12 @@ A corpus search for primarily bilingual manx to english texts.
 
 Deployed at https://manxcorpus.com/
 
-To add/modify documents, see: [manx-search-data](https://github.com/david-allison-1/manx-search-data)
+To add/modify documents, see: [manx-search-data](https://github.com/david-allison/manx-search-data)
 
 ## Installation
 
 1. Clone the source
-2. Copy the `OpenData` folder from [manx-search-data](https://github.com/david-allison-1/manx-search-data/) into `CorpusSearch/OpenData` folder
+2. Copy the `OpenData` folder from [manx-search-data](https://github.com/david-allison/manx-search-data/) into `CorpusSearch/OpenData` folder
 3. `dotnet run`
 
 ## Tech Stack

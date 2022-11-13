@@ -4,7 +4,7 @@ As the system is still in beta, these are subject to change.
 
 The search system is very flexible. Please raise an issue on GitHub if your use-case is not supported and we should be able to assist.
 
-* By default, the system does not differentiate between diacritical marks. `ç` matches `c`. A list can be found: https://github.com/david-allison-1/manx-corpus-search/blob/master/CorpusSearch/Service/DiacriticService.cs
+* By default, the system does not differentiate between diacritical marks. `ç` matches `c`. A list can be found: https://github.com/david-allison-manx-corpus-search/blob/master/CorpusSearch/Service/DiacriticService.cs
 * By default, the search is case insensitive. `Ayns` matches `ayns` and vice-versa
 * Punctuation marks (except ?, - and ') are removed from the search index
 * It is currently not possible to search for the words: `and`, `or`, or `not`.

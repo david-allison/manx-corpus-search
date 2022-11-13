@@ -21,7 +21,7 @@ namespace CorpusSearch.Services
                 .Select(ToDocument)
                 .ToList();
 
-            ret.ForEach(x => x.GitHubRepo = "david-allison-1/manx-search-data");
+            ret.ForEach(x => x.GitHubRepo = "david-allison/manx-search-data");
 
             return ret;
 
