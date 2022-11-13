@@ -19,8 +19,10 @@ const isLocalhost = Boolean(
 );
 
 export default function register () {
+  // @ts-expect-error TS(2580): Cannot find name 'process'. Do you need to install... Remove this comment to see the full error message
   if (process.env.NODE_ENV === 'production' && 'serviceWorker' in navigator) {
     // The URL constructor is available in all browsers that support SW.
+    // @ts-expect-error TS(2580): Cannot find name 'process'. Do you need to install... Remove this comment to see the full error message
     const publicUrl = new URL(process.env.PUBLIC_URL, window.location);
     if (publicUrl.origin !== window.location.origin) {
       // Our service worker won't work if PUBLIC_URL is on a different origin
@@ -30,6 +32,7 @@ export default function register () {
     }
 
     window.addEventListener('load', () => {
+      // @ts-expect-error TS(2580): Cannot find name 'process'. Do you need to install... Remove this comment to see the full error message
       const swUrl = `${process.env.PUBLIC_URL}/service-worker.js`;
 
       if (isLocalhost) {
@@ -43,13 +46,15 @@ export default function register () {
   }
 }
 
-function registerValidSW (swUrl) {
+function registerValidSW (swUrl: any) {
   navigator.serviceWorker
     .register(swUrl)
     .then(registration => {
       registration.onupdatefound = () => {
         const installingWorker = registration.installing;
+        // @ts-expect-error TS(2531): Object is possibly 'null'.
         installingWorker.onstatechange = () => {
+          // @ts-expect-error TS(2531): Object is possibly 'null'.
           if (installingWorker.state === 'installed') {
             if (navigator.serviceWorker.controller) {
               // At this point, the old content will have been purged and
@@ -72,13 +77,14 @@ function registerValidSW (swUrl) {
     });
 }
 
-function checkValidServiceWorker (swUrl) {
+function checkValidServiceWorker (swUrl: any) {
   // Check if the service worker can be found. If it can't reload the page.
   fetch(swUrl)
     .then(response => {
       // Ensure service worker exists, and that we really are getting a JS file.
       if (
         response.status === 404 ||
+        // @ts-expect-error TS(2531): Object is possibly 'null'.
         response.headers.get('content-type').indexOf('javascript') === -1
       ) {
         // No service worker found. Probably a different app. Reload the page.

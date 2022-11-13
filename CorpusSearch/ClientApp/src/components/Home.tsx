@@ -8,13 +8,15 @@ import MainSearchResults from './MainSearchResults'
 import { DictionaryLink } from './DictionaryLink'
 import { TranslationList } from './TranslationList'
 
-export class Home extends Component {
+type State = any;
+
+export class Home extends Component<{}, State> {
     static displayName = Home.name;
     static currentYear = new Date().getFullYear();
 
-    constructor(props) {
+    constructor(props: {}) {
         super(props);
-        const { q } = qs.parse(this.props.location.search, { ignoreQueryPrefix: true });
+        const { q } = qs.parse((this.props as any).location.search, { ignoreQueryPrefix: true });
         this.state = {
             forecasts: [],
             loading: true,
@@ -41,14 +43,16 @@ export class Home extends Component {
         this.populateData();
     }
     //<MainSearchResults products={response.results} />
-    static renderGeneralTable(response, searchManx, searchEnglish) {
+    static renderGeneralTable(response: any, searchManx: any, searchEnglish: any) {
         let query = response.query ? response.query : '';
         return (
             <div>
                 <hr />
                 Returned { response.numberOfResults} matches in { response.numberOfDocuments} texts [{response.timeTaken }] for query '{ query  }'
                 <br />
+                {/* @ts-expect-error TS(2769): No overload matches this call. */}
                 { response.definedInDictionaries && <><DictionaryLink query={ query } dictionaries={ response.definedInDictionaries }/><br/></> }
+                {/* @ts-expect-error TS(2769): No overload matches this call. */}
                 { response.translations && <><TranslationList translations={response.translations} /></ >}
                 <br /><br />
                 <MainSearchResults query={query} results={response.results} manx={ searchManx } english={ searchEnglish }/>
@@ -57,23 +61,23 @@ export class Home extends Component {
         );
     }
 
-    handleDateChange(event, value) {
+    handleDateChange(event: any, value: any) {
         this.setState({ dateRange: value });
     }
 
-    handleDateChangeCommitted(event, value) {
+    handleDateChangeCommitted(event: any, value: any) {
         this.setState({ dateRange: value }, () => this.populateData());
     }
 
-    handleManxChange(event) {
+    handleManxChange(event: any) {
         this.setState({ searchManx: event.target.checked, searchEnglish: !event.target.checked }, () => this.populateData());
     }
 
-    handleEnglishChange(event) {
+    handleEnglishChange(event: any) {
         this.setState({ searchEnglish: event.target.checked, searchManx: !event.target.checked }, () => this.populateData());
     }
 
-    handleMatchPhraseChange(event) {
+    handleMatchPhraseChange(event: any) {
         this.setState({ matchPhrase: event.target.checked }, () => this.populateData());
     }
 
@@ -139,8 +143,8 @@ export class Home extends Component {
         }
     }
 
-    handleChange(event) {
-        this.props.navigation(`/?q=${event.target.value}`, { replace: true })
+    handleChange(event: any) {
+        (this.props as any).navigation(`/?q=${event.target.value}`, { replace: true });
         this.setState({ value: event.target.value }, () => this.populateData());
     }
 }

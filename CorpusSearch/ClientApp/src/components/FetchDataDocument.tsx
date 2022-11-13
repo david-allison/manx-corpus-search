@@ -2,24 +2,27 @@ import './FetchDataDocument.css';
 
 import React, { Component } from 'react';
 import qs from "qs";
+// @ts-expect-error TS(7016): Could not find a declaration file for module 'reac... Remove this comment to see the full error message
 import Highlighter from "react-highlight-words";
 import { Link } from 'react-router-dom';
 
-export class FetchDataDocument extends Component {
+type State = any;
+
+export class FetchDataDocument extends Component<{}, State> {
     static displayName = FetchDataDocument.name;
 
-    constructor(props) {
+    constructor(props: {}) {
         super(props);
-        const { q } = qs.parse(this.props.location.search, { ignoreQueryPrefix: true });
+        const { q } = qs.parse((this.props as any).location.search, { ignoreQueryPrefix: true });
         this.state = {
-            forecasts: [],
-            loading: true,
-            title: "Work Search",
-            docIdent: this.props.match.params.docId,
-            value: q,
-            searchManx: props.location.state ? props.location.state.searchManx : true,
-            searchEnglish: props.location.state ? props.location.state.searchEnglish : false,
-        };
+    forecasts: [],
+    loading: true,
+    title: "Work Search",
+    docIdent: (this.props as any).match.params.docId,
+    value: q,
+    searchManx: (props as any).location.state ? (props as any).location.state.searchManx : true,
+    searchEnglish: (props as any).location.state ? (props as any).location.state.searchEnglish : false,
+};
 
         this.onQueryChanged = this.onQueryChanged.bind(this);
         this.onSearchEnglishChanged = this.onSearchEnglishChanged.bind(this);
@@ -30,14 +33,14 @@ export class FetchDataDocument extends Component {
         this.populateData();
     }
 
-    static renderForecastsTable(response, value, manxhi, englishhi) {
+    static renderForecastsTable(response: any, value: any, manxhi: any, englishhi: any) {
         return (
             <div>
                 { response.totalMatches} results ({ response.numberOfResults} lines) [{response.timeTaken}]
 
                 { response.notes && <><br /><br />{response.notes}</>}
 
-                { response.source && <><br /><br />{response.source}</>} { response.sourceLinks && <>{response.sourceLinks.map(x => <>| <a rel="noreferrer" href={x.url}>{x.text}</a> </>)}</>}
+                { response.source && <><br /><br />{response.source}</>} { response.sourceLinks && <>{response.sourceLinks.map((x: any) => <>| <a rel="noreferrer" href={x.url}>{x.text}</a> </>)}</>}
             <table className='table table-striped' aria-labelledby="tabelLabel">
                 <thead>
                     <tr>
@@ -47,22 +50,21 @@ export class FetchDataDocument extends Component {
                     </tr>
                 </thead>
                 <tbody>
-                    {response.results.map(line =>
-                    {
+                    {response.results.map((line: any) => {
                         const eng = [...englishhi, " " + value + " "];
                         const manx = [...manxhi, " " + value + " "];
                         const englishHighlight = eng
                         const manxHighlight = manx
 
                         // TODO: replace \n with <br/>: https://kevinsimper.medium.com/react-newline-to-break-nl2br-a1c240ba746
-                        let englishText = line.english.split('\n').map((item, key) => {
+                        let englishText = line.english.split('\n').map((item: any, key: any) => {
                             return <span key={key}><Highlighter
                                 highlightClassName="textHighlight"
                                 searchWords={englishHighlight}
                                 autoEscape={true}
                                 textToHighlight={item} /><br /></span>
                         })
-                        let manxText = line.manx.split('\n').map((item, key) => {
+                        let manxText = line.manx.split('\n').map((item: any, key: any) => {
                             return <span key={key}><Highlighter
                                 highlightClassName="textHighlight"
                                 searchWords={manxHighlight}
@@ -85,6 +87,7 @@ export class FetchDataDocument extends Component {
                                     </a>}
                                 </td>
                             </tr>
+                            {/* @ts-expect-error TS(2322): Type 'string' is not assignable to type 'number'. */}
                             {line.notes ? <tr><td colSpan="3" className="noteRow">{line.notes}</td></tr> : null}
                             </>;
                         }
@@ -105,7 +108,9 @@ export class FetchDataDocument extends Component {
                 <h1 id="tabelLabel" ><Link to={`/?q=${this.state.value}`} style={{ textDecoration: 'none' }}>⇦</Link>  { this.state.title }</h1>
 
                 <input type="text" id="corpus-search-box" value={this.state.value} onChange={this.onQueryChanged} />
+                {/* @ts-expect-error TS(2322): Type '{ children: string; for: string; }' is not a... Remove this comment to see the full error message */}
                 <label for="manxSearch">Manx</label> <input id="manxSearch" type="checkbox" checked={this.state.searchManx} onChange={this.onSearchManxChanged} /><br/>
+                {/* @ts-expect-error TS(2322): Type '{ children: string; for: string; }' is not a... Remove this comment to see the full error message */}
                 <label for="englishSearch">English</label> <input id="englishSearch" type="checkbox" checked={this.state.searchEnglish}  onChange={this.onSearchEnglishChanged} /><br/>
                 {contents}
             </div>
@@ -118,15 +123,15 @@ export class FetchDataDocument extends Component {
         this.setState({ forecasts: data, title: data.title, loading: false, translations: data.translations });
     }
 
-    onQueryChanged(event) {
+    onQueryChanged(event: any) {
         this.setState({ value: event.target.value }, () => this.populateData());
     }
 
-    onSearchEnglishChanged(event) {
+    onSearchEnglishChanged(event: any) {
         this.setState({ searchEnglish: event.target.checked, searchManx: !event.target.checked }, () => this.populateData());
     }
 
-    onSearchManxChanged(event) {
+    onSearchManxChanged(event: any) {
         this.setState({ searchManx: event.target.checked, searchEnglish: !event.target.checked }, () => this.populateData());
     }
 }

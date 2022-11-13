@@ -7,15 +7,13 @@ export class Layout extends Component {
 
     // avoid container to allow for full width
   render () {
-    return (
-      <div>
+    return (<div>
         <NavMenu />
         <Container>
             </Container>
             <div className="new-container">
-                {this.props.children}
+                {(this.props as any).children}
                 </div>
-      </div>
-    );
+      </div>);
   }
 }
