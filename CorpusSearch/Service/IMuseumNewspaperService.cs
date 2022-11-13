@@ -1,8 +1,6 @@
-﻿using MoreLinq;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 
 namespace CorpusSearch.Service
 {
@@ -147,7 +145,6 @@ namespace CorpusSearch.Service
             string key = NewspaperNameToId.Select(x => (x.Key, source.IndexOf(x.Key)))
                 .Where(x => x.Item2 != -1)
                 .MinBy(x => x.Item2)
-                .Single()
                 .Key;
 
             return NewspaperNameToId[key];

@@ -6,7 +6,6 @@ using Lucene.Net.Search;
 using Lucene.Net.Search.Spans;
 using Lucene.Net.Store;
 using Lucene.Net.Util;
-using MoreLinq;
 using System;
 using System.Collections.Generic;
 using System.IO;
