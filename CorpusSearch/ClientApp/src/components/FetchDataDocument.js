@@ -85,7 +85,7 @@ export class FetchDataDocument extends Component {
                                     </a>}
                                 </td>
                             </tr>
-                            {line.notes ? <tr><td colspan="3" className="noteRow">{line.notes}</td></tr> : null}
+                            {line.notes ? <tr><td colSpan="3" className="noteRow">{line.notes}</td></tr> : null}
                             </>;
                         }
                     )}
