@@ -1,6 +1,6 @@
 import './Home.css';
 
-import React, { Component } from 'react';
+import React, {ChangeEvent, Component, useState} from 'react';
 import qs from "qs";
 import MainSearchResults from './MainSearchResults'
 import { DictionaryLink } from './DictionaryLink'
@@ -36,10 +36,6 @@ export class Home extends Component<{}, State> {
         };
 
         this.handleChange = this.handleChange.bind(this);
-        
-        this.handleManxChange = this.handleManxChange.bind(this);
-        this.handleEnglishChange = this.handleEnglishChange.bind(this);
-        this.handleMatchPhraseChange = this.handleMatchPhraseChange.bind(this);
 
         this.getQuery = this.getQuery.bind(this);
 
@@ -67,20 +63,6 @@ export class Home extends Component<{}, State> {
         );
     }
 
-
-
-    handleManxChange(event: any) {
-        this.setState({ searchLanguage: "Manx" }, () => this.populateData());
-    }
-
-    handleEnglishChange(event: any) {
-        this.setState({ searchLanguage: "English" }, () => this.populateData());
-    }
-
-    handleMatchPhraseChange(event: any) {
-        this.setState({ matchPhrase: event.target.checked }, () => this.populateData());
-    }
-
     render() {
         let searchResults = this.state.loading
             ? <p></p>
@@ -92,13 +74,10 @@ export class Home extends Component<{}, State> {
                     <a style={{"float":"right"}} href="https://github.com/david-allison/manx-corpus-search/blob/master/CorpusSearch/Docs/searching.md#searching" target="_blank" rel="noreferrer">Search Help ℹ</a>
                     <input id="corpus-search-box" placeholder="Enter search term" type="text" value={this.state.value} onChange={this.handleChange} /> 
 
-
-                    <div className="search-language">
-                        Language: 
-                        <label htmlFor="manxSearch" id="manxSearchLabel">Manx</label> <input id="manxSearch" type="checkbox" checked={this.state.searchLanguage == "Manx"} defaultChecked={this.state.searchLanguage == "Manx"} onChange={this.handleManxChange} />
-                        <label htmlFor="englishSearch">English</label> <input id="englishSearch" type="checkbox" checked={this.state.searchLanguage == "English"} defaultChecked={this.state.searchLanguage == "English"} onChange={this.handleEnglishChange} /> 
-                        <label style={{ "paddingLeft": "5px" }} htmlFor="matchPhrase">Match Phrase</label> <input id="matchPhrase" type="checkbox" checked={this.state.matchPhrase} onChange={this.handleMatchPhraseChange} /><br />
-                    </div>
+                    <SearchLanguageBox 
+                        onLanguageChange={lang => this.setState({ searchLanguage: lang }, () => this.populateData())}
+                        onMatchChange={isMatch => this.setState({ matchPhrase: isMatch }, () => this.populateData())}
+                    />
 
                     <AdvancedOptions onDateRangeChange={(v) => {
                         this.setState({ dateRange: [v.start, v.end] }, () => this.populateData());
@@ -132,4 +111,28 @@ export class Home extends Component<{}, State> {
         (this.props as any).navigation(`/?q=${event.target.value}`, { replace: true });
         this.setState({ value: event.target.value }, () => this.populateData());
     }
+}
+
+const SearchLanguageBox = (props: {
+    onLanguageChange: (lang: SearchLanguage) => void,
+    onMatchChange: (match: boolean) => void
+}) => {
+    const [language, setLanguage] = useState<SearchLanguage>("Manx")
+    const [matchPhrase, setMatchPhrase] = useState(false)
+    
+    const onMatchPhraseChanged = (event: ChangeEvent<HTMLInputElement>) => {
+        setMatchPhrase(event.target.checked)
+        props.onMatchChange(event.target.checked)
+    }
+    const onSetLanguage = (language: SearchLanguage) => {
+        setLanguage(language)
+        props.onLanguageChange(language)
+    }
+    
+    return <div className="search-language">
+        Language:
+        <label htmlFor="manxSearch" id="manxSearchLabel">Manx</label> <input id="manxSearch" type="checkbox" checked={language == "Manx"} defaultChecked={language == "Manx"} onChange={() => onSetLanguage("Manx")} />
+        <label htmlFor="englishSearch">English</label> <input id="englishSearch" type="checkbox" checked={language== "English"} defaultChecked={language == "English"} onChange={() =>onSetLanguage("English")} />
+        <label style={{ "paddingLeft": "5px" }} htmlFor="matchPhrase">Match Phrase</label> <input id="matchPhrase" type="checkbox" checked={matchPhrase} onChange={onMatchPhraseChanged} /><br />
+    </div>
 }
