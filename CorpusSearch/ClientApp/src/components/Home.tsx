@@ -2,11 +2,10 @@ import './Home.css';
 
 import React, { Component } from 'react';
 import qs from "qs";
-import Slider from '@mui/material/Slider';
-import Typography from '@mui/material/Typography';
 import MainSearchResults from './MainSearchResults'
 import { DictionaryLink } from './DictionaryLink'
 import { TranslationList } from './TranslationList'
+import AdvancedOptions from "./AdvancedOptions";
 
 type State = any;
 
@@ -28,8 +27,6 @@ export class Home extends Component<{}, State> {
         };
 
         this.handleChange = this.handleChange.bind(this);
-        this.handleDateChange = this.handleDateChange.bind(this);
-        this.handleDateChangeCommitted = this.handleDateChangeCommitted.bind(this);
         
         this.handleManxChange = this.handleManxChange.bind(this);
         this.handleEnglishChange = this.handleEnglishChange.bind(this);
@@ -61,13 +58,7 @@ export class Home extends Component<{}, State> {
         );
     }
 
-    handleDateChange(event: any, value: any) {
-        this.setState({ dateRange: value });
-    }
 
-    handleDateChangeCommitted(event: any, value: any) {
-        this.setState({ dateRange: value }, () => this.populateData());
-    }
 
     handleManxChange(event: any) {
         this.setState({ searchManx: event.target.checked, searchEnglish: !event.target.checked }, () => this.populateData());
@@ -100,24 +91,9 @@ export class Home extends Component<{}, State> {
                         <label style={{ "paddingLeft": "5px" }} htmlFor="matchPhrase">Match Phrase</label> <input id="matchPhrase" type="checkbox" checked={this.state.matchPhrase} onChange={this.handleMatchPhraseChange} /><br />
                     </div>
 
-                    <details className="advanced-options">
-                        <summary>Advanced Options</summary>
-
-
-                        <Typography id="range-output" gutterBottom>
-                            Dates: {this.state.dateRange[0]}&ndash;{this.state.dateRange[1]}
-                        </Typography>
-
-                        <Slider
-                            value={this.state.dateRange}
-                            min={ 1500 }
-                            max={ Home.currentYear }
-                            valueLabelDisplay="auto"
-                            onChange={this.handleDateChange}
-                            onChangeCommitted={ this.handleDateChangeCommitted }
-                            aria-labelledby="range-slider"
-                            />
-                    </details>
+                    <AdvancedOptions onDateRangeChange={(v) => {
+                        this.setState({ dateRange: [v.start, v.end] }, () => this.populateData());
+                    }} />
 
                 </div>
                 {searchResults}
