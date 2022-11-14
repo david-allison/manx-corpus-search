@@ -1,7 +1,7 @@
 import React from "react"
 import { Link } from "react-router-dom"
 import "./MainSearchResults.css"
-import {SearchResultEntry} from "./Home"
+import {SearchResultEntry} from "../api/SearchApi"
 
 type SortConfig = {
     key: keyof SearchResultEntry
