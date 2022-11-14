@@ -3,7 +3,6 @@ import "./FetchDataDocument.css"
 
 import React, { Component } from "react"
 import qs from "qs"
-// @ts-expect-error TS(7016): Could not find a declaration file for module 'reac... Remove this comment to see the full error message
 import Highlighter from "react-highlight-words"
 import {Link, Location, PathMatch} from "react-router-dom"
 import {searchWork, SearchWorkResponse} from "../api/SearchWorkApi"

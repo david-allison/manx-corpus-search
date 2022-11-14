@@ -117,8 +117,6 @@ export default function MainSearchResults(props: { query:string, results: Search
                 <tr>
                     <th>
                         <div
-                            // @ts-expect-error TS(2322): Type '{ children: string; type: string; onClick: (... Remove this comment to see the full error message
-                            type="button"
                             onClick={() => requestSort("startDate")}
                             className={getClassNamesFor("startDate")}
                         >
@@ -127,8 +125,6 @@ export default function MainSearchResults(props: { query:string, results: Search
                     </th>
                     <th>
                         <div
-                            // @ts-expect-error TS(2322): Type '{ children: string; type: string; onClick: (... Remove this comment to see the full error message
-                            type="button"
                             onClick={() => requestSort("documentName")}
                             className={getClassNamesFor("documentName")}
                         >
@@ -137,8 +133,6 @@ export default function MainSearchResults(props: { query:string, results: Search
                     </th>
                     <th>
                         <div
-                            // @ts-expect-error TS(2322): Type '{ children: string; type: string; onClick: (... Remove this comment to see the full error message
-                            type="button"
                             onClick={() => requestSort("count")}
                             className={getClassNamesFor("count")}
                         >
@@ -160,10 +154,8 @@ export default function MainSearchResults(props: { query:string, results: Search
                             <td>
                                 <Link to={{
                                     pathname: `/docs/${result.ident}`,
-                                    search: `?q=${query}`,
-                                    // @ts-expect-error TS(2322): Type '{ pathname: string; search: string; state: {... Remove this comment to see the full error message
-                                    state: { searchManx: props.manx, searchEnglish: props.english },
-                                }}>Browse</Link>
+                                    search: `?q=${query}`
+                                }} state={{searchManx: props.manx, searchEnglish: props.english }}>Browse</Link>
                             </td>
                     </tr>
                     <tr>
