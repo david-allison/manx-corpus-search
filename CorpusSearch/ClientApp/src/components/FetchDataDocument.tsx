@@ -6,35 +6,9 @@ import qs from "qs"
 // @ts-expect-error TS(7016): Could not find a declaration file for module 'reac... Remove this comment to see the full error message
 import Highlighter from "react-highlight-words"
 import {Link, Location, PathMatch} from "react-router-dom"
-import {Translations} from "./Home"
+import {searchWork, SearchWorkResponse} from "../api/SearchWorkApi"
 
 
-type SourceLink = {
-    url: string
-    text: string
-}
-
-type SearchWorkResult = {
-    english: string
-    manx: string
-    page: string // number?
-    csvLineNumber: number
-    date: string // TODO: Why on the detail result?
-}
-
-type SearchWorkResponse = {
-    results: SearchWorkResult[]
-    title: string
-    translations : Translations
-    totalMatches: number
-    timeTaken: string
-    numberOfResults: number
-    notes: string
-    source: string
-    sourceLinks: SourceLink[] | null
-    pdfLink: string
-    gitHubLink: string
-}
     
 type State = {
     forecasts: SearchWorkResponse | [],
@@ -161,8 +135,9 @@ export class FetchDataDocument extends Component<{ location: Location, match: Pa
         if (!this.state.docIdent) {
             throw new Error("no identifier provided")
         }
-        const response = await fetch(`search/searchWork/${this.state.docIdent}/${encodeURIComponent(this.state.value)}?english=${this.state.searchEnglish.toString()}&manx=${this.state.searchManx.toString()}`)
-        const data: SearchWorkResponse = await response.json() as SearchWorkResponse // TODO
+        const { docIdent, value, searchManx, searchEnglish } = this.state 
+        const data = await searchWork({ docIdent, value, searchEnglish, searchManx })
+        
         this.setState({ 
             forecasts: data, 
             title: data.title, 
