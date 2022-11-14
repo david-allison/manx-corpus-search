@@ -1,11 +1,10 @@
-import React, { Component } from "react"
+import React from "react"
+import {Translations} from "./Home"
 
-export class TranslationList extends Component {
 
-    render() {
-        return <>
-            {Object.keys((this.props as any).translations).map(langCode => <><strong>{langCode}:</strong> {(this.props as any).translations[langCode].map((x: any) => <>{x}, </>)}
-                    </>)}
-        </>
-    }
+export const TranslationList = (props: { translations: Translations }) => {
+    return <>
+        {Object.keys(props.translations).map(langCode => <><strong>{langCode}:</strong> {props.translations[langCode].map(x => <>{x}, </>)}
+        </>)}
+    </>
 }

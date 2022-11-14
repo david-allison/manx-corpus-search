@@ -1,13 +1,12 @@
-import React, { Component } from "react"
+import React from "react"
 
-export class DictionaryLink extends Component {
+export const DictionaryLink = (props: { query: string, dictionaries: Record<string, string[]>}) => {
 
-    render() {
         return <>
-            {Object.keys((this.props as any).dictionaries).map(dictionaryName => <>
-                    <a href={`/Dictionary/${dictionaryName}/${(this.props as any).query}`} target="_blank" rel="noreferrer" style={{ "fontWeight": "bold" }}>{dictionaryName}</a>
-                    : {(this.props as any).dictionaries[dictionaryName]}<br />
+            {Object.keys(props.dictionaries).map(dictionaryName => <>
+                    <a href={`/Dictionary/${dictionaryName}/${props.query}`} target="_blank" rel="noreferrer" style={{ "fontWeight": "bold" }}>{dictionaryName}</a>
+                    : {props.dictionaries[dictionaryName]}<br />
                 </>)}
         </>
-    }
+    
 }

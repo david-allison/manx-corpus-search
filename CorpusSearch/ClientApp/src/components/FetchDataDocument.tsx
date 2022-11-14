@@ -1,46 +1,86 @@
+/* eslint @typescript-eslint/no-misused-promises: 0 */  
 import "./FetchDataDocument.css"
 
 import React, { Component } from "react"
 import qs from "qs"
 // @ts-expect-error TS(7016): Could not find a declaration file for module 'reac... Remove this comment to see the full error message
 import Highlighter from "react-highlight-words"
-import { Link } from "react-router-dom"
+import {Link, Location, PathMatch} from "react-router-dom"
+import {Translations} from "./Home"
 
-type State = any;
 
-export class FetchDataDocument extends Component<{}, State> {
+type SourceLink = {
+    url: string
+    text: string
+}
+
+type SearchWorkResult = {
+    english: string
+    manx: string
+    page: string // number?
+    csvLineNumber: number
+    date: string // TODO: Why on the detail result?
+}
+
+type SearchWorkResponse = {
+    results: SearchWorkResult[]
+    title: string
+    translations : Translations
+    totalMatches: number
+    timeTaken: string
+    numberOfResults: number
+    notes: string
+    source: string
+    sourceLinks: SourceLink[] | null
+    pdfLink: string
+    gitHubLink: string
+}
+    
+type State = {
+    forecasts: SearchWorkResponse | [],
+    loading: boolean,
+    title: string,
+    docIdent: string | undefined
+    value: string,
+    searchManx: boolean
+    searchEnglish: boolean
+};
+
+export class FetchDataDocument extends Component<{ location: Location, match: PathMatch<"docId"> | null}, State> {
     static displayName = FetchDataDocument.name
 
-    constructor(props: {}) {
+    constructor(props: {location: Location, match: PathMatch<"docId"> | null}) {
         super(props)
-        const { q } = qs.parse((this.props as any).location.search, { ignoreQueryPrefix: true })
+        const { q } = qs.parse(props.location.search, { ignoreQueryPrefix: true })
         this.state = {
-    forecasts: [],
-    loading: true,
-    title: "Work Search",
-    docIdent: (this.props as any).match.params.docId,
-    value: q,
-    searchManx: (props as any).location.state ? (props as any).location.state.searchManx : true,
-    searchEnglish: (props as any).location.state ? (props as any).location.state.searchEnglish : false,
-}
+            forecasts: [],
+            loading: true,
+            title: "Work Search",
+            docIdent: props.match?.params.docId,
+            value: q?.toString() ?? "",
+            // eslint-disable-next-line 
+            searchManx: props.location.state ? props.location.state.searchLanguage == "Manx" : true,
+            // eslint-disable-next-line 
+            searchEnglish: props.location.state ? props.location.state.searchLanguage == "English" : false,
+        }
 
         this.onQueryChanged = this.onQueryChanged.bind(this)
         this.onSearchEnglishChanged = this.onSearchEnglishChanged.bind(this)
         this.onSearchManxChanged = this.onSearchManxChanged.bind(this)
     }
 
-    componentDidMount() {
-        this.populateData()
+    async componentDidMount() {
+        await this.populateData()
     }
 
-    static renderForecastsTable(response: any, value: any, manxhi: any, englishhi: any) {
+    static renderForecastsTable(response: SearchWorkResponse, value: string, manxhi: string[], englishhi: string[]) {
         return (
             <div>
                 { response.totalMatches} results ({ response.numberOfResults} lines) [{response.timeTaken}]
 
                 { response.notes && <><br /><br />{response.notes}</>}
 
-                { response.source && <><br /><br />{response.source}</>} { response.sourceLinks && <>{response.sourceLinks.map((x: any) => <>| <a rel="noreferrer" href={x.url}>{x.text}</a> </>)}</>}
+                { response.source && <><br /><br />{response.source}</>} { response.sourceLinks && <>{response.sourceLinks.map(x => <>| <a rel="noreferrer" href={x.url}>{x.text}</a> </>)}</>}
             <table className='table table-striped' aria-labelledby="tabelLabel">
                 <thead>
                     <tr>
@@ -50,21 +90,21 @@ export class FetchDataDocument extends Component<{}, State> {
                     </tr>
                 </thead>
                 <tbody>
-                    {response.results.map((line: any) => {
+                    {response.results.map(line => {
                         const eng = [...englishhi, " " + value + " "]
                         const manx = [...manxhi, " " + value + " "]
                         const englishHighlight = eng
                         const manxHighlight = manx
 
                         // TODO: replace \n with <br/>: https://kevinsimper.medium.com/react-newline-to-break-nl2br-a1c240ba746
-                        const englishText = line.english.split("\n").map((item: any, key: any) => {
+                        const englishText = line.english.split("\n").map((item, key) => {
                             return <span key={key}><Highlighter
                                 highlightClassName="textHighlight"
                                 searchWords={englishHighlight}
                                 autoEscape={true}
                                 textToHighlight={item} /><br /></span>
                         })
-                        const manxText = line.manx.split("\n").map((item: any, key: any) => {
+                        const manxText = line.manx.split("\n").map((item, key) => {
                             return <span key={key}><Highlighter
                                 highlightClassName="textHighlight"
                                 searchWords={manxHighlight}
@@ -82,7 +122,7 @@ export class FetchDataDocument extends Component<{}, State> {
                                 <td>
                                     {line.page != null && response.pdfLink &&
                                         <a href={response.pdfLink + "#page=" + line.page} target="_blank" rel="noreferrer">p{line.page}</a> }
-                                    {response.gitHubLink && <a href={response.gitHubLink + "#L" + line.csvLineNumber}>
+                                    {response.gitHubLink && <a href={`${response.gitHubLink}#L${line.csvLineNumber}`}>
                                         edit
                                     </a>}
                                 </td>
@@ -101,37 +141,45 @@ export class FetchDataDocument extends Component<{}, State> {
     render() {
         const contents = this.state.loading
             ? <p></p>
-            : FetchDataDocument.renderForecastsTable(this.state.forecasts, this.state.value, [], []) // TODO: Add highlights back in based on data.translations
+            : FetchDataDocument.renderForecastsTable(this.state.forecasts as SearchWorkResponse, this.state.value, [], []) // TODO: Add highlights back in based on data.translations
 
         return (
             <div>
                 <h1 id="tabelLabel" ><Link to={`/?q=${this.state.value}`} style={{ textDecoration: "none" }}>⇦</Link>  { this.state.title }</h1>
 
-                <input type="text" id="corpus-search-box" value={this.state.value} onChange={this.onQueryChanged} />
+                <input type="text" id="corpus-search-box" value={this.state.value} onChange={(x) => this.onQueryChanged(x)} />
                 {/* @ts-expect-error TS(2322): Type '{ children: string; for: string; }' is not a... Remove this comment to see the full error message */}
-                <label for="manxSearch">Manx</label> <input id="manxSearch" type="checkbox" checked={this.state.searchManx} onChange={this.onSearchManxChanged} /><br/>
+                <label for="manxSearch">Manx</label> <input id="manxSearch" type="checkbox" checked={this.state.searchManx} onChange={(x) => this.onSearchManxChanged(x)} /><br/>
                 {/* @ts-expect-error TS(2322): Type '{ children: string; for: string; }' is not a... Remove this comment to see the full error message */}
-                <label for="englishSearch">English</label> <input id="englishSearch" type="checkbox" checked={this.state.searchEnglish}  onChange={this.onSearchEnglishChanged} /><br/>
+                <label for="englishSearch">English</label> <input id="englishSearch" type="checkbox" checked={this.state.searchEnglish}  onChange={(x) => this.onSearchEnglishChanged(x)} /><br/>
                 {contents}
             </div>
         )
     }
 
     async populateData() {
-        const response = await fetch(`search/searchWork/${this.state.docIdent}/${encodeURIComponent(this.state.value)}?english=${this.state.searchEnglish}&manx=${this.state.searchManx}`)
-        const data = await response.json()
-        this.setState({ forecasts: data, title: data.title, loading: false, translations: data.translations })
+        if (!this.state.docIdent) {
+            throw new Error("no identifier provided")
+        }
+        const response = await fetch(`search/searchWork/${this.state.docIdent}/${encodeURIComponent(this.state.value)}?english=${this.state.searchEnglish.toString()}&manx=${this.state.searchManx.toString()}`)
+        const data: SearchWorkResponse = await response.json() as SearchWorkResponse // TODO
+        this.setState({ 
+            forecasts: data, 
+            title: data.title, 
+            loading: false, 
+        })
     }
 
-    onQueryChanged(event: any) {
+    onQueryChanged(event: React.ChangeEvent<HTMLInputElement>) {
+        // eslint-disable-next-line 
         this.setState({ value: event.target.value }, () => this.populateData())
     }
 
-    onSearchEnglishChanged(event: any) {
+    onSearchEnglishChanged(event: React.ChangeEvent<HTMLInputElement>) {
         this.setState({ searchEnglish: event.target.checked, searchManx: !event.target.checked }, () => this.populateData())
     }
 
-    onSearchManxChanged(event: any) {
+    onSearchManxChanged(event: React.ChangeEvent<HTMLInputElement>) {
         this.setState({ searchManx: event.target.checked, searchEnglish: !event.target.checked }, () => this.populateData())
     }
 }
