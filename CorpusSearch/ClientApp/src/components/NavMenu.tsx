@@ -2,8 +2,6 @@ import React, { Component } from "react"
 import { Container, Navbar, NavbarToggler, NavItem, NavLink, Collapse } from "reactstrap"
 import { Link } from "react-router-dom"
 import "./NavMenu.css"
-// @ts-expect-error TS(2307): Cannot find module '../corpus.png' or its correspo... Remove this comment to see the full error message
-import logo from "../corpus.png"
 
 type State = any;
 
@@ -34,7 +32,7 @@ export class NavMenu extends Component<unknown, State> {
         <Navbar className="navbar-expand-sm navbar-toggleable-sm ng-white border-bottom box-shadow mb-3" light>
 
           <Container>
-            <img src={logo} alt="Manx Corpus Search Logo" height="100px" />
+            <img src={require("../corpus.png")} alt="Manx Corpus Search Logo" height="100px" />
 
                 <NavbarToggler onClick={this.toggleNavbar} className="mr-2" />
                 <Collapse className="d-sm-inline-flex flex-sm-row-reverse" isOpen={!this.state.collapsed} navbar>

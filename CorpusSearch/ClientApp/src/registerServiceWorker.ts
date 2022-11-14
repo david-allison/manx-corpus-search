@@ -21,8 +21,7 @@ const isLocalhost = Boolean(
 export default function register () {
   if (process.env.NODE_ENV === "production" && "serviceWorker" in navigator) {
     // The URL constructor is available in all browsers that support SW.
-    // @ts-expect-error TS(2580): Cannot find name 'process'. Do you need to install... Remove this comment to see the full error message
-    const publicUrl = new URL(process.env.PUBLIC_URL, window.location)
+    const publicUrl = new URL(process.env.PUBLIC_URL!, window.location.toString())
     if (publicUrl.origin !== window.location.origin) {
       // Our service worker won't work if PUBLIC_URL is on a different origin
       // from what our page is served on. This might happen if a CDN is used to
@@ -49,10 +48,8 @@ function registerValidSW (swUrl: any) {
     .register(swUrl)
     .then(registration => {
       registration.onupdatefound = () => {
-        const installingWorker = registration.installing
-        // @ts-expect-error TS(2531): Object is possibly 'null'.
+        const installingWorker = registration.installing!
         installingWorker.onstatechange = () => {
-          // @ts-expect-error TS(2531): Object is possibly 'null'.
           if (installingWorker.state === "installed") {
             if (navigator.serviceWorker.controller) {
               // At this point, the old content will have been purged and
@@ -82,8 +79,7 @@ function checkValidServiceWorker (swUrl: any) {
       // Ensure service worker exists, and that we really are getting a JS file.
       if (
         response.status === 404 ||
-        // @ts-expect-error TS(2531): Object is possibly 'null'.
-        response.headers.get("content-type").indexOf("javascript") === -1
+        response.headers.get("content-type")!.indexOf("javascript") === -1
       ) {
         // No service worker found. Probably a different app. Reload the page.
         navigator.serviceWorker.ready.then(registration => {
