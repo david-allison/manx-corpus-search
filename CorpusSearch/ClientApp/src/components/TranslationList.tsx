@@ -1,5 +1,5 @@
 import React from "react"
-import {Translations} from "./Home"
+import {Translations} from "../api/SearchApi"
 
 
 export const TranslationList = (props: { translations: Translations }) => {

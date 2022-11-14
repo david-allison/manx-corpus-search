@@ -9,30 +9,7 @@ import { DictionaryLink } from "./DictionaryLink"
 import { TranslationList } from "./TranslationList"
 import AdvancedOptions from "./AdvancedOptions"
 import {Location, NavigateFunction } from "react-router-dom"
-
-export type DefinedInDictionaries = Record<string, string[]> // Dictionary<string, string[]>
-export type Translations = Record<string, string[]> // Dictionary<string, IList<string>>
-
-export type SearchResponse = {
-    results: SearchResultEntry[]
-    query: string
-    numberOfResults: number
-    numberOfDocuments: number
-    timeTaken: string
-    definedInDictionaries: DefinedInDictionaries
-    translations: Translations
-}
-
-type date = string
-
-export type SearchResultEntry = {
-    startDate: date
-    documentName: string
-    count: number
-    endDate: date
-    ident: string
-    sample: string
-}
+import {search, SearchResponse} from "../api/SearchApi"
 
 
 type State = { 
@@ -121,15 +98,16 @@ export class Home extends Component<{ location: Location, navigation: NavigateFu
     }
 
     async populateData() {
-        const response = await fetch(`search/search/${encodeURIComponent(this.getQuery())}?minDate=${this.state.dateRange[0]}&maxDate=${this.state.dateRange[1]}&manx=${(this.state.searchLanguage == "Manx").toString()}&english=${(this.state.searchLanguage == "English").toString()}`)
-        // TODO: Validation
-        const data: SearchResponse = await response.json() as SearchResponse
-
-        // Handle C# casting an empty list to null
-        if (data.results === null) {
-            data.results = []
-        }
-
+        const { dateRange, searchLanguage } = this.state
+        
+        const data = await search({ 
+            query: this.getQuery(),
+            minDate: dateRange[0],
+            maxDate: dateRange[1],
+            manx: searchLanguage == "Manx",
+            english: searchLanguage == "English"
+        })
+        
         if (data.query === this.getQuery()) {
             this.setState({ forecasts: data, loading: false })
         }

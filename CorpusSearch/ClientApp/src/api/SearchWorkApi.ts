@@ -1,4 +1,5 @@
-import {Translations} from "../components/Home"
+import {Translations} from "./SearchApi"
+
 
 export type SourceLink = {
     url: string
