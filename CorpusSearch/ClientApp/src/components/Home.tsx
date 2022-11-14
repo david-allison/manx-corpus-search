@@ -11,11 +11,13 @@ type State = {
     forecasts: [] | any 
     loading: boolean,
     value: string,
-    searchManx: boolean,
-    searchEnglish: boolean
+    searchLanguage: SearchLanguage
     dateRange: number[]
     matchPhrase: boolean
 };
+
+
+type SearchLanguage = "English" | "Manx"
 
 export class Home extends Component<{}, State> {
     static displayName = Home.name;
@@ -28,8 +30,7 @@ export class Home extends Component<{}, State> {
             forecasts: [],
             loading: true,
             value: q?.toString() ?? '',
-            searchManx: true,
-            searchEnglish: false,
+            searchLanguage: "Manx",
             dateRange: [1500, Home.currentYear],
             matchPhrase: false,
         };
@@ -48,7 +49,7 @@ export class Home extends Component<{}, State> {
         this.populateData();
     }
     //<MainSearchResults products={response.results} />
-    static renderGeneralTable(response: any, searchManx: any, searchEnglish: any) {
+    static renderGeneralTable(response: any, searchLanguage: SearchLanguage) {
         let query = response.query ? response.query : '';
         return (
             <div>
@@ -60,7 +61,7 @@ export class Home extends Component<{}, State> {
                 {/* @ts-expect-error TS(2769): No overload matches this call. */}
                 { response.translations && <><TranslationList translations={response.translations} /></ >}
                 <br /><br />
-                <MainSearchResults query={query} results={response.results} manx={ searchManx } english={ searchEnglish }/>
+                <MainSearchResults query={query} results={response.results} manx={ searchLanguage == "Manx" } english={ searchLanguage == "English" }/>
 
             </div>
         );
@@ -69,11 +70,11 @@ export class Home extends Component<{}, State> {
 
 
     handleManxChange(event: any) {
-        this.setState({ searchManx: event.target.checked, searchEnglish: !event.target.checked }, () => this.populateData());
+        this.setState({ searchLanguage: "Manx" }, () => this.populateData());
     }
 
     handleEnglishChange(event: any) {
-        this.setState({ searchEnglish: event.target.checked, searchManx: !event.target.checked }, () => this.populateData());
+        this.setState({ searchLanguage: "English" }, () => this.populateData());
     }
 
     handleMatchPhraseChange(event: any) {
@@ -83,7 +84,7 @@ export class Home extends Component<{}, State> {
     render() {
         let searchResults = this.state.loading
             ? <p></p>
-            : Home.renderGeneralTable(this.state.forecasts, this.state.searchManx, this.state.searchEnglish);
+            : Home.renderGeneralTable(this.state.forecasts, this.state.searchLanguage);
 
         return (
             <div>
@@ -94,8 +95,8 @@ export class Home extends Component<{}, State> {
 
                     <div className="search-language">
                         Language: 
-                        <label htmlFor="manxSearch" id="manxSearchLabel">Manx</label> <input id="manxSearch" type="checkbox" checked={this.state.searchManx} defaultChecked={this.state.searchManx} onChange={this.handleManxChange} />
-                        <label htmlFor="englishSearch">English</label> <input id="englishSearch" type="checkbox" checked={this.state.searchEnglish} defaultChecked={this.state.searchEnglish} onChange={this.handleEnglishChange} /> 
+                        <label htmlFor="manxSearch" id="manxSearchLabel">Manx</label> <input id="manxSearch" type="checkbox" checked={this.state.searchLanguage == "Manx"} defaultChecked={this.state.searchLanguage == "Manx"} onChange={this.handleManxChange} />
+                        <label htmlFor="englishSearch">English</label> <input id="englishSearch" type="checkbox" checked={this.state.searchLanguage == "English"} defaultChecked={this.state.searchLanguage == "English"} onChange={this.handleEnglishChange} /> 
                         <label style={{ "paddingLeft": "5px" }} htmlFor="matchPhrase">Match Phrase</label> <input id="matchPhrase" type="checkbox" checked={this.state.matchPhrase} onChange={this.handleMatchPhraseChange} /><br />
                     </div>
 
@@ -114,7 +115,7 @@ export class Home extends Component<{}, State> {
     }
 
     async populateData() {
-        const response = await fetch(`search/search/${encodeURIComponent(this.getQuery())}?minDate=${this.state.dateRange[0]}&maxDate=${this.state.dateRange[1]}&manx=${this.state.searchManx}&english=${this.state.searchEnglish}`);
+        const response = await fetch(`search/search/${encodeURIComponent(this.getQuery())}?minDate=${this.state.dateRange[0]}&maxDate=${this.state.dateRange[1]}&manx=${this.state.searchLanguage == "Manx"}&english=${this.state.searchLanguage == "English"}`);
         const data = await response.json();
 
         // Handle C# casting an empty list to null
