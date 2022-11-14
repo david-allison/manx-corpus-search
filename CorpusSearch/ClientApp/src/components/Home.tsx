@@ -7,7 +7,15 @@ import { DictionaryLink } from './DictionaryLink'
 import { TranslationList } from './TranslationList'
 import AdvancedOptions from "./AdvancedOptions";
 
-type State = any;
+type State = { 
+    forecasts: [] | any 
+    loading: boolean,
+    value: string,
+    searchManx: boolean,
+    searchEnglish: boolean
+    dateRange: number[]
+    matchPhrase: boolean
+};
 
 export class Home extends Component<{}, State> {
     static displayName = Home.name;
@@ -19,7 +27,7 @@ export class Home extends Component<{}, State> {
         this.state = {
             forecasts: [],
             loading: true,
-            value: q ?? '',
+            value: q?.toString() ?? '',
             searchManx: true,
             searchEnglish: false,
             dateRange: [1500, Home.currentYear],
