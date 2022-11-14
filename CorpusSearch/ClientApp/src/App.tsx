@@ -1,16 +1,16 @@
-import React, { Component } from 'react';
+import React, { Component } from "react"
 import {
     Route,
     Routes,
     useLocation, useMatch, useNavigate
-} from "react-router-dom";
-import { Layout } from './components/Layout';
-import { Home } from './components/Home';
-import { FetchDataDocument } from './components/FetchDataDocument';
-import './custom.css'
+} from "react-router-dom"
+import { Layout } from "./components/Layout"
+import { Home } from "./components/Home"
+import { FetchDataDocument } from "./components/FetchDataDocument"
+import "./custom.css"
 
 export default class App extends Component {
-  static displayName = App.name;
+  static displayName = App.name
 
   render () {
     return (
@@ -21,7 +21,7 @@ export default class App extends Component {
                   <Route path='/docs/:docId' element={<FetchDataDocumentHOC/>} />
               </Routes>
           </Layout>
-    );
+    )
   }
 }
 
@@ -34,7 +34,7 @@ const HomeHOC = (props: any) => {
 
 const FetchDataDocumentHOC = (props: any) => {
     const location = useLocation()
-    const match = useMatch('/docs/:docId')
+    const match = useMatch("/docs/:docId")
 
     return <FetchDataDocument location={location} match={match}  {...props} />
 }

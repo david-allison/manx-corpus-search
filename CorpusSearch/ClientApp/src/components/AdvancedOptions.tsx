@@ -1,7 +1,7 @@
-import Typography from "@mui/material/Typography";
-import Slider from "@mui/material/Slider";
-import React, {useState} from "react";
-import {Home} from "./Home";
+import Typography from "@mui/material/Typography"
+import Slider from "@mui/material/Slider"
+import React, {useState} from "react"
+import {Home} from "./Home"
 
 export type DateRange = {
     start:number,
@@ -25,7 +25,7 @@ const AdvancedOptions = (props: { onDateRangeChange: (range: DateRange) => void 
             valueLabelDisplay="auto"
             onChange={(_, value) => setDateRange(value as number[])}
             onChangeCommitted={(_, value) => {
-                let v = value as number[]
+                const v = value as number[]
                 setDateRange(v)
                 props.onDateRangeChange({ start: v[0], end: v[1]})
             }}
