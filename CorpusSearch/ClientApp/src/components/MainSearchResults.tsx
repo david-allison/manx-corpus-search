@@ -1,114 +1,114 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import './MainSearchResults.css'
+import React from "react"
+import { Link } from "react-router-dom"
+import "./MainSearchResults.css"
 
 const useSortableData = (items: any, config = null) => {
-    const [sortConfig, setSortConfig] = React.useState(config);
+    const [sortConfig, setSortConfig] = React.useState(config)
 
     const sortedItems = React.useMemo(() => {
-        let sortableItems = [...items];
+        const sortableItems = [...items]
         if (sortConfig !== null) {
             sortableItems.sort((a, b) => {
     if (a[(sortConfig as any).key] < b[(sortConfig as any).key]) {
-        return (sortConfig as any).direction === 'ascending' ? -1 : 1;
+        return (sortConfig as any).direction === "ascending" ? -1 : 1
     }
     if (a[(sortConfig as any).key] > b[(sortConfig as any).key]) {
-        return (sortConfig as any).direction === 'ascending' ? 1 : -1;
+        return (sortConfig as any).direction === "ascending" ? 1 : -1
     }
-    return 0;
-});
+    return 0
+})
         }
-        return sortableItems;
-    }, [items, sortConfig]);
+        return sortableItems
+    }, [items, sortConfig])
 
     const requestSort = (key: any) => {
-        let direction = 'ascending';
+        let direction = "ascending"
         if (
             sortConfig &&
     (sortConfig as any).key === key &&
-    (sortConfig as any).direction === 'ascending'
+    (sortConfig as any).direction === "ascending"
         ) {
-            direction = 'descending';
+            direction = "descending"
         }
         // @ts-expect-error TS(2345): Argument of type '{ key: any; direction: string; }... Remove this comment to see the full error message
-        setSortConfig({ key, direction });
-    };
+        setSortConfig({ key, direction })
+    }
 
-    return { items: sortedItems, requestSort, sortConfig };
-};
+    return { items: sortedItems, requestSort, sortConfig }
+}
 
 function getFullYear(date: any, edate: any) {
     if (!date) {
-        return "???";
+        return "???"
     }
 
     if (!edate || edate === date) {
-        return new Date(date).getFullYear();
+        return new Date(date).getFullYear()
     }
 
-    return new Date(date).getFullYear() + "–" + new Date(edate).getFullYear();
+    return new Date(date).getFullYear() + "–" + new Date(edate).getFullYear()
 }
 
 function findFirst(string: any, query: any) {
 
     if (!string) {
-        return null;
+        return null
     }
 
     // TODO: make this work
-    let searchable = " " + string.toLowerCase().replace(/[^\w\s]/gi, " ").replace("\r", " ").replace("\n", " ") + " ";
+    const searchable = " " + string.toLowerCase().replace(/[^\w\s]/gi, " ").replace("\r", " ").replace("\n", " ") + " "
 
     // assume per-word
-    let index = searchable.indexOf(" " + query + " ");
+    const index = searchable.indexOf(" " + query + " ")
 
     if (index === -1) {
-        return string;
+        return string
     }
 
-    var startIndex = index;
-    var count = 0;
-    var lastSpace = false;
+    let startIndex = index
+    let count = 0
+    let lastSpace = false
     while (startIndex > 0 && count < 5) {
-        startIndex--;
-        if (string[startIndex] === ' ') {
+        startIndex--
+        if (string[startIndex] === " ") {
             if (!lastSpace) {
-                count++;
+                count++
             }
-            lastSpace = true;
+            lastSpace = true
         } else {
-            lastSpace = false;
+            lastSpace = false
         }
     }
 
-    var endIndex = index;
-    count = 0;
-    lastSpace = false;
+    let endIndex = index
+    count = 0
+    lastSpace = false
     while (endIndex < string.length && count < 5) {
-        endIndex++;
-        if (string[endIndex] === ' ') {
+        endIndex++
+        if (string[endIndex] === " ") {
             if (!lastSpace) {
-                count++;
+                count++
             }
-            lastSpace = true;
+            lastSpace = true
         } else {
-            lastSpace = false;
+            lastSpace = false
         }
     }
 
-    return string.substring(startIndex, endIndex);
+    return string.substring(startIndex, endIndex)
 
 
 }
 
 export default function MainSearchResults(props: any) {
-    const { results, query } = props;
-    const { items, requestSort, sortConfig } = useSortableData(results);
+    const { results, query } = props
+    const { items, requestSort, sortConfig } = useSortableData(results)
     const getClassNamesFor = (name: any) => {
         if (!sortConfig) {
-            return;
+            return
         }
-        return (sortConfig as any).key === name ? (sortConfig as any).direction : undefined;
-    };
+        return (sortConfig as any).key === name ? (sortConfig as any).direction : undefined
+    }
     return (
         <table className="full-search-results">
             <thead>
@@ -117,8 +117,8 @@ export default function MainSearchResults(props: any) {
                         <div
                             // @ts-expect-error TS(2322): Type '{ children: string; type: string; onClick: (... Remove this comment to see the full error message
                             type="button"
-                            onClick={() => requestSort('startDate')}
-                            className={getClassNamesFor('startDate')}
+                            onClick={() => requestSort("startDate")}
+                            className={getClassNamesFor("startDate")}
                         >
                             Date
                         </div>
@@ -127,8 +127,8 @@ export default function MainSearchResults(props: any) {
                         <div
                             // @ts-expect-error TS(2322): Type '{ children: string; type: string; onClick: (... Remove this comment to see the full error message
                             type="button"
-                            onClick={() => requestSort('documentName')}
-                            className={getClassNamesFor('documentName')}
+                            onClick={() => requestSort("documentName")}
+                            className={getClassNamesFor("documentName")}
                         >
                             Title
                         </div>
@@ -137,8 +137,8 @@ export default function MainSearchResults(props: any) {
                         <div
                             // @ts-expect-error TS(2322): Type '{ children: string; type: string; onClick: (... Remove this comment to see the full error message
                             type="button"
-                            onClick={() => requestSort('count')}
-                            className={getClassNamesFor('count')}
+                            onClick={() => requestSort("count")}
+                            className={getClassNamesFor("count")}
                         >
                             Matches
                         </div>
@@ -176,5 +176,5 @@ export default function MainSearchResults(props: any) {
                 ))}
             </tbody>
         </table>
-    );
+    )
 }
