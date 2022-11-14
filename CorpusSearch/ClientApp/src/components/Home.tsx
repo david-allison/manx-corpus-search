@@ -1,3 +1,5 @@
+/* eslint @typescript-eslint/no-misused-promises: 0 */  
+
 import "./Home.css"
 
 import React, {ChangeEvent, Component, useState} from "react"
@@ -6,9 +8,35 @@ import MainSearchResults from "./MainSearchResults"
 import { DictionaryLink } from "./DictionaryLink"
 import { TranslationList } from "./TranslationList"
 import AdvancedOptions from "./AdvancedOptions"
+import {Location, NavigateFunction } from "react-router-dom"
+
+export type DefinedInDictionaries = Record<string, string[]> // Dictionary<string, string[]>
+export type Translations = Record<string, string[]> // Dictionary<string, IList<string>>
+
+export type SearchResponse = {
+    results: SearchResultEntry[]
+    query: string
+    numberOfResults: number
+    numberOfDocuments: number
+    timeTaken: string
+    definedInDictionaries: DefinedInDictionaries
+    translations: Translations
+}
+
+type date = string
+
+export type SearchResultEntry = {
+    startDate: date
+    documentName: string
+    count: number
+    endDate: date
+    ident: string
+    sample: string
+}
+
 
 type State = { 
-    forecasts: [] | any 
+    forecasts: [] | SearchResponse 
     loading: boolean,
     value: string,
     searchLanguage: SearchLanguage
@@ -19,13 +47,13 @@ type State = {
 
 type SearchLanguage = "English" | "Manx"
 
-export class Home extends Component<{}, State> {
+export class Home extends Component<{ location: Location, navigation: NavigateFunction }, State> {
     static displayName = Home.name
     static currentYear = new Date().getFullYear()
 
-    constructor(props: {}) {
+    constructor(props: { location: Location, navigation: NavigateFunction  }) {
         super(props)
-        const { q } = qs.parse((this.props as any).location.search, { ignoreQueryPrefix: true })
+        const { q } = qs.parse(props.location.search, { ignoreQueryPrefix: true })
         this.state = {
             forecasts: [],
             loading: true,
@@ -41,20 +69,18 @@ export class Home extends Component<{}, State> {
 
     }
 
-    componentDidMount() {
-        this.populateData()
+    async componentDidMount() {
+        await this.populateData()
     }
     //<MainSearchResults products={response.results} />
-    static renderGeneralTable(response: any, searchLanguage: SearchLanguage) {
+    static renderGeneralTable(response: SearchResponse, searchLanguage: SearchLanguage) {
         const query = response.query ? response.query : ""
         return (
             <div>
                 <hr />
                 Returned { response.numberOfResults} matches in { response.numberOfDocuments} texts [{response.timeTaken }] for query '{ query  }'
                 <br />
-                {/* @ts-expect-error TS(2769): No overload matches this call. */}
                 { response.definedInDictionaries && <><DictionaryLink query={ query } dictionaries={ response.definedInDictionaries }/><br/></> }
-                {/* @ts-expect-error TS(2769): No overload matches this call. */}
                 { response.translations && <><TranslationList translations={response.translations} /></ >}
                 <br /><br />
                 <MainSearchResults query={query} results={response.results} manx={ searchLanguage == "Manx" } english={ searchLanguage == "English" }/>
@@ -66,21 +92,22 @@ export class Home extends Component<{}, State> {
     render() {
         const searchResults = this.state.loading
             ? <p></p>
-            : Home.renderGeneralTable(this.state.forecasts, this.state.searchLanguage)
+            : Home.renderGeneralTable(this.state.forecasts as SearchResponse, this.state.searchLanguage)
 
         return (
             <div>
                 <div className="search-options">
                     <a style={{"float":"right"}} href="https://github.com/david-allison/manx-corpus-search/blob/master/CorpusSearch/Docs/searching.md#searching" target="_blank" rel="noreferrer">Search Help ℹ</a>
-                    <input id="corpus-search-box" placeholder="Enter search term" type="text" value={this.state.value} onChange={this.handleChange} /> 
+                    <input id="corpus-search-box" placeholder="Enter search term" type="text" value={this.state.value} onChange={(x) => this.handleChange(x)} /> 
 
                     <SearchLanguageBox 
-                        onLanguageChange={lang => this.setState({ searchLanguage: lang }, () => this.populateData())}
-                        onMatchChange={isMatch => this.setState({ matchPhrase: isMatch }, () => this.populateData())}
+                        
+                        onLanguageChange={lang => this.setState({ searchLanguage: lang }, () =>  this.populateData())}
+                        onMatchChange={isMatch => this.setState({ matchPhrase: isMatch }, () =>  this.populateData())}
                     />
 
                     <AdvancedOptions onDateRangeChange={(v) => {
-                        this.setState({ dateRange: [v.start, v.end] }, () => this.populateData())
+                        this.setState({ dateRange: [v.start, v.end] }, async () => await this.populateData())
                     }} />
 
                 </div>
@@ -94,8 +121,9 @@ export class Home extends Component<{}, State> {
     }
 
     async populateData() {
-        const response = await fetch(`search/search/${encodeURIComponent(this.getQuery())}?minDate=${this.state.dateRange[0]}&maxDate=${this.state.dateRange[1]}&manx=${this.state.searchLanguage == "Manx"}&english=${this.state.searchLanguage == "English"}`)
-        const data = await response.json()
+        const response = await fetch(`search/search/${encodeURIComponent(this.getQuery())}?minDate=${this.state.dateRange[0]}&maxDate=${this.state.dateRange[1]}&manx=${(this.state.searchLanguage == "Manx").toString()}&english=${(this.state.searchLanguage == "English").toString()}`)
+        // TODO: Validation
+        const data: SearchResponse = await response.json() as SearchResponse
 
         // Handle C# casting an empty list to null
         if (data.results === null) {
@@ -107,9 +135,10 @@ export class Home extends Component<{}, State> {
         }
     }
 
-    handleChange(event: any) {
-        (this.props as any).navigation(`/?q=${event.target.value}`, { replace: true })
-        this.setState({ value: event.target.value }, () => this.populateData())
+    handleChange(event: React.ChangeEvent<HTMLInputElement>) {
+        this.props.navigation(`/?q=${event.target.value}`, { replace: true })
+        // eslint-disable-next-line 
+        this.setState({ value: event.target.value }, async () => await this.populateData())
     }
 }
 
@@ -124,9 +153,9 @@ const SearchLanguageBox = (props: {
         setMatchPhrase(event.target.checked)
         props.onMatchChange(event.target.checked)
     }
-    const onSetLanguage = (language: SearchLanguage) => {
-        setLanguage(language)
-        props.onLanguageChange(language)
+    const onSetLanguage = (newLanguage: SearchLanguage) => {
+        setLanguage(newLanguage)
+        props.onLanguageChange(newLanguage)
     }
     
     return <div className="search-language">

@@ -1,43 +1,45 @@
 import React from "react"
 import { Link } from "react-router-dom"
 import "./MainSearchResults.css"
+import {SearchResultEntry} from "./Home"
 
-const useSortableData = (items: any, config = null) => {
+type SortConfig = {
+    key: keyof SearchResultEntry
+    direction: "ascending" | "descending"
+}
+const useSortableData = (items: SearchResultEntry[], config: SortConfig | null = null) => {
     const [sortConfig, setSortConfig] = React.useState(config)
 
     const sortedItems = React.useMemo(() => {
         const sortableItems = [...items]
-        if (sortConfig !== null) {
-            sortableItems.sort((a, b) => {
-    if (a[(sortConfig as any).key] < b[(sortConfig as any).key]) {
-        return (sortConfig as any).direction === "ascending" ? -1 : 1
-    }
-    if (a[(sortConfig as any).key] > b[(sortConfig as any).key]) {
-        return (sortConfig as any).direction === "ascending" ? 1 : -1
-    }
-    return 0
-})
-        }
+        if (sortConfig === null) {
+            return sortableItems
+        } 
+        
+        sortableItems.sort((a, b) => {
+            if (a[sortConfig.key] < b[sortConfig.key]) {
+                return sortConfig.direction === "ascending" ? -1 : 1
+            }
+            if (a[sortConfig.key] > b[sortConfig.key]) {
+                return sortConfig.direction === "ascending" ? 1 : -1
+            }
+            return 0
+        })
         return sortableItems
     }, [items, sortConfig])
 
-    const requestSort = (key: any) => {
-        let direction = "ascending"
-        if (
-            sortConfig &&
-    (sortConfig as any).key === key &&
-    (sortConfig as any).direction === "ascending"
-        ) {
+    const requestSort = (key: keyof SearchResultEntry) => {
+        let direction: "ascending" | "descending" = "ascending"
+        if (sortConfig && sortConfig.key === key && sortConfig.direction === "ascending") {
             direction = "descending"
         }
-        // @ts-expect-error TS(2345): Argument of type '{ key: any; direction: string; }... Remove this comment to see the full error message
         setSortConfig({ key, direction })
     }
 
     return { items: sortedItems, requestSort, sortConfig }
 }
 
-function getFullYear(date: any, edate: any) {
+function getFullYear(date: string, edate: string) {
     if (!date) {
         return "???"
     }
@@ -46,10 +48,10 @@ function getFullYear(date: any, edate: any) {
         return new Date(date).getFullYear()
     }
 
-    return new Date(date).getFullYear() + "–" + new Date(edate).getFullYear()
+    return `${new Date(date).getFullYear()}-${new Date(edate).getFullYear()}`
 }
 
-function findFirst(string: any, query: any) {
+function findFirst(string: string, query: string) {
 
     if (!string) {
         return null
@@ -100,14 +102,14 @@ function findFirst(string: any, query: any) {
 
 }
 
-export default function MainSearchResults(props: any) {
+export default function MainSearchResults(props: { query:string, results: SearchResultEntry[], english: boolean, manx : boolean}) {
     const { results, query } = props
     const { items, requestSort, sortConfig } = useSortableData(results)
-    const getClassNamesFor = (name: any) => {
+    const getClassNamesFor = (name: keyof SearchResultEntry) => {
         if (!sortConfig) {
             return
         }
-        return (sortConfig as any).key === name ? (sortConfig as any).direction : undefined
+        return sortConfig.key === name ? sortConfig.direction : undefined
     }
     return (
         <table className="full-search-results">

@@ -7,10 +7,10 @@ import logo from "../corpus.png"
 
 type State = any;
 
-export class NavMenu extends Component<{}, State> {
+export class NavMenu extends Component<unknown, State> {
   static displayName = NavMenu.name
 
-  constructor (props: {}) {
+  constructor (props: unknown) {
     super(props)
 
     this.toggleNavbar = this.toggleNavbar.bind(this)

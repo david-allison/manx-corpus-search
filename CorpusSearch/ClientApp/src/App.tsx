@@ -25,16 +25,16 @@ export default class App extends Component {
   }
 }
 
-const HomeHOC = (props: any) => {
+const HomeHOC = () => {
     const location = useLocation()
     const navigation = useNavigate()
 
-    return <Home location={location} navigation={navigation} {...props} />
+    return <Home location={location} navigation={navigation} />
 }
 
-const FetchDataDocumentHOC = (props: any) => {
+const FetchDataDocumentHOC = () => {
     const location = useLocation()
     const match = useMatch("/docs/:docId")
 
-    return <FetchDataDocument location={location} match={match}  {...props} />
+    return <FetchDataDocument location={location} match={match} />
 }
