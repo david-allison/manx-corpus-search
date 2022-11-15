@@ -10,7 +10,7 @@ import {searchWork, SearchWorkResponse} from "../api/SearchWorkApi"
 
     
 type State = {
-    forecasts: SearchWorkResponse | [],
+    searchWorkResponse?: SearchWorkResponse,
     loading: boolean,
     title: string,
     docIdent: string | undefined
@@ -26,7 +26,6 @@ export class FetchDataDocument extends Component<{ location: Location, match: Pa
         super(props)
         const { q } = qs.parse(props.location.search, { ignoreQueryPrefix: true })
         this.state = {
-            forecasts: [],
             loading: true,
             title: "Work Search",
             docIdent: props.match?.params.docId,
@@ -114,7 +113,7 @@ export class FetchDataDocument extends Component<{ location: Location, match: Pa
     render() {
         const contents = this.state.loading
             ? <p></p>
-            : FetchDataDocument.renderForecastsTable(this.state.forecasts as SearchWorkResponse, this.state.value, [], []) // TODO: Add highlights back in based on data.translations
+            : FetchDataDocument.renderForecastsTable(this.state.searchWorkResponse as SearchWorkResponse, this.state.value, [], []) // TODO: Add highlights back in based on data.translations
 
         return (
             <div>
@@ -138,7 +137,7 @@ export class FetchDataDocument extends Component<{ location: Location, match: Pa
         const data = await searchWork({ docIdent, value, searchEnglish, searchManx })
         
         this.setState({ 
-            forecasts: data, 
+            searchWorkResponse: data, 
             title: data.title, 
             loading: false, 
         })

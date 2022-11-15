@@ -13,7 +13,7 @@ import {search, SearchResponse} from "../api/SearchApi"
 
 
 type State = { 
-    forecasts: [] | SearchResponse 
+    searchResponse: [] | SearchResponse 
     loading: boolean,
     value: string,
     searchLanguage: SearchLanguage
@@ -32,7 +32,7 @@ export class Home extends Component<{ location: Location, navigation: NavigateFu
         super(props)
         const { q } = qs.parse(props.location.search, { ignoreQueryPrefix: true })
         this.state = {
-            forecasts: [],
+            searchResponse: [],
             loading: true,
             value: q?.toString() ?? "",
             searchLanguage: "Manx",
@@ -53,7 +53,7 @@ export class Home extends Component<{ location: Location, navigation: NavigateFu
 
     render() {
         
-        const { searchLanguage, forecasts } = this.state
+        const { searchLanguage, searchResponse } = this.state
         return (
             <div>
                 <div className="search-options">
@@ -72,10 +72,10 @@ export class Home extends Component<{ location: Location, navigation: NavigateFu
                 </div>
                 {this.state.loading || <>
                     <SearchResultHeader 
-                        response={forecasts as SearchResponse} />
+                        response={searchResponse as SearchResponse} />
                     <MainSearchResults 
-                        query={(forecasts as SearchResponse).query} 
-                        results={(forecasts as SearchResponse).results} 
+                        query={(searchResponse as SearchResponse).query} 
+                        results={(searchResponse as SearchResponse).results} 
                         manx={ searchLanguage == "Manx" } 
                         english={ searchLanguage == "English" }/>
 
@@ -101,7 +101,7 @@ export class Home extends Component<{ location: Location, navigation: NavigateFu
         })
         
         if (data.query === this.getQuery()) {
-            this.setState({ forecasts: data, loading: false })
+            this.setState({ searchResponse: data, loading: false })
         }
     }
 
