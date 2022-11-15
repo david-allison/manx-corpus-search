@@ -49,28 +49,11 @@ export class Home extends Component<{ location: Location, navigation: NavigateFu
     async componentDidMount() {
         await this.populateData()
     }
-    //<MainSearchResults products={response.results} />
-    static renderGeneralTable(response: SearchResponse, searchLanguage: SearchLanguage) {
-        const query = response.query ? response.query : ""
-        return (
-            <div>
-                <hr />
-                Returned { response.numberOfResults} matches in { response.numberOfDocuments} texts [{response.timeTaken }] for query '{ query  }'
-                <br />
-                { response.definedInDictionaries && <><DictionaryLink query={ query } dictionaries={ response.definedInDictionaries }/><br/></> }
-                { response.translations && <><TranslationList translations={response.translations} /></ >}
-                <br /><br />
-                <MainSearchResults query={query} results={response.results} manx={ searchLanguage == "Manx" } english={ searchLanguage == "English" }/>
 
-            </div>
-        )
-    }
 
     render() {
-        const searchResults = this.state.loading
-            ? <p></p>
-            : Home.renderGeneralTable(this.state.forecasts as SearchResponse, this.state.searchLanguage)
-
+        
+        const { searchLanguage, forecasts } = this.state
         return (
             <div>
                 <div className="search-options">
@@ -78,7 +61,6 @@ export class Home extends Component<{ location: Location, navigation: NavigateFu
                     <input id="corpus-search-box" placeholder="Enter search term" type="text" value={this.state.value} onChange={(x) => this.handleChange(x)} /> 
 
                     <SearchLanguageBox 
-                        
                         onLanguageChange={lang => this.setState({ searchLanguage: lang }, () =>  this.populateData())}
                         onMatchChange={isMatch => this.setState({ matchPhrase: isMatch }, () =>  this.populateData())}
                     />
@@ -88,7 +70,17 @@ export class Home extends Component<{ location: Location, navigation: NavigateFu
                     }} />
 
                 </div>
-                {searchResults}
+                {this.state.loading || <>
+                    <SearchResultHeader 
+                        response={forecasts as SearchResponse} />
+                    <MainSearchResults 
+                        query={(forecasts as SearchResponse).query} 
+                        results={(forecasts as SearchResponse).results} 
+                        manx={ searchLanguage == "Manx" } 
+                        english={ searchLanguage == "English" }/>
+
+                </>}
+
             </div>
         )
     }
@@ -118,6 +110,22 @@ export class Home extends Component<{ location: Location, navigation: NavigateFu
         // eslint-disable-next-line 
         this.setState({ value: event.target.value }, async () => await this.populateData())
     }
+}
+
+const SearchResultHeader = (props: { response: SearchResponse })  => {
+    const { response } = props
+    const query = response.query ?? ""
+
+    return (
+        <div>
+            <hr />
+            Returned { response.numberOfResults} matches in { response.numberOfDocuments} texts [{response.timeTaken }] for query '{ query  }'
+            <br />
+            { response.definedInDictionaries && <><DictionaryLink query={ query } dictionaries={ response.definedInDictionaries }/><br/></> }
+            { response.translations && <><TranslationList translations={response.translations} /></ >}
+            <br /><br />
+        </div>
+    )
 }
 
 const SearchLanguageBox = (props: {
