@@ -2,114 +2,103 @@
 
 import "./Home.css"
 
-import React, {ChangeEvent, Component, useState} from "react"
+import React, {ChangeEvent, useEffect, useState} from "react"
 import qs from "qs"
 import MainSearchResults from "./MainSearchResults"
 import { DictionaryLink } from "./DictionaryLink"
 import { TranslationList } from "./TranslationList"
-import AdvancedOptions from "./AdvancedOptions"
-import {Location, NavigateFunction } from "react-router-dom"
+import AdvancedOptions, {DateRange} from "./AdvancedOptions"
+import {useLocation, useNavigate} from "react-router-dom"
 import {search, SearchResponse} from "../api/SearchApi"
-
-
-type State = { 
-    searchResponse: [] | SearchResponse 
-    loading: boolean,
-    value: string,
-    searchLanguage: SearchLanguage
-    dateRange: number[]
-    matchPhrase: boolean
-};
 
 
 type SearchLanguage = "English" | "Manx"
 
-export class Home extends Component<{ location: Location, navigation: NavigateFunction }, State> {
+export class Home {
     static displayName = Home.name
     static currentYear = new Date().getFullYear()
+}
 
-    constructor(props: { location: Location, navigation: NavigateFunction  }) {
-        super(props)
-        const { q } = qs.parse(props.location.search, { ignoreQueryPrefix: true })
-        this.state = {
-            searchResponse: [],
-            loading: true,
-            value: q?.toString() ?? "",
-            searchLanguage: "Manx",
-            dateRange: [1500, Home.currentYear],
-            matchPhrase: false,
+export const HomeFC = () => {
+    const location = useLocation()
+    const navigation = useNavigate()
+    
+    const [loading, setLoading] = useState(true)
+    const [searchResponse, setSearchResponse] = useState<SearchResponse | null>(null)
+    const [searchLanguage, setSearchLanguage] = useState<SearchLanguage>("Manx")
+    const [query, setQuery] = useState(() => qs.parse(location.search, { ignoreQueryPrefix: true })?.q?.toString() ?? "")
+    const [dateRange, setDateRange] = useState<DateRange>( { start: 1500, end: Home.currentYear })
+    const [matchPhrase, setMatchPhrase] = useState(false)
+    
+    // load the data
+    useEffect(() => {
+        const getData = async () => {
+            
+            const parsedQuery = matchPhrase ? `*${query}*` : query
+            
+            const data = await search({
+                query: parsedQuery,
+                minDate: dateRange.start,
+                maxDate: dateRange.end,
+                manx: searchLanguage == "Manx",
+                english: searchLanguage == "English"
+            })
+
+            // ensure the return value is valid
+            if (data.query != parsedQuery) {
+                return null
+            }
+            
+            return data
         }
-
-        this.handleChange = this.handleChange.bind(this)
-
-        this.getQuery = this.getQuery.bind(this)
-
-    }
-
-    async componentDidMount() {
-        await this.populateData()
-    }
-
-
-    render() {
         
-        const { searchLanguage, searchResponse } = this.state
-        return (
-            <div>
-                <div className="search-options">
-                    <a style={{"float":"right"}} href="https://github.com/david-allison/manx-corpus-search/blob/master/CorpusSearch/Docs/searching.md#searching" target="_blank" rel="noreferrer">Search Help ℹ</a>
-                    <input id="corpus-search-box" placeholder="Enter search term" type="text" value={this.state.value} onChange={(x) => this.handleChange(x)} /> 
+        getData()
+            .then(maybeData => {
+                setLoading(false)
+                if (maybeData == null) {
+                    return
+                }
+                setSearchResponse(maybeData)
+            })
+            .catch(e => {
+                setLoading(false)
+                console.error(e)
+            })
+        
+    }, [dateRange, query, searchLanguage, matchPhrase])
 
-                    <SearchLanguageBox 
-                        onLanguageChange={lang => this.setState({ searchLanguage: lang }, () =>  this.populateData())}
-                        onMatchChange={isMatch => this.setState({ matchPhrase: isMatch }, () =>  this.populateData())}
-                    />
+    const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        navigation(`/?q=${event.target.value}`, { replace: true })
+        setQuery(event.target.value)
+    }
 
-                    <AdvancedOptions onDateRangeChange={(v) => {
-                        this.setState({ dateRange: [v.start, v.end] }, async () => await this.populateData())
-                    }} />
+    return (
+        <div>
+            <div className="search-options">
+                <a style={{"float":"right"}} href="https://github.com/david-allison/manx-corpus-search/blob/master/CorpusSearch/Docs/searching.md#searching" target="_blank" rel="noreferrer">Search Help ℹ</a>
+                <input id="corpus-search-box" placeholder="Enter search term" type="text" value={query} onChange={handleChange} />
 
-                </div>
-                {this.state.loading || <>
-                    <SearchResultHeader 
-                        response={searchResponse as SearchResponse} />
-                    <MainSearchResults 
-                        query={(searchResponse as SearchResponse).query} 
-                        results={(searchResponse as SearchResponse).results} 
-                        manx={ searchLanguage == "Manx" } 
-                        english={ searchLanguage == "English" }/>
+                <SearchLanguageBox
+                    onLanguageChange={setSearchLanguage}
+                    onMatchChange={setMatchPhrase}
+                />
 
-                </>}
+                <AdvancedOptions onDateRangeChange={setDateRange} />
 
             </div>
-        )
-    }
+            {loading || <>
+                <SearchResultHeader
+                    response={searchResponse as SearchResponse} />
+                <MainSearchResults
+                    query={(searchResponse as SearchResponse).query}
+                    results={(searchResponse as SearchResponse).results}
+                    manx={ searchLanguage == "Manx" }
+                    english={ searchLanguage == "English" }/>
 
-    getQuery() {
-        return this.state.matchPhrase ? "*" + this.state.value + "*" : this.state.value
-    }
+            </>}
 
-    async populateData() {
-        const { dateRange, searchLanguage } = this.state
-        
-        const data = await search({ 
-            query: this.getQuery(),
-            minDate: dateRange[0],
-            maxDate: dateRange[1],
-            manx: searchLanguage == "Manx",
-            english: searchLanguage == "English"
-        })
-        
-        if (data.query === this.getQuery()) {
-            this.setState({ searchResponse: data, loading: false })
-        }
-    }
-
-    handleChange(event: React.ChangeEvent<HTMLInputElement>) {
-        this.props.navigation(`/?q=${event.target.value}`, { replace: true })
-        // eslint-disable-next-line 
-        this.setState({ value: event.target.value }, async () => await this.populateData())
-    }
+        </div>
+    )
 }
 
 const SearchResultHeader = (props: { response: SearchResponse })  => {
