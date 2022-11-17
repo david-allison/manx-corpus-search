@@ -1,4 +1,4 @@
-src/registerServiceWorker.ts
+src/serviceWorkerRegistration.js
 src/App.test.tsx
 src/index.tsx
 src/components/NavMenu.tsx
