@@ -160,8 +160,7 @@ export default function MainSearchResults(props: { query:string, results: Search
                     </tr>
                     <tr>
                         <td></td>
-                        {/* @ts-expect-error TS(2322): Type 'string' is not assignable to type 'number'. */}
-                        <td colSpan="2">
+                        <td colSpan={2}>
                             <small>{  findFirst(result.sample, query) }</small>
                         </td>
                         <td></td>

@@ -16,8 +16,7 @@ export default class App extends Component {
     return (
           <Layout>
               <Routes>
-                  {/* @ts-expect-error TS(2322): Type '{ exact: true; path: string; element: Elemen... Remove this comment to see the full error message */}
-                  <Route exact path='/' element={<HomeFC/>} />
+                  <Route path='/' element={<HomeFC/>} />
                   <Route path='/docs/:docId' element={<FetchDataDocumentHOC/>} />
               </Routes>
           </Layout>

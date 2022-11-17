@@ -99,8 +99,7 @@ export class FetchDataDocument extends Component<{ location: Location, match: Pa
                                     </a>}
                                 </td>
                             </tr>
-                            {/* @ts-expect-error TS(2322): Type 'string' is not assignable to type 'number'. */}
-                            {line.notes ? <tr><td colSpan="3" className="noteRow">{line.notes}</td></tr> : null}
+                            {line.notes ? <tr><td colSpan={3} className="noteRow">{line.notes}</td></tr> : null}
                             </>
                         }
                     )}
@@ -120,10 +119,8 @@ export class FetchDataDocument extends Component<{ location: Location, match: Pa
                 <h1 id="tabelLabel" ><Link to={`/?q=${this.state.value}`} style={{ textDecoration: "none" }}>⇦</Link>  { this.state.title }</h1>
 
                 <input type="text" id="corpus-search-box" value={this.state.value} onChange={(x) => this.onQueryChanged(x)} />
-                {/* @ts-expect-error TS(2322): Type '{ children: string; for: string; }' is not a... Remove this comment to see the full error message */}
-                <label for="manxSearch">Manx</label> <input id="manxSearch" type="checkbox" checked={this.state.searchManx} onChange={(x) => this.onSearchManxChanged(x)} /><br/>
-                {/* @ts-expect-error TS(2322): Type '{ children: string; for: string; }' is not a... Remove this comment to see the full error message */}
-                <label for="englishSearch">English</label> <input id="englishSearch" type="checkbox" checked={this.state.searchEnglish}  onChange={(x) => this.onSearchEnglishChanged(x)} /><br/>
+                <label htmlFor="manxSearch">Manx</label> <input id="manxSearch" type="checkbox" checked={this.state.searchManx} onChange={(x) => this.onSearchManxChanged(x)} /><br/>
+                <label htmlFor="englishSearch">English</label> <input id="englishSearch" type="checkbox" checked={this.state.searchEnglish}  onChange={(x) => this.onSearchEnglishChanged(x)} /><br/>
                 {contents}
             </div>
         )
