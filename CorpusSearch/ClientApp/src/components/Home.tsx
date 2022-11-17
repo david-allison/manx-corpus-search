@@ -86,7 +86,7 @@ export const HomeFC = () => {
                 <AdvancedOptions onDateRangeChange={setDateRange} />
 
             </div>
-            {!loading && searchResponse != null && searchResponse.results.length == 0 && <>
+            {!loading && searchResponse != null && searchResponse.results.length > 0 && <>
                 <SearchResultHeader
                     response={searchResponse} />
                 <MainSearchResults
