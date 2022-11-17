@@ -45,75 +45,9 @@ export class FetchDataDocument extends Component<{ location: Location, match: Pa
         await this.populateData()
     }
 
-    static renderForecastsTable(response: SearchWorkResponse, value: string, manxhi: string[], englishhi: string[]) {
-        return (
-            <div>
-                { response.totalMatches} results ({ response.numberOfResults} lines) [{response.timeTaken}]
 
-                { response.notes && <><br /><br />{response.notes}</>}
-
-                { response.source && <><br /><br />{response.source}</>} { response.sourceLinks && <>{response.sourceLinks.map(x => <>| <a rel="noreferrer" href={x.url}>{x.text}</a> </>)}</>}
-            <table className='table table-striped' aria-labelledby="tabelLabel">
-                <thead>
-                    <tr>
-                        <th>Manx</th>
-                        <th>English</th>
-                        <th>Link</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {response.results.map(line => {
-                        const eng = [...englishhi, " " + value + " "]
-                        const manx = [...manxhi, " " + value + " "]
-                        const englishHighlight = eng
-                        const manxHighlight = manx
-
-                        // TODO: replace \n with <br/>: https://kevinsimper.medium.com/react-newline-to-break-nl2br-a1c240ba746
-                        const englishText = line.english.split("\n").map((item, key) => {
-                            return <span key={key}><Highlighter
-                                highlightClassName="textHighlight"
-                                searchWords={englishHighlight}
-                                autoEscape={true}
-                                textToHighlight={item} /><br /></span>
-                        })
-                        const manxText = line.manx.split("\n").map((item, key) => {
-                            return <span key={key}><Highlighter
-                                highlightClassName="textHighlight"
-                                searchWords={manxHighlight}
-                                autoEscape={true}
-                                textToHighlight={item} /><br /></span>
-                        })
-
-                            return <><tr key={line.date}>
-                                <td>
-                                    {manxText}
-                                </td>
-                                <td>
-                                    { englishText }
-                                </td>
-                                <td>
-                                    {line.page != null && response.pdfLink &&
-                                        <a href={response.pdfLink + "#page=" + line.page} target="_blank" rel="noreferrer">p{line.page}</a> }
-                                    {response.gitHubLink && <a href={`${response.gitHubLink}#L${line.csvLineNumber}`}>
-                                        edit
-                                    </a>}
-                                </td>
-                            </tr>
-                            {line.notes ? <tr><td colSpan={3} className="noteRow">{line.notes}</td></tr> : null}
-                            </>
-                        }
-                    )}
-                </tbody>
-                </table>
-             </div>
-        )
-    }
 
     render() {
-        const contents = this.state.loading
-            ? <p></p>
-            : FetchDataDocument.renderForecastsTable(this.state.searchWorkResponse as SearchWorkResponse, this.state.value, [], []) // TODO: Add highlights back in based on data.translations
-
         return (
             <div>
                 <h1 id="tabelLabel" ><Link to={`/?q=${this.state.value}`} style={{ textDecoration: "none" }}>⇦</Link>  { this.state.title }</h1>
@@ -121,7 +55,12 @@ export class FetchDataDocument extends Component<{ location: Location, match: Pa
                 <input type="text" id="corpus-search-box" value={this.state.value} onChange={(x) => this.onQueryChanged(x)} />
                 <label htmlFor="manxSearch">Manx</label> <input id="manxSearch" type="checkbox" checked={this.state.searchManx} onChange={(x) => this.onSearchManxChanged(x)} /><br/>
                 <label htmlFor="englishSearch">English</label> <input id="englishSearch" type="checkbox" checked={this.state.searchEnglish}  onChange={(x) => this.onSearchEnglishChanged(x)} /><br/>
-                {contents}
+                {/* TODO: Add highlights back in based on data.translations */}
+                {this.state.loading || <ComparisonTable
+                        response={this.state.searchWorkResponse as SearchWorkResponse}
+                        value={this.state.value}
+                        manxhi={[]}
+                        englishhi={[]}/> }
             </div>
         )
     }
@@ -152,4 +91,69 @@ export class FetchDataDocument extends Component<{ location: Location, match: Pa
     onSearchManxChanged(event: React.ChangeEvent<HTMLInputElement>) {
         this.setState({ searchManx: event.target.checked, searchEnglish: !event.target.checked }, () => this.populateData())
     }
+}
+
+const ComparisonTable = (props: { response: SearchWorkResponse, value: string, manxhi: string[], englishhi: string[] }) => {
+    const {response, value, manxhi, englishhi } = props
+        return (
+            <div>
+                { response.totalMatches} results ({ response.numberOfResults} lines) [{response.timeTaken}]
+
+                { response.notes && <><br /><br />{response.notes}</>}
+
+                { response.source && <><br /><br />{response.source}</>} { response.sourceLinks && <>{response.sourceLinks.map(x => <>| <a rel="noreferrer" href={x.url}>{x.text}</a> </>)}</>}
+                <table className='table table-striped' aria-labelledby="tabelLabel">
+                    <thead>
+                    <tr>
+                        <th>Manx</th>
+                        <th>English</th>
+                        <th>Link</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {response.results.map(line => {
+                            const eng = [...englishhi, " " + value + " "]
+                            const manx = [...manxhi, " " + value + " "]
+                            const englishHighlight = eng
+                            const manxHighlight = manx
+
+                            // TODO: replace \n with <br/>: https://kevinsimper.medium.com/react-newline-to-break-nl2br-a1c240ba746
+                            const englishText = line.english.split("\n").map((item, key) => {
+                                return <span key={key}><Highlighter
+                                    highlightClassName="textHighlight"
+                                    searchWords={englishHighlight}
+                                    autoEscape={true}
+                                    textToHighlight={item} /><br /></span>
+                            })
+                            const manxText = line.manx.split("\n").map((item, key) => {
+                                return <span key={key}><Highlighter
+                                    highlightClassName="textHighlight"
+                                    searchWords={manxHighlight}
+                                    autoEscape={true}
+                                    textToHighlight={item} /><br /></span>
+                            })
+
+                            return <><tr key={line.date}>
+                                <td>
+                                    {manxText}
+                                </td>
+                                <td>
+                                    { englishText }
+                                </td>
+                                <td>
+                                    {line.page != null && response.pdfLink &&
+                                        <a href={response.pdfLink + "#page=" + line.page} target="_blank" rel="noreferrer">p{line.page}</a> }
+                                    {response.gitHubLink && <a href={`${response.gitHubLink}#L${line.csvLineNumber}`}>
+                                        edit
+                                    </a>}
+                                </td>
+                            </tr>
+                                {line.notes ? <tr><td colSpan={3} className="noteRow">{line.notes}</td></tr> : null}
+                            </>
+                        }
+                    )}
+                    </tbody>
+                </table>
+            </div>
+        )
 }
