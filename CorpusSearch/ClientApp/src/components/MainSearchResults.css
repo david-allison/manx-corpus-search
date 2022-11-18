@@ -11,7 +11,7 @@ thead div {
 }
 
 thead div:after {
-    content: '⯆';
+    content: '⬇';
     display: inline-block;
     margin-left: 0.3em;
     margin-right: 0.2em;
@@ -19,7 +19,7 @@ thead div:after {
 }
 
 thead div.ascending::after {
-    content: '⯆';
+    content: '⬇';
     display: inline-block;
     margin-left: 0.3em;
     margin-right: 0.2em;
@@ -27,7 +27,7 @@ thead div.ascending::after {
 }
 
 thead div.descending::after {
-    content: '⯅';
+    content: '⬆';
     display: inline-block;
     margin-left: 0.3em;
     margin-right: 0.2em;
