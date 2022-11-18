@@ -59,8 +59,8 @@ export class FetchDataDocument extends Component<{ location: Location, match: Pa
                 {this.state.loading || <ComparisonTable
                         response={this.state.searchWorkResponse as SearchWorkResponse}
                         value={this.state.value}
-                        manxhi={[]}
-                        englishhi={[]}/> }
+                        highlightManx={this.state.searchManx}
+                        highlightEnglish={this.state.searchEnglish}/> }
             </div>
         )
     }
@@ -97,8 +97,8 @@ function escapeRegex(s: string) {
     return s.replace(/[/\-\\^$*+?.()|[\]{}]/g, "\\$&")
 }
 
-const ComparisonTable = (props: { response: SearchWorkResponse, value: string, manxhi: string[], englishhi: string[] }) => {
-    const {response, value } = props
+const ComparisonTable = (props: { response: SearchWorkResponse, value: string, highlightManx: boolean, highlightEnglish: boolean }) => {
+    const {response, value, highlightManx, highlightEnglish } = props
         return (
             <div>
                 { response.totalMatches} results ({ response.numberOfResults} lines) [{response.timeTaken}]
@@ -116,11 +116,8 @@ const ComparisonTable = (props: { response: SearchWorkResponse, value: string, m
                     </thead>
                     <tbody>
                     {response.results.map(line => {
-                        
-                            const eng = [` [,\\.!]?(${escapeRegex(value)})[,\\.!]?[ (—)]`]
-                            const manx = [` [,\\.!]?(${escapeRegex(value)})[,\\.!]?[ (—)]`]
-                            const englishHighlight = eng
-                            const manxHighlight = manx
+                            const englishHighlight = highlightEnglish ? [` [,\\.!]?(${escapeRegex(value)})[,\\.!]?[ (—)]`] : []
+                            const manxHighlight = highlightManx ? [` [,\\.!]?(${escapeRegex(value)})[,\\.!]?[ (—)]`] : []
 
                             // TODO: replace \n with <br/>: https://kevinsimper.medium.com/react-newline-to-break-nl2br-a1c240ba746
                             const englishText = line.english.split("\n").map((item, key) => {
