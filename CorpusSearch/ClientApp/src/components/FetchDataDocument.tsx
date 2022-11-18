@@ -6,6 +6,7 @@ import qs from "qs"
 import Highlighter from "react-highlight-words"
 import {Link, Location, PathMatch} from "react-router-dom"
 import {searchWork, SearchWorkResponse} from "../api/SearchWorkApi"
+import {Translations} from "../api/SearchApi"
 
 
     
@@ -60,7 +61,8 @@ export class FetchDataDocument extends Component<{ location: Location, match: Pa
                         response={this.state.searchWorkResponse as SearchWorkResponse}
                         value={this.state.value}
                         highlightManx={this.state.searchManx}
-                        highlightEnglish={this.state.searchEnglish}/> }
+                        highlightEnglish={this.state.searchEnglish}
+                        translations={this.state.searchWorkResponse?.translations}/> }
             </div>
         )
     }
@@ -97,8 +99,18 @@ function escapeRegex(s: string) {
     return s.replace(/[/\-\\^$*+?.()|[\]{}]/g, "\\$&")
 }
 
-const ComparisonTable = (props: { response: SearchWorkResponse, value: string, highlightManx: boolean, highlightEnglish: boolean }) => {
-    const {response, value, highlightManx, highlightEnglish } = props
+const ComparisonTable = (props: {
+    response: SearchWorkResponse, 
+    value: string, 
+    highlightManx: boolean, 
+    highlightEnglish: boolean, 
+    translations?: Translations }) => {
+    const {response, value, highlightManx, highlightEnglish, translations } = props
+    
+    const getTranslations = (key: string) => {
+        if (translations == null) return []
+        return translations[key] ?? []
+    }
         return (
             <div>
                 { response.totalMatches} results ({ response.numberOfResults} lines) [{response.timeTaken}]
@@ -116,20 +128,27 @@ const ComparisonTable = (props: { response: SearchWorkResponse, value: string, h
                     </thead>
                     <tbody>
                     {response.results.map(line => {
-                            const englishHighlight = highlightEnglish ? [` [,\\.!]?(${escapeRegex(value)})[,\\.!]?[ (—)]`] : []
-                            const manxHighlight = highlightManx ? [` [,\\.!]?(${escapeRegex(value)})[,\\.!]?[ (—)]`] : []
+                        
+                            
+                            const englishValue = highlightEnglish ? [value] : getTranslations("en")
+                            const manxValue = highlightManx ? [value] : getTranslations("gv")
+                            const english = englishValue.map(x => `(${escapeRegex(x)})`).join("|")
+                            const manx = manxValue.map(x => `(${escapeRegex(x)})`).join("|")
+                            const englishHighlight = englishValue.length > 0 ? [` [,\\.!]?(${english})[,\\.!]?[ (—)]`] : []
+                            const manxHighlight = manxValue.length > 0 ? [` [,\\.!]?(${manx})[,\\.!]?[ (—)]`] : []
+                        
 
                             // TODO: replace \n with <br/>: https://kevinsimper.medium.com/react-newline-to-break-nl2br-a1c240ba746
                             const englishText = line.english.split("\n").map((item, key) => {
                                 return <span key={key}><Highlighter
-                                    highlightClassName="textHighlight"
+                                    highlightClassName={highlightEnglish ? "textHighlight" : "textHighlightAlternate"}
                                     searchWords={englishHighlight}
                                     autoEscape={false}
                                     textToHighlight={item} /><br /></span>
                             })
                             const manxText = line.manx.split("\n").map((item, key) => {
                                 return <span key={key}><Highlighter
-                                    highlightClassName="textHighlight"
+                                    highlightClassName={highlightManx ? "textHighlight" : "textHighlightAlternate"}
                                     searchWords={manxHighlight}
                                     autoEscape={false}
                                     textToHighlight={item} /><br /></span>
