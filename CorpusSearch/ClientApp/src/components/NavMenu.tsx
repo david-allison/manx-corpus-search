@@ -32,17 +32,18 @@ export class NavMenu extends Component<unknown, State> {
         <Navbar className="navbar-expand-sm navbar-toggleable-sm ng-white border-bottom box-shadow mb-3" light>
 
           <Container>
-            <img src={require("../corpus.png")} alt="Manx Corpus Search Logo" height="100px" />
-
+            <img src={require("../corpus.png")} alt="Manx Corpus Search" height="100px" />
                 <NavbarToggler onClick={this.toggleNavbar} className="mr-2" />
                 <Collapse className="d-sm-inline-flex flex-sm-row-reverse" isOpen={!this.state.collapsed} navbar>
                     <ul className="navbar-nav flex-grow">
                         <NavItem>
                             <NavLink tag={Link} className="text-dark" to="/">Home</NavLink>
                         </NavItem>
-                            <NavItem>
-                                <a className="text-dark nav-link"href="/Dictionary/Cregeen">Dictionary</a>
-
+                        <NavItem>
+                            <a className="text-dark nav-link" href="/Dictionary/Cregeen">Dictionary</a>
+                        </NavItem>
+                        <NavItem>
+                            <a className="text-dark nav-link" href="https://github.com/david-allison/manx-search-data">Contribute</a>
                         </NavItem>
                     </ul>
                     </Collapse>
