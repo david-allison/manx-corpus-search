@@ -93,8 +93,12 @@ export class FetchDataDocument extends Component<{ location: Location, match: Pa
     }
 }
 
+function escapeRegex(s: string) {
+    return s.replace(/[/\-\\^$*+?.()|[\]{}]/g, "\\$&")
+}
+
 const ComparisonTable = (props: { response: SearchWorkResponse, value: string, manxhi: string[], englishhi: string[] }) => {
-    const {response, value, manxhi, englishhi } = props
+    const {response, value } = props
         return (
             <div>
                 { response.totalMatches} results ({ response.numberOfResults} lines) [{response.timeTaken}]
@@ -112,8 +116,9 @@ const ComparisonTable = (props: { response: SearchWorkResponse, value: string, m
                     </thead>
                     <tbody>
                     {response.results.map(line => {
-                            const eng = [...englishhi, " " + value + " "]
-                            const manx = [...manxhi, " " + value + " "]
+                        
+                            const eng = [` [,\\.!]?(${escapeRegex(value)})[,\\.!]?[ (—)]`]
+                            const manx = [` [,\\.!]?(${escapeRegex(value)})[,\\.!]?[ (—)]`]
                             const englishHighlight = eng
                             const manxHighlight = manx
 
@@ -122,14 +127,14 @@ const ComparisonTable = (props: { response: SearchWorkResponse, value: string, m
                                 return <span key={key}><Highlighter
                                     highlightClassName="textHighlight"
                                     searchWords={englishHighlight}
-                                    autoEscape={true}
+                                    autoEscape={false}
                                     textToHighlight={item} /><br /></span>
                             })
                             const manxText = line.manx.split("\n").map((item, key) => {
                                 return <span key={key}><Highlighter
                                     highlightClassName="textHighlight"
                                     searchWords={manxHighlight}
-                                    autoEscape={true}
+                                    autoEscape={false}
                                     textToHighlight={item} /><br /></span>
                             })
 
