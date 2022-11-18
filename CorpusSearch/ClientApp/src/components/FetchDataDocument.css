@@ -2,6 +2,10 @@
     background-color: yellow;
 }
 
+mark.textHighlightAlternate {
+    background-color: #b0edde;
+}
+
 .noteRow {
     background-color: aliceblue;
     font-size: small;
