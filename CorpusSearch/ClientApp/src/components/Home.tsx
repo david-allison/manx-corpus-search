@@ -12,7 +12,7 @@ import {useLocation, useNavigate} from "react-router-dom"
 import {search, SearchResponse} from "../api/SearchApi"
 
 
-type SearchLanguage = "English" | "Manx"
+export type SearchLanguage = "English" | "Manx"
 
 export class Home {
     static displayName = Home.name

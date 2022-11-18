@@ -1,99 +1,85 @@
 /* eslint @typescript-eslint/no-misused-promises: 0 */  
 import "./FetchDataDocument.css"
 
-import React, { Component } from "react"
+import React, {useEffect, useState} from "react"
 import qs from "qs"
 import Highlighter from "react-highlight-words"
-import {Link, Location, PathMatch} from "react-router-dom"
+import {Link, useLocation, useMatch} from "react-router-dom"
 import {searchWork, SearchWorkResponse} from "../api/SearchWorkApi"
 import {Translations} from "../api/SearchApi"
+import {SearchLanguage} from "./Home"
 
 
+export const FetchDataDocument = () => {
+    const location = useLocation()
+    const match = useMatch("/docs/:docId")
+
+    const [loading, setLoading] = useState(true)
+    const [title, setTitle] = useState("Work Search")
     
-type State = {
-    searchWorkResponse?: SearchWorkResponse,
-    loading: boolean,
-    title: string,
-    docIdent: string | undefined
-    value: string,
-    searchManx: boolean
-    searchEnglish: boolean
-};
+    const docIdent = match?.params.docId
+    
+    // the 'q' parameter from the querystring
+    const { q } = qs.parse(location.search, { ignoreQueryPrefix: true })
+    
+    const [value, setValue] = useState(q?.toString() ?? "")
+    
+    const getInitialSearchLanguage = (): SearchLanguage => {
+        // eslint-disable-next-line
+        switch (location.state.searchLanguage) {
+            case "English": return "English"
+            case "Manx": return "Manx"
+            default: return "Manx"
+        }
+    }
+    const [searchLanguage, setSearchLanguage] = useState<SearchLanguage>(getInitialSearchLanguage)
+    const searchManx = searchLanguage == "Manx"
+    const searchEnglish = searchLanguage == "English"
+    
+    const [searchWorkResponse, setSearchWorkResponse] = useState<SearchWorkResponse | null>(null)
 
-export class FetchDataDocument extends Component<{ location: Location, match: PathMatch<"docId"> | null}, State> {
-    static displayName = FetchDataDocument.name
 
-    constructor(props: {location: Location, match: PathMatch<"docId"> | null}) {
-        super(props)
-        const { q } = qs.parse(props.location.search, { ignoreQueryPrefix: true })
-        this.state = {
-            loading: true,
-            title: "Work Search",
-            docIdent: props.match?.params.docId,
-            value: q?.toString() ?? "",
-            // eslint-disable-next-line 
-            searchManx: props.location.state ? props.location.state.searchLanguage == "Manx" : true,
-            // eslint-disable-next-line 
-            searchEnglish: props.location.state ? props.location.state.searchLanguage == "English" : false,
+    // load the data
+    useEffect(() => {
+        const getData = async () => {
+            if (!docIdent) {
+                throw new Error("no identifier provided")
+            }
+            return await searchWork({ docIdent, value, searchEnglish, searchManx })
         }
 
-        this.onQueryChanged = this.onQueryChanged.bind(this)
-        this.onSearchEnglishChanged = this.onSearchEnglishChanged.bind(this)
-        this.onSearchManxChanged = this.onSearchManxChanged.bind(this)
-    }
+        getData()
+            .then(data => {
+                setSearchWorkResponse(data)
+                setTitle(data.title)
+                setLoading(false)
+            })
+            .catch(e => {
+                setLoading(false)
+                console.error(e)
+            })
 
-    async componentDidMount() {
-        await this.populateData()
-    }
+    }, [value, searchEnglish, searchManx])
 
 
+    return (
+        <div>
+            <h1 id="tabelLabel" ><Link to={`/?q=${value}`} style={{ textDecoration: "none" }}>⇦</Link>  { title }</h1>
 
-    render() {
-        return (
-            <div>
-                <h1 id="tabelLabel" ><Link to={`/?q=${this.state.value}`} style={{ textDecoration: "none" }}>⇦</Link>  { this.state.title }</h1>
+            <input type="text" id="corpus-search-box" value={value} onChange={(x) => setValue(x.target.value)} />
+            <label htmlFor="manxSearch">Manx</label> <input id="manxSearch" type="checkbox" checked={searchManx} onChange={(x) => setSearchLanguage(x.target.checked ? "Manx" : "English")} /><br/>
+            <label htmlFor="englishSearch">English</label> <input id="englishSearch" type="checkbox" checked={searchEnglish}  onChange={(x) => setSearchLanguage(x.target.checked ? "English" : "Manx")} /><br/>
+            {loading || searchWorkResponse == null || <ComparisonTable
+                response={searchWorkResponse}
+                value={value}
+                highlightManx={searchManx}
+                highlightEnglish={searchEnglish}
+                translations={searchWorkResponse.translations}/> }
+        </div>
+    )
 
-                <input type="text" id="corpus-search-box" value={this.state.value} onChange={(x) => this.onQueryChanged(x)} />
-                <label htmlFor="manxSearch">Manx</label> <input id="manxSearch" type="checkbox" checked={this.state.searchManx} onChange={(x) => this.onSearchManxChanged(x)} /><br/>
-                <label htmlFor="englishSearch">English</label> <input id="englishSearch" type="checkbox" checked={this.state.searchEnglish}  onChange={(x) => this.onSearchEnglishChanged(x)} /><br/>
-                {/* TODO: Add highlights back in based on data.translations */}
-                {this.state.loading || <ComparisonTable
-                        response={this.state.searchWorkResponse as SearchWorkResponse}
-                        value={this.state.value}
-                        highlightManx={this.state.searchManx}
-                        highlightEnglish={this.state.searchEnglish}
-                        translations={this.state.searchWorkResponse?.translations}/> }
-            </div>
-        )
-    }
-
-    async populateData() {
-        if (!this.state.docIdent) {
-            throw new Error("no identifier provided")
-        }
-        const { docIdent, value, searchManx, searchEnglish } = this.state 
-        const data = await searchWork({ docIdent, value, searchEnglish, searchManx })
-        
-        this.setState({ 
-            searchWorkResponse: data, 
-            title: data.title, 
-            loading: false, 
-        })
-    }
-
-    onQueryChanged(event: React.ChangeEvent<HTMLInputElement>) {
-        // eslint-disable-next-line 
-        this.setState({ value: event.target.value }, () => this.populateData())
-    }
-
-    onSearchEnglishChanged(event: React.ChangeEvent<HTMLInputElement>) {
-        this.setState({ searchEnglish: event.target.checked, searchManx: !event.target.checked }, () => this.populateData())
-    }
-
-    onSearchManxChanged(event: React.ChangeEvent<HTMLInputElement>) {
-        this.setState({ searchManx: event.target.checked, searchEnglish: !event.target.checked }, () => this.populateData())
-    }
 }
+
 
 function escapeRegex(s: string) {
     return s.replace(/[/\-\\^$*+?.()|[\]{}]/g, "\\$&")
