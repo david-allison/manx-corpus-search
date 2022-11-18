@@ -1,5 +1,6 @@
 import React, { Component } from "react"
 import {
+    Navigate,
     Route,
     Routes,
 } from "react-router-dom"
@@ -17,6 +18,7 @@ export default class App extends Component {
               <Routes>
                   <Route path='/' element={<HomeFC/>} />
                   <Route path='/docs/:docId' element={<FetchDataDocument/>} />
+                  <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
           </Layout>
     )
