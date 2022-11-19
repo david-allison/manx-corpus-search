@@ -22,11 +22,11 @@ export const FetchDataDocument = () => {
     // the 'q' parameter from the querystring
     const { q } = qs.parse(location.search, { ignoreQueryPrefix: true })
     
-    const [value, setValue] = useState(q?.toString() ?? "")
+    const [value, setValue] = useState(q?.toString() ?? "*")
     
     const getInitialSearchLanguage = (): SearchLanguage => {
         // eslint-disable-next-line
-        switch (location.state.searchLanguage) {
+        switch (location.state?.searchLanguage) {
             case "English": return "English"
             case "Manx": return "Manx"
             default: return "Manx"
