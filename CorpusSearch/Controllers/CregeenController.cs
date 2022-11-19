@@ -15,7 +15,7 @@ namespace CorpusSearch.Controllers
         public IActionResult Get(string s)
         {
             ViewData["query"] = s;
-            return View("Views/Cregeen/Index.cshtml");
+            return View("~/Views/Cregeen/Index.cshtml");
         }
     }
 }
