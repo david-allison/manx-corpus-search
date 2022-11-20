@@ -2,7 +2,7 @@
 
 import "./Home.css"
 
-import React, {ChangeEvent, useEffect, useState} from "react"
+import React, {ChangeEvent, useEffect, useRef, useState} from "react"
 import qs from "qs"
 import MainSearchResults from "./MainSearchResults"
 import { DictionaryLink } from "./DictionaryLink"
@@ -33,6 +33,9 @@ export const HomeFC = () => {
     const [hasError, setHasError] = useState(false)
     
     const hasNoSearch = query.trim() == "" 
+    
+    const currentQuery = useRef(query)
+    currentQuery.current = query
     
     // load the data
     useEffect(() => {
@@ -66,7 +69,7 @@ export const HomeFC = () => {
         getData()
             .then(maybeData => {
                 setLoading(false)
-                if (maybeData == null) {
+                if (maybeData == null || maybeData.query != currentQuery.current) {
                     return
                 }
                 setHasError(false)
