@@ -9,6 +9,7 @@ import {searchWork, SearchWorkResponse} from "../api/SearchWorkApi"
 import {Translations} from "../api/SearchApi"
 import {SearchLanguage} from "./Home"
 import {CircularProgress} from "@mui/material"
+import {ManxEnglishSelector} from "./ManxEnglishSelector"
 
 
 export const FetchDataDocument = () => {
@@ -68,9 +69,10 @@ export const FetchDataDocument = () => {
         <div>
             <h1 id="tabelLabel" ><Link to={`/?q=${value}`} style={{ textDecoration: "none" }}>⇦</Link>  { title }</h1>
 
-            <input type="text" id="corpus-search-box" value={value} onChange={(x) => setValue(x.target.value)} />
-            <label htmlFor="manxSearch">Manx</label> <input id="manxSearch" type="checkbox" checked={searchManx} onChange={(x) => setSearchLanguage(x.target.checked ? "Manx" : "English")} /><br/>
-            <label htmlFor="englishSearch">English</label> <input id="englishSearch" type="checkbox" checked={searchEnglish}  onChange={(x) => setSearchLanguage(x.target.checked ? "English" : "Manx")} /><br/>
+            <div style={{display: "flex", flex: 1, flexGrow: 2}}>
+                <input size={5} id="corpus-search-box" style={{flexGrow: 1, marginRight: 12}} placeholder="Enter search term" type="text" value={value} onChange={(x) => setValue(x.target.value)} />
+                <ManxEnglishSelector onLanguageChange={setSearchLanguage}/>
+            </div>
             {loading && <div style={{
                 marginTop: 40,
                 display: "flex",
