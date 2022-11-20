@@ -2,7 +2,7 @@
 
 import "./Home.css"
 
-import React, {ChangeEvent, useEffect, useRef, useState} from "react"
+import React, {useEffect, useRef, useState} from "react"
 import qs from "qs"
 import MainSearchResults from "./MainSearchResults"
 import { DictionaryLink } from "./DictionaryLink"
@@ -11,6 +11,7 @@ import AdvancedOptions, {DateRange} from "./AdvancedOptions"
 import {useLocation, useNavigate} from "react-router-dom"
 import {search, SearchResponse} from "../api/SearchApi"
 import {CircularProgress} from "@mui/material"
+import {ManxEnglishSelector} from "./ManxEnglishSelector"
 
 
 export type SearchLanguage = "English" | "Manx"
@@ -91,15 +92,15 @@ export const HomeFC = () => {
     return (
         <div>
             <div className="search-options">
-                <a style={{"float":"right"}} href="https://github.com/david-allison/manx-corpus-search/blob/master/CorpusSearch/Docs/searching.md#searching" target="_blank" rel="noreferrer">Search Help ℹ</a>
-                <input id="corpus-search-box" placeholder="Enter search term" type="text" value={query} onChange={handleChange} />
 
-                <SearchLanguageBox
-                    onLanguageChange={setSearchLanguage}
-                    onMatchChange={setMatchPhrase}
-                />
+                <div style={{display: "flex", flex: 1}}>
+                    <input size={5} id="corpus-search-box" style={{flexGrow: 1, marginRight: 12}} placeholder="Enter search term" type="text" value={query} onChange={handleChange} />
+                    <ManxEnglishSelector onLanguageChange={setSearchLanguage}/>
+                </div>
 
-                <AdvancedOptions onDateRangeChange={setDateRange} />
+                <div style={{clear: "both"}} />
+
+                <AdvancedOptions onDateRangeChange={setDateRange} onMatchChange={setMatchPhrase} />
 
             </div>
 
@@ -148,28 +149,4 @@ const SearchResultHeader = (props: { response: SearchResponse })  => {
             <br /><br />
         </div>
     )
-}
-
-const SearchLanguageBox = (props: {
-    onLanguageChange: (lang: SearchLanguage) => void,
-    onMatchChange: (match: boolean) => void
-}) => {
-    const [language, setLanguage] = useState<SearchLanguage>("Manx")
-    const [matchPhrase, setMatchPhrase] = useState(false)
-    
-    const onMatchPhraseChanged = (event: ChangeEvent<HTMLInputElement>) => {
-        setMatchPhrase(event.target.checked)
-        props.onMatchChange(event.target.checked)
-    }
-    const onSetLanguage = (newLanguage: SearchLanguage) => {
-        setLanguage(newLanguage)
-        props.onLanguageChange(newLanguage)
-    }
-    
-    return <div className="search-language">
-        Language:
-        <label htmlFor="manxSearch" id="manxSearchLabel">Manx</label> <input id="manxSearch" type="checkbox" checked={language == "Manx"} defaultChecked={language == "Manx"} onChange={() => onSetLanguage("Manx")} />
-        <label htmlFor="englishSearch">English</label> <input id="englishSearch" type="checkbox" checked={language== "English"} defaultChecked={language == "English"} onChange={() =>onSetLanguage("English")} />
-        <label style={{ "paddingLeft": "5px" }} htmlFor="matchPhrase">Match Phrase</label> <input id="matchPhrase" type="checkbox" checked={matchPhrase} onChange={onMatchPhraseChanged} /><br />
-    </div>
 }
