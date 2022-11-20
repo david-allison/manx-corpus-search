@@ -93,8 +93,8 @@
             </tr>
             @if (!string.IsNullOrEmpty(line.Notes))
             {
-                <tr>
-                <td colSpan="3" class="noteRow mw-50">
+                <tr class="noteRow">
+                <td colSpan="3">
                     @foreach (var (note, i) in line.Notes.Split("\\n").SelectMany(SplitNotesToLines).Select((x,i) => (x, i)))
                     {
                         <div style="max-width: 75%; margin: auto"> 
