@@ -3,8 +3,8 @@ import {Grid, Switch} from "@mui/material"
 import {SearchLanguage} from "./Home"
 
 
-export const ManxEnglishSelector = (props: { onLanguageChange: (lang: SearchLanguage) => void }) => {
-    const [language, setLanguage] = useState<SearchLanguage>("Manx")
+export const ManxEnglishSelector = (props: { onLanguageChange: (lang: SearchLanguage) => void, initialLanguage?: SearchLanguage }) => {
+    const [language, setLanguage] = useState<SearchLanguage>(props.initialLanguage ?? "Manx")
 
     const onSetLanguage = (checked: boolean) => {
         const newLanguage: SearchLanguage = checked ? "English" : "Manx"
