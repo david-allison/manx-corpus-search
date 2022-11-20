@@ -39,5 +39,19 @@ namespace CorpusSearch.Model
             path = HttpUtility.UrlEncode(path).Replace("+", "%20").Replace("%5c", "/");
             return $"https://github.com/{target.GitHubRepo}/blob/master/{path}";
         }
+        
+        /// <summary>(nullable) - full link to GitHub</summary>
+        public static string GetDownloadTextLink(this IDocument target)
+        {
+            return GetGitHubLink(target)?
+                .Replace("https://github.com", "https://raw.githubusercontent.com")
+                .Replace("/blob/", "/");
+        }
+        
+        /// <summary>(nullable) - full link to GitHub</summary>
+        public static string GetDownloadMetadataLink(this IDocument target)
+        {
+            return GetDownloadTextLink(target)?.Replace("document.csv", "manifest.json.txt");
+        }
     }
 }

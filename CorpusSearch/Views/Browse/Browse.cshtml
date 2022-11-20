@@ -32,7 +32,18 @@
 <h1 style="margin: 24px"><a href="/Browse" style="text-decoration: none">⇦</a> @ViewData["Title"]</h1>
 
 <a class="lead font-weight-bold" style="margin: 24px" href="/docs/@ViewData["docId"]">View in Corpus</a>
-<a class="lead font-weight-bold" style="margin: 24px" href="@ViewData["GitHubLink"]">Edit on GitHub</a>
+@if (ViewData["GitHubLink"] != null)
+{
+    <a class="lead font-weight-bold" style="margin: 24px" href="@ViewData["GitHubLink"]">Edit on GitHub</a>
+}
+@if (ViewData["DownloadText"] != null)
+{
+    <a class="lead font-weight-bold" style="margin: 24px" href="@ViewData["DownloadText"]">Download Text (CSV)</a>
+}
+@if (ViewData["DownloadMetadata"] != null)
+{
+    <a class="lead font-weight-bold" style="margin: 24px" href="@ViewData["DownloadMetadata"]">Download Metadata (JSON)</a>
+}
 
 <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
 <script src="https://code.jquery.com/jquery-1.12.4.min.js" integrity="sha384-nvAa0+6Qg9clwYCGGPpDQLVpLNn0fRaROjHqs13t4Ggj3Ez50XnGQqc/r8MhnRDZ" crossorigin="anonymous"></script>
