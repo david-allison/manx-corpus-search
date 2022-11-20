@@ -71,7 +71,7 @@ export const FetchDataDocument = () => {
 
             <div style={{display: "flex", flex: 1, flexGrow: 2}}>
                 <input size={5} id="corpus-search-box" style={{flexGrow: 1, marginRight: 12}} placeholder="Enter search term" type="text" value={value} onChange={(x) => setValue(x.target.value)} />
-                <ManxEnglishSelector onLanguageChange={setSearchLanguage}/>
+                <ManxEnglishSelector initialLanguage={searchLanguage} onLanguageChange={setSearchLanguage}/>
             </div>
             {loading && <div style={{
                 marginTop: 40,
