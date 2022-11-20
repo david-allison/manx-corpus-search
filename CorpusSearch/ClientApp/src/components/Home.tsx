@@ -21,14 +21,37 @@ export class Home {
     static currentYear = new Date().getFullYear()
 }
 
+const parseLanguage = (language?: string): SearchLanguage | null => {
+    if (!language) {
+        return null
+    }
+    switch (language) {
+        case "en": return "English"
+        case "gv": return "Manx"
+        default: return null
+    }
+}
+
+const toLangParam = (param: SearchLanguage): string => {
+    switch (param) {
+        case "Manx": return "gv"
+        case "English": return "en"
+    }
+}
+
 export const HomeFC = () => {
     const location = useLocation()
     const navigation = useNavigate()
     
     const [loading, setLoading] = useState(true)
     const [searchResponse, setSearchResponse] = useState<SearchResponse | null>(null)
-    const [searchLanguage, setSearchLanguage] = useState<SearchLanguage>("Manx")
-    const [query, setQuery] = useState(() => qs.parse(location.search, { ignoreQueryPrefix: true })?.q?.toString() ?? "")
+    
+    const locationParams = qs.parse(location.search, { ignoreQueryPrefix: true })
+    
+    const [query, setQuery] = useState(() => locationParams?.q?.toString() ?? "")
+    const [searchLanguage, setSearchLanguage] = useState<SearchLanguage>(() => parseLanguage(locationParams?.lang?.toString()) ?? "Manx")
+    
+    
     const [dateRange, setDateRange] = useState<DateRange>( { start: 1500, end: Home.currentYear })
     const [matchPhrase, setMatchPhrase] = useState(false)
     const [hasError, setHasError] = useState(false)
@@ -85,9 +108,16 @@ export const HomeFC = () => {
     }, [dateRange, query, searchLanguage, matchPhrase])
 
     const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        navigation(`/?q=${event.target.value}`, { replace: true })
         setQuery(event.target.value)
     }
+    
+    useEffect(() => {
+        if (!query && searchLanguage == "Manx") {
+            navigation("/", { replace: true })
+        } else {
+            navigation(`/?q=${query}&lang=${toLangParam(searchLanguage)}`, { replace: true })    
+        }
+    }, [query, searchLanguage])
 
     return (
         <div>
