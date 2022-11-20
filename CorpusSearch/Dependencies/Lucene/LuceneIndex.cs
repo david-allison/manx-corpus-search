@@ -250,6 +250,25 @@ namespace CorpusSearch
         {
             return this.indexWriter;
         }
+
+        public List<DocumentLine> GetAllLines(string ident)
+        {
+            using var reader = indexWriter.GetReader(applyAllDeletes: true);
+            var searcher = new IndexSearcher(reader);
+            
+            TopDocs docs = searcher.Search(new TermQuery(new Term(DOCUMENT_IDENT, ident)), Int32.MaxValue);
+
+            var fieldsToLoad = new HashSet<string> { DOCUMENT_REAL_MANX, DOCUMENT_REAL_ENGLISH, DOCUMENT_NOTES };
+            return docs.ScoreDocs
+                .Select(x => searcher.Doc(x.Doc, fieldsToLoad))
+                .Select(x => new DocumentLine
+            {
+                Manx = x.GetField(DOCUMENT_REAL_MANX)?.GetStringValue(),
+                English = x.GetField(DOCUMENT_REAL_ENGLISH)?.GetStringValue(),
+                Notes = x.GetField(DOCUMENT_NOTES)?.GetStringValue()
+                
+            }).ToList();
+        }
     }
 
 

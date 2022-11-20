@@ -38,6 +38,15 @@ namespace CorpusSearch.Dependencies
 
         }
 
+        /// <summary>
+        /// Returns all lines for a provided document
+        /// </summary>
+        /// <param name="ident">The ID of the document</param>
+        internal List<DocumentLine> GetAllLines(string ident)
+        {
+            return luceneSearch.GetAllLines(ident);
+        }
+
         public ScanResult Scan(string query)
         {
             return Scan(query, ScanOptions.Default);

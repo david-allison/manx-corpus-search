@@ -1,7 +1,7 @@
 ﻿using CorpusSearch.Controllers;
 using CorpusSearch.Dependencies;
 using CorpusSearch.Model;
-using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using static CorpusSearch.Controllers.SearchController;
 
@@ -45,6 +45,15 @@ namespace CorpusSearch.Service
             ret.TotalMatches = results.TotalMatches;
 
             return ret;
+        }
+        
+        /// <summary>
+        /// Returns all lines for a provided document
+        /// </summary>
+        /// <param name="ident">The ID of the document</param>
+        internal List<DocumentLine> GetAllLines(string ident)
+        {
+            return searcher.GetAllLines(ident);
         }
 
         private static SearchOptions ToSearchOptions(CorpusSearchWorkQuery workQuery)
