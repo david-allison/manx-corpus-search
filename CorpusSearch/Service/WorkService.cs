@@ -21,6 +21,11 @@ namespace CorpusSearch.Service
             documentByIdent.Add(document.Ident, document);
         }
 
+        internal Task<List<IDocument>> GetAll()
+        {
+            return Task.FromResult(documentByIdent.Values.ToList());
+        }
+
         internal Task<List<string>> GetIdentsBetween(DateTime minDate, DateTime maxDate)
         {
             List<string> results = documentByIdent.Where(x =>
@@ -32,5 +37,7 @@ namespace CorpusSearch.Service
                 .ToList();
             return Task.FromResult(results);
         }
+
+        public bool HasIdent(string documentId) => documentByIdent.ContainsKey(documentId);
     }
 }
