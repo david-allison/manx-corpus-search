@@ -37,6 +37,8 @@ public class BrowseController : Controller
         var document = await workService.ByIdent(documentId);
         ViewData["Title"] = document.Name;
         ViewData["GitHubLink"] = document.GetGitHubLink();
+        ViewData["DownloadText"] = document.GetDownloadTextLink();
+        ViewData["DownloadMetadata"] = document.GetDownloadMetadataLink();
         ViewData["docId"] = documentId;
         ViewData["lines"] = lines;
         return View("~/Views/Browse/Browse.cshtml");
