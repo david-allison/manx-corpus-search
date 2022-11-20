@@ -6,12 +6,7 @@
 
 <script>
     function search() {
-        var query = document.getElementById("searchInput").value;
-        window.location.href = `/Dictionary/Cregeen/${query}`;
-        return false;
-    }
-    function search() {
-        var query = document.getElementById("searchInput").value;
+        let query = document.getElementById("searchInput").value;
         window.location.href = `/Dictionary/Cregeen/${query}`;
         return false;
     }
@@ -48,8 +43,9 @@
     {
         var elDepth = depth * 30 + "px";
         <p>
-            <span style="margin-left: @elDepth;" class="word"> @Html.Raw(entry.HeadingHtml)</span>; 
-            <span class="entry"> @Html.Raw(entry.EntryHtml)</span>
+            @* Non-breaking hyphen doesn't appear on macOS *@
+            <span style="margin-left: @elDepth;" class="word"> @Html.Raw(entry.HeadingHtml.Replace("&#8209;", "-"))</span>;
+            <span class="entry"> @Html.Raw(entry.EntryHtml.Replace("&#8209;", "-"))</span>
         </p>
         if (!renderRecursive)
         {
