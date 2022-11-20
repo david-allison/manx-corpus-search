@@ -10,6 +10,7 @@ import { TranslationList } from "./TranslationList"
 import AdvancedOptions, {DateRange} from "./AdvancedOptions"
 import {useLocation, useNavigate} from "react-router-dom"
 import {search, SearchResponse} from "../api/SearchApi"
+import {CircularProgress} from "@mui/material"
 
 
 export type SearchLanguage = "English" | "Manx"
@@ -51,6 +52,7 @@ export const HomeFC = () => {
             
             return data
         }
+        setLoading(true)
         
         getData()
             .then(maybeData => {
@@ -86,6 +88,16 @@ export const HomeFC = () => {
                 <AdvancedOptions onDateRangeChange={setDateRange} />
 
             </div>
+
+            {loading && <div style={{
+                marginTop: 40,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+            }}>
+                <CircularProgress style={{alignSelf: "center"}} />
+            </div>}
+            
             {!loading && searchResponse != null && searchResponse.results.length > 0 && <>
                 <SearchResultHeader
                     response={searchResponse} />

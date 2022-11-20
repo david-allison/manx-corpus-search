@@ -8,6 +8,7 @@ import {Link, useLocation, useMatch} from "react-router-dom"
 import {searchWork, SearchWorkResponse} from "../api/SearchWorkApi"
 import {Translations} from "../api/SearchApi"
 import {SearchLanguage} from "./Home"
+import {CircularProgress} from "@mui/material"
 
 
 export const FetchDataDocument = () => {
@@ -48,6 +49,7 @@ export const FetchDataDocument = () => {
             return await searchWork({ docIdent, value, searchEnglish, searchManx })
         }
 
+        setLoading(true)
         getData()
             .then(data => {
                 setSearchWorkResponse(data)
@@ -69,6 +71,14 @@ export const FetchDataDocument = () => {
             <input type="text" id="corpus-search-box" value={value} onChange={(x) => setValue(x.target.value)} />
             <label htmlFor="manxSearch">Manx</label> <input id="manxSearch" type="checkbox" checked={searchManx} onChange={(x) => setSearchLanguage(x.target.checked ? "Manx" : "English")} /><br/>
             <label htmlFor="englishSearch">English</label> <input id="englishSearch" type="checkbox" checked={searchEnglish}  onChange={(x) => setSearchLanguage(x.target.checked ? "English" : "Manx")} /><br/>
+            {loading && <div style={{
+                marginTop: 40,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+            }}>
+                <CircularProgress style={{alignSelf: "center"}} />
+            </div>}
             {loading || searchWorkResponse == null || <ComparisonTable
                 response={searchWorkResponse}
                 value={value}
