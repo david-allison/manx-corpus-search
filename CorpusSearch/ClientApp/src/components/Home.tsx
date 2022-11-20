@@ -105,7 +105,7 @@ export const HomeFC = () => {
             </div>
 
             {hasNoSearch && <span style={{marginTop: 10, fontSize: "large", display: "flex", justifyContent: "center"}}>
-                Please enter a search term, or&nbsp;<a href={"/Browse"}>Browse</a>&nbsp;all content
+                <span style={{display: "inline"}}>Please enter a search term, or&nbsp;<a href={"/Browse"}>Browse</a>&nbsp;all content</span>
             </span>}
             {!hasNoSearch && hasError && <span style={{marginTop: 10, fontSize: "large", display: "flex", justifyContent: "center"}}>
                 Something went wrong, please try again
