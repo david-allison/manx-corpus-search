@@ -30,6 +30,9 @@ export const HomeFC = () => {
     const [query, setQuery] = useState(() => qs.parse(location.search, { ignoreQueryPrefix: true })?.q?.toString() ?? "")
     const [dateRange, setDateRange] = useState<DateRange>( { start: 1500, end: Home.currentYear })
     const [matchPhrase, setMatchPhrase] = useState(false)
+    const [hasError, setHasError] = useState(false)
+    
+    const hasNoSearch = query.trim() == "" 
     
     // load the data
     useEffect(() => {
@@ -52,6 +55,12 @@ export const HomeFC = () => {
             
             return data
         }
+
+        if (hasNoSearch) {
+            setLoading(false)
+            return
+        }
+        
         setLoading(true)
         
         getData()
@@ -60,10 +69,12 @@ export const HomeFC = () => {
                 if (maybeData == null) {
                     return
                 }
+                setHasError(false)
                 setSearchResponse(maybeData)
             })
             .catch(e => {
                 setLoading(false)
+                setHasError(true)
                 console.error(e)
             })
         
@@ -89,7 +100,14 @@ export const HomeFC = () => {
 
             </div>
 
-            {loading && <div style={{
+            {hasNoSearch && <span style={{marginTop: 10, fontSize: "large", display: "flex", justifyContent: "center"}}>
+                Please enter a search term, or&nbsp;<a href={"/Browse"}>Browse</a>&nbsp;all content
+            </span>}
+            {!hasNoSearch && hasError && <span style={{marginTop: 10, fontSize: "large", display: "flex", justifyContent: "center"}}>
+                Something went wrong, please try again
+            </span>}
+
+            {!hasNoSearch && !hasError && loading && <div style={{
                 marginTop: 40,
                 display: "flex",
                 alignItems: "center",
@@ -98,7 +116,7 @@ export const HomeFC = () => {
                 <CircularProgress style={{alignSelf: "center"}} />
             </div>}
             
-            {!loading && searchResponse != null && searchResponse.results.length > 0 && <>
+            {!hasNoSearch && !hasError && !loading && searchResponse != null && <>
                 <SearchResultHeader
                     response={searchResponse} />
                 <MainSearchResults
