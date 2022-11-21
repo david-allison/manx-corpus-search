@@ -154,8 +154,8 @@ const ComparisonTable = (props: {
     useEffect(() => {
         setModalValue(null)
         if (!modalText) return
-         manxDictionaryLookup(modalText).then((v) => {
-             const finalString = v.trim().replace(/(\r\n|\r|\n)/g, "<br><br>")
+         manxDictionaryLookup(modalText).then((summaries) => {
+             const finalString = summaries.map(x => x.summary).join("<br><br>")
              setModalValue(finalString)
          })
              .catch(e => { console.warn(e)})

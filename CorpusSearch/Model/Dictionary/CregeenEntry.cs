@@ -11,6 +11,9 @@ namespace CorpusSearch.Model.Dictionary
     {
         public List<string> Words { get; set; }
         public string EntryHtml { get; set; }
+        public string Definition { get; set; }
+        public List<string> PartsOfSpeech { get; set; }
+        public List<string> Gender { get; set; }
         public string HeadingHtml { get; set; }
         // nullable
         public List<CregeenEntry> Children { get; set; }

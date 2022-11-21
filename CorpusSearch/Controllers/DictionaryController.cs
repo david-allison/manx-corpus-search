@@ -5,6 +5,9 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace CorpusSearch.Controllers;
 
+/// <summary>
+/// Unstable API
+/// </summary>
 [ApiController]
 [Route("api/[controller]")]
 public class DictionaryController
@@ -25,9 +28,9 @@ public class DictionaryController
     /// <returns></returns>
     [HttpGet]
     // ReSharper disable once UnusedMember.Global
-    public string Get([FromQuery] string lang, [FromQuery] string word)
+    public IEnumerable<DictionarySummary> Get([FromQuery] string lang, [FromQuery] string word)
     {
         word = word.Replace(".", "").Replace(",", "").Replace("?", "").Replace(";", "");
-        return string.Join("", dictionaryServices.SelectMany(x => x.GetSummaries(word)).Select(x => x.Summary));
+        return dictionaryServices.SelectMany(x => x.GetSummaries(word, basic: true));
     }    
 }

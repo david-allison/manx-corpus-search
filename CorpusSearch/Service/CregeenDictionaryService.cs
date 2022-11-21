@@ -93,16 +93,14 @@ namespace CorpusSearch.Service
                     );
         }
 
-        public static List<CregeenEntry> FuzzySearch(string query, IEnumerable<CregeenEntry> entries)
+        public static IList<CregeenEntry> FuzzySearch(string query, IEnumerable<CregeenEntry> entries)
         {
-            HashSet<CregeenEntry> cregeenEntries = new HashSet<CregeenEntry>(FuzzySearchInternal(query, entries));
-
             return FuzzySearchInternal(query, entries).Distinct().ToList();
         }
 
         private static IEnumerable<CregeenEntry> FuzzySearchInternal(string query, IEnumerable<CregeenEntry> entryData)
         {
-            var flatEntries = entryData.SelectMany(x => x.ChildrenRecursive);
+            var flatEntries = entryData.SelectMany(x => x.ChildrenRecursive).ToList();
 
             // exact match
             foreach (var e in flatEntries.Where(x => x.ContainsWordExact(query)))
@@ -111,13 +109,13 @@ namespace CorpusSearch.Service
             }
 
             // Prefix
-            foreach (var e in flatEntries.Where(x => x.Words.Where(x => x.StartsWith(query)).Any()))
+            foreach (var e in flatEntries.Where(entry => entry.Words.Any(word => word.StartsWith(query))))
             {
                 yield return e;
             }
 
             // Contains
-            foreach (var e in flatEntries.Where(x => x.Words.Where(x => x.Contains(query)).Any()))
+            foreach (var e in flatEntries.Where(entry => entry.Words.Any(word => word.Contains(query))))
             {
                 yield return e;
             }
@@ -129,20 +127,32 @@ namespace CorpusSearch.Service
             return allWords.Contains(s);
         }
 
-        public IEnumerable<DictionarySummary> GetSummaries(string query)
+        public IEnumerable<DictionarySummary> GetSummaries(string query, bool basic)
         {
             if (!ContainsWordExact(query)) { yield break; }
 
-            var entries = this.allEntries.SelectMany(x => x.ChildrenRecursive).ToList();
-
-            foreach (var valid in entries.Where(e => e.Words.Contains(query, StringComparer.InvariantCultureIgnoreCase)))
+            string GetSummary(CregeenEntry entry)
             {
+                if (basic && !string.IsNullOrWhiteSpace(entry.Definition))
+                {
+                    return entry.Definition;
+                }
+                
+                // decode the HTML
                 HtmlDocument doc = new();
-                doc.LoadHtml(valid.EntryHtml);
+                doc.LoadHtml(entry.EntryHtml);
 
+                return HttpUtility.HtmlDecode(doc.DocumentNode.InnerText);
+            }
+
+            // PERF: extract to member
+            var entries = allEntries.SelectMany(x => x.ChildrenRecursive).ToList();
+
+            foreach (var validEntry in entries.Where(e => e.Words.Contains(query, StringComparer.InvariantCultureIgnoreCase)))
+            {
                 yield return new DictionarySummary
                 {
-                    Summary = HttpUtility.HtmlDecode(doc.DocumentNode.InnerText),
+                    Summary = GetSummary(validEntry)
                 };
             }
         }
@@ -150,7 +160,7 @@ namespace CorpusSearch.Service
         private class CaseInsensitiveCharComparer : IEqualityComparer<char>
         {
             public bool Equals(char x, char y) => char.ToUpperInvariant(x) == char.ToUpperInvariant(y);
-            public int GetHashCode([DisallowNull] char c) => char.ToUpperInvariant(c).GetHashCode();
+            public int GetHashCode(char c) => char.ToUpperInvariant(c).GetHashCode();
         }
     }
 }
