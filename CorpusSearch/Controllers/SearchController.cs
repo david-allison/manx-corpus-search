@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
+using CorpusSearch.Utils;
 
 namespace CorpusSearch.Controllers
 {
@@ -130,6 +131,7 @@ namespace CorpusSearch.Controllers
         public async Task<QueryDocumentSearchResult> SearchCorpus(string query, bool manx = true, bool english = true, int minDate = 1600, int maxDate = 2100)
         {
             var sw = Stopwatch.StartNew();
+            AnonymousAnalytics.Track("Search Corpus");
             QueryDocumentSearchResult ret = new QueryDocumentSearchResult()
             {
                 Query = query,

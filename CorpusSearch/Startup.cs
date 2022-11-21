@@ -13,10 +13,11 @@ using CorpusSearch.Model;
 using CorpusSearch.Dependencies.csly;
 using CorpusSearch.Dependencies;
 using CorpusSearch.Service;
+using CorpusSearch.Utils;
 
 namespace CorpusSearch
 {
-    public partial class Startup
+    public class Startup
     {
         public static Dictionary<string, IList<string>> EnglishToManxDictionary { get; set; }
         public static Dictionary<string, IList<string>> ManxToEnglishDictionary { get; set; }
@@ -66,7 +67,11 @@ namespace CorpusSearch
                 app.UseHsts();
             }
 
-
+            if (!AnonymousAnalytics.Init())
+            {
+                Console.WriteLine("Failed to init anonymous analytics. Was CORPUS_SEARCH_SEGMENT_KEY set?");
+            }
+            
 
             SetupDatabase(workService, searcher);
 
