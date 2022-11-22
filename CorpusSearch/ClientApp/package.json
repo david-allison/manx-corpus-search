@@ -20,6 +20,7 @@
     "react-router-dom": "^6.4.3",
     "reactstrap": "^8.10.1",
     "rimraf": "^2.6.2",
+    "source-map-explorer": "^2.5.3",
     "workbox-core": "^6.5.4",
     "workbox-expiration": "^6.5.4",
     "workbox-precaching": "^6.5.4",
@@ -56,6 +57,7 @@
   },
   "scripts": {
     "start": "rimraf ./build && react-scripts start",
+    "analyze": "source-map-explorer 'build/static/js/*.js'",
     "build": "react-scripts build",
     "test": "cross-env CI=true react-scripts test --env=jsdom",
     "eject": "react-scripts eject",
