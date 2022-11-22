@@ -180,3 +180,5 @@ const SearchResultHeader = (props: { response: SearchResponse })  => {
         </div>
     )
 }
+
+export default HomeFC
