@@ -37,6 +37,7 @@ type WorkSearch = {
 }
 
 export const searchWork = async (params: WorkSearch): Promise<SearchWorkResponse> => {
-    const response = await fetch(`search/searchWork/${params.docIdent}/${encodeURIComponent(params.value)}?english=${params.searchEnglish.toString()}&manx=${params.searchManx.toString()}`)
+    const searchValue = !params.value ? "*" : params.value
+    const response = await fetch(`search/searchWork/${params.docIdent}/${encodeURIComponent(searchValue)}?english=${params.searchEnglish.toString()}&manx=${params.searchManx.toString()}`)
     return await response.json() as SearchWorkResponse
 }
