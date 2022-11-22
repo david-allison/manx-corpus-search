@@ -5,9 +5,8 @@ import {
     Routes,
 } from "react-router-dom"
 import { Layout } from "./components/Layout"
-
-const HomeFC = React.lazy(() => import("./components/Home"))
-const FetchDataDocument = React.lazy(() => import("./components/FetchDataDocument"))
+import {HomeFC} from "./components/Home"
+import { FetchDataDocument } from "./components/FetchDataDocument"
 import "./custom.css"
 
 export default class App extends Component {
@@ -16,13 +15,11 @@ export default class App extends Component {
   render () {
     return (
           <Layout>
-              <React.Suspense fallback={<></>}>
-                  <Routes>
-                      <Route path='/' element={<HomeFC/>} />
-                      <Route path='/docs/:docId' element={<FetchDataDocument/>} />
-                      <Route path="*" element={<Navigate to="/" replace />} />
-                  </Routes>
-              </React.Suspense>
+              <Routes>
+                  <Route path='/' element={<HomeFC/>} />
+                  <Route path='/docs/:docId' element={<FetchDataDocument/>} />
+                  <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
           </Layout>
     )
   }
