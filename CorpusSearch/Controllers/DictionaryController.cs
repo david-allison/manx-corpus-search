@@ -30,7 +30,8 @@ public class DictionaryController
     // ReSharper disable once UnusedMember.Global
     public IEnumerable<DictionarySummary> Get([FromQuery] string lang, [FromQuery] string word)
     {
-        word = word.Replace(".", "").Replace(",", "").Replace("?", "").Replace(";", "");
+        word = word.Replace(".", "").Replace(",", "").Replace("?", "").Replace(";", "")
+            .Replace("(", "").Replace(")", "");
         return dictionaryServices.SelectMany(x => x.GetSummaries(word, basic: true));
     }    
 }

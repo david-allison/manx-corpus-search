@@ -5,5 +5,5 @@ export const manxDictionaryLookup = async (queryUnsafe: string): Promise<Diction
     const query = encodeURIComponent(queryUnsafe)
     const response = await fetch(`api/Dictionary/?lang=gv&word=${query}`)
     // TODO: Validation
-    return await response.json() 
+    return await response.json() as DictionaryResponse
 }
