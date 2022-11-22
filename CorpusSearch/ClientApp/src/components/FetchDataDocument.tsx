@@ -190,8 +190,9 @@ const ComparisonTable = (props: {
                             const manxValue = highlightManx ? [value] : getTranslations("gv")
                             const english = englishValue.map(x => `(${escapeRegex(x)})`).join("|")
                             const manx = manxValue.map(x => `(${escapeRegex(x)})`).join("|")
-                            const englishHighlight = englishValue.length > 0 ? [` [,\\.!]?(${english})[,\\.!]?[ (—)]`] : []
-                            const manxHighlight = manxValue.length > 0 ? [` [,\\.!]?(${manx})[,\\.!]?[ (—)]`] : []
+                            // no highlighting if we don't have a value 
+                            const englishHighlight = englishValue.length > 0 && value ? [` [,\\.!]?(${english})[,\\.!]?[ (—)]`] : []
+                            const manxHighlight = manxValue.length > 0 && value ? [` [,\\.!]?(${manx})[,\\.!]?[ (—)]`] : []
                         
 
                             // TODO: replace \n with <br/>: https://kevinsimper.medium.com/react-newline-to-break-nl2br-a1c240ba746
