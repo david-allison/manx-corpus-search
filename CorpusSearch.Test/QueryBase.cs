@@ -12,7 +12,7 @@ namespace CorpusSearch.Test
     {
         protected LuceneIndex luceneIndex;
         protected SearchParser parser;
-        protected DateTime DOC_DATE = new DateTime(2212, 10, 10);
+        protected DateTime DOC_DATE = new(2212, 10, 10);
 
         [SetUp]
         public void setUp()

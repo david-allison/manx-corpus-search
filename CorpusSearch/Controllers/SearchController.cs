@@ -64,12 +64,12 @@ namespace CorpusSearch.Controllers
 
         public class SearchWorkResult : IResultContainer<DocumentLine>, ITimedResult
         {
-            public List<DocumentLine> Results { get; set; } = new List<DocumentLine>();
+            public List<DocumentLine> Results { get; set; } = new();
             public int NumberOfResults { get; set; }
             public string TimeTaken { get; set; }
             public string Title { get; set; }
 
-            public Translations Translations { get; set; } = new Translations();
+            public Translations Translations { get; set; } = new();
             /// <summary>The total number of matches (multiple matches per line)</summary>
             public int TotalMatches { get; internal set; } = -1;
             /// <summary>
@@ -85,7 +85,7 @@ namespace CorpusSearch.Controllers
             public string GitHubLink { get; set; }
             public object Notes { get; internal set; }
             public string Source { get; set; }
-            public List<SourceLink> SourceLinks { get; internal set; } = new List<SourceLink>();
+            public List<SourceLink> SourceLinks { get; internal set; } = new();
 
             internal static SearchWorkResult Empty(string title)
             {
@@ -186,7 +186,7 @@ namespace CorpusSearch.Controllers
             public int NumberOfResults { get; set; }
             public string TimeTaken { get; set; }
             public Dictionary<string, List<string>> DefinedInDictionaries { get; internal set; } = new();
-            public Translations Translations { get; set; } = new Translations();
+            public Translations Translations { get; set; } = new();
         }
     }
 }
