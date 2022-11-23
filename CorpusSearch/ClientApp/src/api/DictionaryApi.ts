@@ -1,4 +1,4 @@
-type Summary = { summary: string }
+type Summary = { summary: string, primaryWord: string }
 export type DictionaryResponse = Summary[]
 
 export const manxDictionaryLookup = async (queryUnsafe: string): Promise<DictionaryResponse> => {

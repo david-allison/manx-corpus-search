@@ -3,7 +3,6 @@ using HtmlAgilityPack;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Web;
@@ -144,16 +143,22 @@ namespace CorpusSearch.Service
 
                 return HttpUtility.HtmlDecode(doc.DocumentNode.InnerText);
             }
+            
+            DictionarySummary GetDictionarySummary(CregeenEntry entry)
+            {
+                return new DictionarySummary
+                {
+                    PrimaryWord = entry.Words.First(),
+                    Summary = GetSummary(entry),
+                };
+            }
 
             // PERF: extract to member
             var entries = allEntries.SelectMany(x => x.ChildrenRecursive).ToList();
 
             foreach (var validEntry in entries.Where(e => e.Words.Contains(query, StringComparer.InvariantCultureIgnoreCase)))
             {
-                yield return new DictionarySummary
-                {
-                    Summary = GetSummary(validEntry)
-                };
+                yield return GetDictionarySummary(validEntry);
             }
         }
 

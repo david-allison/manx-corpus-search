@@ -12,5 +12,6 @@ namespace CorpusSearch.Service
     public class DictionarySummary
     {
         public string Summary { get; set; }
+        public string PrimaryWord { get; set; }
     }
 }
