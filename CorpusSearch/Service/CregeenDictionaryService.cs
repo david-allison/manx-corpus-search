@@ -11,7 +11,7 @@ namespace CorpusSearch.Service
 {
     public class CregeenDictionaryService : ISearchDictionary
     {
-        public readonly static Dictionary<char, string> LetterLookup = new Dictionary<char, string>(new CaseInsensitiveCharComparer())
+        public static readonly Dictionary<char, string> LetterLookup = new(new CaseInsensitiveCharComparer())
         {
             [' '] = "  ",
             ['A'] = "aa-",
