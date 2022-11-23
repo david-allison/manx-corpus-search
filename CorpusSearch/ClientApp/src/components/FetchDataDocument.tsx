@@ -257,7 +257,7 @@ const ComparisonTable = (props: {
                             </div>}
                             
                             {modalValue && <span dangerouslySetInnerHTML={{__html: modalValue}} />}
-                            {!modalValue && <span>Could not find definition</span>}
+                            {modalValue == "" && <span>Could not find definition</span>}
                         </Typography>
                     </Box>
                 </Modal>
