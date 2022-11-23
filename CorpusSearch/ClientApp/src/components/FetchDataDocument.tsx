@@ -155,7 +155,9 @@ const ComparisonTable = (props: {
         setModalValue(null)
         if (!modalText) return
          manxDictionaryLookup(modalText).then((summaries) => {
-             const finalString = summaries.map(x => x.summary).join("<br><br>")
+             // we need a primaryWord as we something match 'dy hroggal' -> 'hroggal'
+             // This also matches 'cha greck' -> 'greck' and we need to differentiate this.
+             const finalString = summaries.map(x => `<strong>${x.primaryWord}</strong>: ${x.summary}`).join("<br><br>")
              setModalValue(finalString)
          })
              .catch(e => { console.warn(e)})
