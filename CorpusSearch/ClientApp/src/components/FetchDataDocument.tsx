@@ -5,13 +5,60 @@ import React, {useEffect, useState} from "react"
 import qs from "qs"
 import Highlighter from "react-highlight-words"
 import {Link, useLocation, useMatch} from "react-router-dom"
-import {searchWork, SearchWorkResponse} from "../api/SearchWorkApi"
+import {searchWork, SearchWorkResponse, SourceLink} from "../api/SearchWorkApi"
 import {Translations} from "../api/SearchApi"
 import {SearchLanguage} from "./Home"
 import {Box, CircularProgress, Modal} from "@mui/material"
 import {ManxEnglishSelector} from "./ManxEnglishSelector"
 import Typography from "@mui/material/Typography"
 import {manxDictionaryLookup} from "../api/DictionaryApi"
+import {metadataLookup} from "../api/MetadataApi"
+import RecursiveProperty from "../vendor/react-json-component/RecursiveProperty"
+
+/* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/restrict-template-expressions, @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment */
+const enrichSources = (x: any, sourceLinks: SourceLink[] | null) => {
+    if (!sourceLinks || sourceLinks.length == 0) {
+        return
+    }
+    
+    if ("mnhNewsComponent" in x) {
+        delete x.mnhNewsComponent
+    }
+    
+    if ("source" in x && typeof x.source == "string") {
+        x.source = { name: x["source"] }
+
+        if (sourceLinks.length == 1) {
+            x.source.link =sourceLinks[0]
+        } else {
+            x.source.links = sourceLinks
+        }
+        
+        return
+    }
+    
+    x.sources = sourceLinks
+} 
+
+const enrichGitHub = (x: any) => {
+    if (!("gitHubRepo" in x) || !("relativeCsvPath" in x)) {
+        return
+    }
+
+    // TODO: This is listed as 'Git Hub' due to RecursiveProperty.ts
+    let path = `https://github.com/${x.gitHubRepo}/blob/master/${x.relativeCsvPath}`
+    if (path.endsWith("document.csv")) {
+        path = path.substring(0, path.length - "document.csv".length)
+    }
+    x.gitHub = {
+     url: path,
+     text: x.gitHubRepo   
+    }
+    
+    delete x.gitHubRepo
+    delete x.relativeCsvPath
+}
+/* eslint-enable */
 
 
 export const FetchDataDocument = () => {
@@ -67,6 +114,24 @@ export const FetchDataDocument = () => {
     }, [value, searchEnglish, searchManx])
 
 
+    // eslint-disable-next-line
+    const [testJson, setTestJson] = useState<any>(null)
+
+    useEffect(() => {
+        if (searchWorkResponse == null || docIdent == null) {
+            return
+        }
+        
+        metadataLookup(docIdent)
+            .then(x => {
+                enrichGitHub(x)
+                enrichSources(x, searchWorkResponse.sourceLinks)
+                setTestJson(x)
+            })
+            .catch(e => console.warn(e))
+    },[searchWorkResponse])
+
+
     return (
         <div>
             <h1 id="tabelLabel" ><Link to={`/?q=${value}`} style={{ textDecoration: "none" }}>⇦</Link>  { title }</h1>
@@ -83,12 +148,24 @@ export const FetchDataDocument = () => {
             }}>
                 <CircularProgress style={{alignSelf: "center"}} />
             </div>}
-            {loading || searchWorkResponse == null || <ComparisonTable
-                response={searchWorkResponse}
-                value={value}
-                highlightManx={searchManx}
-                highlightEnglish={searchEnglish}
-                translations={searchWorkResponse.translations}/> }
+            {loading || searchWorkResponse == null ||
+                <>
+                    { searchWorkResponse.totalMatches} results ({ searchWorkResponse.numberOfResults} lines) [{searchWorkResponse.timeTaken}]
+                    <RecursiveProperty
+                        // eslint-disable-next-line
+                        property={testJson}
+                        propertyName={"Additional Data "}
+                        excludeBottomBorder={false}
+                        rootProperty={false}/>
+
+                    { searchWorkResponse.notes && <><br />{searchWorkResponse.notes}</>}
+
+                    <ComparisonTable
+                    response={searchWorkResponse}
+                    value={value}
+                    highlightManx={searchManx}
+                    highlightEnglish={searchEnglish}
+                    translations={searchWorkResponse.translations}/></> }
         </div>
     )
 
@@ -171,11 +248,6 @@ const ComparisonTable = (props: {
         return (
             <>
             <div>
-                { response.totalMatches} results ({ response.numberOfResults} lines) [{response.timeTaken}]
-
-                { response.notes && <><br /><br />{response.notes}</>}
-
-                { response.source && <><br /><br />{response.source}</>} { response.sourceLinks && <>{response.sourceLinks.map(x => <>| <a rel="noreferrer" href={x.url}>{x.text}</a> </>)}</>}
                 <table className='table table-striped' aria-labelledby="tabelLabel">
                     <thead>
                     <tr>

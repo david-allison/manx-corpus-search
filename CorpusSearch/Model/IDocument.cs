@@ -22,7 +22,7 @@ namespace CorpusSearch.Model
         string Notes { get; }
         string Source { get; }
 
-        object GetExtensionData(string key);
+        IDictionary<string, object> GetAllExtensionData();
     }
 
     public static class IDocumentExtensions
@@ -77,6 +77,11 @@ namespace CorpusSearch.Model
             }
             
             return document.CreatedCircaStart!.Value.Year + "-" + document.CreatedCircaEnd?.Year;
+        }
+        
+        public static object GetExtensionData(this IDocument document, string key)
+        {
+            return document.GetAllExtensionData()[key];
         }
     }
 }
