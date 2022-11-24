@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using CorpusSearch.Service;
+using CorpusSearch.Utils;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CorpusSearch.Controllers;
@@ -32,6 +33,8 @@ public class DictionaryController
     {
         word = word.Replace(".", "").Replace(",", "").Replace("?", "").Replace(";", "")
             .Replace("(", "").Replace(")", "");
-        return dictionaryServices.SelectMany(x => x.GetSummaries(word, basic: true));
+        var result = dictionaryServices.SelectMany(x => x.GetSummaries(word, basic: true)).ToList();
+        AnonymousAnalytics.Track("Dictionary Lookup", new Dictionary<string, object> { ["success"] = result.Any() });
+        return result;
     }    
 }

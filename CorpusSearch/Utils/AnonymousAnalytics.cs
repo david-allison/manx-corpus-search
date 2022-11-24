@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace CorpusSearch.Utils;
 
@@ -26,12 +27,12 @@ public static class AnonymousAnalytics
         }
     }
 
-    public static void Track(string eventName)
+    public static void Track(string eventName, IDictionary<string, object> properties = null)
     {
         if (!_hasInit)
         {
             return;
         }
-        Segment.Analytics.Client.Track("Anon", eventName);
+        Segment.Analytics.Client.Track("Anon", eventName, properties);
     }
 }
