@@ -17,6 +17,19 @@ interface Props {
 export const camelCaseToNormal = (str: string) =>
     str.replace(/([A-Z])/g, ' $1').replace(/^./, str2 => str2.toUpperCase());
 
+const isLink = (obj: any) => {
+    if (typeof obj === 'object' &&
+        !Array.isArray(obj) &&
+        obj !== null) {
+        return "url" in obj && "text" in obj
+    }
+return false
+}
+
+const parseLink = (obj: any): React.ReactNode => {
+    return <a rel="noreferrer" target="_blank" href={obj.url}>{obj.text}</a>
+}
+
 const RecursiveProperty: React.FC<Props> = props => {
     return (
         <div style={
@@ -32,7 +45,9 @@ const RecursiveProperty: React.FC<Props> = props => {
             {props.property ? (
                 typeof props.property === 'number' ||
                 typeof props.property === 'string' ||
-                typeof props.property === 'boolean' ? (
+                typeof props.property === 'boolean' ||
+                isLink(props.property)    
+                    ? (
                     <React.Fragment>
                         <span style={{
                             color: "black",
@@ -42,7 +57,7 @@ const RecursiveProperty: React.FC<Props> = props => {
                         {props.propertyNameProcessor!(props.propertyName)}: 
                         </span>
                         {" "}
-                        {props.property.toString()}
+                        {isLink(props.property) ? parseLink(props.property) : props.property.toString()}
                     </React.Fragment>
                 ) : (
                     <ExpandableProperty title={props.propertyNameProcessor!(props.propertyName)} expanded={!!props.rootProperty}>
