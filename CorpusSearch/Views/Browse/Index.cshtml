@@ -48,7 +48,7 @@
 
 @foreach (var document in documents.OrderBy(x => x.CreatedCircaStart))
 {
-    <a class="lead" href="/Browse/@document.Ident">@document.Name</a><br/>
+    <a class="lead" href="/Browse/@document.Ident">@document.Name</a> @document.GetFullYear()<br/>
 }
 
 </body>
