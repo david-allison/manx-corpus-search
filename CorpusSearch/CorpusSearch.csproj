@@ -57,6 +57,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="ClientApp\vendor" />
     <Folder Include="Views\Shared\" />
   </ItemGroup>
 
