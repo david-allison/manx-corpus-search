@@ -53,5 +53,30 @@ namespace CorpusSearch.Model
         {
             return GetDownloadTextLink(target)?.Replace("document.csv", "manifest.json.txt");
         }
+        
+        public static string GetFullYear(this IDocument document)
+        {
+            if (document.CreatedCircaStart == null && document.CreatedCircaEnd == null)
+            {
+                return "";
+            }
+
+            if (!document.CreatedCircaEnd.HasValue)
+            {
+                return document.CreatedCircaStart?.Year.ToString();
+            }
+
+            if (!document.CreatedCircaStart.HasValue)
+            {
+                return document.CreatedCircaEnd?.Year.ToString();
+            }
+
+            if (document.CreatedCircaStart!.Value.Year == document.CreatedCircaEnd!.Value.Year)
+            {
+                return document.CreatedCircaStart.Value.Year.ToString();
+            }
+            
+            return document.CreatedCircaStart!.Value.Year + "-" + document.CreatedCircaEnd?.Year;
+        }
     }
 }
