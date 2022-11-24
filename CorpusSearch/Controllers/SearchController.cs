@@ -103,6 +103,7 @@ namespace CorpusSearch.Controllers
         public async Task<SearchWorkResult> SearchWork(string workIdent, string query = null, bool manx = true, bool english = true)
         {
             var sw = Stopwatch.StartNew();
+            AnonymousAnalytics.Track("Search Work");
             var workQuery = new CorpusSearchWorkQuery(query)
             {
                 Ident = workIdent,
