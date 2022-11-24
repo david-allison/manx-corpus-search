@@ -39,9 +39,9 @@ namespace CorpusSearch.Model
         [JsonExtensionData]
         public IDictionary<string, object> ExtensionData { get; set; } = new Dictionary<string, object>();
 
-        public object GetExtensionData(string key)
+        public IDictionary<string, object> GetAllExtensionData()
         {
-            return ExtensionData[key];
+            return ExtensionData;
         }
 
         internal virtual List<DocumentLine> LoadLocalFile()

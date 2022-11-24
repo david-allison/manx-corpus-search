@@ -3,6 +3,7 @@ using CorpusSearch.Model;
 using CorpusSearch.Test.TestUtils;
 using NUnit.Framework;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace CorpusSearch.Test
@@ -59,10 +60,9 @@ namespace CorpusSearch.Test
             public string Notes => null;
 
             public string Source => null;
-
-            public object GetExtensionData(string key)
+            public IDictionary<string, object> GetAllExtensionData()
             {
-                return null;
+                return new Dictionary<string, object>();
             }
         }
     }
