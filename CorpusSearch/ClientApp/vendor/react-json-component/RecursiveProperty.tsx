@@ -1,24 +1,5 @@
 import * as React from 'react';
-import styled from 'styled-components';
 import ExpandableProperty from './ExpandableProperty';
-
-// PERF: remove 'styled' dependency
-
-const RecursivePropertyContainer = styled.div`
-  padding-top: 10px;
-  padding-left: 3px;
-  margin-left: 10px;
-  ${(props: { excludeBottomBorder: boolean }) =>
-    props.excludeBottomBorder ? '' : 'border-bottom: 1px solid #b2d6ff;'}
-  color: #666;    
-  font-size: 16px;
-`;
-
-export const PropertyName = styled.span`
-  color: black;
-  font-size: 14px;
-  font-weight: bold;
-`;
 
 interface IterableObject {
     [s: number]: number | string | boolean | IterableObject;
@@ -38,13 +19,28 @@ export const camelCaseToNormal = (str: string) =>
 
 const RecursiveProperty: React.FC<Props> = props => {
     return (
-        <RecursivePropertyContainer excludeBottomBorder={props.excludeBottomBorder}>
+        <div style={
+                {
+                    paddingTop: 10,
+                    paddingLeft: 3,
+                    marginLeft: 10,
+                    borderBottom: props.excludeBottomBorder ? '' : 'border-bottom: 1px solid #b2d6ff;',
+                    color: "#666",
+                    fontSize: 16,
+                }
+            }>
             {props.property ? (
                 typeof props.property === 'number' ||
                 typeof props.property === 'string' ||
                 typeof props.property === 'boolean' ? (
                     <React.Fragment>
-                        <PropertyName>{props.propertyNameProcessor!(props.propertyName)}: </PropertyName>
+                        <span style={{
+                            color: "black",
+                            fontSize: 14,
+                            fontWeight: "bold"
+                        }}>
+                        {props.propertyNameProcessor!(props.propertyName)}: 
+                        </span>
                         {props.property.toString()}
                     </React.Fragment>
                 ) : (
@@ -62,7 +58,7 @@ const RecursiveProperty: React.FC<Props> = props => {
                 )
             ) : props.emptyPropertyLabel
             }
-        </RecursivePropertyContainer>
+        </div>
     );
 }
 
