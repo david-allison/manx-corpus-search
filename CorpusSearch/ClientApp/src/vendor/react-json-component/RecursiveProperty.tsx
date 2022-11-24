@@ -41,6 +41,7 @@ const RecursiveProperty: React.FC<Props> = props => {
                         }}>
                         {props.propertyNameProcessor!(props.propertyName)}: 
                         </span>
+                        {" "}
                         {props.property.toString()}
                     </React.Fragment>
                 ) : (
