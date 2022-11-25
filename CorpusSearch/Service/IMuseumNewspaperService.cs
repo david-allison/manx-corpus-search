@@ -92,7 +92,7 @@ namespace CorpusSearch.Service
         }
 
         // Obtained from https://www.imuseum.im/Olive/APA/IsleofMan/get.res?id=page.Scripts&kind=script&uq=20210325071104&for=%7E%2Fdefault.aspx&mode=group
-        public static Dictionary<string, string> NewspaperNameToId = new()
+        public static readonly Dictionary<string, string> NewspaperNameToId = new()
         {
             ["Calf of Man Bird Observatory Report"] = "COM",
             ["Camp Echo"] = "CEC",
