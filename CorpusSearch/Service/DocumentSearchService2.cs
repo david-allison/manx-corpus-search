@@ -34,6 +34,7 @@ namespace CorpusSearch.Service
 
             ret.PdfLink = document.ExternalPdfLink;
             ret.Notes = document.Notes;
+            ret.Original = document.Original;
             ret.Source = document.Source;
 
             var results = searcher.SearchWork(workQuery.Ident, workQuery.Query, ToSearchOptions(workQuery));

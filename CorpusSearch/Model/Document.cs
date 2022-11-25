@@ -32,6 +32,7 @@ namespace CorpusSearch.Model
         public abstract string GitHubRepo { get; set; }
         public abstract string RelativeCsvPath { get; }
 
+        public string Original { get; set; }
         public string Notes { get; set; }
 
         public string Source { get; set; }

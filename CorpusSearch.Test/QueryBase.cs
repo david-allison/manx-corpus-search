@@ -60,6 +60,8 @@ namespace CorpusSearch.Test
             public string Notes => null;
 
             public string Source => null;
+            public string Original => "Manx";
+
             public IDictionary<string, object> GetAllExtensionData()
             {
                 return new Dictionary<string, object>();
