@@ -248,12 +248,12 @@ const ComparisonTable = (props: {
         return (
             <>
             <div>
-                <table className='table table-striped' aria-labelledby="tabelLabel">
+                <table className='table table-striped' style={{tableLayout: "fixed"}} aria-labelledby="tabelLabel">
                     <thead>
                     <tr>
                         <th>{originalManx ? "Manx" : "English"}</th>
                         <th>{originalManx ? "English" : "Manx"}</th>
-                        <th>Link</th>
+                        <th style={{width: 45}}>Link</th>
                     </tr>
                     </thead>
                     <tbody>
