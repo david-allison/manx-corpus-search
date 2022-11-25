@@ -68,6 +68,8 @@ namespace CorpusSearch.Controllers
             public int NumberOfResults { get; set; }
             public string TimeTaken { get; set; }
             public string Title { get; set; }
+            
+            public string Original { get; set; }
 
             public Translations Translations { get; set; } = new();
             /// <summary>The total number of matches (multiple matches per line)</summary>

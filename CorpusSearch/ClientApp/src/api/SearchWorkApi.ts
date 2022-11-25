@@ -27,6 +27,7 @@ export type SearchWorkResponse = {
     sourceLinks: SourceLink[] | null
     pdfLink: string
     gitHubLink: string
+    original?: string
 }
 
 type WorkSearch = {

@@ -21,6 +21,8 @@ namespace CorpusSearch.Model
         public string RelativeCsvPath { get; }
         string Notes { get; }
         string Source { get; }
+        
+        string Original { get; }
 
         IDictionary<string, object> GetAllExtensionData();
     }

@@ -240,7 +240,7 @@ const ComparisonTable = (props: {
              .catch(e => { console.warn(e)})
     }, [modalText])
 
-
+    const originalManx = response.original != "English" // anything other than English is Manx
     const getTranslations = (key: string) => {
         if (translations == null) return []
         return translations[key] ?? []
@@ -251,8 +251,8 @@ const ComparisonTable = (props: {
                 <table className='table table-striped' aria-labelledby="tabelLabel">
                     <thead>
                     <tr>
-                        <th>Manx</th>
-                        <th>English</th>
+                        <th>{originalManx ? "Manx" : "English"}</th>
+                        <th>{originalManx ? "English" : "Manx"}</th>
                         <th>Link</th>
                     </tr>
                     </thead>
@@ -287,10 +287,10 @@ const ComparisonTable = (props: {
 
                             return <><tr key={line.date}>
                                 <td>
-                                    {manxText}
+                                    {originalManx ? manxText : englishText}
                                 </td>
                                 <td>
-                                    { englishText }
+                                    {originalManx ? englishText : manxText }
                                 </td>
                                 <td>
                                     {line.page != null && response.pdfLink &&
