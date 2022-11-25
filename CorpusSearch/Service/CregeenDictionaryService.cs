@@ -81,7 +81,19 @@ namespace CorpusSearch.Service
             
             var text = File.ReadAllText(path);
 
-            return JsonConvert.DeserializeObject<List<CregeenEntry>>(text);
+            var entries = JsonConvert.DeserializeObject<List<CregeenEntry>>(text) ?? new List<CregeenEntry>();
+
+            entries.ForEach(EnrichCedillaEntries);
+            return entries;
+        }
+
+        /// <summary>If an entry has 'ç', allow 'c'</summary>
+        /// <remarks>Allows us to search for ymmyrçhagh. Shouldn't be done in the dictionary JSON. Best done here</remarks>
+        private static void EnrichCedillaEntries(CregeenEntry entry)
+        {
+            // TODO: needs test
+            entry.Words = entry.Words.Concat(entry.Words.Select(x => x.Replace('ç', 'c'))).ToHashSet().ToList();
+            entry.SafeChildren.ForEach(EnrichCedillaEntries);
         }
 
         public static bool IsValidSearch(string query)
