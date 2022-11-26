@@ -7,16 +7,23 @@ export const getSelectedWordOrPhrase = (selection: Selection) => {
         return null
     }
 
-    // Find starting point
-    while(range.toString().indexOf(" ") != 0 && range.startOffset > 0) {
+    setRangeStartOffset(range, node)
+    setRangeEndOffset(range, node)
+
+    return range.toString();
+}
+
+const setRangeStartOffset = (range: Range, node: Node) => {
+    while (range.toString().indexOf(" ") != 0 && range.startOffset > 0) {
         range.setStart(node,(range.startOffset -1))
     }
     if (range.startOffset != 0 || range.toString()[0] == " ") {
         // if we reached a space, ignore it
         range.setStart(node, range.startOffset + 1)
     }
+}
 
-    // Find ending point
+const setRangeEndOffset = (range: Range, node: Node) => {
     try {
         do {
             range.setEnd(node,range.endOffset + 1)
@@ -24,6 +31,4 @@ export const getSelectedWordOrPhrase = (selection: Selection) => {
     } catch (e) {
         // TODO: find a less hacky way to end if at the end
     }
-    
-    return range.toString();
 }
