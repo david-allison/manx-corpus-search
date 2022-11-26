@@ -21,7 +21,7 @@ export type SearchWorkResponse = {
     results: SearchWorkResult[]
     title: string
     translations : Translations
-    totalMatches: number
+    totalMatches: number | null
     timeTaken: string
     numberOfResults: number
     notes: string

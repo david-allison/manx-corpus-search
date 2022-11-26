@@ -152,7 +152,7 @@ export const FetchDataDocument = () => {
             </div>}
             {loading || searchWorkResponse == null ||
                 <>
-                    { searchWorkResponse.totalMatches} results ({ searchWorkResponse.numberOfResults} lines) [{searchWorkResponse.timeTaken}]
+                    { searchWorkResponse.totalMatches ? `${searchWorkResponse.totalMatches} results;` : ""} { searchWorkResponse.numberOfResults} lines [{searchWorkResponse.timeTaken}]
                     <RecursiveProperty
                         // eslint-disable-next-line
                         property={testJson}
