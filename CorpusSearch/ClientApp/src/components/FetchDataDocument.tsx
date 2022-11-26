@@ -234,15 +234,16 @@ const ComparisonTable = (props: {
         const manx = manxValue.map(x => `(${escapeRegex(x)})`).join("|")
         // no highlighting if we don't have a value 
         const manxHighlight = manxValue.length > 0 && value ? [` [,\\.!]?(${manx})[,\\.!]?[ (—)]`] : []
-        return lineValue.split("\n").map((item, key) => <span onClick={() => {
+        return lineValue.split("\n").map((item, key) => <div onClick={() => {
             if (languageCode == "gv") {
                 onClickWordForDictionaryLookup()
             }
-           }} key={key}><Highlighter
+            
+           }} style={{textAlign: "justify"}} key={key}><Highlighter
             highlightClassName={shouldHighlight ? "textHighlight" : "textHighlightAlternate"}
             searchWords={manxHighlight}
             autoEscape={false}
-            textToHighlight={item} /><br /></span>
+            textToHighlight={item} /><br /></div>
         )
     }
     
@@ -257,15 +258,16 @@ const ComparisonTable = (props: {
         const result = diffChars(originalText, currentText)
 
         // TODO: This only handles the correction, not the original
-        return <span onClick={() => {
+        // TODO: Also apply justify to 'browse' screen
+        return <div onClick={() => {
             onClickWordForDictionaryLookup()
-        }}>
+        }} style={{textAlign: "justify"}}>
             {value != "*" && value != "" && <div style={{textAlign: "center", backgroundColor: "rgba(255,255,0,0.3)" }}>highlighting disabled</div>}
             {result.map(part => {
                 const color = part.added ? "rgba(0, 128, 0, 0.3)" : part.removed ? "rgba(255, 0, 0, 0.3)" : ""
                 return <span style={{backgroundColor: color}}>{part.value}</span>
             })}
-        </span>
+        </div>
     }
     
     const getTranslations = (key: string) => {
