@@ -153,10 +153,6 @@ namespace CorpusSearch
                 var manx = document.GetField(DOCUMENT_REAL_MANX).GetStringValue();
                 var english = document.GetField(DOCUMENT_REAL_ENGLISH).GetStringValue();
 
-                int pageAsInt = 0;
-                int.TryParse(document.GetField(DOCUMENT_PAGE)?.GetStringValue(), out pageAsInt);
-
-
                 string notes = document.GetField(DOCUMENT_NOTES)?.GetStringValue();
                 int lineNumber = document.GetField(DOCUMENT_LINE_NUMBER)?.GetInt32Value() ?? -1;
 
@@ -164,7 +160,7 @@ namespace CorpusSearch
                 {
                     English = english,
                     Manx = manx,
-                    Page = pageAsInt != 0 ? pageAsInt : null,
+                    Page = document.GetPageAsInt(),
                     Notes = notes,
                     CsvLineNumber = lineNumber,
                     ManxOriginal = document.GetField(DOCUMENT_ORIGINAL_MANX)?.GetStringValue(),
@@ -271,12 +267,21 @@ namespace CorpusSearch
             {
                 Manx = x.GetField(DOCUMENT_REAL_MANX)?.GetStringValue(),
                 English = x.GetField(DOCUMENT_REAL_ENGLISH)?.GetStringValue(),
+                Page = x.GetPageAsInt(),
                 Notes = x.GetField(DOCUMENT_NOTES)?.GetStringValue(),
+                CsvLineNumber = x.GetField(DOCUMENT_LINE_NUMBER)?.GetInt32Value() ?? -1,
                 ManxOriginal = x.GetField(DOCUMENT_ORIGINAL_MANX)?.GetStringValue(),
                 EnglishOriginal = x.GetField(DOCUMENT_ORIGINAL_ENGLISH)?.GetStringValue(),
             }).ToList();
         }
     }
+}
 
-
+public static class DocumentExtensions
+{
+    public static int? GetPageAsInt(this Document document)
+    {
+        var pageAsInt = document.GetField(LuceneIndex.DOCUMENT_PAGE)?.GetInt32Value();
+        return pageAsInt != 0 ? pageAsInt : null;
+    }
 }

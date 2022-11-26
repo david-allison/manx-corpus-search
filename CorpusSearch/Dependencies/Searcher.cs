@@ -25,6 +25,14 @@ namespace CorpusSearch.Dependencies
 
         internal SearchResult SearchWork(string ident, string query, SearchOptions options)
         {
+            if (query.Trim() == "*")
+            {
+                return new SearchResult
+                {
+                    Lines = luceneSearch.GetAllLines(ident).Where(x => !string.IsNullOrEmpty(x.Manx) || !string.IsNullOrEmpty(x.English)).ToList(),
+                    TotalMatches = null,
+                };
+            }
             // HACK: use the ScanOptions as they're the same for now
             var scanOptionsHack = new ScanOptions { SearchType = options.Type };
 

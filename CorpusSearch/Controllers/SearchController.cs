@@ -72,8 +72,11 @@ namespace CorpusSearch.Controllers
             public string Original { get; set; }
 
             public Translations Translations { get; set; } = new();
-            /// <summary>The total number of matches (multiple matches per line)</summary>
-            public int TotalMatches { get; internal set; } = -1;
+            /// <summary>
+            /// The total number of matches (multiple matches per line)
+            /// </summary>
+            /// <remarks>May be null if searching for "*"</remarks>
+            public int? TotalMatches { get; internal set; } = -1;
             /// <summary>
             /// Optional link to external PDF
             /// </summary>
