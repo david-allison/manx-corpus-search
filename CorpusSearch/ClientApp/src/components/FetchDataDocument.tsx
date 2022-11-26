@@ -15,7 +15,7 @@ import {manxDictionaryLookup} from "../api/DictionaryApi"
 import {metadataLookup} from "../api/MetadataApi"
 import RecursiveProperty from "../vendor/react-json-component/RecursiveProperty"
 import {diffChars} from "diff"
-import {getSelectedWordOrPhrase} from "../utils/Selection";
+import {getSelectedWordOrPhrase} from "../utils/Selection"
 
 /* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/restrict-template-expressions, @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment */
 const enrichSources = (x: any, sourceLinks: SourceLink[] | null) => {
@@ -195,7 +195,7 @@ const ComparisonTable = (props: {
         const range = getSelectedWordOrPhrase(selection)
         
         if (range == null) {
-            return;
+            return
         }
         
         // remove notes/citations '[1]' at the end of the string
@@ -256,7 +256,10 @@ const ComparisonTable = (props: {
         }
         const result = diffChars(originalText, currentText)
 
-        return <span>
+        // TODO: This only handles the correction, not the original
+        return <span onClick={() => {
+            onClickWordForDictionaryLookup()
+        }}>
             {value != "*" && value != "" && <div style={{textAlign: "center", backgroundColor: "rgba(255,255,0,0.3)" }}>highlighting disabled</div>}
             {result.map(part => {
                 const color = part.added ? "rgba(0, 128, 0, 0.3)" : part.removed ? "rgba(255, 0, 0, 0.3)" : ""
