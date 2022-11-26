@@ -14,6 +14,7 @@ import Typography from "@mui/material/Typography"
 import {manxDictionaryLookup} from "../api/DictionaryApi"
 import {metadataLookup} from "../api/MetadataApi"
 import RecursiveProperty from "../vendor/react-json-component/RecursiveProperty"
+import {diffChars} from "diff"
 
 /* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/restrict-template-expressions, @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment */
 const enrichSources = (x: any, sourceLinks: SourceLink[] | null) => {
@@ -240,7 +241,44 @@ const ComparisonTable = (props: {
              .catch(e => { console.warn(e)})
     }, [modalText])
 
+    // TODO: We use original for two concepts:
+    // The Original text (compared to a corrected text)
+    // The original text (whether Manx -> English or English -> Manx)
     const originalManx = response.original != "English" // anything other than English is Manx
+
+    
+    const highlightText = (shouldHighlight: boolean, languageCode: "gv" | "en", lineValue: string) => {
+        const manxValue = shouldHighlight ? [value] : getTranslations(languageCode)
+        const manx = manxValue.map(x => `(${escapeRegex(x)})`).join("|")
+        // no highlighting if we don't have a value 
+        const manxHighlight = manxValue.length > 0 && value ? [` [,\\.!]?(${manx})[,\\.!]?[ (—)]`] : []
+        return lineValue.split("\n").map((item, key) => <span onClick={() => onClick()} key={key}><Highlighter
+            highlightClassName={shouldHighlight ? "textHighlight" : "textHighlightAlternate"}
+            searchWords={manxHighlight}
+            autoEscape={false}
+            textToHighlight={item} /><br /></span>
+        )
+    }
+    
+    /** 
+     * If originalText exists, perform a diff and display this to the user
+     * This displays changes we made to the document
+     */
+    const diffCorrectedText = (originalText: string | undefined, currentText: string): React.ReactNode | null => {
+        if (!originalText) {
+            return null
+        }
+        const result = diffChars(originalText, currentText)
+
+        return <span>
+            {value != "*" && value != "" && <div style={{textAlign: "center", backgroundColor: "rgba(255,255,0,0.3)" }}>highlighting disabled</div>}
+            {result.map(part => {
+                const color = part.added ? "rgba(0, 128, 0, 0.3)" : part.removed ? "rgba(255, 0, 0, 0.3)" : ""
+                return <span style={{backgroundColor: color}}>{part.value}</span>
+            })}
+        </span>
+    }
+    
     const getTranslations = (key: string) => {
         if (translations == null) return []
         return translations[key] ?? []
@@ -258,32 +296,10 @@ const ComparisonTable = (props: {
                     </thead>
                     <tbody>
                     {response.results.map(line => {
-                        
-                            
-                            const englishValue = highlightEnglish ? [value] : getTranslations("en")
-                            const manxValue = highlightManx ? [value] : getTranslations("gv")
-                            const english = englishValue.map(x => `(${escapeRegex(x)})`).join("|")
-                            const manx = manxValue.map(x => `(${escapeRegex(x)})`).join("|")
-                            // no highlighting if we don't have a value 
-                            const englishHighlight = englishValue.length > 0 && value ? [` [,\\.!]?(${english})[,\\.!]?[ (—)]`] : []
-                            const manxHighlight = manxValue.length > 0 && value ? [` [,\\.!]?(${manx})[,\\.!]?[ (—)]`] : []
-                        
-
-                            // TODO: replace \n with <br/>: https://kevinsimper.medium.com/react-newline-to-break-nl2br-a1c240ba746
-                            const englishText = line.english.split("\n").map((item, key) => {
-                                return <span key={key}><Highlighter
-                                    highlightClassName={highlightEnglish ? "textHighlight" : "textHighlightAlternate"}
-                                    searchWords={englishHighlight}
-                                    autoEscape={false}
-                                    textToHighlight={item} /><br /></span>
-                            })
-                            const manxText = line.manx.split("\n").map((item, key) => {
-                                return <span onClick={() => onClick()} key={key}><Highlighter
-                                    highlightClassName={highlightManx ? "textHighlight" : "textHighlightAlternate"}
-                                    searchWords={manxHighlight}
-                                    autoEscape={false}
-                                    textToHighlight={item} /><br /></span>
-                            })
+                            // TODO: Only due to technical reasons, we can't mix highlights and diffs. 
+                            // This should be fixed via vendoring react-highlight-words's `Highlighter` class
+                            const manxText = diffCorrectedText(line.manxOriginal, line.manx) ?? highlightText(highlightManx, "gv", line.manx)
+                            const englishText = diffCorrectedText(line.englishOriginal, line.english) ?? highlightText(highlightEnglish, "en", line.english)
 
                             return <><tr key={line.date}>
                                 <td>
