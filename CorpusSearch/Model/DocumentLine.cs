@@ -10,6 +10,9 @@ namespace CorpusSearch.Model
         public int? Page { get; set; }
         public string Notes { get; set; }
 
+        public string ManxOriginal { get; set; }
+        public string EnglishOriginal { get; set; }
+
         [JsonIgnore]
         // TODO: NBSP?
         public string NormalizedEnglish
