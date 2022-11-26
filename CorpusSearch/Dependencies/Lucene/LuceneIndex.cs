@@ -24,8 +24,10 @@ namespace CorpusSearch
         public const string DOCUMENT_LINE_NUMBER = "line_number";
         public const string DOCUMENT_NORMALIZED_MANX = "manx";
         public const string DOCUMENT_REAL_MANX = "real_manx";
+        public const string DOCUMENT_ORIGINAL_MANX = "original_manx";
         public const string DOCUMENT_NORMALIZED_ENGLISH = "english";
         public const string DOCUMENT_REAL_ENGLISH = "real_english";
+        public const string DOCUMENT_ORIGINAL_ENGLISH = "original_english";
         public const string DOCUMENT_CREATED_START = "created_start";
         public const string DOCUMENT_CREATED_END = "created_end";
 
@@ -81,6 +83,7 @@ namespace CorpusSearch
                     new Field(DOCUMENT_NORMALIZED_MANX, line.NormalizedManx , fieldType),
                     // TODO: Confirm that the analyzer that we use is also appropriate for English
                     new Field(DOCUMENT_NORMALIZED_ENGLISH, line.NormalizedEnglish, fieldType),
+
                 };
 
                 void AddField(string key, string value)
@@ -89,7 +92,9 @@ namespace CorpusSearch
                     if (value == null) { return; }
                     doc.Add(new StringField(key, value, Field.Store.YES));
                 }
-                
+
+                AddField(DOCUMENT_ORIGINAL_ENGLISH, line.EnglishOriginal);
+                AddField(DOCUMENT_ORIGINAL_MANX, line.ManxOriginal);
                 AddField(DOCUMENT_CREATED_START, document.CreatedCircaStart?.ToString());
                 AddField(DOCUMENT_CREATED_END, document.CreatedCircaEnd?.ToString());
                 AddField(DOCUMENT_NOTES, line.Notes);
@@ -162,6 +167,8 @@ namespace CorpusSearch
                     Page = pageAsInt != 0 ? pageAsInt : null,
                     Notes = notes,
                     CsvLineNumber = lineNumber,
+                    ManxOriginal = document.GetField(DOCUMENT_ORIGINAL_MANX)?.GetStringValue(),
+                    EnglishOriginal = document.GetField(DOCUMENT_ORIGINAL_ENGLISH)?.GetStringValue(),
                 };
             }).ToList();
 
@@ -265,8 +272,9 @@ namespace CorpusSearch
             {
                 Manx = x.GetField(DOCUMENT_REAL_MANX)?.GetStringValue(),
                 English = x.GetField(DOCUMENT_REAL_ENGLISH)?.GetStringValue(),
-                Notes = x.GetField(DOCUMENT_NOTES)?.GetStringValue()
-                
+                Notes = x.GetField(DOCUMENT_NOTES)?.GetStringValue(),
+                ManxOriginal = x.GetField(DOCUMENT_ORIGINAL_MANX)?.GetStringValue(),
+                EnglishOriginal = x.GetField(DOCUMENT_ORIGINAL_ENGLISH)?.GetStringValue(),
             }).ToList();
         }
     }

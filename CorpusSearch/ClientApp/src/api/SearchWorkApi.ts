@@ -13,6 +13,8 @@ export type SearchWorkResult = {
     csvLineNumber: number
     date: string // TODO: Why on the detail result?
     notes: string
+    manxOriginal?: string
+    englishOriginal?: string
 }
 
 export type SearchWorkResponse = {
