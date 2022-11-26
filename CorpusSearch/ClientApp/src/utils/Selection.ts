@@ -6,10 +6,9 @@ export const getSelectedWordOrPhrase = (selection: Selection) => {
     if (node == null) {
         return null
     }
-    debugger
+    
     const currentSelection = selection.toString()
     const beforeSelection = setRangeStartOffset(range, node)
-    debugger
     const afterSelection = setRangeEndOffset(range, node)
 
     return `${beforeSelection}${currentSelection}${afterSelection}`
