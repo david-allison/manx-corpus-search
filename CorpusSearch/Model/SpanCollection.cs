@@ -1,10 +1,30 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 
 namespace CorpusSearch.Dependencies.Lucene
 {
-    /// <summary>
+    public class EmptySpanCollection
+    {
+        private int count;
+        private readonly ISet<int> docIds = new HashSet<int>();
+        public void Increment(int docId)
+        {
+            count++;
+            docIds.Add(docId);
+        }
+
+        public IEnumerable<int> DistinctDocuments()
+        {
+            return docIds;
+        }
+
+        public int GetTotalCount()
+        {
+            return count;
+        }
+    }
+    
+      /// <summary>
     /// A collection of token spans per document
     /// </summary>
     public class SpanCollection

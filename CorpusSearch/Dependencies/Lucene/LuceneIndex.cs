@@ -10,7 +10,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-
+using CorpusSearch;
+using Document = Lucene.Net.Documents.Document;
 using LuceneDocument = Lucene.Net.Documents.Document;
 
 namespace CorpusSearch
@@ -126,9 +127,8 @@ namespace CorpusSearch
 
             ISet<int> acceptDocs = GetDocsForIdent(searcher, ident);
 
-            int totalMatches = 0;
             var spanQuery = (SpanQuery)query.Rewrite(reader);
-            SpanCollection spanCollection = new();
+            EmptySpanCollection spanCollection = new();
             foreach (var leaf in reader.Leaves)
             {
                 var dict = new Dictionary<Term, TermContext>();
@@ -142,8 +142,8 @@ namespace CorpusSearch
                     {
                         continue;
                     }
-                    spanCollection.Add(leaf.DocBase + spans.Doc, new Span(spans.Start, spans.End));
-                    totalMatches++;
+                    
+                    spanCollection.Increment(leaf.DocBase + spans.Doc);
                 }
             }
 
@@ -221,7 +221,6 @@ namespace CorpusSearch
             var samples = corpusDocuments.Select(kvp =>
             {
                 var doc = kvp.Value;
-                int docId = kvp.Key;
 
                 string maybeStartDate = doc.GetField(DOCUMENT_CREATED_START)?.GetStringValue();
                 string maybeEndDate = doc.GetField(DOCUMENT_CREATED_END)?.GetStringValue();
