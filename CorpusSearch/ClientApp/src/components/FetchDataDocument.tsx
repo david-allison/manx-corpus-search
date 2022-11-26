@@ -185,7 +185,7 @@ const ComparisonTable = (props: {
     translations?: Translations }) => {
     const {response, value, highlightManx, highlightEnglish, translations } = props
     
-    const onClick = () => {
+    const onClickWordForDictionaryLookup = () => {
         const s = window.getSelection()
         if (s == null) {
             return
@@ -252,7 +252,11 @@ const ComparisonTable = (props: {
         const manx = manxValue.map(x => `(${escapeRegex(x)})`).join("|")
         // no highlighting if we don't have a value 
         const manxHighlight = manxValue.length > 0 && value ? [` [,\\.!]?(${manx})[,\\.!]?[ (—)]`] : []
-        return lineValue.split("\n").map((item, key) => <span onClick={() => onClick()} key={key}><Highlighter
+        return lineValue.split("\n").map((item, key) => <span onClick={() => {
+            if (languageCode == "gv") {
+                onClickWordForDictionaryLookup()
+            }
+           }} key={key}><Highlighter
             highlightClassName={shouldHighlight ? "textHighlight" : "textHighlightAlternate"}
             searchWords={manxHighlight}
             autoEscape={false}
