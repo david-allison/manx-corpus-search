@@ -15,6 +15,7 @@ import {manxDictionaryLookup} from "../api/DictionaryApi"
 import {metadataLookup} from "../api/MetadataApi"
 import RecursiveProperty from "../vendor/react-json-component/RecursiveProperty"
 import {diffChars} from "diff"
+import {getSelectedWordOrPhrase} from "../utils/Selection";
 
 /* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/restrict-template-expressions, @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment */
 const enrichSources = (x: any, sourceLinks: SourceLink[] | null) => {
@@ -186,38 +187,19 @@ const ComparisonTable = (props: {
     const {response, value, highlightManx, highlightEnglish, translations } = props
     
     const onClickWordForDictionaryLookup = () => {
-        const s = window.getSelection()
-        if (s == null) {
+        const selection = window.getSelection()
+        if (selection == null) {
             return
         }
         
-        const range = s.getRangeAt(0).cloneRange() // clone to ensure we don't modify selection
-        const node = s.anchorNode
+        const range = getSelectedWordOrPhrase(selection)
         
-        if (node == null) {
-            return
-        }
-        
-        // Find starting point
-        while(range.toString().indexOf(" ") != 0 && range.startOffset > 0) {
-            range.setStart(node,(range.startOffset -1))
-        }
-        if (range.startOffset != 0 || range.toString()[0] == " ") {
-            // if we reached a space, ignore it
-            range.setStart(node, range.startOffset + 1)    
-        }
-
-        // Find ending point
-        try {
-            do {
-                range.setEnd(node,range.endOffset + 1)
-            } while(range.toString().indexOf(" ") == -1 && range.toString().trim() != "")
-        } catch (e) {
-            // TODO: find a less hacky way to end if at the end
+        if (range == null) {
+            return;
         }
         
         // remove notes/citations '[1]' at the end of the string
-        const stringToSearch = range.toString().replace(/\[\d+]/g, " ")
+        const stringToSearch = range.replace(/\[\d+]/g, " ")
         
         setModalOpen(true)
         setModalText(stringToSearch.trim())
