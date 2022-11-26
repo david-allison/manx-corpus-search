@@ -1,4 +1,5 @@
-﻿using CorpusSearch.Services;
+﻿using System.Text.Json.Serialization;
+using CorpusSearch.Services;
 
 namespace CorpusSearch.Model
 {
@@ -9,6 +10,7 @@ namespace CorpusSearch.Model
         public int? Page { get; set; }
         public string Notes { get; set; }
 
+        [JsonIgnore]
         // TODO: NBSP?
         public string NormalizedEnglish
         {
@@ -19,6 +21,7 @@ namespace CorpusSearch.Model
             }
         }
 
+        [JsonIgnore]
         public string NormalizedManx
         {
             get
