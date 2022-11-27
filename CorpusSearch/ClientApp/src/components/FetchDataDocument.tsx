@@ -60,6 +60,12 @@ const enrichGitHub = (x: any) => {
     delete x.gitHubRepo
     delete x.relativeCsvPath
 }
+
+const removeHandledKeys = (x: any) => {
+    if ("googleBooksId" in x) {
+        delete x.googleBooksId
+    }
+}
 /* eslint-enable */
 
 
@@ -128,6 +134,7 @@ export const FetchDataDocument = () => {
             .then(x => {
                 enrichGitHub(x)
                 enrichSources(x, searchWorkResponse.sourceLinks)
+                removeHandledKeys(x)
                 setTestJson(x)
             })
             .catch(e => console.warn(e))
