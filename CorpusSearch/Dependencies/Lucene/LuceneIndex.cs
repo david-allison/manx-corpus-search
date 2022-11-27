@@ -260,7 +260,9 @@ namespace CorpusSearch
             
             TopDocs docs = searcher.Search(new TermQuery(new Term(DOCUMENT_IDENT, ident)), Int32.MaxValue);
 
-            var fieldsToLoad = new HashSet<string> { DOCUMENT_REAL_MANX, DOCUMENT_REAL_ENGLISH, DOCUMENT_NOTES };
+            var fieldsToLoad = new HashSet<string> { DOCUMENT_REAL_MANX, DOCUMENT_REAL_ENGLISH, DOCUMENT_NOTES,
+                DOCUMENT_PAGE,
+                DOCUMENT_LINE_NUMBER, DOCUMENT_ORIGINAL_MANX, DOCUMENT_ORIGINAL_ENGLISH };
             return docs.ScoreDocs
                 .Select(x => searcher.Doc(x.Doc, fieldsToLoad))
                 .Select(x => new DocumentLine
@@ -281,7 +283,13 @@ public static class DocumentExtensions
 {
     public static int? GetPageAsInt(this Document document)
     {
-        var pageAsInt = document.GetField(LuceneIndex.DOCUMENT_PAGE)?.GetInt32Value();
+        var page = document.GetField(LuceneIndex.DOCUMENT_PAGE)?.GetStringValue();
+        if (page == null)
+        {
+            return null;
+        }
+
+        if (!int.TryParse(page, out var pageAsInt)) return null;
         return pageAsInt != 0 ? pageAsInt : null;
     }
 }
