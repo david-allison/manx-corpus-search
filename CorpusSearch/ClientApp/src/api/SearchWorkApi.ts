@@ -27,7 +27,8 @@ export type SearchWorkResponse = {
     notes: string
     source: string
     sourceLinks: SourceLink[] | null
-    pdfLink: string
+    pdfLink: string | undefined
+    googleBooksId: string | undefined
     gitHubLink: string
     original?: string
 }

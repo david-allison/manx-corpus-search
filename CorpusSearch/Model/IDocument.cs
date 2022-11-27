@@ -16,6 +16,10 @@ namespace CorpusSearch.Model
 
         /// <summary>(optional) link to PDF</summary>
         public string ExternalPdfLink { get; }
+        
+        /// <summary>(optional) link to Google Books</summary>
+        /// <remarks>Google books uses "&amp;pg=p7" to link to pages, slightly different from a PDF</remarks>
+        public string GoogleBooksId { get; }
 
         public string GitHubRepo { get; }
         public string RelativeCsvPath { get; }

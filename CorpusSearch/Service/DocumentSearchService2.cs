@@ -33,6 +33,7 @@ namespace CorpusSearch.Service
             }
 
             ret.PdfLink = document.ExternalPdfLink;
+            ret.GoogleBooksId = document.GoogleBooksId;
             ret.Notes = document.Notes;
             ret.Original = document.Original;
             ret.Source = document.Source;

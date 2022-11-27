@@ -81,6 +81,11 @@ namespace CorpusSearch.Controllers
             /// Optional link to external PDF
             /// </summary>
             public string PdfLink { get; internal set; }
+            
+            /// <summary>
+            /// Optional ID of the content on Google Books
+            /// </summary>
+            public string GoogleBooksId { get; set; }
 
             /// <summary>A list of the dictionaries that the word is defined in</summary>
             public Dictionary<string, List<string>> DefinedInDictionaries { get; set; } = new();
@@ -91,6 +96,7 @@ namespace CorpusSearch.Controllers
             public object Notes { get; internal set; }
             public string Source { get; set; }
             public List<SourceLink> SourceLinks { get; internal set; } = new();
+            
 
             internal static SearchWorkResult Empty(string title)
             {
