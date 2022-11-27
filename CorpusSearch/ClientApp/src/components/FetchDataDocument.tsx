@@ -262,7 +262,7 @@ const ComparisonTable = (props: {
         return <div onClick={() => {
             onClickWordForDictionaryLookup()
         }} style={{textAlign: "justify"}}>
-            {value != "*" && value != "" && <div style={{textAlign: "center", backgroundColor: "rgba(255,255,0,0.3)" }}>highlighting disabled</div>}
+            {value != "*" && value != "" && <div style={{textAlign: "center", backgroundColor: "rgba(255,255,0,0.3)" }}> highlighting disabled </div>}
             {result.map(part => {
                 const color = part.added ? "rgba(0, 128, 0, 0.3)" : part.removed ? "rgba(255, 0, 0, 0.3)" : ""
                 return <span style={{backgroundColor: color}}>{part.value}</span>
