@@ -52,6 +52,7 @@ namespace CorpusSearch.Test
             public DateTime? CreatedCircaEnd => date;
 
             public string ExternalPdfLink => null;
+            public string GoogleBooksId => null;
 
             public string GitHubRepo => null;
 

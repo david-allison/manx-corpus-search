@@ -27,6 +27,8 @@ namespace CorpusSearch.Model
         /// <remarks>Ensure that #page=n works on PC for a link like this</remarks>
         /// <remarks>I'm currenlty hosting these on Google Drive: I don't expect this to be a problem given small search volumes, but we may need a more permanent form of storage</remarks>
         public string ExternalPdfLink { get; set; }
+
+        public string GoogleBooksId { get; set; }
         public DateTime? CreatedCircaStart { get; set; }
         public DateTime? CreatedCircaEnd { get; set; }
         public abstract string GitHubRepo { get; set; }

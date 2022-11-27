@@ -301,7 +301,9 @@ const ComparisonTable = (props: {
                                 </td>
                                 <td>
                                     {line.page != null && response.pdfLink &&
-                                        <a href={response.pdfLink + "#page=" + line.page} target="_blank" rel="noreferrer">p{line.page}</a> }
+                                        <><a href={response.pdfLink + "#page=" + line.page} target="_blank" rel="noreferrer">p{line.page}</a>{" "}</> }
+                                    {line.page != null && response.googleBooksId &&
+                                        <><a href={`https://books.google.im/books?id=${response.googleBooksId}&pg=PA${line.page}`} target="_blank" rel="noreferrer">p{line.page}</a>{" "}</> }
                                     {response.gitHubLink && <a href={`${response.gitHubLink}#L${line.csvLineNumber}`}>
                                         edit
                                     </a>}
