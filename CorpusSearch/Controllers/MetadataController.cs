@@ -1,10 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 using CorpusSearch.Model;
 using CorpusSearch.Service;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json.Linq;
 
 namespace CorpusSearch.Controllers;
 
@@ -43,6 +46,16 @@ public class MetadataController
         {
             ret["created"] = work.CreatedCircaStart?.ToString("yyyy-MM-dd");
         }
+
+        // hack: JObject was not serialised correctly
+        foreach (var (k,v) in ret)
+        {
+            if (v is JObject)
+            {
+                ret[k] = JsonSerializer.Deserialize<JsonObject>(v.ToString());
+            }
+        }
+
         
         foreach (var prop in typeof(IDocument).GetProperties().Where(x => x.CanRead))
         {
