@@ -7,10 +7,15 @@ export const getSelectedWordOrPhrase = (selection: Selection) => {
         return null
     }
     
-    const currentSelection = selection.toString()
+    let currentSelection = selection.toString()
     const beforeSelection = setRangeStartOffset(range, node)
     const afterSelection = setRangeEndOffset(range, node)
 
+    if (node.parentElement != null && node.parentElement.className == "part-removed") {
+        currentSelection = ""
+    }
+    
+    console.debug(`${beforeSelection}|${currentSelection}|${afterSelection}`)
     return `${beforeSelection}${currentSelection}${afterSelection}`
 }
 
@@ -18,7 +23,7 @@ const setRangeStartOffset = (inputRange: Range, node: Node) => {
     const range = inputRange.cloneRange()
     let currentString = ""
     while (!range.toString().includes(" ")) {
-        if (range.startOffset == 0) {
+        if (range.startOffset == 0 || node.parentElement == null || node.parentElement.className == "part-removed") {
             currentString = range.toString() + currentString
             if (node?.parentNode?.previousSibling == null) {
                 return currentString
@@ -30,6 +35,10 @@ const setRangeStartOffset = (inputRange: Range, node: Node) => {
             }
             range.setEnd(node, node.textContent.length)
             range.setStart(node, node.textContent.length)
+        }
+
+        if (node.parentElement == null || node.parentElement.className == "part-removed") {
+            continue
         }
 
         while (range.toString().indexOf(" ") != 0 && range.startOffset > 0) {
@@ -61,6 +70,11 @@ const setRangeEndOffset = (inputRange: Range, node: Node) => {
             range.setEnd(node, 0)
             range.setStart(node, 0)
         }
+        firstTime = false
+
+        if (node.parentElement == null || node.parentElement.className == "part-removed") {
+            continue
+        }
         
         try {
             do {
@@ -69,7 +83,6 @@ const setRangeEndOffset = (inputRange: Range, node: Node) => {
         } catch (e) {
             // TODO: find a less hacky way to end if at the end
         }
-        firstTime = false
     }
     
     return currentString + range.toString()
