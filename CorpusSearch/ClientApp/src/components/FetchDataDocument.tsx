@@ -265,7 +265,8 @@ const ComparisonTable = (props: {
             {value != "*" && value != "" && <div style={{textAlign: "center", backgroundColor: "rgba(255,255,0,0.3)" }}> highlighting disabled </div>}
             {result.map(part => {
                 const color = part.added ? "rgba(0, 128, 0, 0.3)" : part.removed ? "rgba(255, 0, 0, 0.3)" : ""
-                return <span style={{backgroundColor: color}}>{part.value}</span>
+                const className = part.added ? "part-added" : part.removed ? "part-removed" : ""
+                return <span className={className} style={{backgroundColor: color}}>{part.value}</span>
             })}
         </div>
     }
