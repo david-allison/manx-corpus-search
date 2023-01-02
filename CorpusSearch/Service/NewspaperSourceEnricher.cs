@@ -7,7 +7,7 @@ using static CorpusSearch.Service.IMuseumNewspaperService;
 
 namespace CorpusSearch.Service
 {
-    public class WorkEnricher
+    public class NewspaperSourceEnricher
     {
         internal void Enrich(SearchController.SearchWorkResult result, IDocument document)
         {
