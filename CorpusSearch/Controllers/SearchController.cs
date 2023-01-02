@@ -176,7 +176,7 @@ namespace CorpusSearch.Controllers
             }
 
             ret.DefinedInDictionaries = DictionaryLookup(query);
-            ret.EnrichResults(results);
+            ret.SetResults(results);
             ret.EnrichWithTime(sw);
             ret.NumberOfDocuments = ret.Results.Count;
             return ret;

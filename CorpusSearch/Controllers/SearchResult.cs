@@ -18,7 +18,7 @@ namespace CorpusSearch.Controllers
             result.TimeTaken = elapsed.TotalMilliseconds + "ms";
         }
 
-        public static void EnrichResults<T>(this IResultContainer<T> target, IEnumerable<T> result)
+        public static void SetResults<T>(this IResultContainer<T> target, IEnumerable<T> result)
         {
             var res = result.ToList();
             int count = typeof(Countable).IsAssignableFrom(typeof(T)) ? res.Cast<Countable>().Sum(x => x.Count) : res.Count;
