@@ -1,4 +1,5 @@
-﻿using CorpusSearch.Controllers;
+﻿using System;
+using CorpusSearch.Controllers;
 using CorpusSearch.Dependencies;
 using CorpusSearch.Model;
 using System.Collections.Generic;
@@ -38,7 +39,12 @@ namespace CorpusSearch.Service
             ret.Original = document.Original;
             ret.Source = document.Source;
 
-            var results = searcher.SearchWork(workQuery.Ident, workQuery.Query, ToSearchOptions(workQuery));
+            var searchOptions = ToSearchOptions(workQuery);
+            searchOptions.ReturnTranscriptData = document.Source != null &&
+                                                 (document.Source.Trim().StartsWith("https://youtube.com") || 
+                                                 document.Source.Trim().StartsWith("https://www.youtube.com")); 
+            
+            var results = searcher.SearchWork(workQuery.Ident, workQuery.Query, searchOptions);
 
             newspaperSourceEnricher.Enrich(ret, document);
 

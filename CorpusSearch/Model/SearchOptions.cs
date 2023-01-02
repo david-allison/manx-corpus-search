@@ -1,12 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿namespace CorpusSearch.Model;
 
-namespace CorpusSearch.Model
+public class SearchOptions
 {
-    public class SearchOptions
-    {
-        public SearchType Type { get; set; }
-    }
+    public SearchType Type { get; set; }
+    public bool ReturnTranscriptData { get; set; }
 }
