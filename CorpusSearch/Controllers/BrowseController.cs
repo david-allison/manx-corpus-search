@@ -10,10 +10,10 @@ namespace CorpusSearch.Controllers;
 [Route("[controller]")]
 public class BrowseController : Controller
 {
-    private readonly DocumentSearchService2 documentSearchService;
+    private readonly DocumentSearchService documentSearchService;
     private readonly WorkService workService;
 
-    public BrowseController(DocumentSearchService2 documentSearchService, WorkService workService)
+    public BrowseController(DocumentSearchService documentSearchService, WorkService workService)
     {
         this.documentSearchService = documentSearchService;
         this.workService = workService;

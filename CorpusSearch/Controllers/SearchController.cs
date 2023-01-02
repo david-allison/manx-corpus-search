@@ -17,12 +17,12 @@ namespace CorpusSearch.Controllers
     public partial class SearchController : ControllerBase
     {
         public static string PUNCTUATION_REGEX = "[,.;!?\\s]";
-        private readonly DocumentSearchService2 documentSearchService;
+        private readonly DocumentSearchService documentSearchService;
         private readonly OverviewSearchService2 overviewSearchService;
         private readonly ISearchDictionary[] dictionaryServices;
         private readonly WorkService workService;
 
-        public SearchController(DocumentSearchService2 documentSearchService, OverviewSearchService2 overviewSearchService, IEnumerable<ISearchDictionary> dictionaryServices, WorkService workService)
+        public SearchController(DocumentSearchService documentSearchService, OverviewSearchService2 overviewSearchService, IEnumerable<ISearchDictionary> dictionaryServices, WorkService workService)
         {
             this.documentSearchService = documentSearchService;
             this.overviewSearchService = overviewSearchService;
