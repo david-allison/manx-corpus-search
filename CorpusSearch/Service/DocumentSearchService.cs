@@ -7,13 +7,13 @@ using static CorpusSearch.Controllers.SearchController;
 
 namespace CorpusSearch.Service
 {
-    public class DocumentSearchService2
+    public class DocumentSearchService
     {
         private readonly WorkService workService;
         private readonly Searcher searcher;
         private readonly NewspaperSourceEnricher newspaperSourceEnricher;
 
-        public DocumentSearchService2(WorkService workService, Searcher searcher, NewspaperSourceEnricher newspaperSourceEnricher)
+        public DocumentSearchService(WorkService workService, Searcher searcher, NewspaperSourceEnricher newspaperSourceEnricher)
         {
             this.workService = workService;
             this.searcher = searcher;
