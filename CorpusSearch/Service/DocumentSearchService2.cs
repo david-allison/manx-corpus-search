@@ -11,13 +11,13 @@ namespace CorpusSearch.Service
     {
         private readonly WorkService workService;
         private readonly Searcher searcher;
-        private readonly WorkEnricher enricher;
+        private readonly NewspaperSourceEnricher newspaperSourceEnricher;
 
-        public DocumentSearchService2(WorkService workService, Searcher searcher, WorkEnricher enricher)
+        public DocumentSearchService2(WorkService workService, Searcher searcher, NewspaperSourceEnricher newspaperSourceEnricher)
         {
             this.workService = workService;
             this.searcher = searcher;
-            this.enricher = enricher;
+            this.newspaperSourceEnricher = newspaperSourceEnricher;
         }
 
         public async Task<SearchWorkResult> SearchWork(CorpusSearchWorkQuery workQuery)
@@ -40,7 +40,7 @@ namespace CorpusSearch.Service
 
             var results = searcher.SearchWork(workQuery.Ident, workQuery.Query, ToSearchOptions(workQuery));
 
-            enricher.Enrich(ret, document);
+            newspaperSourceEnricher.Enrich(ret, document);
 
             ret.EnrichResults(results.Lines);
             // Handles more than one result per document line

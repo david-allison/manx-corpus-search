@@ -44,7 +44,7 @@ namespace CorpusSearch
             services.AddSingleton<ISearchDictionary>(provider => provider.GetService<CregeenDictionaryService>());
             services.AddSingleton<WorkService>();
             services.AddSingleton<DocumentSearchService2>();
-            services.AddSingleton<WorkEnricher>();
+            services.AddSingleton<NewspaperSourceEnricher>();
             services.AddSingleton<OverviewSearchService2>();
 
             // In production, the React files will be served from this directory
