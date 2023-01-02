@@ -32,6 +32,9 @@ namespace CorpusSearch
         public const string DOCUMENT_CREATED_START = "created_start";
         public const string DOCUMENT_CREATED_END = "created_end";
 
+        public const string SUBTITLE_START = "subtitle_start";
+        public const string SUBTITLE_END = "subtitle_end";
+        
         private IndexWriter indexWriter;
 
         public LuceneIndex(IndexWriter indexWriter)
@@ -101,6 +104,15 @@ namespace CorpusSearch
                 AddField(DOCUMENT_NOTES, line.Notes);
                 AddField(DOCUMENT_PAGE, line.Page.ToString());
 
+                if (line.SubStart != null)
+                {
+                    doc.Add(new DoubleField(SUBTITLE_START, line.SubStart.Value, Field.Store.YES));
+                }
+                if (line.SubEnd != null)
+                {
+                    doc.Add(new DoubleField(SUBTITLE_END, line.SubEnd.Value, Field.Store.YES));
+                }
+                
                 indexWriter.AddDocument(doc);
             }
 
@@ -119,7 +131,7 @@ namespace CorpusSearch
         }
 
 
-        internal SearchResult Search(string ident, SpanQuery query)
+        internal SearchResult Search(string ident, SpanQuery query, bool getTranscriptData)
         {
             // TODO: Copied from Scan
             using var reader = indexWriter.GetReader(applyAllDeletes: true);
@@ -156,6 +168,7 @@ namespace CorpusSearch
                 string notes = document.GetField(DOCUMENT_NOTES)?.GetStringValue();
                 int lineNumber = document.GetField(DOCUMENT_LINE_NUMBER)?.GetInt32Value() ?? -1;
 
+                
                 return new DocumentLine
                 {
                     English = english,
@@ -165,6 +178,8 @@ namespace CorpusSearch
                     CsvLineNumber = lineNumber,
                     ManxOriginal = document.GetField(DOCUMENT_ORIGINAL_MANX)?.GetStringValue(),
                     EnglishOriginal = document.GetField(DOCUMENT_ORIGINAL_ENGLISH)?.GetStringValue(),
+                    SubStart = getTranscriptData ? document.GetField(SUBTITLE_START)?.GetDoubleValue() : null,
+                    SubEnd = getTranscriptData ? document.GetField(SUBTITLE_END)?.GetDoubleValue() : null,
                 };
             }).ToList();
 
@@ -253,7 +268,7 @@ namespace CorpusSearch
             return this.indexWriter;
         }
 
-        public List<DocumentLine> GetAllLines(string ident)
+        public List<DocumentLine> GetAllLines(string ident, bool getTranscript)
         {
             using var reader = indexWriter.GetReader(applyAllDeletes: true);
             var searcher = new IndexSearcher(reader);
@@ -263,6 +278,12 @@ namespace CorpusSearch
             var fieldsToLoad = new HashSet<string> { DOCUMENT_REAL_MANX, DOCUMENT_REAL_ENGLISH, DOCUMENT_NOTES,
                 DOCUMENT_PAGE,
                 DOCUMENT_LINE_NUMBER, DOCUMENT_ORIGINAL_MANX, DOCUMENT_ORIGINAL_ENGLISH };
+            if (getTranscript)
+            {
+                fieldsToLoad.Add(SUBTITLE_END);
+                fieldsToLoad.Add(SUBTITLE_START);
+            }
+            
             return docs.ScoreDocs
                 .Select(x => searcher.Doc(x.Doc, fieldsToLoad))
                 .Select(x => new DocumentLine
@@ -274,6 +295,8 @@ namespace CorpusSearch
                 CsvLineNumber = x.GetField(DOCUMENT_LINE_NUMBER)?.GetInt32Value() ?? -1,
                 ManxOriginal = x.GetField(DOCUMENT_ORIGINAL_MANX)?.GetStringValue(),
                 EnglishOriginal = x.GetField(DOCUMENT_ORIGINAL_ENGLISH)?.GetStringValue(),
+                SubStart = getTranscript ? x.GetField(SUBTITLE_START)?.GetDoubleValue() : null,
+                SubEnd = getTranscript ? x.GetField(SUBTITLE_END)?.GetDoubleValue() : null
             }).ToList();
         }
     }

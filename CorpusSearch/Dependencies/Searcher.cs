@@ -29,7 +29,8 @@ namespace CorpusSearch.Dependencies
             {
                 return new SearchResult
                 {
-                    Lines = luceneSearch.GetAllLines(ident).Where(x => !string.IsNullOrEmpty(x.Manx) || !string.IsNullOrEmpty(x.English)).ToList(),
+                    Lines = luceneSearch.GetAllLines(ident, options.ReturnTranscriptData)
+                        .Where(x => !string.IsNullOrEmpty(x.Manx) || !string.IsNullOrEmpty(x.English)).ToList(),
                     TotalMatches = null,
                 };
             }
@@ -42,7 +43,7 @@ namespace CorpusSearch.Dependencies
             // Convert the result to a Lucene Span Query (or throw ArgumentException)
             SpanQuery spanQuery = ToSpanQuery(parsed, scanOptionsHack);
 
-            return luceneSearch.Search(ident, spanQuery);
+            return luceneSearch.Search(ident, spanQuery, options.ReturnTranscriptData);
 
         }
 
@@ -52,7 +53,7 @@ namespace CorpusSearch.Dependencies
         /// <param name="ident">The ID of the document</param>
         internal List<DocumentLine> GetAllLines(string ident)
         {
-            return luceneSearch.GetAllLines(ident);
+            return luceneSearch.GetAllLines(ident, getTranscript: false);
         }
 
         public ScanResult Scan(string query)

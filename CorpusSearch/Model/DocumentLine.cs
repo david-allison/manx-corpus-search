@@ -12,6 +12,9 @@ namespace CorpusSearch.Model
 
         public string ManxOriginal { get; set; }
         public string EnglishOriginal { get; set; }
+        
+        public double? SubStart { get; set; }
+        public double? SubEnd { get; set; }
 
         [JsonIgnore]
         // TODO: NBSP?
