@@ -42,7 +42,7 @@ namespace CorpusSearch.Service
 
             newspaperSourceEnricher.Enrich(ret, document);
 
-            ret.EnrichResults(results.Lines);
+            ret.SetResults(results.Lines);
             // Handles more than one result per document line
             ret.TotalMatches = results.TotalMatches;
 
