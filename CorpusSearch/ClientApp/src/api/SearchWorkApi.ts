@@ -15,6 +15,8 @@ export type SearchWorkResult = {
     notes: string
     manxOriginal?: string
     englishOriginal?: string
+    subStart?: number
+    subEnd?: number
 }
 
 export type SearchWorkResponse = {

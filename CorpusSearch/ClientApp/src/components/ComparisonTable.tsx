@@ -1,12 +1,15 @@
-import {SearchWorkResponse} from "../api/SearchWorkApi"
+import {SearchWorkResponse, SearchWorkResult} from "../api/SearchWorkApi"
 import {Translations} from "../api/SearchApi"
 import {getSelectedWordOrPhrase} from "../utils/Selection"
-import React, {useEffect, useState} from "react"
+import React, {CSSProperties, useEffect, useRef, useState} from "react"
 import {manxDictionaryLookup} from "../api/DictionaryApi"
 import Highlighter from "react-highlight-words"
 import {Box, CircularProgress, Modal} from "@mui/material"
 import Typography from "@mui/material/Typography"
 import {diffChars} from "diff"
+import YouTuber, {Player} from "./YouTuber"
+import useInterval from "../vendor/use-interval/UseInterval"
+import "./ComparisonTable.css"
 
 function escapeRegex(s: string) {
     return s.replace(/[/\-\\^$*+?.()|[\]{}]/g, "\\$&")
@@ -109,12 +112,54 @@ export const ComparisonTable = (props: {
         if (translations == null) return []
         return translations[key] ?? []
     }
+
+    const [videoTime, setVideoTime] = useState(0)
+    
+    useInterval(() => setVideoTime(player.current?.getCurrentTime() ?? 0), 10)
+
+    const getVideoId = (source:string) => {
+        try {
+            return new URL(source).searchParams.get("v")
+        } catch (e) {
+            console.warn(e)
+            return ""
+        }
+    }
+
+    let isVideo = response?.source?.startsWith("https://www.youtube") || response?.source?.startsWith("https://youtube.com")
+    const videoId = !isVideo ? "" : getVideoId(response.source)
+    if (!videoId) {
+        isVideo = false
+    }
+    const player = useRef<Player>(null)
+    
+    const getLineStyle = (line: SearchWorkResult): CSSProperties => {
+        if (!isVideo || !line.subStart || !line.subEnd) return {}
+        if (videoTime < line.subStart || videoTime > line.subEnd) return {}
+        return {
+            backgroundColor: "aliceblue",
+        }
+    }
+    
+    const tableStyle = (): CSSProperties => {
+        if (!isVideo) return {}
+        return {
+            display: "block",
+            overflowY: "scroll",
+            maxHeight: "400px"
+        }
+    }
+    
     return (
         <>
             <div>
-                <table className='table table-striped' style={{tableLayout: "fixed"}} aria-labelledby="tabelLabel">
+                {/*TODO: Lazy Load Youtube player*/}
+                {isVideo && videoId != null && <div className={"youtube-container center"}><YouTuber ref={player} videoId={videoId} /></div>}
+                <div>
+                <table className='table table-striped' style={{tableLayout: "fixed", ...tableStyle()}} aria-labelledby="tabelLabel">
                     <thead>
                     <tr>
+                        {isVideo && <th>{""}</th>}
                         <th>{originalManx ? "Manx" : "English"}</th>
                         <th>{originalManx ? "English" : "Manx"}</th>
                         <th style={{width: 45}}>Link</th>
@@ -127,7 +172,12 @@ export const ComparisonTable = (props: {
                             const manxText = diffCorrectedText(line.manxOriginal, line.manx) ?? highlightText(highlightManx, "gv", line.manx)
                             const englishText = diffCorrectedText(line.englishOriginal, line.english) ?? highlightText(highlightEnglish, "en", line.english)
 
-                            return <><tr key={line.date}>
+                            return <><tr key={line.date} style={getLineStyle(line)}>
+                                {isVideo && <td style={{cursor: "pointer"}} onClick={() => {
+                                    if (line.subStart && player.current) {
+                                    player.current.seek(line.subStart)
+                                }
+                                }}>▶️</td>}
                                 <td>
                                     {originalManx ? manxText : englishText}
                                 </td>
@@ -150,6 +200,7 @@ export const ComparisonTable = (props: {
                     )}
                     </tbody>
                 </table>
+                </div>
             </div>
 
             <Modal
