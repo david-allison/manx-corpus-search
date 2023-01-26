@@ -14,6 +14,7 @@ using CorpusSearch.Dependencies.csly;
 using CorpusSearch.Dependencies;
 using CorpusSearch.Service;
 using CorpusSearch.Utils;
+using static System.Text.Json.JsonSerializer;
 
 namespace CorpusSearch
 {
@@ -107,15 +108,20 @@ namespace CorpusSearch
 
         internal static void SetupDictionaries()
         {
+            Dictionary<string, IList<string>> ToCaseInsensitiveDict(FileStream fileStream) 
+            {
+                var dict = DeserializeAsync<Dictionary<string, IList<string>>>(fileStream).Result;
+                return new Dictionary<string, IList<string>>(dict, StringComparer.OrdinalIgnoreCase);
+            }
             // This saves ~700MB RAM compared to using F# for XML reading... sorry
-            // files sourced from https://www.learnmanx.com/page_342285.html - TODO; confirm copyright
+            // files sourced from Phil Kelly https://www.learnmanx.com/page_342285.html
             using (FileStream manx = File.OpenRead(GetLocalFile("Resources", "manx.json")))
             {
-                ManxToEnglishDictionary = System.Text.Json.JsonSerializer.DeserializeAsync<Dictionary<string, IList<string>>>(manx).Result;
+                ManxToEnglishDictionary = ToCaseInsensitiveDict(manx);
             }
             using (FileStream english = File.OpenRead(GetLocalFile("Resources", "english.json")))
             {
-                EnglishToManxDictionary = System.Text.Json.JsonSerializer.DeserializeAsync<Dictionary<string, IList<string>>>(english).Result;
+                EnglishToManxDictionary = ToCaseInsensitiveDict(english);
             }
         }
 
