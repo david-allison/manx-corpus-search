@@ -46,7 +46,7 @@ namespace CorpusSearch.Controllers
                 var results = Startup.ManxToEnglishDictionary.GetValueOrDefault(query, new List<string>());
                 var ret = new Translations
                 {
-                    { "en", results }
+                    { "Phil Kelly (en)", results }
                 };
                 return ret;
             }
@@ -56,7 +56,7 @@ namespace CorpusSearch.Controllers
                 var results = Startup.EnglishToManxDictionary.GetValueOrDefault(query, new List<string>());
                 var ret = new Translations
                 {
-                    { "gv", results }
+                    { "Phil Kelly (gv)", results }
                 };
                 return ret;
             }
