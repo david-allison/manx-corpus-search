@@ -49,9 +49,6 @@ export class NavMenu extends Component<unknown, State> {
                         <NavItem>
                             <a className="text-dark nav-link" href="/Browse">Browse All</a>
                         </NavItem>
-                        <NavItem>
-                            <a className="text-dark nav-link" href="/MailingList">Mailing List</a>
-                        </NavItem>
                     </ul>
                     </Collapse>
                 </Container>
