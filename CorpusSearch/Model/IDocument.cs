@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.Diagnostics;
 using System.Web;
 
 namespace CorpusSearch.Model
@@ -59,32 +59,64 @@ namespace CorpusSearch.Model
         {
             return GetDownloadTextLink(target)?.Replace("document.csv", "manifest.json.txt");
         }
-        
-        public static string GetFullYear(this IDocument document)
+
+        private static DatePair GetDatePair(this IDocument document)
         {
             if (document.CreatedCircaStart == null && document.CreatedCircaEnd == null)
             {
-                return "";
+                return null;
             }
 
             if (!document.CreatedCircaEnd.HasValue)
             {
-                return document.CreatedCircaStart?.Year.ToString();
+                Debug.Assert(document.CreatedCircaStart != null);
+                return new DatePair(document.CreatedCircaStart.Value, null);
             }
 
             if (!document.CreatedCircaStart.HasValue)
             {
-                return document.CreatedCircaEnd?.Year.ToString();
+                return new DatePair(document.CreatedCircaEnd.Value, null);
             }
 
             if (document.CreatedCircaStart!.Value.Year == document.CreatedCircaEnd!.Value.Year)
             {
-                return document.CreatedCircaStart.Value.Year.ToString();
+                return new DatePair(document.CreatedCircaStart.Value, null);
+            }
+
+            return new DatePair(document.CreatedCircaStart.Value, document.CreatedCircaEnd.Value);
+        }
+        public static string GetFullYear(this IDocument document)
+        {
+            var datePair = document.GetDatePair();
+            if (datePair == null) {
+                return "";
+            }
+
+            if (!datePair.Second.HasValue)
+            {
+                return datePair.First.Year.ToString();
             }
             
-            return document.CreatedCircaStart!.Value.Year + "-" + document.CreatedCircaEnd?.Year;
+            return datePair.First.Year + "-" + datePair.Second.Value.Year;
         }
         
+        public static string GetFullDate(this IDocument document)
+        {
+            var datePair = document.GetDatePair();
+            if (datePair == null) {
+                return "";
+            }
+
+            if (!datePair.Second.HasValue)
+            {
+                return datePair.First.ToString("ddd, dd MMM yyy");
+            }
+            
+            return datePair.First.ToString("ddd, dd MMM yyy") + "-" + datePair.Second.Value.ToString("ddd, dd MMM yyy");
+        }
+
+        record DatePair(DateTime First, DateTime? Second);
+
         public static object GetExtensionData(this IDocument document, string key)
         {
             return document.GetAllExtensionData()[key];
