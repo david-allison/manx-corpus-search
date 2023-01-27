@@ -32,7 +32,11 @@ export class NavMenu extends Component<unknown, State> {
         <Navbar className="navbar-expand-sm navbar-toggleable-sm ng-white border-bottom box-shadow mb-3" light>
 
           <Container>
-            <img src={require("../corpus.png")} alt="Manx Corpus Search" height="100px" />
+              <div>
+                <img src={require("../corpus.png")} alt="Manx Corpus Search" className={"corpusImageLarge"} height="100px" />
+                <img src={require("../corpus-search-icon.png")} alt="Manx Corpus Search" className={"corpusImageSmall"} height="60px" />
+                <span className={"corpusImageSmall titleText"}>Gaelg Corpus Search</span>
+              </div>
                 <NavbarToggler onClick={this.toggleNavbar} className="mr-2" />
                 <Collapse className="d-sm-inline-flex flex-sm-row-reverse" isOpen={!this.state.collapsed} navbar>
                     <ul className="navbar-nav flex-grow">
