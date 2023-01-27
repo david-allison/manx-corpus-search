@@ -46,7 +46,7 @@ export class NavMenu extends Component<unknown, State> {
                             <a className="text-dark nav-link" href="/Browse">Browse All</a>
                         </NavItem>
                         <NavItem>
-                            <a className="text-dark nav-link" href="https://github.com/david-allison/manx-search-data">Contribute</a>
+                            <a className="text-dark nav-link" href="/MailingList">Mailing List</a>
                         </NavItem>
                     </ul>
                     </Collapse>
