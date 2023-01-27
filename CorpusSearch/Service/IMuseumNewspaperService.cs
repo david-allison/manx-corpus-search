@@ -140,6 +140,8 @@ namespace CorpusSearch.Service
             ["Werden"] = "WER",
         };
 
+        public static List<string> NewspaperNames => NewspaperNameToId.Select(x => x.Key).ToList();
+
         internal static string ParseNewspaperId(string source)
         {
             string key = NewspaperNameToId.Select(x => (x.Key, source.IndexOf(x.Key)))

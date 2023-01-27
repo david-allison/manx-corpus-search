@@ -1,0 +1,53 @@
+﻿
+@using CorpusSearch.Model
+@model CorpusSearch.Controllers.DocumentTree 
+
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+    <title>@ViewData["Title"]</title>
+
+    <!-- Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-Zenh87qX5JnK2Jl0vWa8Ck2rdkQ2Bzep5IDxbcnCeuOxjzrPF/et3URy9Bv1WTRi" crossorigin="anonymous">
+    <style>
+    .noteRow {
+       background-color: aliceblue;
+       font-size: small;
+       padding: 0.15rem;
+       text-align: center;
+    }
+    </style>
+</head>
+<body>
+<h1 style="margin: 24px"><a href="/Tags" style="text-decoration: none">⇦</a> @ViewData.Model.Title</h1>
+
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-OERcA2EqjJCMA+/3y+gxIOqMEjwtxJY7qPCqsdltbNJuaOe923+mo//f6V8Qbsw3" crossorigin="anonymous"></script>
+
+<ul>
+    @foreach (var document in Model.Documents)
+    {
+        <li><a class="lead" href="/Browse/@document.Ident">@document.Name</a> @document.GetFullDate()<br/></li>
+    }
+</ul>
+
+<ul>
+    @foreach (var subCategory in Model.Children)
+    {
+        <h3>@subCategory.Title</h3>
+        @foreach (var subDocDoc in subCategory.Documents)
+        {
+            <li><a class="lead" href="/Browse/@subDocDoc.Ident">@subDocDoc.Name</a>
+            @subDocDoc.GetFullYear()</li>
+        }
+    }
+</ul>   
+
+</body>
+</html>
+
+
