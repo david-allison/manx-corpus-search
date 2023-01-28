@@ -51,7 +51,7 @@ jobs:
         run: ssh -tt david2@209.97.129.212 'cd /var/www/manx-corpus/CorpusSearch/bin/Release/net6.0/publish/Resources && /var/www/manx-corpus/.github/scripts/download_cregeen.sh'
         continue-on-error: true
 
-      - name: Upload Cregeen Dictionary
+      - name: Upload Kelly M2E Dictionary
         run: ssh -tt david2@209.97.129.212 'cd /var/www/manx-corpus/CorpusSearch/bin/Release/net6.0/publish/Resources && /var/www/manx-corpus/.github/scripts/download_kelly_m2e.sh'
         continue-on-error: true
         
