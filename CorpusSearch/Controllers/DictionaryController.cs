@@ -28,12 +28,11 @@ public class DictionaryController
     /// <param name="word"></param>
     /// <returns></returns>
     [HttpGet]
-    // ReSharper disable once UnusedMember.Global
     public IEnumerable<DictionarySummary> Get([FromQuery] string lang, [FromQuery] string word)
     {
         word = word.Replace(".", "").Replace(",", "").Replace("?", "").Replace(";", "")
             .Replace("(", "").Replace(")", "");
-        var result = dictionaryServices.SelectMany(x => x.GetSummaries(word, basic: true)).ToList();
+        var result = dictionaryServices.Where(x => x.QueryLanguages.Contains(lang)).SelectMany(x => x.GetSummaries(word, basic: true)).ToList();
         AnonymousAnalytics.Track("Dictionary Lookup", new Dictionary<string, object> { ["success"] = result.Any() });
         return result;
     }    

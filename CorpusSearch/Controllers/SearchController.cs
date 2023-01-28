@@ -133,7 +133,7 @@ namespace CorpusSearch.Controllers
             }
 
             ret.GitHubLink = (await this.workService.ByIdent(workIdent))?.GetGitHubLink();
-            ret.DefinedInDictionaries = DictionaryLookup(query);
+            ret.DefinedInDictionaries = DictionaryLookup(query, new QueryLanguages(Manx: manx, English: english));
 
             ret.EnrichWithTime(sw);
             return ret;
@@ -175,16 +175,17 @@ namespace CorpusSearch.Controllers
                 ret.Translations = Translations.FromEnglish(query);
             }
 
-            ret.DefinedInDictionaries = DictionaryLookup(query);
+            ret.DefinedInDictionaries = DictionaryLookup(query, new QueryLanguages(Manx: manx, English: english));
             ret.SetResults(results);
             ret.EnrichWithTime(sw);
             ret.NumberOfDocuments = ret.Results.Count;
             return ret;
         }
 
-        private Dictionary<string, DictionaryData> DictionaryLookup(string query)
+        private Dictionary<string, DictionaryData> DictionaryLookup(string query, QueryLanguages languages)
         {
-            var lookup = dictionaryServices.ToDictionary(x => x.Identifier,
+            var requestedLanguages = languages.AsList(); 
+            var lookup = dictionaryServices.Where(x => x.QueryLanguages.Any(supportedLanguages => requestedLanguages.Contains(supportedLanguages))).ToDictionary(x => x.Identifier,
                 x => new { summaries = x.GetSummaries(query), AllowLookup = x.LinkToDictionary });
             return lookup
                     .Where(x => x.Value.summaries.Any()) // where there are results
@@ -204,5 +205,16 @@ namespace CorpusSearch.Controllers
             public Dictionary<string, DictionaryData> DefinedInDictionaries { get; internal set; } = new();
             public Translations Translations { get; set; } = new();
         }
+    }
+}
+
+public record QueryLanguages(bool Manx, bool English)
+{
+    public List<string> AsList()
+    {
+        var requestedLanguages = new List<string>();
+        if (English) requestedLanguages.Add("en");
+        if (Manx) requestedLanguages.Add("en");
+        return requestedLanguages;
     }
 }
