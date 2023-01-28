@@ -1,4 +1,9 @@
-export type DefinedInDictionaries = Record<string, string[]> // Dictionary<string, string[]>
+export type DictionaryDefinition = {
+    entries: string[],
+    allowLookup: boolean
+}
+
+export type DefinedInDictionaries = Record<string, DictionaryDefinition> // Dictionary<string, string[]>
 export type Translations = Record<string, string[]> // Dictionary<string, IList<string>>
 
 export type SearchResponse = {

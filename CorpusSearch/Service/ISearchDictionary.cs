@@ -5,6 +5,11 @@ namespace CorpusSearch.Service
     public interface ISearchDictionary
     {
         string Identifier { get; }
+        
+        /// <summary>
+        /// Whether a link to Dictionaries/XXX should be produced.
+        /// </summary>
+        bool LinkToDictionary { get; }
         IEnumerable<DictionarySummary> GetSummaries(string query, bool basic = false);
     }
 
