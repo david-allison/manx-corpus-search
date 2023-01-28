@@ -1,13 +1,13 @@
-﻿using CorpusSearch.Model.Dictionary;
-using HtmlAgilityPack;
-using Newtonsoft.Json;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Web;
+using CorpusSearch.Model.Dictionary;
+using HtmlAgilityPack;
+using Newtonsoft.Json;
 
-namespace CorpusSearch.Service
+namespace CorpusSearch.Service.Dictionaries
 {
     public class CregeenDictionaryService : ISearchDictionary
     {
