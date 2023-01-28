@@ -214,7 +214,7 @@ public record QueryLanguages(bool Manx, bool English)
     {
         var requestedLanguages = new List<string>();
         if (English) requestedLanguages.Add("en");
-        if (Manx) requestedLanguages.Add("en");
+        if (Manx) requestedLanguages.Add("gv");
         return requestedLanguages;
     }
 }
