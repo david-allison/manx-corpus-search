@@ -50,6 +50,7 @@ namespace CorpusSearch.Service.Dictionaries
         }
 
         public string Identifier => "Cregeen";
+        public bool LinkToDictionary => true;
 
         public static CregeenDictionaryService Init()
         {

@@ -88,7 +88,7 @@ namespace CorpusSearch.Controllers
             public string GoogleBooksId { get; set; }
 
             /// <summary>A list of the dictionaries that the word is defined in</summary>
-            public Dictionary<string, List<string>> DefinedInDictionaries { get; set; } = new();
+            public Dictionary<string, DictionaryData> DefinedInDictionaries { get; set; } = new();
 
             /// <summary>https uri to the file on GitHub</summary>
             /// <remarks>This views the file, as "edit" on GitHub does not handle line numbers</remarks>
@@ -182,13 +182,17 @@ namespace CorpusSearch.Controllers
             return ret;
         }
 
-        private Dictionary<string, List<string>> DictionaryLookup(string query)
+        private Dictionary<string, DictionaryData> DictionaryLookup(string query)
         {
-            var lookup = dictionaryServices.ToDictionary(x => x.Identifier, x => x.GetSummaries(query));
+            var lookup = dictionaryServices.ToDictionary(x => x.Identifier,
+                x => new { summaries = x.GetSummaries(query), AllowLookup = x.LinkToDictionary });
             return lookup
-                    .Where(x => x.Value.Any()) // where there are results
-                    .ToDictionary(x => x.Key, x => x.Value.Select(x => x.Summary).ToList()); // extract the summary
+                    .Where(x => x.Value.summaries.Any()) // where there are results
+                    .ToDictionary(x => x.Key, 
+                        x => new DictionaryData(x.Value.summaries.Select(x => x.Summary).ToList(), x.Value.AllowLookup)); // extract the summary
         }
+
+        public record DictionaryData(List<string> Entries, bool AllowLookup);
 
         public class QueryDocumentSearchResult : IResultContainer<QueryDocumentResult>, ITimedResult
         {
@@ -197,7 +201,7 @@ namespace CorpusSearch.Controllers
             public List<QueryDocumentResult> Results { get; set; }
             public int NumberOfResults { get; set; }
             public string TimeTaken { get; set; }
-            public Dictionary<string, List<string>> DefinedInDictionaries { get; internal set; } = new();
+            public Dictionary<string, DictionaryData> DefinedInDictionaries { get; internal set; } = new();
             public Translations Translations { get; set; } = new();
         }
     }

@@ -44,6 +44,8 @@ namespace CorpusSearch
             services.AddSingleton<Searcher>();
             services.AddSingleton(provider => CregeenDictionaryService.Init());
             services.AddSingleton<ISearchDictionary>(provider => provider.GetService<CregeenDictionaryService>());
+            services.AddSingleton(provider => KellyManxToEnglishDictionaryService.Init());
+            services.AddSingleton<ISearchDictionary>(provider => provider.GetService<KellyManxToEnglishDictionaryService>());
             services.AddSingleton<WorkService>();
             services.AddSingleton<DocumentSearchService>();
             services.AddSingleton<NewspaperSourceEnricher>();

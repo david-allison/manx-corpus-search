@@ -50,6 +50,10 @@ jobs:
       - name: Upload Cregeen Dictionary
         run: ssh -tt david2@209.97.129.212 'cd /var/www/manx-corpus/CorpusSearch/bin/Release/net6.0/publish/Resources && /var/www/manx-corpus/.github/scripts/download_cregeen.sh'
         continue-on-error: true
+
+      - name: Upload Cregeen Dictionary
+        run: ssh -tt david2@209.97.129.212 'cd /var/www/manx-corpus/CorpusSearch/bin/Release/net6.0/publish/Resources && /var/www/manx-corpus/.github/scripts/download_kelly_m2e.sh'
+        continue-on-error: true
         
       - name: Restart Service
         run: ssh -tt david2@209.97.129.212 'sudo /bin/systemctl start manx-corpus.service'
