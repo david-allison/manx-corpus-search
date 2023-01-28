@@ -19,6 +19,9 @@ namespace CorpusSearch.Service.Dictionaries
         }
 
         public string Identifier => "J Kelly Manx to English";
+
+        public List<string> QueryLanguages => new() { "gv" };
+        
         public bool LinkToDictionary => false;
 
         public static KellyManxToEnglishDictionaryService Init()

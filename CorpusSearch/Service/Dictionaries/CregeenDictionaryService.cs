@@ -51,6 +51,7 @@ namespace CorpusSearch.Service.Dictionaries
 
         public string Identifier => "Cregeen";
         public bool LinkToDictionary => true;
+        public List<string> QueryLanguages => new() { "gv" };
 
         public static CregeenDictionaryService Init()
         {
