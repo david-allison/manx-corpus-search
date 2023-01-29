@@ -1,6 +1,13 @@
 import React from "react"
 import {DefinedInDictionaries, DictionaryDefinition} from "../api/SearchApi"
 
+export function hasDictionaryDefinitions(dictionaries?: DefinedInDictionaries) {
+    if (!dictionaries) {
+        return false
+    }
+    return Object.keys(dictionaries).filter(dictionaryName => dictionaries[dictionaryName].entries.length > 0).length > 0
+}
+
 export const DictionaryLink = (props: { query: string, dictionaries: DefinedInDictionaries}) => {
         return <>
             {Object.keys(props.dictionaries).map(dictionaryName => {

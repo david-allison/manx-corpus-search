@@ -5,8 +5,8 @@ import "./Home.css"
 import React, {useEffect, useRef, useState} from "react"
 import qs from "qs"
 import MainSearchResults from "./MainSearchResults"
-import { DictionaryLink } from "./DictionaryLink"
-import { TranslationList } from "./TranslationList"
+import {DictionaryLink, hasDictionaryDefinitions} from "./DictionaryLink"
+import {hasTranslations, TranslationList} from "./TranslationList"
 import AdvancedOptions, {DateRange} from "./AdvancedOptions"
 import {useLocation, useNavigate} from "react-router-dom"
 import {search, SearchResponse} from "../api/SearchApi"
@@ -170,14 +170,17 @@ const SearchResultHeader = (props: { response: SearchResponse })  => {
     const { response } = props
     const query = response.query ?? ""
 
+    const isDict = hasDictionaryDefinitions(response.definedInDictionaries)
+    const isTranslation = hasTranslations(response.translations)
+    
     return (
         <div>
             <hr />
-            Returned { response.numberOfResults} matches in { response.numberOfDocuments} texts [{response.timeTaken }] for query '{ query  }'
-            <br />
-            { response.definedInDictionaries && <><DictionaryLink query={ query } dictionaries={ response.definedInDictionaries }/><br/></> }
-            { response.translations && <><TranslationList translations={response.translations} /></ >}
-            <br /><br />
+            Found { response.numberOfResults} matches in { response.numberOfDocuments} texts
+            <br/><br/>
+            { isDict && <><DictionaryLink query={ query } dictionaries={ response.definedInDictionaries }/></> }
+            { isTranslation && <><TranslationList translations={response.translations} /></ >}
+            { (isDict || isTranslation) && <br/>}
         </div>
     )
 }
