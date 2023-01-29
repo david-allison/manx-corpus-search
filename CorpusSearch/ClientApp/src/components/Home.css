@@ -58,3 +58,11 @@ tr:nth-child(even) {
 th {
     border-bottom: 1px solid gray;
 }
+
+.homeText {
+    margin-top: 10px;
+    font-size: large;
+    display: flex;
+    flex-direction: column;
+    align-content: center;
+}

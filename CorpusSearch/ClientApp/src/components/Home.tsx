@@ -147,14 +147,14 @@ export const HomeFC = () => {
             </div>
 
             {hasNoSearch && !stats && <ProgressBar/>}
-            {hasNoSearch && stats && <span style={{marginTop: 10, fontSize: "large", display: "flex", flexDirection: "column", alignContent: "center"}}>
+            {hasNoSearch && stats && <span className={"homeText"}>
                 {stats != "error" ?
-                    <span style={{marginTop: 10, fontSize: "large", display: "flex", flexDirection: "column", alignContent: "center"}}>
+                    <span className={"homeText"}>
                         <span style={{display: "inline"}}>Search our growing collection of over {stats.manxWordCount.toLocaleString()} words, or&nbsp;<a href={"/Browse"}>browse&nbsp;{stats.documentCount.toLocaleString()} documents</a></span>
                     </span>    
                 :
                     <>
-                        <span style={{marginTop: 10, fontSize: "large", display: "flex", flexDirection: "column", alignContent: "center"}}>
+                        <span className={"homeText"}>
                             <span style={{display: "inline"}}>Enter a search term, or&nbsp;<a href={"/Browse"}>Browse</a>&nbsp;all content</span>
                         </span>
                     </>
@@ -162,7 +162,7 @@ export const HomeFC = () => {
                 <span style={{display: "inline", marginTop: "1em"}}>Support our revitalisation efforts by signing up for our <a href={"/MailingList"}>mailing list</a>. We'll email once in a while with updates to the corpus & other projects</span>
             </span>}
             
-            {!hasNoSearch && hasError && <span style={{marginTop: 10, fontSize: "large", display: "flex", justifyContent: "center"}}>
+            {!hasNoSearch && hasError && <span className={"homeText"}>
                 Something went wrong, please try again
             </span>}
 
