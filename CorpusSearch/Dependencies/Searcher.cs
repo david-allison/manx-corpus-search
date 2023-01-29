@@ -172,5 +172,7 @@ namespace CorpusSearch.Dependencies
         {
             this.luceneSearch.Add(document, data);
         }
+
+        public long CountManxTerms() => luceneSearch.CountManxTerms();
     }
 }
