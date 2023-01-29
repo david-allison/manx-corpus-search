@@ -42,13 +42,19 @@ html {
 
 @media (max-width: 378px) {
   .titleText {
+    font-size: 18px;
+  }
+}
+
+@media (max-width: 320px) {
+  .titleText {
     font-size: 16px;
   }
 }
 
-@media (max-width: 378px) {
+@media (max-width: 306px) {
   .titleText {
-    display: none;
+   display: none;
   }
 }
 
