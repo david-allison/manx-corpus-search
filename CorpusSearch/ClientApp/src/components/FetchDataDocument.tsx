@@ -11,6 +11,7 @@ import {ManxEnglishSelector} from "./ManxEnglishSelector"
 import {metadataLookup} from "../api/MetadataApi"
 import RecursiveProperty from "../vendor/react-json-component/RecursiveProperty"
 import {ComparisonTable} from  "./ComparisonTable"
+import {SearchBar} from "./SearchBar"
 
 /* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/restrict-template-expressions, @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment */
 const enrichSources = (x: any, sourceLinks: SourceLink[] | null) => {
@@ -141,7 +142,7 @@ export const FetchDataDocument = () => {
             <h1 id="tabelLabel" ><Link to={`/?q=${q?.toString() ?? ""}`} style={{ textDecoration: "none" }}>⇦</Link>  { title }</h1>
 
             <div style={{display: "flex", flex: 1, flexGrow: 2}}>
-                <input size={5} id="corpus-search-box" style={{flexGrow: 1, marginRight: 12}} placeholder="Enter search term" type="text" value={value} onChange={(x) => setValue(x.target.value)} />
+                <SearchBar query={value} onChange={(x) => setValue(x.target.value)}/>
                 <ManxEnglishSelector initialLanguage={searchLanguage} onLanguageChange={setSearchLanguage}/>
             </div>
             {loading && <div style={{
