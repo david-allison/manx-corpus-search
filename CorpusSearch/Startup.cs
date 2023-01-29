@@ -9,6 +9,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Collections.Generic;
+using CorpusSearch.Controllers;
 using CorpusSearch.Model;
 using CorpusSearch.Dependencies.csly;
 using CorpusSearch.Dependencies;
@@ -78,7 +79,7 @@ namespace CorpusSearch
             
 
             var databaseCount = SetupDatabase(workService, searcher);
-            Console.WriteLine($"{databaseCount.totalTerms} in {databaseCount.totalDocuments} documents");
+            StatisticsController.Init(databaseCount);
             SetupDictionaries();
 
 
@@ -128,7 +129,7 @@ namespace CorpusSearch
             }
         }
 
-        internal static (long totalDocuments, long totalTerms) SetupDatabase(WorkService workService, Searcher searcher)
+        internal static (long totalDocuments, long totalManxTerms) SetupDatabase(WorkService workService, Searcher searcher)
         {
             var totalDocuments = 0L;
             try
