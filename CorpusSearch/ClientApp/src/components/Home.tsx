@@ -2,7 +2,7 @@
 
 import "./Home.css"
 
-import React, {useEffect, useRef, useState} from "react"
+import React, {useEffect, useMemo, useRef, useState} from "react"
 import qs from "qs"
 import MainSearchResults from "./MainSearchResults"
 import {DictionaryLink, hasDictionaryDefinitions} from "./DictionaryLink"
@@ -12,6 +12,7 @@ import {useLocation, useNavigate} from "react-router-dom"
 import {search, SearchResponse} from "../api/SearchApi"
 import {CircularProgress} from "@mui/material"
 import {ManxEnglishSelector} from "./ManxEnglishSelector"
+import {getCorpusStatistics, Statistics} from "../api/CorpusStatistics"
 
 
 export type SearchLanguage = "English" | "Manx"
@@ -119,6 +120,16 @@ export const HomeFC = () => {
         }
     }, [query, searchLanguage])
 
+    const statsMemo = useMemo(async () => {return await getCorpusStatistics()} , [])
+    const [stats, setStats] = useState<Statistics | "error" | null>(null)
+    useEffect(() => {
+        const loadStatsSync = async () => {
+            return await statsMemo
+        }
+         
+        loadStatsSync().then((x) => setStats(x)).catch(() => setStats("error"))
+    }, [])
+    
     return (
         <div>
             <div className="search-options">
@@ -134,22 +145,27 @@ export const HomeFC = () => {
 
             </div>
 
-            {hasNoSearch && <span style={{marginTop: 10, fontSize: "large", display: "flex", flexDirection: "column", alignContent: "center"}}>
-                <span style={{display: "inline"}}>Please enter a search term, or&nbsp;<a href={"/Browse"}>Browse</a>&nbsp;all content</span>
-                <span style={{display: "inline", marginTop: "1em"}}>Support our revitalisation efforts by signing up for our <a href={"/MailingList"}>mailing list</a>. We'll email once in a while with updates to the corpus & other projects.</span>
+            {hasNoSearch && !stats && <ProgressBar/>}
+            {hasNoSearch && stats && <span style={{marginTop: 10, fontSize: "large", display: "flex", flexDirection: "column", alignContent: "center"}}>
+                {stats != "error" ?
+                    <span style={{marginTop: 10, fontSize: "large", display: "flex", flexDirection: "column", alignContent: "center"}}>
+                        <span style={{display: "inline"}}>Search our growing collection of over {stats.manxWordCount.toLocaleString()} words, or&nbsp;<a href={"/Browse"}>browse&nbsp;{stats.documentCount.toLocaleString()} documents</a></span>
+                    </span>    
+                :
+                    <>
+                        <span style={{marginTop: 10, fontSize: "large", display: "flex", flexDirection: "column", alignContent: "center"}}>
+                            <span style={{display: "inline"}}>Enter a search term, or&nbsp;<a href={"/Browse"}>Browse</a>&nbsp;all content</span>
+                        </span>
+                    </>
+                }
+                <span style={{display: "inline", marginTop: "1em"}}>Support our revitalisation efforts by signing up for our <a href={"/MailingList"}>mailing list</a>. We'll email once in a while with updates to the corpus & other projects</span>
             </span>}
+            
             {!hasNoSearch && hasError && <span style={{marginTop: 10, fontSize: "large", display: "flex", justifyContent: "center"}}>
                 Something went wrong, please try again
             </span>}
 
-            {!hasNoSearch && !hasError && loading && <div style={{
-                marginTop: 40,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-            }}>
-                <CircularProgress style={{alignSelf: "center"}} />
-            </div>}
+            {!hasNoSearch && !hasError && loading && <ProgressBar/>}
             
             {!hasNoSearch && !hasError && !loading && searchResponse != null && <>
                 <SearchResultHeader
@@ -183,4 +199,15 @@ const SearchResultHeader = (props: { response: SearchResponse })  => {
             { (isDict || isTranslation) && <br/>}
         </div>
     )
+}
+
+const ProgressBar = () => {
+    return <div style={{
+        marginTop: 40,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+    }}>
+        <CircularProgress style={{alignSelf: "center"}} />
+    </div>
 }
