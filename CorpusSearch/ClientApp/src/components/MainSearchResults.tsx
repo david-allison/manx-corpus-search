@@ -1,4 +1,4 @@
-import React from "react"
+import React, {Fragment} from "react"
 import { Link } from "react-router-dom"
 import "./MainSearchResults.css"
 import {SearchResultEntry} from "../api/SearchApi"
@@ -146,7 +146,7 @@ export default function MainSearchResults(props: { query:string, results: Search
             </thead>
             <tbody>
                 {items.map(result => (
-                    <>
+                    <Fragment key={result.ident + result.count.toString()}>
                     <tr>
                         <td>{getFullYear(result.startDate, result.endDate) }</td>
                         <td>{result.documentName}</td>
@@ -165,7 +165,7 @@ export default function MainSearchResults(props: { query:string, results: Search
                         </td>
                         <td></td>
                     </tr>
-                    </>
+                    </Fragment>
                 ))}
             </tbody>
         </table>
