@@ -136,8 +136,8 @@ export const HomeFC = () => {
             <div className="search-options">
 
                 <div id={"corpus-search-box-container"} style={{display: "flex", flex: 1}}>
-                    <SearchBar query={query} onChange={handleChange}/>
                     <ManxEnglishSelector initialLanguage={searchLanguage} onLanguageChange={setSearchLanguage}/>
+                    <SearchBar query={query} onChange={handleChange}/>
                 </div>
 
                 <div style={{clear: "both"}} />
