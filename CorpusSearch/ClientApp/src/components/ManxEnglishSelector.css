@@ -1,6 +1,5 @@
 .languageSelectorButtonContainer {
     display: inline-block; 
-    min-width: 85px;
     margin-top: auto;
     margin-bottom: auto;
 }
@@ -9,4 +8,5 @@
     margin-top: auto;
     margin-bottom: auto;
     float: right;
+    min-width: 85px;
 }
