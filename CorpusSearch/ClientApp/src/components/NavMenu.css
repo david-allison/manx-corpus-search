@@ -32,6 +32,9 @@ html {
   .corpusImageSmall {
     display: none;
   }
+  .container {
+    max-width: 85vw
+  }
 }
 
 @media (max-width: 420px) {

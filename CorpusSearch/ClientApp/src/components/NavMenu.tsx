@@ -31,7 +31,7 @@ export class NavMenu extends Component<unknown, State> {
 
         <Navbar className="navbar-expand-sm navbar-toggleable-sm ng-white border-bottom box-shadow mb-3" light>
 
-          <Container>
+          <Container fluid={true} className={"container"}>
               <div>
                 <img src={require("../corpus.png")} alt="Manx Corpus Search" className={"corpusImageLarge"} height="100px" />
                 <img src={require("../corpus-search-icon.png")} alt="Manx Corpus Search" className={"corpusImageSmall"} height="60px" />
