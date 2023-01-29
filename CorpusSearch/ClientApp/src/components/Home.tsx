@@ -149,8 +149,8 @@ export const HomeFC = () => {
             {hasNoSearch && !stats && <ProgressBar/>}
             {hasNoSearch && stats && <span className={"homeText"}>
                 {stats != "error" ?
-                    <span className={"homeText"}>
-                        <span style={{display: "inline"}}>Search our growing collection of over {stats.manxWordCount.toLocaleString()} words, or&nbsp;<a href={"/Browse"}>browse&nbsp;{stats.documentCount.toLocaleString()} documents</a></span>
+                    <span className={"homeText"} style={{textAlign: "center"}}>
+                        <span style={{display: "inline"}}>Search our growing collection of over <b>{stats.manxWordCount.toLocaleString()} Manx words</b> or&nbsp;<a href={"/Browse"}>browse&nbsp;{stats.documentCount.toLocaleString()} documents</a></span>
                     </span>    
                 :
                     <>
@@ -159,7 +159,7 @@ export const HomeFC = () => {
                         </span>
                     </>
                 }
-                <span style={{display: "inline", marginTop: "1em"}}>Support our revitalisation efforts by signing up for our <a href={"/MailingList"}>mailing list</a>. We'll email once in a while with updates to the corpus & other projects</span>
+                <span style={{display: "inline", marginTop: "2em"}}>Support our revitalisation efforts by signing up for our <a href={"/MailingList"}>mailing list</a>. We'll email once in a while with updates to the corpus & other projects</span>
             </span>}
             
             {!hasNoSearch && hasError && <span className={"homeText"}>
