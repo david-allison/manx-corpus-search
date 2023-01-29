@@ -142,8 +142,8 @@ export const FetchDataDocument = () => {
             <h1 id="tabelLabel" ><Link to={`/?q=${q?.toString() ?? ""}`} style={{ textDecoration: "none" }}>⇦</Link>  { title }</h1>
 
             <div style={{display: "flex", flex: 1, flexGrow: 2}}>
-                <SearchBar query={value} onChange={(x) => setValue(x.target.value)}/>
                 <ManxEnglishSelector initialLanguage={searchLanguage} onLanguageChange={setSearchLanguage}/>
+                <SearchBar query={value} onChange={(x) => setValue(x.target.value)}/>
             </div>
             {loading && <div style={{
                 marginTop: 40,
