@@ -159,7 +159,7 @@ export const HomeFC = () => {
                         </span>
                     </>
                 }
-                <span style={{display: "inline", marginTop: "2em"}}>Support our revitalisation efforts by signing up for our <a href={"/MailingList"}>mailing list</a>. We'll email once in a while with updates to the corpus & other projects</span>
+                <span style={{display: "inline", marginTop: "2em"}}>Support our revitalisation efforts by <a href={"/MailingList"}>signing up for our mailing list</a>. We'll email once in a while with updates to the corpus & other projects</span>
             </span>}
             
             {!hasNoSearch && hasError && <span className={"homeText"}>
