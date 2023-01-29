@@ -3,7 +3,7 @@ import "./FetchDataDocument.css"
 
 import React, {useEffect, useState} from "react"
 import qs from "qs"
-import {Link, useLocation, useMatch} from "react-router-dom"
+import {useLocation, useMatch} from "react-router-dom"
 import {searchWork, SearchWorkResponse, SourceLink} from "../api/SearchWorkApi"
 import {SearchLanguage} from "./Home"
 import {CircularProgress} from "@mui/material"
@@ -12,6 +12,7 @@ import {metadataLookup} from "../api/MetadataApi"
 import RecursiveProperty from "../vendor/react-json-component/RecursiveProperty"
 import {ComparisonTable} from  "./ComparisonTable"
 import {SearchBar} from "./SearchBar"
+import {BackChevron} from "./BackChevron"
 
 /* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/restrict-template-expressions, @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment */
 const enrichSources = (x: any, sourceLinks: SourceLink[] | null) => {
@@ -139,7 +140,10 @@ export const FetchDataDocument = () => {
 
     return (
         <div>
-            <h1 id="tabelLabel" ><Link to={`/?q=${q?.toString() ?? ""}`} style={{ textDecoration: "none" }}>⇦</Link>  { title }</h1>
+            <h1 id="tabelLabel" style={{display: "flex"}} >
+                <BackChevron to={`/?q=${q?.toString() ?? ""}`}/>
+                { title }
+            </h1>
 
             <div style={{display: "flex", flex: 1, flexGrow: 2}}>
                 <ManxEnglishSelector initialLanguage={searchLanguage} onLanguageChange={setSearchLanguage}/>
