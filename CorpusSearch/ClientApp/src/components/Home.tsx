@@ -123,7 +123,7 @@ export const HomeFC = () => {
         <div>
             <div className="search-options">
 
-                <div style={{display: "flex", flex: 1}}>
+                <div id={"corpus-search-box-container"} style={{display: "flex", flex: 1}}>
                     <input size={5} id="corpus-search-box" style={{flexGrow: 1, marginRight: 12}} placeholder="Enter search term" type="text" value={query} onChange={handleChange} />
                     <ManxEnglishSelector initialLanguage={searchLanguage} onLanguageChange={setSearchLanguage}/>
                 </div>

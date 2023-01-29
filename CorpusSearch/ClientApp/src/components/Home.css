@@ -2,12 +2,15 @@
     width: 100%;
 }
 
+#corpus-search-box-container {
+    margin-bottom: 10px;
+}
+
 #corpus-search-box {
     padding: 5px 10px 5px 10px;
     font-size: 20px;
     border-radius: 40px;
     outline: none;
-    margin-bottom: 10px;
 }
 
 #manxSearch {
