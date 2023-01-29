@@ -139,7 +139,7 @@ export const HomeFC = () => {
                 <span style={{display: "inline", marginTop: "1em"}}>Support our revitalisation efforts by signing up for our <a href={"/MailingList"}>mailing list</a>. We'll email once in a while with updates to the corpus & other projects.</span>
             </span>}
             {!hasNoSearch && hasError && <span style={{marginTop: 10, fontSize: "large", display: "flex", justifyContent: "center"}}>
-                {window.navigator.onLine ? "Something went wrong, please try again" : "You are offline"}
+                Something went wrong, please try again
             </span>}
 
             {!hasNoSearch && !hasError && loading && <div style={{
