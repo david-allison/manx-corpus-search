@@ -2,6 +2,7 @@ import Typography from "@mui/material/Typography"
 import Slider from "@mui/material/Slider"
 import React, {ChangeEvent, useState} from "react"
 import {Home} from "./Home"
+import "./AdvancedOptions.css"
 
 export type DateRange = {
     start:number,
@@ -12,7 +13,10 @@ const AdvancedOptions = (props: { onDateRangeChange: (range: DateRange) => void,
     
     return <details className="advanced-options">
         <summary>Advanced Options
-            <a style={{"float":"right"}} href="https://github.com/david-allison/manx-corpus-search/blob/master/CorpusSearch/Docs/searching.md#searching" target="_blank" rel="noreferrer">Search Help ℹ</a>
+            <a style={{"float":"right"}} href="https://github.com/david-allison/manx-corpus-search/blob/master/CorpusSearch/Docs/searching.md#searching" target="_blank" rel="noreferrer">
+                Search Help
+                <span className={"noUnderline"}>&nbsp;ℹ</span>
+            </a>
         </summary>
 
         <Typography id="range-output" gutterBottom>
