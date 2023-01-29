@@ -77,8 +77,8 @@ namespace CorpusSearch
             }
             
 
-            SetupDatabase(workService, searcher);
-
+            var databaseCount = SetupDatabase(workService, searcher);
+            Console.WriteLine($"{databaseCount.totalTerms} in {databaseCount.totalDocuments} documents");
             SetupDictionaries();
 
 
@@ -128,13 +128,15 @@ namespace CorpusSearch
             }
         }
 
-        internal static void SetupDatabase(WorkService workService, Searcher searcher)
+        internal static (long totalDocuments, long totalTerms) SetupDatabase(WorkService workService, Searcher searcher)
         {
+            var totalDocuments = 0L;
             try
             {
                 List<Document> closedSourceDocument = ClosedDataLoader.LoadDocumentsFromFile().Cast<Document>().ToList();
                 Console.WriteLine($"Loaded {closedSourceDocument.Count} documents");
                 AddDocuments(closedSourceDocument, workService, searcher);
+                totalDocuments += closedSourceDocument.Count;
             }
             catch (Exception e)
             {
@@ -148,6 +150,7 @@ namespace CorpusSearch
                 List<Document> ossDocuments = OpenDataLoader.LoadDocumentsFromFile().Cast<Document>().ToList();
                 Console.WriteLine($"Loaded {ossDocuments.Count} documents");
                 AddDocuments(ossDocuments, workService, searcher);
+                totalDocuments += ossDocuments.Count;
             }
             catch (Exception e)
             {
@@ -157,6 +160,9 @@ namespace CorpusSearch
             var stopWatch = System.Diagnostics.Stopwatch.StartNew();
             searcher.OnAllDocumentsAdded();
             Console.WriteLine($"compacted in {stopWatch.ElapsedMilliseconds}");
+
+            var totalTerms = searcher.CountManxTerms();
+            return (totalDocuments, totalTerms);
         }
 
         private static void AddDocuments(List<Document> documents, WorkService workService, Searcher searcher)

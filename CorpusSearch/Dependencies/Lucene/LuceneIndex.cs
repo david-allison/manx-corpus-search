@@ -299,6 +299,27 @@ namespace CorpusSearch
                 SubEnd = getTranscript ? x.GetField(SUBTITLE_END)?.GetDoubleValue() : null
             }).ToList();
         }
+
+        public long CountManxTerms()
+        {
+            // TODO: Probably inefficient
+            using var reader = indexWriter.GetReader(applyAllDeletes: true);
+            var query = new SpanMultiTermQueryWrapper<ExtendedWildcardQuery>(new ExtendedWildcardQuery(new Term( DOCUMENT_NORMALIZED_MANX, "*"))); 
+            int totalMatches = 0;
+            var spanQuery = (SpanQuery)query.Rewrite(reader);
+            foreach (var leaf in reader.Leaves)
+            {
+                var dict = new Dictionary<Term, TermContext>();
+                var spans = spanQuery.GetSpans(leaf, null, dict);
+
+                while (spans.MoveNext())
+                {
+                    totalMatches++;
+                }
+            }
+
+            return totalMatches;
+        }
     }
 }
 
