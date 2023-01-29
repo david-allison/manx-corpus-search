@@ -12,7 +12,7 @@ export const TranslationList = (props: { translations: Translations }) => {
         {Object.keys(translations).map(langCode => {
             const langCodeTranslations = translations[langCode]
             if (langCodeTranslations.length == 0) { return <></> }
-            return <><strong>{langCode}:</strong> {langCodeTranslations.map(x => <>{x}, </>)}</>}
+            return <><strong>{langCode}:</strong> {langCodeTranslations.join(", ")}</>}
         )}
         {/*return a newline if we had results*/}
         <br/>
