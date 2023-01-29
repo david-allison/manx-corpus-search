@@ -13,6 +13,7 @@ import {search, SearchResponse} from "../api/SearchApi"
 import {CircularProgress} from "@mui/material"
 import {ManxEnglishSelector} from "./ManxEnglishSelector"
 import {getCorpusStatistics, Statistics} from "../api/CorpusStatistics"
+import {SearchBar} from "./SearchBar"
 
 
 export type SearchLanguage = "English" | "Manx"
@@ -135,7 +136,7 @@ export const HomeFC = () => {
             <div className="search-options">
 
                 <div id={"corpus-search-box-container"} style={{display: "flex", flex: 1}}>
-                    <input size={5} id="corpus-search-box" style={{flexGrow: 1, marginRight: 12}} placeholder="Enter search term" type="text" value={query} onChange={handleChange} />
+                    <SearchBar query={query} onChange={handleChange}/>
                     <ManxEnglishSelector initialLanguage={searchLanguage} onLanguageChange={setSearchLanguage}/>
                 </div>
 
