@@ -141,7 +141,7 @@ export const FetchDataDocument = () => {
     return (
         <div>
             <h1 id="tabelLabel" style={{display: "flex"}} >
-                <BackChevron to={`/?q=${q?.toString() ?? ""}`}/>
+                <BackChevron to={"historyBack"}/>
                 { title }
             </h1>
 

@@ -116,9 +116,9 @@ export const HomeFC = () => {
     useEffect(() => {
         if (!query && searchLanguage == "Manx") {
             navigation("/", { replace: true })
-        } else {
+       } else {
             navigation(`/?q=${query}&lang=${toLangParam(searchLanguage)}`, { replace: true })    
-        }
+       }
     }, [query, searchLanguage])
 
     const statsMemo = useMemo(async () => {return await getCorpusStatistics()} , [])
