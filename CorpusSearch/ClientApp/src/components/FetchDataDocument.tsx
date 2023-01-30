@@ -71,7 +71,7 @@ export const FetchDataDocument = () => {
     const match = useMatch("/docs/:docId")
 
     const [loading, setLoading] = useState(true)
-    const [title, setTitle] = useState("Work Search")
+    const [title, setTitle] = useState(" ") // use a space to avoid a layout shift
     
     const docIdent = match?.params.docId
     
