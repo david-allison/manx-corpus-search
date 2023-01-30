@@ -1,19 +1,15 @@
-import React, { Component } from "react"
+import React from "react"
 import { Container } from "reactstrap"
 import { NavMenu } from "./NavMenu"
 
-export class Layout extends Component {
-  static displayName = Layout.name
+export const Layout = (props: { onRefresh: () => void, children: React.ReactNode}) => {
 
-    // avoid container to allow for full width
-  render () {
     return (<div>
-        <NavMenu />
+        <NavMenu onRefreshState={props.onRefresh} />
         <Container>
             </Container>
             <div className="new-container">
-                {(this.props as any).children}
+                {props.children}
                 </div>
       </div>)
-  }
 }

@@ -155,7 +155,7 @@ export default function MainSearchResults(props: { query:string, results: Search
                                 <Link to={{
                                     pathname: `/docs/${result.ident}`,
                                     search: `?q=${query}`
-                                }} state={{ searchLanguage: props.manx ? "Manx" : "English" }}>Browse</Link>
+                                }} state={{ searchLanguage: props.manx ? "Manx" : "English", previousPage: "/" }}>Browse</Link>
                             </td>
                     </tr>
                     <tr>
