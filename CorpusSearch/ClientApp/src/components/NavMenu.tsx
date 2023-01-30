@@ -44,10 +44,10 @@ export const NavMenu = (props: { onRefreshState: () => void}) => {
                             <Link replace className="text-dark nav-link" onClick={onGoHome} to="/">Home</Link>
                         </NavItem>
                         <NavItem>
-                            <a className="text-dark nav-link" href="/Dictionary/Cregeen">Dictionary</a>
+                            <a className="text-dark nav-link" href="/Dictionary/Cregeen" target="_blank">Dictionary</a>
                         </NavItem>
                         <NavItem>
-                            <a className="text-dark nav-link" href="/Browse">Browse All</a>
+                            <a className="text-dark nav-link" href="/Browse" target="_blank">Browse All</a>
                         </NavItem>
                     </ul>
                 </Collapse>
