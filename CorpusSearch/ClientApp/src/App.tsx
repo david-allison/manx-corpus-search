@@ -1,4 +1,4 @@
-import React, { Component } from "react"
+import React, {useReducer} from "react"
 import {
     Navigate,
     Route,
@@ -9,18 +9,19 @@ import {HomeFC} from "./components/Home"
 import { FetchDataDocument } from "./components/FetchDataDocument"
 import "./custom.css"
 
-export default class App extends Component {
-  static displayName = App.name
+export const App = () => {
 
-  render () {
+    const [k,onRefresh] = useReducer<(num: number) => number>(x => x + 1, 1)
+
     return (
-          <Layout>
+          <Layout onRefresh={onRefresh}>
               <Routes>
-                  <Route path='/' element={<HomeFC/>} />
+                  <Route path='/' element={<HomeFC key={k}/>} />
                   <Route path='/docs/:docId' element={<FetchDataDocument/>} />
                   <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
           </Layout>
     )
-  }
 }
+
+export default App
