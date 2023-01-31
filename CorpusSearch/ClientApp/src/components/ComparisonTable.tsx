@@ -154,6 +154,8 @@ export const ComparisonTable = (props: {
     const languageVisibility = useLanguageVisibility()
     const leftVisible = languageVisibility.manxVisible && originalManx || languageVisibility.englishVisible && !originalManx
     const rightVisible = languageVisibility.englishVisible && originalManx || languageVisibility.manxVisible && !originalManx
+    // TODO: optimise this - no need to iterate each render
+    const linkVisible = response.gitHubLink || response.results.filter(x => x.page != null && (response.pdfLink || response.googleBooksId)).length > 0
     return (
         <>
             <div>
@@ -166,7 +168,7 @@ export const ComparisonTable = (props: {
                         {isVideo && <th>{""}</th>}
                         {leftVisible && <th>{originalManx ? "Manx" : "English"}</th>}
                         {rightVisible && <th>{originalManx ? "English" : "Manx"}</th>}
-                        <th style={{width: 45}}>Link</th>
+                        {linkVisible && <th style={{width: 45}}>Link</th>}
                     </tr>
                     </thead>
                     <tbody>
@@ -188,7 +190,7 @@ export const ComparisonTable = (props: {
                                 {rightVisible && <td>
                                     {originalManx ? englishText : manxText }
                                 </td>}
-                                <td>
+                                {linkVisible && <td>
                                     {line.page != null && response.pdfLink &&
                                         <><a href={response.pdfLink + "#page=" + line.page} target="_blank" rel="noreferrer">p{line.page}</a>{" "}</> }
                                     {line.page != null && response.googleBooksId &&
@@ -196,7 +198,7 @@ export const ComparisonTable = (props: {
                                     {response.gitHubLink && <a href={`${response.gitHubLink}#L${line.csvLineNumber}`}>
                                         edit
                                     </a>}
-                                </td>
+                                </td>}
                             </tr>
                                 {line.notes ? <tr><td colSpan={3} className="noteRow">{line.notes}</td></tr> : null}
                             </>
