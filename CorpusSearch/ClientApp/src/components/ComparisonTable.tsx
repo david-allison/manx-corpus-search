@@ -10,6 +10,7 @@ import {diffChars} from "diff"
 import YouTuber, {Player} from "./YouTuber"
 import useInterval from "../vendor/use-interval/UseInterval"
 import "./ComparisonTable.css"
+import {useLanguageVisibility} from "../hooks/LanguageVisibility"
 
 function escapeRegex(s: string) {
     return s.replace(/[/\-\\^$*+?.()|[\]{}]/g, "\\$&")
@@ -149,7 +150,10 @@ export const ComparisonTable = (props: {
             maxHeight: "400px"
         }
     }
-    
+
+    const languageVisibility = useLanguageVisibility()
+    const leftVisible = languageVisibility.manxVisible && originalManx || languageVisibility.englishVisible && !originalManx
+    const rightVisible = languageVisibility.englishVisible && originalManx || languageVisibility.manxVisible && !originalManx
     return (
         <>
             <div>
@@ -160,8 +164,8 @@ export const ComparisonTable = (props: {
                     <thead>
                     <tr>
                         {isVideo && <th>{""}</th>}
-                        <th>{originalManx ? "Manx" : "English"}</th>
-                        <th>{originalManx ? "English" : "Manx"}</th>
+                        {leftVisible && <th>{originalManx ? "Manx" : "English"}</th>}
+                        {rightVisible && <th>{originalManx ? "English" : "Manx"}</th>}
                         <th style={{width: 45}}>Link</th>
                     </tr>
                     </thead>
@@ -178,12 +182,12 @@ export const ComparisonTable = (props: {
                                     player.current.seek(line.subStart)
                                 }
                                 }}>▶️</td>}
-                                <td>
+                                {leftVisible && <td>
                                     {originalManx ? manxText : englishText}
-                                </td>
-                                <td>
+                                </td>}
+                                {rightVisible && <td>
                                     {originalManx ? englishText : manxText }
-                                </td>
+                                </td>}
                                 <td>
                                     {line.page != null && response.pdfLink &&
                                         <><a href={response.pdfLink + "#page=" + line.page} target="_blank" rel="noreferrer">p{line.page}</a>{" "}</> }
