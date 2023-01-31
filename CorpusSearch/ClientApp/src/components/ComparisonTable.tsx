@@ -156,6 +156,8 @@ export const ComparisonTable = (props: {
     const rightVisible = languageVisibility.englishVisible && originalManx || languageVisibility.manxVisible && !originalManx
     // TODO: optimise this - no need to iterate each render
     const linkVisible = response.gitHubLink || response.results.filter(x => x.page != null && (response.pdfLink || response.googleBooksId)).length > 0
+    const leftLang = originalManx ? "gv" : "en"
+    const rightLang = originalManx ? "en" : "gv"
     return (
         <>
             <div>
@@ -184,10 +186,10 @@ export const ComparisonTable = (props: {
                                     player.current.seek(line.subStart)
                                 }
                                 }}>▶️</td>}
-                                {leftVisible && <td>
+                                {leftVisible && <td lang={leftLang}>
                                     {originalManx ? manxText : englishText}
                                 </td>}
-                                {rightVisible && <td>
+                                {rightVisible && <td lang={rightLang}>
                                     {originalManx ? englishText : manxText }
                                 </td>}
                                 {linkVisible && <td>
