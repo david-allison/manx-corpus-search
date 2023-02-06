@@ -15,6 +15,8 @@ namespace CorpusSearch.Model
         
         public double? SubStart { get; set; }
         public double? SubEnd { get; set; }
+        
+        public long? MatchesInLine { get; set; }
 
         [JsonIgnore]
         // TODO: NBSP?
