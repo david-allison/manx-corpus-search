@@ -1,9 +1,10 @@
-import React, {useMemo, useState} from "react"
+import React, {useState} from "react"
 import { Link } from "react-router-dom"
 import "./MainSearchResults.css"
 import {SearchResultEntry} from "../api/SearchApi"
 import {GetMatch} from "../api/Matches"
 import {floatingPromiseReturn} from "../utils/Promise"
+import {useLazyLoader} from "../utils/LazyLoader"
 
 type SortConfig = {
     key: keyof SearchResultEntry
@@ -201,10 +202,8 @@ const ResultView = (props: { result: SearchResultEntry, query: string, manx: boo
         await changeLine(matchNumber - 1)
     }
     
-    // key word in context
-    const kwicSample = useMemo(() => {
-        return findNth(sample, query, indexInLine)
-    }, [sample, query, indexInLine])
+    const kwicSample = useLazyLoader(() => findNth(sample, query, indexInLine)
+        ,[sample, query, indexInLine])
     
     return  <><tr>
         <td>{getFullYear(result.startDate, result.endDate) }</td>
@@ -223,7 +222,8 @@ const ResultView = (props: { result: SearchResultEntry, query: string, manx: boo
             &nbsp;
             {canGoUp ? <Link to={""} style={{textDecoration: "none"}} onClick={floatingPromiseReturn(up)}>&uarr;</Link> : <>&uarr;</>}
             <small style={{marginLeft: 4}}>
-                {!kwicSample && sample }
+                {!kwicSample && kwicSample == null && "" } {/*Loading - no data to stop layout shift*/}
+                {!kwicSample && kwicSample != null && sample } {/*Failed*/}
                 {kwicSample && 
                     <>
                         {kwicSample.pre}
