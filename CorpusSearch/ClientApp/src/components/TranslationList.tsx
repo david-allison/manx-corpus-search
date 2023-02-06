@@ -1,4 +1,4 @@
-import React from "react"
+import React, {Fragment} from "react"
 import {Translations} from "../api/SearchApi"
 
 export function hasTranslations(translations?: Translations) {
@@ -12,7 +12,9 @@ export const TranslationList = (props: { translations: Translations }) => {
         {Object.keys(translations).map(langCode => {
             const langCodeTranslations = translations[langCode]
             if (langCodeTranslations.length == 0) { return <></> }
-            return <><strong>{langCode}:</strong> {langCodeTranslations.join(", ")}</>}
+            return <Fragment key={langCode}>
+                <strong>{langCode}:</strong> {langCodeTranslations.join(", ")}
+            </Fragment>}
         )}
         {/*return a newline if we had results*/}
         <br/>
