@@ -1,7 +1,9 @@
-import React, {Fragment} from "react"
+import React, {useMemo, useState} from "react"
 import { Link } from "react-router-dom"
 import "./MainSearchResults.css"
 import {SearchResultEntry} from "../api/SearchApi"
+import {GetMatch} from "../api/Matches"
+import {floatingPromiseReturn} from "../utils/Promise"
 
 type SortConfig = {
     key: keyof SearchResultEntry
@@ -40,34 +42,47 @@ const useSortableData = (items: SearchResultEntry[], config: SortConfig | null =
 }
 
 function getFullYear(date: string, edate: string) {
-    if (!date) {
-        return "???"
-    }
-
     if (!edate || edate === date) {
         return new Date(date).getFullYear()
+    }
+    
+    const first = new Date(date)
+    const second = new Date(edate)
+    
+    if (first.getFullYear() == second.getFullYear()) {
+        return "c. " + first.getFullYear().toString()
     }
 
     return `${new Date(date).getFullYear()}-${new Date(edate).getFullYear()}`
 }
 
-function findFirst(string: string, query: string) {
+const nthIndexOf = (inputString: string, searchString: string, index: number) => {
+    let i = -1
 
-    if (!string) {
+    while (index-- && i++ < inputString.length) {
+        i = inputString.indexOf(searchString, i)
+        if (i < 0) break
+    }
+
+    return i
+}
+function findNth(string: string, query: string, fromIndex: number) {
+    // TODO: make this work
+    const searchable = " " + string.toLowerCase()
+        .replace(" ", " ")
+        .replace(/[^\w\s]/gi, " ")
+        .replace("\r", " ")
+        .replace("\n", " ") + " "
+
+    // assume per-word
+    const stringStartIndex = nthIndexOf(searchable, " " + query.toLowerCase() + " ", fromIndex + 1)
+    const stringEndIndex = stringStartIndex + query.length
+    
+    if (stringStartIndex === -1) {
         return null
     }
 
-    // TODO: make this work
-    const searchable = " " + string.toLowerCase().replace(/[^\w\s]/gi, " ").replace("\r", " ").replace("\n", " ") + " "
-
-    // assume per-word
-    const index = searchable.indexOf(" " + query + " ")
-
-    if (index === -1) {
-        return string
-    }
-
-    let startIndex = index
+    let startIndex = stringStartIndex
     let count = 0
     let lastSpace = false
     while (startIndex > 0 && count < 5) {
@@ -82,7 +97,7 @@ function findFirst(string: string, query: string) {
         }
     }
 
-    let endIndex = index
+    let endIndex = stringEndIndex
     count = 0
     lastSpace = false
     while (endIndex < string.length && count < 5) {
@@ -97,9 +112,11 @@ function findFirst(string: string, query: string) {
         }
     }
 
-    return string.substring(startIndex, endIndex)
-
-
+    return {
+        pre: string.substring(startIndex, stringStartIndex),
+        match: string.substring(stringStartIndex, stringEndIndex),
+        post: string.substring(stringEndIndex, endIndex),
+    }
 }
 
 export default function MainSearchResults(props: { query:string, results: SearchResultEntry[], english: boolean, manx : boolean}) {
@@ -115,6 +132,7 @@ export default function MainSearchResults(props: { query:string, results: Search
         <table className="full-search-results">
             <thead>
                 <tr>
+                    {/*We want the date - if we sort on another column we want to be able to go back to the default sort*/}
                     <th>
                         <div
                             onClick={() => requestSort("startDate")}
@@ -139,35 +157,81 @@ export default function MainSearchResults(props: { query:string, results: Search
                             Matches
                         </div>
                     </th>
-                    <th>
-                        Details
-                    </th>
                 </tr>
             </thead>
             <tbody>
                 {items.map(result => (
-                    <Fragment key={result.ident + result.count.toString()}>
-                    <tr>
-                        <td>{getFullYear(result.startDate, result.endDate) }</td>
-                        <td>{result.documentName}</td>
-                        <td>{result.count}</td>
-                            <td>
-                                <Link to={{
-                                    pathname: `/docs/${result.ident}`,
-                                    search: `?q=${query}`
-                                }} state={{ searchLanguage: props.manx ? "Manx" : "English", previousPage: "/" }}>Browse</Link>
-                            </td>
-                    </tr>
-                    <tr>
-                        <td></td>
-                        <td colSpan={2}>
-                            <small>{  findFirst(result.sample, query) }</small>
-                        </td>
-                        <td></td>
-                    </tr>
-                    </Fragment>
+                    <ResultView key={result.ident + result.count.toString()} result={result} query={query} manx={props.manx}/>
                 ))}
             </tbody>
         </table>
     )
+}
+
+const ResultView = (props: { result: SearchResultEntry, query: string, manx: boolean }) => {
+    const {result, query, manx} = props
+    
+    const [matchNumber, setMatchNumber] = useState(1) // 1-based
+    const [sample, setSample] = useState(result.sample)
+    const [indexInLine, setIndexInLine] = useState(0) // 0-based
+    
+    const changeLine = async (line: number) => {
+        const lineResult = await GetMatch({query: query, match: line, docIdent: result.ident})
+        setSample(lineResult.manx)
+        setMatchNumber(lineResult.matchNumber)
+        setIndexInLine(lineResult.matchIndexInLine)
+    } 
+    
+    const canGoUp = matchNumber < result.count
+    const canGoDown = matchNumber > 1
+    
+    const formattedLineNumber = String(matchNumber).padStart(4, "0")  
+    const up = async (e: React.MouseEvent) => {
+        e.preventDefault()
+        if (!canGoUp) {
+           return   
+        }
+        await changeLine(matchNumber + 1)
+    }
+    const down =  async (e: React.MouseEvent) => {
+        e.preventDefault()
+        if (!canGoDown) {
+            return
+        }
+        await changeLine(matchNumber - 1)
+    }
+    
+    // key word in context
+    const kwicSample = useMemo(() => {
+        return findNth(sample, query, indexInLine)
+    }, [sample, query, indexInLine])
+    
+    return  <><tr>
+        <td>{getFullYear(result.startDate, result.endDate) }</td>
+        <td><strong>{result.documentName}</strong></td>
+        <td>
+            <Link to={{
+                pathname: `/docs/${result.ident}`,
+                search: `?q=${query}`
+            }} state={{ searchLanguage: manx ? "Manx" : "English", previousPage: "/" }}>Browse&nbsp;({result.count})</Link>
+        </td>
+    </tr>
+    <tr>
+        <td colSpan={3}>
+            <small style={{fontFamily: "monospace"}}>{formattedLineNumber}</small>&nbsp;
+            {canGoDown ? <Link to={""} style={{textDecoration: "none"}} onClick={floatingPromiseReturn(down)}>&darr;</Link> : <>&darr;</>}
+            &nbsp;
+            {canGoUp ? <Link to={""} style={{textDecoration: "none"}} onClick={floatingPromiseReturn(up)}>&uarr;</Link> : <>&uarr;</>}
+            <small style={{marginLeft: 4}}>
+                {!kwicSample && sample }
+                {kwicSample && 
+                    <>
+                        {kwicSample.pre}
+                        <strong>{kwicSample.match}</strong>
+                        {kwicSample.post}
+                    </>
+                }
+            </small>
+        </td>
+    </tr></>
 }

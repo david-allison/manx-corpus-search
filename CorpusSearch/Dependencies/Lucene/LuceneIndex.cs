@@ -161,14 +161,14 @@ namespace CorpusSearch
 
             var docs = spanCollection.DistinctDocuments().Select(x =>
             {
-                var document = searcher.Doc(x);
+                var (docId, countInDoc) = x;
+                var document = searcher.Doc(docId);
                 var manx = document.GetField(DOCUMENT_REAL_MANX).GetStringValue();
                 var english = document.GetField(DOCUMENT_REAL_ENGLISH).GetStringValue();
 
                 string notes = document.GetField(DOCUMENT_NOTES)?.GetStringValue();
                 int lineNumber = document.GetField(DOCUMENT_LINE_NUMBER)?.GetInt32Value() ?? -1;
 
-                
                 return new DocumentLine
                 {
                     English = english,
@@ -180,6 +180,7 @@ namespace CorpusSearch
                     EnglishOriginal = document.GetField(DOCUMENT_ORIGINAL_ENGLISH)?.GetStringValue(),
                     SubStart = getTranscriptData ? document.GetField(SUBTITLE_START)?.GetDoubleValue() : null,
                     SubEnd = getTranscriptData ? document.GetField(SUBTITLE_END)?.GetDoubleValue() : null,
+                    MatchesInLine = countInDoc
                 };
             }).ToList();
 
