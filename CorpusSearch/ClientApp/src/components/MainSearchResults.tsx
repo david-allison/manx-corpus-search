@@ -183,20 +183,20 @@ const ResultView = (props: { result: SearchResultEntry, query: string, manx: boo
         setIndexInLine(lineResult.matchIndexInLine)
     } 
     
-    const canGoUp = matchNumber < result.count
-    const canGoDown = matchNumber > 1
+    const canNext = matchNumber < result.count
+    const canPrev = matchNumber > 1
     
     const formattedLineNumber = String(matchNumber).padStart(4, "0")  
-    const up = async (e: React.MouseEvent) => {
+    const next = async (e: React.MouseEvent) => {
         e.preventDefault()
-        if (!canGoUp) {
+        if (!canNext) {
            return   
         }
         await changeLine(matchNumber + 1)
     }
-    const down =  async (e: React.MouseEvent) => {
+    const prev =  async (e: React.MouseEvent) => {
         e.preventDefault()
-        if (!canGoDown) {
+        if (!canPrev) {
             return
         }
         await changeLine(matchNumber - 1)
@@ -218,9 +218,9 @@ const ResultView = (props: { result: SearchResultEntry, query: string, manx: boo
     <tr>
         <td colSpan={3}>
             <small style={{fontFamily: "monospace"}}>{formattedLineNumber}</small>&nbsp;
-            {canGoDown ? <Link to={""} style={{textDecoration: "none"}} onClick={floatingPromiseReturn(down)}>&darr;</Link> : <>&darr;</>}
+            {canPrev ? <Link to={""} style={{textDecoration: "none"}} onClick={floatingPromiseReturn(prev)}>&uarr;</Link> : <>&uarr;</>}
             &nbsp;
-            {canGoUp ? <Link to={""} style={{textDecoration: "none"}} onClick={floatingPromiseReturn(up)}>&uarr;</Link> : <>&uarr;</>}
+            {canNext ? <Link to={""} style={{textDecoration: "none"}} onClick={floatingPromiseReturn(next)}>&darr;</Link> : <>&darr;</>}
             <small style={{marginLeft: 4}}>
                 {!kwicSample && kwicSample == null && "" } {/*Loading - no data to stop layout shift*/}
                 {!kwicSample && kwicSample != null && sample } {/*Failed*/}
