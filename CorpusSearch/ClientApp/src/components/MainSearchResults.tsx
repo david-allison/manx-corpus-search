@@ -222,8 +222,8 @@ const ResultView = (props: { result: SearchResultEntry, query: string, manx: boo
             &nbsp;
             {canNext ? <Link to={""} style={{textDecoration: "none"}} onClick={floatingPromiseReturn(next)}>&darr;</Link> : <>&darr;</>}
             <small style={{marginLeft: 4}}>
-                {!kwicSample && kwicSample == null && "" } {/*Loading - no data to stop layout shift*/}
-                {!kwicSample && kwicSample != null && sample } {/*Failed*/}
+                {!kwicSample && kwicSample == null && sample } {/*Loading - no data to stop layout shift*/}
+                {!kwicSample && kwicSample != null && "" } {/*Failed*/}
                 {kwicSample && 
                     <>
                         {kwicSample.pre}
