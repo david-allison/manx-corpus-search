@@ -1,5 +1,5 @@
 /* eslint @typescript-eslint/no-misused-promises: 0 */  
-import "./FetchDataDocument.css"
+import "./DocumentView.css"
 
 import React, {useEffect, useState} from "react"
 import qs from "qs"
@@ -66,7 +66,7 @@ const removeHandledKeys = (x: any) => {
 /* eslint-enable */
 
 
-export const FetchDataDocument = () => {
+export const DocumentView = () => {
     const location = useLocation()
     const match = useMatch("/docs/:docId")
 
