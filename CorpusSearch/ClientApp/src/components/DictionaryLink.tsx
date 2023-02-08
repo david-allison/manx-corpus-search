@@ -1,4 +1,4 @@
-import React from "react"
+import React, {Fragment} from "react"
 import {DefinedInDictionaries, DictionaryDefinition} from "../api/SearchApi"
 
 export function hasDictionaryDefinitions(dictionaries?: DefinedInDictionaries) {
@@ -9,26 +9,24 @@ export function hasDictionaryDefinitions(dictionaries?: DefinedInDictionaries) {
 }
 
 export const DictionaryLink = (props: { query: string, dictionaries: DefinedInDictionaries}) => {
-        return <>
-            {Object.keys(props.dictionaries).map(dictionaryName => {
+        return Object.keys(props.dictionaries).map(dictionaryName => {
                 const element = props.dictionaries[dictionaryName]
                 return (
-                    <>
+                    <Fragment key={dictionaryName}>
                         <DictionaryNameHeader dictionary={element} dictionaryName={dictionaryName} query={props.query} />
                         : {/*: A literal colon*/}
                         {
                             element.entries.map((e, i) => 
-                            <>
+                            <Fragment key={e+i.toString()}>
                                 <b>{`${i+1})`}</b>
                                 {` ${e}`}
                                 {i == element.entries.length -1 ? "" : "; "}
-                            </>)
+                            </Fragment>)
                         }
                         <br />
-                    </>
+                    </Fragment>
                 )})
-            }
-        </>
+            
     
 }
 

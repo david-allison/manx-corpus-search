@@ -1,7 +1,7 @@
 import {SearchWorkResponse, SearchWorkResult} from "../api/SearchWorkApi"
 import {Translations} from "../api/SearchApi"
 import {getSelectedWordOrPhrase} from "../utils/Selection"
-import React, {CSSProperties, useEffect, useRef, useState} from "react"
+import React, {CSSProperties, Fragment, useEffect, useRef, useState} from "react"
 import {manxDictionaryLookup} from "../api/DictionaryApi"
 import Highlighter from "react-highlight-words"
 import {Box, CircularProgress, Modal} from "@mui/material"
@@ -180,7 +180,8 @@ export const ComparisonTable = (props: {
                             const manxText = diffCorrectedText(line.manxOriginal, line.manx) ?? highlightText(highlightManx, "gv", line.manx)
                             const englishText = diffCorrectedText(line.englishOriginal, line.english) ?? highlightText(highlightEnglish, "en", line.english)
 
-                            return <><tr key={line.date} style={getLineStyle(line)}>
+                            return <Fragment key={response.title + line.csvLineNumber.toString()}>
+                                <tr key={line.date} style={getLineStyle(line)}>
                                 {isVideo && <td style={{cursor: "pointer"}} onClick={() => {
                                     if (line.subStart && player.current) {
                                     player.current.seek(line.subStart)
@@ -203,7 +204,7 @@ export const ComparisonTable = (props: {
                                 </td>}
                             </tr>
                                 {line.notes ? <tr><td colSpan={3} className="noteRow">{line.notes}</td></tr> : null}
-                            </>
+                            </Fragment>
                         }
                     )}
                     </tbody>
