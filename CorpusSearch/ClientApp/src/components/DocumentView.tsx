@@ -13,6 +13,7 @@ import RecursiveProperty from "../vendor/react-json-component/RecursiveProperty"
 import {ComparisonTable} from  "./ComparisonTable"
 import {SearchBar} from "./SearchBar"
 import {BackChevron} from "./BackChevron"
+import {Helmet} from "react-helmet"
 
 /* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/restrict-template-expressions, @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment */
 const enrichSources = (x: any, sourceLinks: SourceLink[] | null) => {
@@ -140,6 +141,11 @@ export const DocumentView = () => {
 
     return (
         <div>
+            {<Helmet>
+                {!loading && <title>{ title } | Manx Corpus Search</title>}
+                {loading  && <title>Manx Corpus Search</title>}
+                <meta name="description" content="Search for words &amp; phrases within over 500 translated texts, from 1610 to the present era. Free &amp; Open Source"/>
+            </Helmet>}
             <h1 id="tabelLabel" style={{display: "flex"}} >
                 <BackChevron to={"historyBack"}/>
                 { title }
