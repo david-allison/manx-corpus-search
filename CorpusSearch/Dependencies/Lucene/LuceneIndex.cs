@@ -45,22 +45,16 @@ namespace CorpusSearch
         public static LuceneIndex GetInstance()
         {
             // Ensures index backward compatibility
-            const LuceneVersion AppLuceneVersion = LuceneVersion.LUCENE_48;
-
-            // Construct a machine-independent path for the index
-            var basePath = AppDomain.CurrentDomain.BaseDirectory;
-            var indexPath = Path.Combine(basePath, "luceneindex");
+            const LuceneVersion appLuceneVersion = LuceneVersion.LUCENE_48;
 
             // should be under a "using"
             var dir = new RAMDirectory();// FSDirectory.Open(indexPath);
-
-
 
             // Create an analyzer to process the text
             var analyzer = new ManxAnalyzer();
 
             // Create an index writer
-            var indexConfig = new IndexWriterConfig(AppLuceneVersion, analyzer);
+            var indexConfig = new IndexWriterConfig(appLuceneVersion, analyzer);
             var writer = new IndexWriter(dir, indexConfig);
             return new LuceneIndex(writer);
         }
@@ -133,31 +127,18 @@ namespace CorpusSearch
 
         internal SearchResult Search(string ident, SpanQuery query, bool getTranscriptData)
         {
-            // TODO: Copied from Scan
             using var reader = indexWriter.GetReader(applyAllDeletes: true);
             var searcher = new IndexSearcher(reader);
 
             ISet<int> acceptDocs = GetDocsForIdent(searcher, ident);
 
-            var spanQuery = (SpanQuery)query.Rewrite(reader);
-            EmptySpanCollection spanCollection = new();
-            foreach (var leaf in reader.Leaves)
+            bool AcceptDocument(AtomicReaderContext leaf, Spans spans)
             {
-                var dict = new Dictionary<Term, TermContext>();
-                var spans = spanQuery.GetSpans(leaf, null, dict);
-
-                while (spans.MoveNext())
-                {
-                    var docId = leaf.DocBase + spans.Doc;
-                    // TODO PERF: Inefficient - should be able to use GetSpans(?, acceptDocs, ?) - need to read documents to understand it
-                    if (!acceptDocs.Contains(docId))
-                    {
-                        continue;
-                    }
-                    
-                    spanCollection.Increment(leaf.DocBase + spans.Doc);
-                }
+                // TODO PERF: Inefficient - should be able to use GetSpans(?, acceptDocs, ?) - need to read documents to understand it
+                var docId = leaf.DocBase + spans.Doc;
+                return acceptDocs.Contains(docId);
             }
+            var spanCollection = BuildSpanCollection(query, reader, AcceptDocument);
 
             var docs = spanCollection.DistinctDocuments().Select(x =>
             {
@@ -191,6 +172,29 @@ namespace CorpusSearch
             };
         }
 
+        private static EmptySpanCollection BuildSpanCollection(Query query, IndexReader reader, Func<AtomicReaderContext,Spans, bool> acceptDocument)
+        {
+            var spanQuery = (SpanQuery)query.Rewrite(reader);
+            EmptySpanCollection spanCollection = new();
+            foreach (var leaf in reader.Leaves)
+            {
+                var dict = new Dictionary<Term, TermContext>();
+                var spans = spanQuery.GetSpans(leaf, null, dict);
+
+                while (spans.MoveNext())
+                {
+                    if (!acceptDocument(leaf, spans))
+                    {
+                        continue;
+                    }
+
+                    spanCollection.Increment(leaf.DocBase + spans.Doc);
+                }
+            }
+
+            return spanCollection;
+        }
+
         private ISet<int> GetDocsForIdent(IndexSearcher searcher, string ident)
         {
             var query = new TermQuery(new Term(DOCUMENT_IDENT, ident));
@@ -202,30 +206,14 @@ namespace CorpusSearch
 
         public static ScanResult Scan(IndexReader reader, SpanQuery query)
         {
-            var searcher = new IndexSearcher(reader);
-
-            int totalMatches = 0;
             var spanQuery = (SpanQuery)query.Rewrite(reader);
-            SpanCollection spanCollection = new();
-            foreach (var leaf in reader.Leaves)
-            {
-                var dict = new Dictionary<Term, TermContext>();
-                var spans = spanQuery.GetSpans(leaf, null, dict);
+            var spanCollection = BuildSpanCollection(spanQuery, reader, (_, _) => true);
+            var distinctDocuments = spanCollection.DistinctDocumentIds().ToList();
 
-                while (spans.MoveNext())
-                {
-                    spanCollection.Add(leaf.DocBase + spans.Doc, new Span(spans.Start, spans.End));
-                    totalMatches++;
-                }
-            }
-
-            var distinctDocuments = spanCollection.DistinctDocuments();
-            var luceneDocumentCount = distinctDocuments.Count();
-
-            var documentMapping = distinctDocuments.ToDictionary(x => x, x => reader.Document(x));
+            var documentMapping = distinctDocuments.ToDictionary(x => x, reader.Document);
 
             // A collection of Lucene documents, each refers to the first sample in a distinct Corpus Document
-            var corpusDocuments = documentMapping.DistinctBy(x => x.Value.GetField(DOCUMENT_IDENT)?.GetStringValue());
+            var corpusDocuments = documentMapping.DistinctBy(x => x.Value.GetField(DOCUMENT_IDENT)?.GetStringValue()).ToList();
 
             // key: ident of corpus document, value: docIds of each segment
             var corpusDocumentMapping = documentMapping.ToLookup(x => x.Value.GetField(DOCUMENT_IDENT).GetStringValue(), x => x.Key);
@@ -253,20 +241,13 @@ namespace CorpusSearch
                 };
             });
 
-            var corpusDocumentCount = corpusDocuments.Count();
-
             return new ScanResult
             {
-                NumberOfMatches = totalMatches,
-                NumberOfSegments = luceneDocumentCount,
-                NumberOfDocuments = corpusDocumentCount,
+                NumberOfMatches = spanCollection.GetTotalCount(),
+                NumberOfSegments = distinctDocuments.Count,
+                NumberOfDocuments = corpusDocuments.Count,
                 DocumentResults = samples.ToList(),
             };
-        }
-
-        internal IndexWriter GetWriter()
-        {
-            return this.indexWriter;
         }
 
         public List<DocumentLine> GetAllLines(string ident, bool getTranscript)
