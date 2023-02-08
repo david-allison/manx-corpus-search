@@ -49,6 +49,9 @@ export const NavMenu = (props: { onRefreshState: () => void}) => {
                         <NavItem>
                             <a className="text-dark nav-link" href="/Browse" target="_blank">Browse All</a>
                         </NavItem>
+                        <NavItem>
+                            <a className="text-dark nav-link" href="https://www.learnmanx.com/resources/translations/" target="_blank">Translations</a>
+                        </NavItem>
                     </ul>
                 </Collapse>
             </Container>
