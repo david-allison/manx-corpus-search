@@ -37,7 +37,7 @@ const RecursiveProperty: React.FC<Props> = props => {
                     paddingTop: 10,
                     paddingLeft: 3,
                     marginLeft: 10,
-                    borderBottom: props.excludeBottomBorder ? '' : 'border-bottom: 1px solid #b2d6ff;',
+                    borderBottom: props.excludeBottomBorder ? '' : '1px solid #b2d6ff',
                     color: "#666",
                     fontSize: 16,
                 }
