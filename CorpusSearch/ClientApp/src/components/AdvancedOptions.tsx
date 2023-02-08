@@ -1,7 +1,7 @@
 import Typography from "@mui/material/Typography"
 import Slider from "@mui/material/Slider"
 import React, {ChangeEvent, useState} from "react"
-import {Home} from "./Home"
+import {HomeData} from "./Home"
 import "./AdvancedOptions.css"
 
 export type DateRange = {
@@ -9,7 +9,7 @@ export type DateRange = {
     end: number
 }
 const AdvancedOptions = (props: { onDateRangeChange: (range: DateRange) => void, onMatchChange: (match: boolean) => void }) => {
-    const [dateRange, setDateRange] = useState([1500, Home.currentYear])
+    const [dateRange, setDateRange] = useState([1500, HomeData.currentYear])
     
     return <details className="advanced-options">
         <summary>Advanced Options
@@ -26,7 +26,7 @@ const AdvancedOptions = (props: { onDateRangeChange: (range: DateRange) => void,
         <Slider
             value={dateRange}
             min={ 1500 }
-            max={ Home.currentYear }
+            max={ HomeData.currentYear }
             valueLabelDisplay="auto"
             onChange={(_, value) => setDateRange(value as number[])}
             onChangeCommitted={(_, value) => {

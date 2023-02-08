@@ -18,8 +18,8 @@ import {SearchBar} from "./SearchBar"
 
 export type SearchLanguage = "English" | "Manx"
 
-export class Home {
-    static displayName = Home.name
+export class HomeData {
+    static displayName = HomeData.name
     static currentYear = new Date().getFullYear()
 }
 
@@ -41,7 +41,7 @@ const toLangParam = (param: SearchLanguage): string => {
     }
 }
 
-export const HomeFC = () => {
+export const Home = () => {
     const location = useLocation()
     const navigation = useNavigate()
     
@@ -54,7 +54,7 @@ export const HomeFC = () => {
     const [searchLanguage, setSearchLanguage] = useState<SearchLanguage>(() => parseLanguage(locationParams?.lang?.toString()) ?? "Manx")
     
     
-    const [dateRange, setDateRange] = useState<DateRange>( { start: 1500, end: Home.currentYear })
+    const [dateRange, setDateRange] = useState<DateRange>( { start: 1500, end: HomeData.currentYear })
     const [matchPhrase, setMatchPhrase] = useState(false)
     const [hasError, setHasError] = useState(false)
     

@@ -5,8 +5,8 @@ import {
     Routes,
 } from "react-router-dom"
 import { Layout } from "./components/Layout"
-import {HomeFC} from "./components/Home"
-import { FetchDataDocument } from "./components/FetchDataDocument"
+import {Home} from "./components/Home"
+import { DocumentView } from "./components/DocumentView"
 import "./custom.css"
 
 export const App = () => {
@@ -16,8 +16,8 @@ export const App = () => {
     return (
           <Layout onRefresh={onRefresh}>
               <Routes>
-                  <Route path='/' element={<HomeFC key={k}/>} />
-                  <Route path='/docs/:docId' element={<FetchDataDocument/>} />
+                  <Route path='/' element={<Home key={k}/>} />
+                  <Route path='/docs/:docId' element={<DocumentView/>} />
                   <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
           </Layout>
