@@ -9,7 +9,7 @@ export function hasDictionaryDefinitions(dictionaries?: DefinedInDictionaries) {
 }
 
 export const DictionaryLink = (props: { query: string, dictionaries: DefinedInDictionaries}) => {
-        return Object.keys(props.dictionaries).map(dictionaryName => {
+        return <>{Object.keys(props.dictionaries).map(dictionaryName => {
                 const element = props.dictionaries[dictionaryName]
                 return (
                     <Fragment key={dictionaryName}>
@@ -26,7 +26,7 @@ export const DictionaryLink = (props: { query: string, dictionaries: DefinedInDi
                         <br />
                     </Fragment>
                 )})
-            
+        }</>
     
 }
 
