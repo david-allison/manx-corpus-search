@@ -9,6 +9,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 using CorpusSearch.Controllers;
 using CorpusSearch.Model;
 using CorpusSearch.Dependencies.csly;
@@ -38,7 +39,10 @@ namespace CorpusSearch
         public void ConfigureServices(IServiceCollection services)
         {
 
-            services.AddControllersWithViews();
+            services.AddControllersWithViews().AddJsonOptions(options =>
+            {
+                options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
+            });
 
             services.AddSingleton(provider => LuceneIndex.GetInstance());
             services.AddSingleton(provider => SearchParser.GetParser());
