@@ -173,7 +173,7 @@ export const DocumentView = () => {
                         excludeBottomBorder={false}
                         rootProperty={false}/>
 
-                    { searchWorkResponse.notes && <><br />{searchWorkResponse.notes}</>}
+                    { searchWorkResponse.notes && <><br /><span style={{whiteSpace: "pre-wrap"}}>{searchWorkResponse.notes}</span></>}
 
                     <ComparisonTable
                     response={searchWorkResponse}
