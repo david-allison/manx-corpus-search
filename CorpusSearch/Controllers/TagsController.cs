@@ -44,6 +44,7 @@ public class TagsController : Controller
         var allTags = new List<Tag>
         {
             Tag.Build("Noon as Noal", PathMatcher("Noon as Noal")),
+            Tag.Build("Audio", doc => doc.Name.StartsWith("🎥")),
             Tag.Build("Carn", doc => doc.Name.StartsWith("Carn ")),
             new("Newspapers", 
                 IMuseumNewspaperService
