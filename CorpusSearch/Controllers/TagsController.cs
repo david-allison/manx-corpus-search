@@ -45,7 +45,7 @@ public class TagsController : Controller
         {
             Tag.Build("Noon as Noal", PathMatcher("Noon as Noal")),
             Tag.Build("Audio", doc => doc.Name.StartsWith("🎥")),
-            Tag.Build("Coraa ny Gaal", PathMatcher("Coraa ny Gaal")),
+            Tag.Build("Coraa ny Gael", PathMatcher("Coraa ny Gael")),
             Tag.Build("Carn", doc => doc.Name.StartsWith("Carn ")),
             new("Newspapers", 
                 IMuseumNewspaperService
