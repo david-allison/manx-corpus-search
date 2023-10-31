@@ -150,7 +150,7 @@ export const Home = () => {
             {hasNoSearch && stats && <span className={"homeText"}>
                 {stats != "error" ?
                     <span className={"homeText"} style={{textAlign: "center"}}>
-                        <span style={{display: "inline"}}>Search our growing collection of over <b>{stats.manxWordCount.toLocaleString()} Manx words</b> or&nbsp;<a href={"/Browse"}>browse&nbsp;{stats.documentCount.toLocaleString()} documents</a></span>
+                        <span style={{display: "inline"}}>Search our growing collection of over <b title={`${stats.uniqueManxWordCount.toLocaleString()} unique words`}>{stats.manxWordCount.toLocaleString()} Manx words</b> or&nbsp;<a href={"/Browse"}>browse&nbsp;{stats.documentCount.toLocaleString()} documents</a></span>
                     </span>    
                 :
                     <>

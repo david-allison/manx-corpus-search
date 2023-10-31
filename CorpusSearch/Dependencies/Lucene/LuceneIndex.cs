@@ -41,6 +41,8 @@ namespace CorpusSearch
         {
             this.indexWriter = indexWriter;
         }
+        
+        private IndexReader UseReader() => indexWriter.GetReader(applyAllDeletes: true);
 
         public static LuceneIndex GetInstance()
         {
@@ -120,14 +122,14 @@ namespace CorpusSearch
 
         public ScanResult Scan(SpanQuery query)
         {
-            using var reader = indexWriter.GetReader(applyAllDeletes: true);
+            using var reader = UseReader();
             return Scan(reader, query);
         }
 
 
         internal SearchResult Search(string ident, SpanQuery query, bool getTranscriptData)
         {
-            using var reader = indexWriter.GetReader(applyAllDeletes: true);
+            using var reader = UseReader();
             var searcher = new IndexSearcher(reader);
 
             ISet<int> acceptDocs = GetDocsForIdent(searcher, ident);
@@ -252,7 +254,7 @@ namespace CorpusSearch
 
         public List<DocumentLine> GetAllLines(string ident, bool getTranscript)
         {
-            using var reader = indexWriter.GetReader(applyAllDeletes: true);
+            using var reader = UseReader();
             var searcher = new IndexSearcher(reader);
             
             TopDocs docs = searcher.Search(new TermQuery(new Term(DOCUMENT_IDENT, ident)), Int32.MaxValue);
@@ -285,7 +287,7 @@ namespace CorpusSearch
         public long CountManxTerms()
         {
             // TODO: Probably inefficient
-            using var reader = indexWriter.GetReader(applyAllDeletes: true);
+            using var reader = UseReader();
             var query = new SpanMultiTermQueryWrapper<ExtendedWildcardQuery>(new ExtendedWildcardQuery(new Term( DOCUMENT_NORMALIZED_MANX, "*"))); 
             int totalMatches = 0;
             var spanQuery = (SpanQuery)query.Rewrite(reader);
@@ -301,6 +303,20 @@ namespace CorpusSearch
             }
 
             return totalMatches;
+        }
+        
+        public List<(string, long)> GetTermFrequencyList()
+        {
+            var termList = new List<(string, long)>();
+            
+            using var reader = UseReader();
+            var terms = MultiFields.GetTerms(reader, DOCUMENT_NORMALIZED_MANX);
+            foreach (var term in terms)
+            {
+                termList.Add((term.Term.Utf8ToString(), term.TotalTermFreq));
+            }
+
+            return termList;
         }
     }
 }

@@ -173,6 +173,11 @@ namespace CorpusSearch.Dependencies
             this.luceneSearch.Add(document, data);
         }
 
+        public List<(string, long)> QueryTermFrequency()
+        {
+            return luceneSearch.GetTermFrequencyList();
+        }
+        
         public long CountManxTerms() => luceneSearch.CountManxTerms();
     }
 }

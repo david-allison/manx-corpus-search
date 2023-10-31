@@ -1,4 +1,4 @@
-export type Statistics = { documentCount: number, manxWordCount: number }
+export type Statistics = { documentCount: number, manxWordCount: number, uniqueManxWordCount: number }
 
 export const getCorpusStatistics = async (): Promise<Statistics> => {
     const response = await fetch("statistics")
