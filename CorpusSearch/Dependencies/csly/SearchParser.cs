@@ -12,20 +12,20 @@ namespace CorpusSearch.Dependencies.csly
     {
         [Lexeme("[0-9]+")]
         INT = 1,
-        [Lexeme("\\s", IsSkippable = true)] // TODO: WS TODO: also ',', '?', '*', '(', ')', ':', '^', '"'
-        WS = 2,
         [Lexeme("\\(")]
         LPAREN = 6,
         [Lexeme("\\)")]
         RPAREN = 7,
-        [Lexeme("and")]
+        [Lexeme(" and ")]
         AND = 8,
-        [Lexeme("or")]
+        [Lexeme(" or ")]
         OR = 9, 
-        [Lexeme("not")]
+        [Lexeme(" not ")]
         NOT = 10,
+        [Lexeme("\\s", IsSkippable = true)] // TODO: WS TODO: also ',', '?', '*', '(', ')', ':', '^', '"'
+        WS = 11,
         [Lexeme("[^\\s\\(\\)]+")] // not whitespace or brackets
-        TOKEN = 11,
+        TOKEN = 12,
     }
 
     public class ExpressionParser
