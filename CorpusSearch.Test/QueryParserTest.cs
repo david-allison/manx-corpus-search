@@ -443,6 +443,18 @@ namespace CorpusSearch.Test
             Assert.That(resultCre.NumberOfSegments, Is.EqualTo(1), "could not find 'cre'");
             Assert.That(resultCreErbee.NumberOfSegments, Is.EqualTo(1), "could not find 'cre-erbee'");
         }
+        
+        [Test]
+        public void OrPrefix()
+        {
+            // searching for 'orrym' failed as it started with 'or'
+            this.AddManxDoc("1", "Ta'n ennym orrym David");
+
+            var result = Query("orrym");
+
+            Assert.That(result.NumberOfMatches, Is.EqualTo(1));
+            Assert.That(result.NumberOfSegments, Is.EqualTo(1));
+        }
 
         private ScanResult Query(string query, ScanOptions options)
         {
