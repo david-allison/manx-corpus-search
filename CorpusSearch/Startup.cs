@@ -83,7 +83,8 @@ namespace CorpusSearch
             
 
             var databaseCount = SetupDatabase(workService, searcher);
-            StatisticsController.Init(databaseCount);
+            var termFrequency = searcher.QueryTermFrequency();
+            StatisticsController.Init(databaseCount, termFrequency);
             SetupDictionaries();
 
 
