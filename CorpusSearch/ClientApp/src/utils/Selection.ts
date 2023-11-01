@@ -8,8 +8,12 @@ export const getSelectedWordOrPhrase = (selection: Selection) => {
     }
     
     let currentSelection = selection.toString()
-    const beforeSelection = setRangeStartOffset(range, node)
-    const afterSelection = setRangeEndOffset(range, node)
+    let beforeSelection = "" 
+    let afterSelection = "" 
+    if (currentSelection.split(" ").length == 1) {
+        beforeSelection = setRangeStartOffset(range, node)
+        afterSelection = setRangeEndOffset(range, node)
+    }
 
     if (node.parentElement != null && node.parentElement.className == "part-removed") {
         currentSelection = ""
