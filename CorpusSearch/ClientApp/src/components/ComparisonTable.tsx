@@ -32,7 +32,7 @@ export const ComparisonTable = (props: {
 
         const range = getSelectedWordOrPhrase(selection)
 
-        if (range == null) {
+        if (range == null || range.split(" ").length > 4) {
             return
         }
 
