@@ -13,7 +13,7 @@ The search system is very flexible. Please raise an issue on GitHub if your use-
 
 ## Simple Queries
 
-* `ayns` will return all paragrpahs containing `ayns`
+* `ayns` will return all paragraphs containing `ayns`
 * `aght cha` will return all results where `aght` is followed by `cha`
 
 Punctuation is ignored, `"aght, cha"` would be returned. 
