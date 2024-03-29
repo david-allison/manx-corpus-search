@@ -1,10 +1,10 @@
-<a href="https://manxcorpus.com/"><img src="https://img.shields.io/uptimerobot/status/m788600664-01eee56ee2b6a032b98b70c4"></a>
+<a href="https://corpus.gaelg.im//"><img src="https://img.shields.io/uptimerobot/status/m788600664-01eee56ee2b6a032b98b70c4"></a>
 
 # manx-corpus-search
 
 A corpus search for primarily bilingual manx to english texts.
 
-Deployed at https://manxcorpus.com/
+Deployed at https://corpus.gaelg.im/
 
 To add/modify documents, see: [manx-search-data](https://github.com/david-allison/manx-search-data)
 
