@@ -159,7 +159,9 @@ export const Home = () => {
                         </span>
                     </>
                 }
-                <span style={{display: "inline", marginTop: "2em"}}>Support our revitalisation efforts by <a href={"/MailingList"}>signing up for our mailing list</a>. We'll email once in a while with updates to the corpus & other projects</span>
+                <span style={{display: "inline", marginTop: "2em"}}>Support our revitalisation efforts by <a href={"/MailingList"}>signing up for our mailing list</a>. We'll email once in a while with updates to the corpus & other projects.</span>
+                <br/>
+                <span>If we're missing anything, please let us know at <a href="mailto:corpus-submissions@gaelg.im">corpus-submissions@gaelg.im</a>.</span>
             </span>}
             
             {!hasNoSearch && hasError && <span className={"homeText"}>
