@@ -17,6 +17,7 @@ export type SearchWorkResult = {
     englishOriginal?: string
     subStart?: number
     subEnd?: number
+    speaker?: string
 }
 
 export type SearchWorkResponse = {
