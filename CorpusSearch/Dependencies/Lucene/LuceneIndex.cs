@@ -8,9 +8,9 @@ using Lucene.Net.Store;
 using Lucene.Net.Util;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using CorpusSearch;
+using CorpusSearch.Utils;
 using Document = Lucene.Net.Documents.Document;
 using LuceneDocument = Lucene.Net.Documents.Document;
 
@@ -100,15 +100,9 @@ namespace CorpusSearch
                 AddField(DOCUMENT_NOTES, line.Notes);
                 AddField(DOCUMENT_PAGE, line.Page.ToString());
 
-                if (line.SubStart != null)
-                {
-                    doc.Add(new DoubleField(SUBTITLE_START, line.SubStart.Value, Field.Store.YES));
-                }
-                if (line.SubEnd != null)
-                {
-                    doc.Add(new DoubleField(SUBTITLE_END, line.SubEnd.Value, Field.Store.YES));
-                }
-                
+                line.SubStart?.Let(start => doc.Add(new DoubleField(SUBTITLE_START, start, Field.Store.YES)));
+                line.SubEnd?.Let(end => doc.Add(new DoubleField(SUBTITLE_END, end, Field.Store.YES)));
+
                 indexWriter.AddDocument(doc);
             }
 
