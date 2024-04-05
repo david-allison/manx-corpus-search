@@ -5,8 +5,8 @@ import {
     Routes,
 } from "react-router-dom"
 import { Layout } from "./components/Layout"
-import {Home} from "./components/Home"
-import { DocumentView } from "./components/DocumentView"
+import {Home} from "./routes/Home"
+import { DocumentView } from "./routes/DocumentView"
 import "./custom.css"
 
 export const App = () => {

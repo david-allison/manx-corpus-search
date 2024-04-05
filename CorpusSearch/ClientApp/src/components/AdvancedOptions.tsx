@@ -1,7 +1,7 @@
 import Typography from "@mui/material/Typography"
 import Slider from "@mui/material/Slider"
 import React, {ChangeEvent, useState} from "react"
-import {HomeData} from "./Home"
+import {HomeData} from "../routes/Home"
 import "./AdvancedOptions.css"
 
 export type DateRange = {
