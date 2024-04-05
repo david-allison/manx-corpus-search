@@ -16,6 +16,9 @@ namespace CorpusSearch.Model
         public double? SubStart { get; set; }
         public double? SubEnd { get; set; }
         
+        /// <summary>The name of the speaker in a transcription. Nullable</summary>
+        public string Speaker { get; set; }
+        
         public long? MatchesInLine { get; set; }
 
         [JsonIgnore]

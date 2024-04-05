@@ -142,6 +142,8 @@ export const ComparisonTable = (props: {
         }
     }
     
+    const hasSpeakerColumn = isVideo && response.results.filter(x => x.speaker != null && x.speaker != "").length > 0
+    
     const tableStyle = (): CSSProperties => {
         if (!isVideo) return {}
         return {
@@ -168,6 +170,7 @@ export const ComparisonTable = (props: {
                     <thead>
                     <tr>
                         {isVideo && <th>{""}</th>}
+                        {hasSpeakerColumn && <th>Speaker</th>}
                         {leftVisible && <th>{originalManx ? "Manx" : "English"}</th>}
                         {rightVisible && <th>{originalManx ? "English" : "Manx"}</th>}
                         {linkVisible && <th style={{width: 45}}>Link</th>}
@@ -187,6 +190,9 @@ export const ComparisonTable = (props: {
                                     player.current.seek(line.subStart)
                                 }
                                 }}>▶️</td>}
+                                {hasSpeakerColumn && <td>
+                                    {line.speaker}
+                                </td>}
                                 {leftVisible && <td lang={leftLang}>
                                     {originalManx ? manxText : englishText}
                                 </td>}

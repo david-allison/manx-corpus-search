@@ -14,6 +14,7 @@ namespace CorpusSearch.Dependencies.CsvHelper
             Map(m => m.Notes).Optional();
             Map(m => m.SubStart).Optional();
             Map(m => m.SubEnd).Optional();
+            Map(m => m.Speaker).Optional();
             Map(m => m.CsvLineNumber).Convert(row => row.Parser.RawRow);
             Map(m => m.ManxOriginal).Convert(row =>
             {

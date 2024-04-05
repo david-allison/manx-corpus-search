@@ -31,6 +31,7 @@ namespace CorpusSearch
         public const string DOCUMENT_ORIGINAL_ENGLISH = "original_english";
         public const string DOCUMENT_CREATED_START = "created_start";
         public const string DOCUMENT_CREATED_END = "created_end";
+        public const string DOCUMENT_SPEAKER = "speaker";
 
         public const string SUBTITLE_START = "subtitle_start";
         public const string SUBTITLE_END = "subtitle_end";
@@ -89,9 +90,9 @@ namespace CorpusSearch
                 void AddField(string key, string value)
                 {
                     // ArgumentNullException if the value is null
-                    if (value == null) { return; }
-                    doc.Add(new StringField(key, value, Field.Store.YES));
+                    value?.Let(val => doc.Add(new StringField(key, val, Field.Store.YES)));
                 }
+                
 
                 AddField(DOCUMENT_ORIGINAL_ENGLISH, line.EnglishOriginal);
                 AddField(DOCUMENT_ORIGINAL_MANX, line.ManxOriginal);
@@ -99,6 +100,7 @@ namespace CorpusSearch
                 AddField(DOCUMENT_CREATED_END, document.CreatedCircaEnd?.ToString());
                 AddField(DOCUMENT_NOTES, line.Notes);
                 AddField(DOCUMENT_PAGE, line.Page.ToString());
+                AddField(DOCUMENT_SPEAKER, line.Speaker);
 
                 line.SubStart?.Let(start => doc.Add(new DoubleField(SUBTITLE_START, start, Field.Store.YES)));
                 line.SubEnd?.Let(end => doc.Add(new DoubleField(SUBTITLE_END, end, Field.Store.YES)));
@@ -157,6 +159,7 @@ namespace CorpusSearch
                     EnglishOriginal = document.GetField(DOCUMENT_ORIGINAL_ENGLISH)?.GetStringValue(),
                     SubStart = getTranscriptData ? document.GetField(SUBTITLE_START)?.GetDoubleValue() : null,
                     SubEnd = getTranscriptData ? document.GetField(SUBTITLE_END)?.GetDoubleValue() : null,
+                    Speaker = getTranscriptData ? document.GetField(DOCUMENT_SPEAKER)?.GetStringValue() : null,
                     MatchesInLine = countInDoc
                 };
             }).ToList();
@@ -260,6 +263,7 @@ namespace CorpusSearch
             {
                 fieldsToLoad.Add(SUBTITLE_END);
                 fieldsToLoad.Add(SUBTITLE_START);
+                fieldsToLoad.Add(DOCUMENT_SPEAKER);
             }
             
             return docs.ScoreDocs
@@ -274,7 +278,8 @@ namespace CorpusSearch
                 ManxOriginal = x.GetField(DOCUMENT_ORIGINAL_MANX)?.GetStringValue(),
                 EnglishOriginal = x.GetField(DOCUMENT_ORIGINAL_ENGLISH)?.GetStringValue(),
                 SubStart = getTranscript ? x.GetField(SUBTITLE_START)?.GetDoubleValue() : null,
-                SubEnd = getTranscript ? x.GetField(SUBTITLE_END)?.GetDoubleValue() : null
+                SubEnd = getTranscript ? x.GetField(SUBTITLE_END)?.GetDoubleValue() : null,
+                Speaker = getTranscript ? x.GetField(DOCUMENT_SPEAKER)?.GetStringValue() : null
             }).ToList();
         }
 
