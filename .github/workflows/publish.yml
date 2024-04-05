@@ -42,10 +42,10 @@ jobs:
         run: ssh -tt david2@209.97.129.212 'cd ~/corpus-search-data-private && cp -r ~/corpus-search-data-private/ClosedData /var/www/manx-corpus/CorpusSearch'
       
       - name: Build
-        run: ssh -tt david2@209.97.129.212 'cd /var/www/manx-corpus/ && dotnet build'
+        run: ssh -tt david2@209.97.129.212 'cd /var/www/manx-corpus/ && dotnet build --framework net6.0'
       
       - name: Publish
-        run: ssh -tt david2@209.97.129.212 'cd /var/www/manx-corpus/ && dotnet publish --configuration Release'
+        run: ssh -tt david2@209.97.129.212 'cd /var/www/manx-corpus/ && dotnet publish --framework net6.0 --configuration Release'
 
       - name: Upload Cregeen Dictionary
         run: ssh -tt david2@209.97.129.212 'cd /var/www/manx-corpus/CorpusSearch/bin/Release/net6.0/publish/Resources && /var/www/manx-corpus/.github/scripts/download_cregeen.sh'
