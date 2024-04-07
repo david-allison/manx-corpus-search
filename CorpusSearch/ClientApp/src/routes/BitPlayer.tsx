@@ -10,7 +10,7 @@ function Video({vId="rLEBp8R1_XA"}) {
         const player = event.target
         setPtime(player.getCurrentTime())
     }
-    const onChange : YouTubeProps["onStateChange"] = (e) => {
+    const onChange = (e) => {
         setVideoId(e.target.value)
     }
 
