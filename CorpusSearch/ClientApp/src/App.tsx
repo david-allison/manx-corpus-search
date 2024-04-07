@@ -7,6 +7,7 @@ import {
 import { Layout } from "./components/Layout"
 import {Home} from "./routes/Home"
 import { DocumentView } from "./routes/DocumentView"
+import {BitPlayer} from "./routes/BitPlayer"
 import "./custom.css"
 
 export const App = () => {
@@ -18,8 +19,9 @@ export const App = () => {
               <Routes>
                   <Route path='/' element={<Home key={k}/>} />
                   <Route path='/docs/:docId' element={<DocumentView/>} />
+                  <Route path={"/tools/youtube"} element={<BitPlayer/>} />
                   <Route path="*" element={<Navigate to="/" replace />} />
-              </Routes>
+              </Routes> 
           </Layout>
     )
 }
