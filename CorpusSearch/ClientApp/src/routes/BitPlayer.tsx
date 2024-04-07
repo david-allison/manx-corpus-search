@@ -1,8 +1,8 @@
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
 import "./DocumentView.css"
 import React, {Fragment, useState} from "react"
 import YouTube, {YouTubeProps} from "react-youtube"
 
-/* eslint-disable @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment */
 function Video({vId="rLEBp8R1_XA"}) {
     const [ptime, setPtime] = useState(-1)
     const [video, setVideoId] = useState(vId)
