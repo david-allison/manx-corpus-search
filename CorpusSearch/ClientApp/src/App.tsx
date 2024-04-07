@@ -7,8 +7,7 @@ import {
 import { Layout } from "./components/Layout"
 import {Home} from "./routes/Home"
 import { DocumentView } from "./routes/DocumentView"
-import {BitPlayer} from "./routes/BitPlayer";
-import {BizPlayer} from "./routes/BizPlayer";
+import {BitPlayer} from "./routes/BitPlayer"
 import "./custom.css"
 
 export const App = () => {
