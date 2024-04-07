@@ -1,17 +1,18 @@
-import './DocumentView.css';
-import React, {Fragment, useState} from "react";
-import YouTube, {YouTubeProps} from "react-youtube";
+import "./DocumentView.css"
+import React, {Fragment, useState} from "react"
+import YouTube, {YouTubeProps} from "react-youtube"
 
+/* eslint-disable @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment */
 function Video({vId="rLEBp8R1_XA"}) {
-    const [ptime, setPtime] = useState(-1);
-    const [video, setVideoId] = useState(vId);
+    const [ptime, setPtime] = useState(-1)
+    const [video, setVideoId] = useState(vId)
     const onPause : YouTubeProps["onPause"] = (event) => {
-        const player = event.target;
-        setPtime(player.getCurrentTime());
+        const player = event.target
+        setPtime(player.getCurrentTime())
     }
     const onChange : YouTubeProps["onStateChange"] = (e) => {
         setVideoId(e.target.value)
-    };
+    }
 
     return <><Fragment>
         <div>
@@ -20,7 +21,7 @@ function Video({vId="rLEBp8R1_XA"}) {
         {ptime >= 0 && <div>Paused at: {ptime.toFixed(1)}</div>}
         Enter video ID:
         <input type="search" id="corpus-bit-player" style = {{flexGrow: 1}}  value = {video} onChange={onChange}/>
-    </Fragment></>;
+    </Fragment></>
 
 }
 export const BitPlayer= () => { 
@@ -29,4 +30,4 @@ export const BitPlayer= () => {
         </header>
         <Video/>
     </div>)
-};
+}
