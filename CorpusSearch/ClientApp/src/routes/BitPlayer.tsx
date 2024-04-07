@@ -10,7 +10,7 @@ function Video({vId="rLEBp8R1_XA"}) {
         const player = event.target
         setPtime(player.getCurrentTime())
     }
-    const onChange = (e) => {
+    const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setVideoId(e.target.value)
     }
 
