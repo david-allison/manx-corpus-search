@@ -3,8 +3,9 @@
 since this is kind of a no-frills YouTube player*/
 
 import "./DocumentView.css"
-import React, {ChangeEvent, useRef, useState} from "react"
+import React, {useRef, useState} from "react"
 import YouTube, {YouTubePlayer, YouTubeProps} from "react-youtube"
+import useInterval from "../vendor/use-interval/UseInterval";
 
 function Video({vId="rLEBp8R1_XA"}) {
     const r_player = useRef<YouTubePlayer>(null)
@@ -14,11 +15,21 @@ function Video({vId="rLEBp8R1_XA"}) {
     const [ktime, setKtime] = useState(-1)
     
     const [video, setVideoId] = useState(vId)
-    const [stime, setStime  ] = useState("50.00")
-    const [etime, setEtime] = useState("60.00")
+    const [startTime, setStartTime  ] = useState("50.00")
+    const [endTime, setEndTime] = useState("60.00")
 
     const [loop, setLoop] = useState(false)
-    let interval_id : NodeJS.Timer
+    
+    useInterval(() => {
+        if (!loop) return;
+        const vt = r_player.current.getCurrentTime()
+        const endTimeAsFloat = parseFloat(endTime)
+        if (!endTimeAsFloat || endTimeAsFloat >= dur) return
+        if (vt >= endTimeAsFloat) {
+            restart()
+        }
+    }, 10)
+
 /* eslint-disable @typescript-eslint/no-unsafe-argument,@typescript-eslint/no-unsafe-call,@typescript-eslint/no-unsafe-member-access,@typescript-eslint/no-unsafe-assignment */
     const onPlay: YouTubeProps["onPlay"] = (event) => {
         setTime0(event.target.getCurrentTime())
@@ -36,53 +47,31 @@ function Video({vId="rLEBp8R1_XA"}) {
         setDur(the_player.getDuration())
     }
     const onSChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setStime(e.target.value)
+        setStartTime(e.target.value)
     }
     const onEChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setEtime(e.target.value)
+        setEndTime(e.target.value)
     }
     const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setVideoId(e.target.value)
     }
     const restart = () => {
-        r_player.current.seekTo(parseFloat(stime))
+        r_player.current.seekTo(parseFloat(startTime))
         r_player.current.playVideo()
     }
     const onClick = (/*e :MouseEvent<HTMLButtonElement>*/) => {
         setKtime(r_player.current.getCurrentTime())
         restart()
     }
-    const onToggleLoop = (e :ChangeEvent<HTMLInputElement>) => {
-        console.log("setting Loop to",e.target.checked)
-        setLoop(e.target.checked)
-        console.log("Loop is now",loop)
-        if (e.target.checked) {//can't use loop itself for some reason
-            console.log("setting interval!")
-            interval_id = setInterval(check_time_for_loop, 10)
-        } else {
-            console.log("clearing interval!")
-            clearInterval(interval_id)
-        }
-    }
-    const check_time_for_loop = () => {
-        console.log("inside check_time_for_loop with",loop)
-        const vt = r_player.current.getCurrentTime()
-        const netime = parseFloat(etime)
-        //console.log("ne time is",netime)
-        if (!netime || netime >= dur) return
-        if (vt >= netime) {
-            //clearInterval(interval_id);
-            restart()
-        }
-    }
+
     /* eslint-enable */
     return <>
         <div><YouTube videoId={video} onReady={onReady} onPlay = {onPlay} onPause={onPause}/></div>
         <div> Video ID: <input type={"text"} value={video} onChange={onChange}/></div>
-        <div> Loop Start: <input type={"number"} step={"0.01"} value={stime} onChange={onSChange}/></div>
-        <div> Loop End: <input type={"number"} step={"0.01"} value={etime} onChange={onEChange}/></div>
+        <div> Loop Start: <input type={"number"} step={"0.01"} value={startTime} onChange={onSChange}/></div>
+        <div> Loop End: <input type={"number"} step={"0.01"} value={endTime} onChange={onEChange}/></div>
         <button onClick={onClick}>Click To Seek and Play</button>
-        <div> Loop <input type="checkbox" checked={loop} onChange={onToggleLoop}/></div>
+        <div> Loop <input type="checkbox" checked={loop} onChange={() => setLoop(x => !x)}/></div>
         {dur > 0 ? <div>Duration: {dur}</div> : ""}
         {ktime >= 0 && <div>Seek  from: {ktime.toFixed(2)}</div>}
         {time0 >= 0 && <div>Started at: {time0.toFixed(2)}</div>}
