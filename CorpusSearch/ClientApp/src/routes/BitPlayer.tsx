@@ -5,7 +5,7 @@ since this is kind of a no-frills YouTube player*/
 import "./DocumentView.css"
 import React, {useRef, useState} from "react"
 import YouTube, {YouTubePlayer, YouTubeProps} from "react-youtube"
-import useInterval from "../vendor/use-interval/UseInterval";
+import useInterval from "../vendor/use-interval/UseInterval"
 
 function Video({vId="rLEBp8R1_XA"}) {
     const r_player = useRef<YouTubePlayer>(null)
@@ -19,9 +19,10 @@ function Video({vId="rLEBp8R1_XA"}) {
     const [endTime, setEndTime] = useState("60.00")
 
     const [loop, setLoop] = useState(false)
-    
+
+    /* eslint-disable @typescript-eslint/no-unsafe-argument,@typescript-eslint/no-unsafe-call,@typescript-eslint/no-unsafe-member-access,@typescript-eslint/no-unsafe-assignment */
     useInterval(() => {
-        if (!loop) return;
+        if (!loop) return
         const vt = r_player.current.getCurrentTime()
         const endTimeAsFloat = parseFloat(endTime)
         if (!endTimeAsFloat || endTimeAsFloat >= dur) return
@@ -30,7 +31,6 @@ function Video({vId="rLEBp8R1_XA"}) {
         }
     }, 10)
 
-/* eslint-disable @typescript-eslint/no-unsafe-argument,@typescript-eslint/no-unsafe-call,@typescript-eslint/no-unsafe-member-access,@typescript-eslint/no-unsafe-assignment */
     const onPlay: YouTubeProps["onPlay"] = (event) => {
         setTime0(event.target.getCurrentTime())
         setPtime(-1)
