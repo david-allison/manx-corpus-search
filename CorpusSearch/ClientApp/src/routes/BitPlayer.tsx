@@ -4,7 +4,7 @@ since this is kind of a no-frills YouTube player*/
 
 import "./DocumentView.css"
 import React, {useRef, useState} from "react"
-import YouTube, {YouTubePlayer, YouTubeProps} from "react-youtube"
+import YouTube, {YouTubeEvent, YouTubePlayer, YouTubeProps} from "react-youtube"
 import useInterval from "../vendor/use-interval/UseInterval"
 
 function Video({vId="rLEBp8R1_XA"}) {
@@ -15,8 +15,8 @@ function Video({vId="rLEBp8R1_XA"}) {
     const [ktime, setKtime] = useState(-1)
     
     const [video, setVideoId] = useState(vId)
-    const [startTime, setStartTime  ] = useState("50.00")
-    const [endTime, setEndTime] = useState("60.00")
+    const [startTime, setStartTime  ] = useState(50)
+    const [endTime, setEndTime] = useState(60)
 
     const [loop, setLoop] = useState(false)
 
@@ -24,12 +24,15 @@ function Video({vId="rLEBp8R1_XA"}) {
     useInterval(() => {
         if (!loop) return
         const vt = r_player.current.getCurrentTime()
-        const endTimeAsFloat = parseFloat(endTime)
-        if (!endTimeAsFloat || endTimeAsFloat >= dur) return
-        if (vt >= endTimeAsFloat) {
+        if (!endTime || endTime <= startTime || endTime >= dur) return
+        if (vt >= endTime) {
             restart()
         }
     }, 10)
+
+    const onStateChange = (event : YouTubeEvent) => {
+       if (loop && event.data === 0 ) restart()
+    }
 
     const onPlay: YouTubeProps["onPlay"] = (event) => {
         setTime0(event.target.getCurrentTime())
@@ -47,42 +50,69 @@ function Video({vId="rLEBp8R1_XA"}) {
         setDur(the_player.getDuration())
     }
     const onSChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setStartTime(e.target.value)
+        setStartTime(constrained_val(parseFloat(e.target.value)) )
     }
     const onEChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setEndTime(e.target.value)
+        setEndTime(constrained_val(parseFloat(e.target.value)) )
     }
-    const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const onIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setVideoId(e.target.value)
     }
     const restart = () => {
-        r_player.current.seekTo(parseFloat(startTime))
+        r_player.current.seekTo(startTime)
         r_player.current.playVideo()
     }
     const onClick = (/*e :MouseEvent<HTMLButtonElement>*/) => {
         setKtime(r_player.current.getCurrentTime())
         restart()
     }
-
     /* eslint-enable */
+    const constrained_val = (n: number) => {
+        const newVal = +n.toFixed(2)
+        if (isNaN(newVal) || newVal < 0 ) return 0
+        if (newVal > dur) return dur
+        return newVal
+    }
+    const alterStartTime = (chg : number) => {
+        setStartTime( currentVal => constrained_val(currentVal + chg ))
+    }
+    const alterEndTime = (chg : number) => {
+        setEndTime( currentVal => constrained_val(currentVal + chg ))
+    }
     return <>
-        <div><YouTube videoId={video} onReady={onReady} onPlay = {onPlay} onPause={onPause}/></div>
-        <div> Video ID: <input type={"text"} value={video} onChange={onChange}/></div>
-        <div> Loop Start: <input type={"number"} step={"0.01"} value={startTime} onChange={onSChange}/></div>
-        <div> Loop End: <input type={"number"} step={"0.01"} value={endTime} onChange={onEChange}/></div>
+        <div><YouTube videoId={video} onReady={onReady} onPlay={onPlay} onPause={onPause} onStateChange={onStateChange}/></div>
+        <div> Video ID: <input type={"text"} value={video} onChange={onIdChange}/></div>
+        <div>
+            <span>Loop Start: </span>
+            <button onClick={() => alterStartTime( -1)}>⏮️</button>
+            <button onClick={() => alterStartTime(-.1)}>⏪</button>
+            <input type={"number"} step={"0.01"} value={startTime > 0 ? startTime : " "} onChange={onSChange}/>
+            <button onClick={() => alterStartTime( .1)}>⏩️</button>
+            <button onClick={() => alterStartTime(  1)}>⏭️</button>
+        </div>
+        <div>
+            <span>Loop End: </span>
+            <button onClick={() => alterEndTime(-1)}>⏮️</button>
+            <button onClick={() => alterEndTime(-.1)}>⏪</button>
+            <input type={"number"} step={"0.01"} value={endTime > 0 ? endTime : " "} onChange={onEChange}/>
+            <button onClick={() => alterEndTime(.1)}>⏩️</button>
+            <button onClick={() => alterEndTime(1)}>⏭️</button>
+        </div>
         <button onClick={onClick}>Click To Seek and Play</button>
         <div> Loop <input type="checkbox" checked={loop} onChange={() => setLoop(x => !x)}/></div>
         {dur > 0 ? <div>Duration: {dur}</div> : ""}
-        {ktime >= 0 && <div>Seek  from: {ktime.toFixed(2)}</div>}
+        {ktime >= 0 && <div>Seek from: {ktime.toFixed(2)}</div>}
         {time0 >= 0 && <div>Started at: {time0.toFixed(2)}</div>}
         {ptime >= 0 && <div> Paused at: {ptime.toFixed(2)}</div>}
-    </> 
+    </>
 
 }
-export const BitPlayer= () => { 
+
+export const BitPlayer = () => {
     return (<div className="BitPlayer">
         <header className="BitPlayer-header">
         </header>
         <Video/>
     </div>)
 }
+export default BitPlayer
