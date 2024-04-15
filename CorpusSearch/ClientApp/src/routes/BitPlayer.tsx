@@ -84,22 +84,26 @@ function Video({vId="rLEBp8R1_XA"}) {
         <div> Video ID: <input type={"text"} value={video} onChange={onIdChange}/></div>
         <div>
             <span>Loop Start: </span>
-            <button onClick={() => alterStartTime( -1)}>⏮️</button>
-            <button onClick={() => alterStartTime(-.1)}>⏪</button>
-            <input type={"number"} step={"0.01"} value={startTime > 0 ? startTime : " "} onChange={onSChange}/>
-            <button onClick={() => alterStartTime( .1)}>⏩️</button>
-            <button onClick={() => alterStartTime(  1)}>⏭️</button>
+            <button title =    "-1s" onClick={() => alterStartTime( -1)}>⏮️</button>
+            <button title = "-100ms" onClick={() => alterStartTime(-.1)}>⏪</button>
+            <input type={"number"} step={"0.01"} value={startTime > 0 ? startTime : " "}
+                   onChange={onSChange}/>
+            <button title = "+100ms" onClick={() => alterStartTime( .1)}>⏩️</button>
+            <button title =    "+1s" onClick={() => alterStartTime(  1)}>⏭️</button>
         </div>
         <div>
             <span>Loop End: </span>
-            <button onClick={() => alterEndTime(-1)}>⏮️</button>
-            <button onClick={() => alterEndTime(-.1)}>⏪</button>
-            <input type={"number"} step={"0.01"} value={endTime > 0 ? endTime : " "} onChange={onEChange}/>
-            <button onClick={() => alterEndTime(.1)}>⏩️</button>
-            <button onClick={() => alterEndTime(1)}>⏭️</button>
+            <button title =    "-1s" onClick={() => alterEndTime(-1)}>⏮️</button>
+            <button title = "-100ms" onClick={() => alterEndTime(-.1)}>⏪</button>
+            <input type={"number"} step={"0.01"} value={endTime > 0 ? endTime : " "}
+                   onChange={onEChange}/>
+            <button title = "+100ms" onClick={() => alterEndTime(.1)}>⏩️</button>
+            <button title =    "+1s" onClick={() => alterEndTime(1)}>⏭️</button>
         </div>
         <button onClick={onClick}>Click To Seek and Play</button>
-        <div> Loop <input type="checkbox" checked={loop} onChange={() => setLoop(x => !x)}/></div>
+        <div> Loop <input type="checkbox" checked={loop}
+                          onChange={() => setLoop(x => !x)}/>
+        </div>
         {dur > 0 ? <div>Duration: {dur}</div> : ""}
         {ktime >= 0 && <div>Seek from: {ktime.toFixed(2)}</div>}
         {time0 >= 0 && <div>Started at: {time0.toFixed(2)}</div>}
