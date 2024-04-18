@@ -10,6 +10,11 @@ export const getSelectedWordOrPhrase = (selection: Selection) => {
     let currentSelection = selection.toString()
     let beforeSelection = "" 
     let afterSelection = "" 
+    
+    //highlighting returns a non-empty string so we are good to go
+    if (currentSelection != "") return currentSelection
+    
+    //clicking requires more work
     if (currentSelection.split(" ").length == 1) {
         beforeSelection = setRangeStartOffset(range, node)
         afterSelection = setRangeEndOffset(range, node)
@@ -38,7 +43,7 @@ const setRangeStartOffset = (inputRange: Range, node: Node) => {
                 return currentString
             }
             range.setEnd(node, node.textContent.length)
-            range.setStart(node, node.textContent.length)
+            range.setStart(node,0)
         }
 
         if (node.parentElement == null || node.parentElement.className == "part-removed") {
