@@ -14,10 +14,11 @@ namespace CorpusSearch.Services
         /// We copy files in from the "OpenData" directory, which is cloned into by git.
         /// </summary>
         /// <returns></returns>
-        public static List<OpenSourceDocument> LoadDocumentsFromFile()
+        public static List<OpenSourceDocument> LoadDocumentsFromFile(LoadConfig lConfig)
         {
-            var paths = GetJsonPaths();
-            var ret = paths
+            var paths = GetJsonPaths(lConfig);
+
+        var ret = paths
                 .Select(ToDocument)
                 .ToList();
 
@@ -41,14 +42,23 @@ namespace CorpusSearch.Services
             }
         }
 
-        public static List<string> GetJsonPaths()
+        public static List<string> GetJsonPaths(LoadConfig lConfig)
         {
-            String path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "OpenData");
+            bool videoOnly = lConfig?.VideoOnly ?? false;
+            String path = Path.Combine(
+                AppDomain.CurrentDomain.BaseDirectory,
+                "OpenData" +(videoOnly ? "/Video" : "")
+                );
+            
             // We use .json.txt so the file opens in the system text editor without explanation.
-            // This isn't ideal, but we're likley working with non-technical users outside their comfort zone,
+            // This isn't ideal, but we're likely working with non-technical users outside their comfort zone,
             // and explaining file associations is not ideal
 
-            return Directory.GetFiles(path, "*.json.txt", SearchOption.AllDirectories).ToList();
+            var allFiles = Directory.GetFiles(path, "*.json.txt", SearchOption.AllDirectories);
+            return lConfig?.MaxOpenData > 0
+                    ? allFiles.Take(lConfig.MaxOpenData).ToList()
+                    : allFiles.ToList()
+                ;
         }
     }
 
@@ -66,7 +76,7 @@ namespace CorpusSearch.Services
         {
             String path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ClosedData");
             // We use .json.txt so the file opens in the system text editor without explanation.
-            // This isn't ideal, but we're likley working with non-technical users outside their comfort zone,
+            // This isn't ideal, but we're likely working with non-technical users outside their comfort zone,
             // and explaining file associations is not ideal
 
             return Directory.GetFiles(path, "*.json.txt", SearchOption.AllDirectories).ToList();
