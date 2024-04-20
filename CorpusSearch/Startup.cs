@@ -21,6 +21,21 @@ using static System.Text.Json.JsonSerializer;
 
 namespace CorpusSearch
 {
+    public class LoadConfig
+    {
+    //add below to appsettings.Development.json for fast load
+    //},
+    //"Loading": {
+    //    "OpenDataOnly":  true,
+    //    "VideoOnly": true,
+    //    "MaxOpenData": 1
+    //}
+        public bool VideoOnly { get; set;}
+        public bool OpenDataOnly { get; set;}
+        public int MaxOpenData { get; set;}
+        //public LoadConfig(bool videoOnlyConfig) => videoOnlyConfig = videoOnly;
+    }
+
     public class Startup
     {
         public static Dictionary<string, IList<string>> EnglishToManxDictionary { get; set; }
@@ -80,9 +95,9 @@ namespace CorpusSearch
             {
                 Console.WriteLine("Failed to init anonymous analytics. Was CORPUS_SEARCH_SEGMENT_KEY set?");
             }
-            
+            var lConfig = Configuration.GetSection("Loading").Get<LoadConfig>();
 
-            var databaseCount = SetupDatabase(workService, searcher);
+            var databaseCount = SetupDatabase(workService, searcher, lConfig);
             var termFrequency = searcher.QueryTermFrequency();
             StatisticsController.Init(databaseCount, termFrequency);
             SetupDictionaries();
@@ -134,26 +149,26 @@ namespace CorpusSearch
             }
         }
 
-        internal static (long totalDocuments, long totalManxTerms) SetupDatabase(WorkService workService, Searcher searcher)
+        internal static (long totalDocuments, long totalManxTerms) SetupDatabase(WorkService workService, Searcher searcher, LoadConfig lConfig)
         {
             var totalDocuments = 0L;
-            try
-            {
-                List<Document> closedSourceDocument = ClosedDataLoader.LoadDocumentsFromFile().Cast<Document>().ToList();
-                Console.WriteLine($"Loaded {closedSourceDocument.Count} documents");
-                AddDocuments(closedSourceDocument, workService, searcher);
-                totalDocuments += closedSourceDocument.Count;
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine($"Failed loading documents: {e}");
-            }
 
-
+            bool ignoreClosedData = lConfig?.OpenDataOnly ?? false;
+            if (!ignoreClosedData) try
+                {
+                    List<Document> closedSourceDocument = ClosedDataLoader.LoadDocumentsFromFile().Cast<Document>().ToList();
+                    Console.WriteLine($"Loaded {closedSourceDocument.Count} documents");
+                    AddDocuments(closedSourceDocument, workService, searcher);
+                    totalDocuments += closedSourceDocument.Count;
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine($"Failed loading documents: {e}");
+                }
             // Try adding open source documents
             try
             {
-                List<Document> ossDocuments = OpenDataLoader.LoadDocumentsFromFile().Cast<Document>().ToList();
+                List<Document> ossDocuments = OpenDataLoader.LoadDocumentsFromFile(lConfig).Cast<Document>().ToList();
                 Console.WriteLine($"Loaded {ossDocuments.Count} documents");
                 AddDocuments(ossDocuments, workService, searcher);
                 totalDocuments += ossDocuments.Count;
