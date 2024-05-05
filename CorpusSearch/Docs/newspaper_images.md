@@ -20,7 +20,7 @@ Once the 'link' hs been selected, the following screen should appear:
 
 https://www.imuseum.im/Olive/APA/IsleofMan/SharedView.Article.aspx?href=IMT%2F1913%2F05%2F03&id=Ar00905&sk=E10B8601&viewMode=image
 
-The component we want is `Ar00905`, listed inside the `&id=Ar00905` section of the URL:
+The components we want are `IMT%2F1913%2F05%2F03` listed after the`?href=` and `Ar00905`, listed inside the `&id=Ar00905` section of the URL:
 
 ```
 https://www.imuseum.im/Olive/APA/IsleofMan/SharedView.Article.aspx?href=IMT%2F1913%2F05%2F03&id=Ar00905&sk=E10B8601&viewMode=image
