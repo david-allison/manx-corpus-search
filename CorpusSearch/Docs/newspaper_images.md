@@ -1,6 +1,6 @@
 # Obtaining a good link to iMuseum newspaper images
 
-Example of the output: http://manxcorpus.com/IMuseumNewspaper/Component/V1?newspaper=IMT&date=1913-05-03&id=Ar00905
+Example of the output: http://corpus.gaelg.im/IMuseumNewspaper/Component/V1?newspaper=IMT&date=1913-05-03&id=Ar00905
 
 ## iMuseum steps
 
@@ -39,7 +39,7 @@ In order to reduce the effort to proofread, we would like to link to the iMuseum
 
 iMuseum provides a 'standard' link to a newspaper, but this doesn't support the scroll wheel. Many users will not realise that the scroll bars are usable, which causes frustration.  Sample: https://www.imuseum.im/Olive/APA/IsleofMan/SharedView.Article.aspx?href=IMT%2F1913%2F05%2F03&id=Ar00905&sk=E10B8601&viewMode=image
 
-We want to do better than this. I (David) have reverse-engineered the newspaper site to provide a usable link: https://manxcorpus.com/docs/Manx-Gaelic-Gathering-first-chaglym
+We want to do better than this. I (David) have reverse-engineered the newspaper site to provide a usable link: https://corpus.gaelg.im/docs/Manx-Gaelic-Gathering-first-chaglym
 
 The link to the newspaper images appear in the corpus article under 'Additional Data' -> 'Sources'
 
@@ -49,7 +49,7 @@ The link to the newspaper images appear in the corpus article under 'Additional 
   * **IMuseumNewspaperService** [Permalink](https://github.com/david-allison/manx-corpus-search/blob/f471c5e52237f0fed232808e002897bf28165a11/CorpusSearch/Service/IMuseumNewspaperService.cs) [Current](https://github.com/david-allison/manx-corpus-search/blob/master/CorpusSearch/Service/IMuseumNewspaperService.cs) 
   * **IMuseumNewspaperController** [Permalink](https://github.com/david-allison/manx-corpus-search/blob/7a11925893790a7be93988ac12cda76da4f8bc17/CorpusSearch/Controllers/IMuseumNewspaperController.cs) [Current](https://github.com/david-allison/manx-corpus-search/blob/master/CorpusSearch/Controllers/IMuseumNewspaperController.cs)
   
-Example page: https://manxcorpus.com/docs/Manx-Gaelic-Gathering-first-chaglym
+Example page: https://corpus.gaelg.im/docs/Manx-Gaelic-Gathering-first-chaglym
 
 * Example URL: 
   * http://manxcorpus.com/IMuseumNewspaper/Component/V1?newspaper=IMT&date=1913-05-03&id=Ar00905 
