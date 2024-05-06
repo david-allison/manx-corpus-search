@@ -19,6 +19,7 @@ namespace CorpusSearch.Controllers;
 public class MetadataController
 {
     private readonly WorkService workService;
+    private readonly RecentDocumentsService recentDocumentsService;
 
     /// <summary>
     /// Override for property names from <see cref="IDocument"/> when returning JSON
@@ -28,9 +29,10 @@ public class MetadataController
         [nameof(IDocument.Ident)] = "Identifier"
     };
     
-    public MetadataController(WorkService workService)
+    public MetadataController(WorkService workService, RecentDocumentsService recentDocumentsService)
     {
         this.workService = workService;
+        this.recentDocumentsService = recentDocumentsService;
     }
 
     [HttpGet]
@@ -74,5 +76,11 @@ public class MetadataController
         }
 
         return ret;
-    }    
+    }
+
+    [HttpGet("Latest/")]
+    public List<RecentDocumentsService.LatestDocumentDto> LatestDocuments()
+    {
+        return recentDocumentsService.GetLatestDocuments();
+    }
 }

@@ -1,0 +1,44 @@
+#!/bin/bash
+#note: this script needs to be run on the manx-search-data repo
+# not the repo it lives in
+
+MAX=20
+SINCE=three-months-ago
+usage="$(basename "$0") [-h] [-m MAX] [-s SINCE]  - list recently changed docs when run in manx-search-data
+
+options are:
+    -h  show this help text
+    -m  set maximum number of lines to return, for example -m ${MAX} (the default)
+    -s  set since argument, for example -s ${SINCE} (the default)"
+
+while getopts ':hm:s:' option; do
+  case "$option" in
+    h) echo "$usage"
+       exit
+       ;;
+    m) MAX=${OPTARG}
+       ;;
+    s) SINCE=${OPTARG}
+       ;;
+   \?) printf "illegal option: -%s\n" "$OPTARG" >&2
+       echo "$usage" >&2
+       exit 1
+       ;;
+  esac
+done
+shift $((OPTIND - 1))
+
+IGNORE_RENAME=--diff-filter=r
+#substitute % for space because the latter is used as an array delimiter by the shell
+for  f in $(git log --since=${SINCE} ${IGNORE_RENAME} --name-only | grep ^OpenData | grep document.csv$ |  sort -u | tr ' ' '%')
+do
+    ff=$(echo $f |  tr '%' ' ')
+
+    if [[ -z $(git ls-files "$ff") ]]; then continue; fi
+
+    cd=$(git log -1 --date=format-local:'%Y-%m-%d %H:%M:%S' --pretty=format:"%cd" "$ff")
+
+    # 2024-02-27 04:50:38 OpenData/miscellaneous religious printed 1600 - 1900/Wilsons Sermons/document.csv0
+    echo $cd $ff
+    
+done  | sort -rn | head -${MAX} 
