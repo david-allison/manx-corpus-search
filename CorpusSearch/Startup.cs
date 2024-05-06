@@ -70,6 +70,8 @@ namespace CorpusSearch
             services.AddSingleton<DocumentSearchService>();
             services.AddSingleton<NewspaperSourceEnricher>();
             services.AddSingleton<OverviewSearchService2>();
+            // TODO: Move config here
+            services.AddSingleton<RecentDocumentsService>();
 
             // In production, the React files will be served from this directory
             services.AddSpaStaticFiles(configuration =>
@@ -78,7 +80,11 @@ namespace CorpusSearch
             });
         }
 
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, WorkService workService, Searcher searcher)
+        public void Configure(IApplicationBuilder app,
+            IWebHostEnvironment env,
+            WorkService workService,
+            Searcher searcher,
+            RecentDocumentsService recentDocumentsService)
         {
             if (env.IsDevelopment())
             {
@@ -102,8 +108,16 @@ namespace CorpusSearch
             StatisticsController.Init(databaseCount, termFrequency);
             SetupDictionaries();
 
-
-
+            try
+            {
+                var latestDocuments = OpenDataLoader.LoadRecentDocuments(workService).Result;
+                recentDocumentsService.Init(latestDocuments);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("failed to read latest documents {0}", e);
+            }
+            
             // app.UseHttpsRedirection();
             app.UseStaticFiles();
             app.UseSpaStaticFiles();
