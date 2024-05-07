@@ -1,8 +1,10 @@
 version: '3.7'
+# to execute: `docker-compose up --build`
 services:
   corpus-search:
-    build:
-      dockerfile: Dockerfile
+    image: "ghcr.io/david-allison/manx-corpus-search:master"
+#    build: # builds locally
+#      dockerfile: Dockerfile
     ports:
       - '127.0.0.1:7266:8080'
     volumes:
