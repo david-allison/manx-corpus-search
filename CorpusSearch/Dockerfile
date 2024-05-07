@@ -1,5 +1,7 @@
 ﻿FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
-USER $APP_UID
+RUN apt-get update && apt-get install -y curl jq git
+# set in init.sh
+#USER $APP_UID
 WORKDIR /app
 EXPOSE 8080
 
@@ -26,4 +28,5 @@ RUN source ~/.nvm/nvm.sh && dotnet publish "CorpusSearch/CorpusSearch.csproj" -c
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
-ENTRYPOINT ["dotnet", "CorpusSearch.dll"]
+# ENTRYPOINT ["dotnet", "CorpusSearch.dll"]
+ENTRYPOINT ["bash", "-c", "./tools/init.sh"]
