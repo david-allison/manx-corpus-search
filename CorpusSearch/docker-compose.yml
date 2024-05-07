@@ -7,13 +7,3 @@ services:
 #      dockerfile: Dockerfile
     ports:
       - '127.0.0.1:7266:8080'
-    volumes:
-      - dictionaries:/var/corpus-search/dictionaries
-      - manx-search-data:/var/corpus-search/open-data
-      - corpus-search-data-private:/var/corpus-search/closed-data
-
-volumes:
-  dictionaries:
-  manx-search-data:
-  corpus-search-data-private:
-   

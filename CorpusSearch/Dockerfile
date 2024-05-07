@@ -3,6 +3,10 @@ RUN apt-get update && apt-get install -y curl jq git
 # set in init.sh
 #USER $APP_UID
 WORKDIR /app
+
+VOLUME /var/corpus-search/dictionaries
+VOLUME /var/corpus-search/open-data
+VOLUME /var/corpus-search/closed-data
 EXPOSE 8080
 
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
