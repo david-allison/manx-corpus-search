@@ -26,7 +26,7 @@ public class TagsController(WorkService workService) : Controller
         string? GetField(IDocument document, string field)
         {
             var ext = document.GetAllExtensionData();
-            return !ext.ContainsKey(field) ? null : ext[field].ToString();
+            return !ext.TryGetValue(field, out var value) ? null : value.ToString();
         }
 
         Predicate<IDocument> HasType(string typeToFind) => doc => GetField(doc, "type")?.Contains(typeToFind, StringComparison.OrdinalIgnoreCase) ?? false;
