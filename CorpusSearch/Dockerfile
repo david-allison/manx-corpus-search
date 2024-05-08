@@ -27,7 +27,7 @@ RUN dotnet build "CorpusSearch.csproj" -c $BUILD_CONFIGURATION -o /app/build
 WORKDIR /src
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
-RUN source ~/.nvm/nvm.sh && dotnet publish "CorpusSearch/CorpusSearch.csproj" -c $BUILD_CONFIGURATION -f net8.0 -o /app/publish /p:UseAppHost=false
+RUN source ~/.nvm/nvm.sh && dotnet publish "CorpusSearch/CorpusSearch.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
 
 FROM base AS final
 WORKDIR /app
