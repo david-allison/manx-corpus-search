@@ -1,4 +1,4 @@
-﻿namespace CorpusSearch.Dependencies.csly
+﻿namespace CorpusSearch.Dependencies.csly.Model
 {
     public class OrExpression(Expression left, Expression right) : Expression("or")
     {
