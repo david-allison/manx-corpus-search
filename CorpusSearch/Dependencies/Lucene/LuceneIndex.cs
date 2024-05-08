@@ -16,7 +16,7 @@ using LuceneDocument = Lucene.Net.Documents.Document;
 
 namespace CorpusSearch
 {
-    public class LuceneIndex
+    public class LuceneIndex(IndexWriter indexWriter)
     {
         public const string DOCUMENT_NAME = "name";
         public const string DOCUMENT_IDENT = "ident";
@@ -35,14 +35,7 @@ namespace CorpusSearch
 
         public const string SUBTITLE_START = "subtitle_start";
         public const string SUBTITLE_END = "subtitle_end";
-        
-        private IndexWriter indexWriter;
 
-        public LuceneIndex(IndexWriter indexWriter)
-        {
-            this.indexWriter = indexWriter;
-        }
-        
         private IndexReader UseReader() => indexWriter.GetReader(applyAllDeletes: true);
 
         public static LuceneIndex GetInstance()

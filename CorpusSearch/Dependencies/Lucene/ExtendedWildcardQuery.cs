@@ -11,13 +11,9 @@ namespace CorpusSearch.Dependencies.Lucene
     /// <summary>
     /// Extends WildcardQuery to handle a "+"
     /// </summary>
-    public class ExtendedWildcardQuery: AutomatonQuery
+    public class ExtendedWildcardQuery(Term term) : AutomatonQuery(GetTerm(term), ToAutomaton(term))
     {
         public static ISet<char> RelevantChars = new HashSet<char>() { '+', '_', '*' };
-
-        public ExtendedWildcardQuery(Term term) : base(GetTerm(term), ToAutomaton(term))
-        {
-        }
 
         private static Term GetTerm(Term term)
         {

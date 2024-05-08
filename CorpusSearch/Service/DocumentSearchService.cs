@@ -8,19 +8,11 @@ using static CorpusSearch.Controllers.SearchController;
 
 namespace CorpusSearch.Service
 {
-    public class DocumentSearchService
+    public class DocumentSearchService(
+        WorkService workService,
+        Searcher searcher,
+        NewspaperSourceEnricher newspaperSourceEnricher)
     {
-        private readonly WorkService workService;
-        private readonly Searcher searcher;
-        private readonly NewspaperSourceEnricher newspaperSourceEnricher;
-
-        public DocumentSearchService(WorkService workService, Searcher searcher, NewspaperSourceEnricher newspaperSourceEnricher)
-        {
-            this.workService = workService;
-            this.searcher = searcher;
-            this.newspaperSourceEnricher = newspaperSourceEnricher;
-        }
-
         public async Task<SearchWorkResult> SearchWork(CorpusSearchWorkQuery workQuery)
         {
             IDocument document = await workService.ByIdent(workQuery.Ident);

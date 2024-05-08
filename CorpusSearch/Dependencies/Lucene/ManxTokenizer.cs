@@ -6,13 +6,8 @@ using System.Linq;
 
 namespace CorpusSearch.Dependencies.Lucene
 {
-    public sealed class ManxTokenizer : CharTokenizer
+    public sealed class ManxTokenizer(LuceneVersion matchVersion, TextReader input) : CharTokenizer(matchVersion, input)
     {
-
-        public ManxTokenizer(LuceneVersion matchVersion, TextReader input) : base(matchVersion, input)
-        {
-        }
-
         protected override int Normalize(int c)
         {
             // TODO: See comment on test 'SearchIsNotCaseSensitive'

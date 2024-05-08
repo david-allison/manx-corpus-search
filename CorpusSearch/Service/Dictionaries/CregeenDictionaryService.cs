@@ -9,7 +9,7 @@ using Newtonsoft.Json;
 
 namespace CorpusSearch.Service.Dictionaries
 {
-    public class CregeenDictionaryService : ISearchDictionary
+    public class CregeenDictionaryService(ISet<string> allWords, IList<CregeenEntry> entries) : ISearchDictionary
     {
         public static readonly Dictionary<char, string> LetterLookup = new(new CaseInsensitiveCharComparer())
         {
@@ -39,15 +39,6 @@ namespace CorpusSearch.Service.Dictionaries
             ['W'] = "wagaan",
             ['Y'] = "y",
         };
-
-        private readonly ISet<string> allWords;
-        private readonly IList<CregeenEntry> allEntries;
-
-        public CregeenDictionaryService(ISet<string> allWords, IList<CregeenEntry> entries)
-        {
-            this.allWords = allWords;
-            this.allEntries = entries;
-        }
 
         public string Identifier => "Cregeen";
         public bool LinkToDictionary => true;
@@ -168,9 +159,9 @@ namespace CorpusSearch.Service.Dictionaries
             }
 
             // PERF: extract to member
-            var entries = allEntries.SelectMany(x => x.ChildrenRecursive).ToList();
+            var entries1 = entries.SelectMany(x => x.ChildrenRecursive).ToList();
 
-            foreach (var validEntry in entries.Where(e => e.Words.Contains(query, StringComparer.InvariantCultureIgnoreCase)))
+            foreach (var validEntry in entries1.Where(e => e.Words.Contains(query, StringComparer.InvariantCultureIgnoreCase)))
             {
                 yield return GetDictionarySummary(validEntry);
             }

@@ -16,15 +16,8 @@ namespace CorpusSearch.Controllers;
 /// <remarks>Currently only single tags. No Binary operations</remarks>
 /// <remarks>Only 1 level, not properly recursive</remarks>
 [Route("[controller]")]
-public class TagsController : Controller
+public class TagsController(WorkService workService) : Controller
 {
-    private readonly WorkService workService;
-
-    public TagsController(WorkService workService)
-    {
-        this.workService = workService;
-    }
-
     [HttpGet("All")]
     public async Task<List<Tag>> GetTags()
     {

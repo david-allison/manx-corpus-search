@@ -36,18 +36,13 @@ namespace CorpusSearch
         //public LoadConfig(bool videoOnlyConfig) => videoOnlyConfig = videoOnly;
     }
 
-    public class Startup
+    public class Startup(IConfiguration configuration)
     {
         public static Dictionary<string, IList<string>> EnglishToManxDictionary { get; set; }
         public static Dictionary<string, IList<string>> ManxToEnglishDictionary { get; set; }
 
 
-        public Startup(IConfiguration configuration)
-        {
-            Configuration = configuration;
-        }
-
-        public IConfiguration Configuration { get; }
+        public IConfiguration Configuration { get; } = configuration;
 
 
         // This method gets called by the runtime. Use this method to add services to the container.

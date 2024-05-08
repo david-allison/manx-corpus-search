@@ -11,16 +11,11 @@ namespace CorpusSearch.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/[controller]")]
-public class DictionaryController
+public class DictionaryController(IEnumerable<ISearchDictionary> dictionaryServices)
 {
-    private readonly ISearchDictionary[] dictionaryServices;
-    
-    public DictionaryController(IEnumerable<ISearchDictionary> dictionaryServices)
-    {
-        this.dictionaryServices = dictionaryServices.ToArray();
-    }
-    
-    
+    private readonly ISearchDictionary[] dictionaryServices = dictionaryServices.ToArray();
+
+
     /// <summary>
     /// Returns diction
     /// </summary>

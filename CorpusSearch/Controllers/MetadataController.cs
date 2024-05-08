@@ -16,11 +16,8 @@ namespace CorpusSearch.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/[controller]")]
-public class MetadataController
+public class MetadataController(WorkService workService, RecentDocumentsService recentDocumentsService)
 {
-    private readonly WorkService workService;
-    private readonly RecentDocumentsService recentDocumentsService;
-
     /// <summary>
     /// Override for property names from <see cref="IDocument"/> when returning JSON
     /// </summary>
@@ -28,12 +25,6 @@ public class MetadataController
     {
         [nameof(IDocument.Ident)] = "Identifier"
     };
-    
-    public MetadataController(WorkService workService, RecentDocumentsService recentDocumentsService)
-    {
-        this.workService = workService;
-        this.recentDocumentsService = recentDocumentsService;
-    }
 
     [HttpGet]
     // ReSharper disable once UnusedMember.Global
