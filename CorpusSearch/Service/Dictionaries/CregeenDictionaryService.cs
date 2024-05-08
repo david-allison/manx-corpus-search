@@ -135,6 +135,16 @@ namespace CorpusSearch.Service.Dictionaries
         {
             if (!ContainsWordExact(query)) { yield break; }
 
+            // PERF: extract to member
+            var entries1 = entries.SelectMany(x => x.ChildrenRecursive).ToList();
+
+            foreach (var validEntry in entries1.Where(e => e.Words.Contains(query, StringComparer.InvariantCultureIgnoreCase)))
+            {
+                yield return GetDictionarySummary(validEntry);
+            }
+
+            yield break;
+
             string GetSummary(CregeenEntry entry)
             {
                 if (basic && !string.IsNullOrWhiteSpace(entry.Definition))
@@ -148,7 +158,7 @@ namespace CorpusSearch.Service.Dictionaries
 
                 return HttpUtility.HtmlDecode(doc.DocumentNode.InnerText);
             }
-            
+
             DictionarySummary GetDictionarySummary(CregeenEntry entry)
             {
                 return new DictionarySummary
@@ -156,14 +166,6 @@ namespace CorpusSearch.Service.Dictionaries
                     PrimaryWord = entry.Words.First(),
                     Summary = GetSummary(entry),
                 };
-            }
-
-            // PERF: extract to member
-            var entries1 = entries.SelectMany(x => x.ChildrenRecursive).ToList();
-
-            foreach (var validEntry in entries1.Where(e => e.Words.Contains(query, StringComparer.InvariantCultureIgnoreCase)))
-            {
-                yield return GetDictionarySummary(validEntry);
             }
         }
 
