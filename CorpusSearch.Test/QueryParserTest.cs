@@ -3,466 +3,465 @@ using CorpusSearch.Model;
 using CorpusSearch.Test.TestUtils;
 using NUnit.Framework;
 
-namespace CorpusSearch.Test
+namespace CorpusSearch.Test;
+
+[TestFixture]
+public class QueryParserTest : QueryBase
 {
-    [TestFixture]
-    public class QueryParserTest : QueryBase
+    [Test]
+    public void BasicQuery()
     {
-        [Test]
-        public void BasicQuery()
-        {
-            this.AddManxDoc("1", "hello world");
+        this.AddManxDoc("1", "hello world");
 
-            var result = Query("hello");
+        var result = Query("hello");
 
-            Assert.That(result.NumberOfMatches, Is.EqualTo(1));
-            Assert.That(result.NumberOfSegments, Is.EqualTo(1));
-        }
+        Assert.That(result.NumberOfMatches, Is.EqualTo(1));
+        Assert.That(result.NumberOfSegments, Is.EqualTo(1));
+    }
 
-        [Test]
-        public void MultipleWords()
-        {
-            this.AddManxDoc("1", "hello hello hello");
+    [Test]
+    public void MultipleWords()
+    {
+        this.AddManxDoc("1", "hello hello hello");
 
-            var result = Query("hello");
+        var result = Query("hello");
 
-            Assert.That(result.NumberOfMatches, Is.EqualTo(3));
-            Assert.That(result.NumberOfSegments, Is.EqualTo(1));
-        }
+        Assert.That(result.NumberOfMatches, Is.EqualTo(3));
+        Assert.That(result.NumberOfSegments, Is.EqualTo(1));
+    }
 
-        [Test]
-        public void SearchIsNotCaseSensitive()
-        {
-            // TODO: We will fix this later once I write an optional case sensitive span query, but for now, this works.
-            this.AddManxDoc("1", "Hello");
+    [Test]
+    public void SearchIsNotCaseSensitive()
+    {
+        // TODO: We will fix this later once I write an optional case sensitive span query, but for now, this works.
+        this.AddManxDoc("1", "Hello");
 
-            var result = Query("hello");
+        var result = Query("hello");
 
-            Assert.That(result.NumberOfMatches, Is.EqualTo(1));
-            Assert.That(result.NumberOfSegments, Is.EqualTo(1));
-        }
+        Assert.That(result.NumberOfMatches, Is.EqualTo(1));
+        Assert.That(result.NumberOfSegments, Is.EqualTo(1));
+    }
 
-        [Test]
-        public void TestSearchForCaps()
-        {
-            // TODO: We will fix this later once I write an optional case sensitive span query, but for now, this works.
-            this.AddManxDoc("1", "	dy ve beaghey ayns aggle Yee, as jeaghyn son");
+    [Test]
+    public void TestSearchForCaps()
+    {
+        // TODO: We will fix this later once I write an optional case sensitive span query, but for now, this works.
+        this.AddManxDoc("1", "	dy ve beaghey ayns aggle Yee, as jeaghyn son");
 
-            var result = Query("Aggle");
+        var result = Query("Aggle");
 
-            Assert.That(result.NumberOfDocuments, Is.EqualTo(1));
-        }
+        Assert.That(result.NumberOfDocuments, Is.EqualTo(1));
+    }
 
-        [Test]
-        public void SearchMultipleWordsInCorrectOrder()
-        {
-            this.AddManxDoc("1", 
-                "hi",               // no: only matches first
-                "hi world",         // yes: perfect match
-                "world hi",         // no: wrong order
-                "hi not world",     // no: word in-between
-                "hi world hi world" // yes x2
-            );
+    [Test]
+    public void SearchMultipleWordsInCorrectOrder()
+    {
+        this.AddManxDoc("1", 
+            "hi",               // no: only matches first
+            "hi world",         // yes: perfect match
+            "world hi",         // no: wrong order
+            "hi not world",     // no: word in-between
+            "hi world hi world" // yes x2
+        );
 
-            var result = Query("hi world");
+        var result = Query("hi world");
 
-            Assert.That(result.NumberOfMatches, Is.EqualTo(3));
-            Assert.That(result.NumberOfSegments, Is.EqualTo(2));
-        }
+        Assert.That(result.NumberOfMatches, Is.EqualTo(3));
+        Assert.That(result.NumberOfSegments, Is.EqualTo(2));
+    }
 
-        [Test]
-        public void TestOr()
-        {
-            this.AddManxDoc("1",
-                "hi",           // 1: matches first
-                "hi world",     // 2: perfect match
-                "world hi",     // 2: wrong order
-                "hi not world", // 2: word in-between
-                "worl"          // no:  substring
-            );
+    [Test]
+    public void TestOr()
+    {
+        this.AddManxDoc("1",
+            "hi",           // 1: matches first
+            "hi world",     // 2: perfect match
+            "world hi",     // 2: wrong order
+            "hi not world", // 2: word in-between
+            "worl"          // no:  substring
+        );
 
-            var result = Query("hi or world");
+        var result = Query("hi or world");
 
-            Assert.That(result.NumberOfMatches, Is.EqualTo(7));
-            Assert.That(result.NumberOfSegments, Is.EqualTo(4));
-        }
+        Assert.That(result.NumberOfMatches, Is.EqualTo(7));
+        Assert.That(result.NumberOfSegments, Is.EqualTo(4));
+    }
 
-        [Test]
-        public void TestAnd()
-        {
-            this.AddManxDoc("1",
-                "hi",           // 0: matches first
-                "hi world",     // 1: perfect match
-                "world hi",     // 1: wrong order
-                "hi not world", // 1: word in-between
-                "worl"          // no:  substring
-            );
+    [Test]
+    public void TestAnd()
+    {
+        this.AddManxDoc("1",
+            "hi",           // 0: matches first
+            "hi world",     // 1: perfect match
+            "world hi",     // 1: wrong order
+            "hi not world", // 1: word in-between
+            "worl"          // no:  substring
+        );
 
-            var result = Query("hi and world");
+        var result = Query("hi and world");
 
-            Assert.That(result.NumberOfMatches, Is.EqualTo(3));
-            Assert.That(result.NumberOfSegments, Is.EqualTo(3));
-        }
+        Assert.That(result.NumberOfMatches, Is.EqualTo(3));
+        Assert.That(result.NumberOfSegments, Is.EqualTo(3));
+    }
 
-        [Test]
-        public void TestNot()
-        {
-            // Equal to TestAnd
-            this.AddManxDoc("1",
-                "hi",            // 1: matches first
-                "hi world",      // 0: not
-                "world hi",      // 0: not
-                "hi note world", // 0: word in-between
-                "hid"            // 0: sperstring
-            );
+    [Test]
+    public void TestNot()
+    {
+        // Equal to TestAnd
+        this.AddManxDoc("1",
+            "hi",            // 1: matches first
+            "hi world",      // 0: not
+            "world hi",      // 0: not
+            "hi note world", // 0: word in-between
+            "hid"            // 0: sperstring
+        );
 
-            var result = Query("hi not world");
+        var result = Query("hi not world");
 
-            Assert.That(result.NumberOfMatches, Is.EqualTo(1));
-            Assert.That(result.NumberOfSegments, Is.EqualTo(1));
-        }
+        Assert.That(result.NumberOfMatches, Is.EqualTo(1));
+        Assert.That(result.NumberOfSegments, Is.EqualTo(1));
+    }
 
-        [Test]
-        public void TestUselessBrackets()
-        {
-            // Equal to TestAnd
-            this.AddManxDoc("1",
-                "hi",           // 0: matches first
-                "hi world",     // 1: perfect match
-                "world hi",     // 1: wrong order
-                "hi not world", // 1: word in-between
-                "worl"          // no:  substring
-            );
+    [Test]
+    public void TestUselessBrackets()
+    {
+        // Equal to TestAnd
+        this.AddManxDoc("1",
+            "hi",           // 0: matches first
+            "hi world",     // 1: perfect match
+            "world hi",     // 1: wrong order
+            "hi not world", // 1: word in-between
+            "worl"          // no:  substring
+        );
 
-            var result = Query("(hi) and (world)");
+        var result = Query("(hi) and (world)");
 
-            Assert.That(result.NumberOfMatches, Is.EqualTo(3));
-            Assert.That(result.NumberOfSegments, Is.EqualTo(3));
-        }
+        Assert.That(result.NumberOfMatches, Is.EqualTo(3));
+        Assert.That(result.NumberOfSegments, Is.EqualTo(3));
+    }
 
-        [Test]
-        public void DiacriticMatchIsDefault()
-        {
-            this.AddManxDoc("1",
-                "facade",       // 0: matches first
-                "façade"        // 1: perfect match
-            );
+    [Test]
+    public void DiacriticMatchIsDefault()
+    {
+        this.AddManxDoc("1",
+            "facade",       // 0: matches first
+            "façade"        // 1: perfect match
+        );
 
-            var result = Query("facade", ScanOptions.Default);
+        var result = Query("facade", ScanOptions.Default);
             
-            Assert.That(result.NumberOfMatches, Is.EqualTo(2));
+        Assert.That(result.NumberOfMatches, Is.EqualTo(2));
+    }
+
+    [Test]
+    public void TestNonCedillaSearch()
+    {
+        this.AddManxDoc("1",
+            "facade",       // 0: matches first
+            "façade"        // 1: perfect match
+        );
+
+        var result1 = Query("facade", new ScanOptions { NormalizeDiacritics = true });
+        var result2 = Query("façade", new ScanOptions { NormalizeDiacritics = true });
+
+        Assert.That(result1.NumberOfMatches, Is.EqualTo(2));
+        Assert.That(result2.NumberOfMatches, Is.EqualTo(2));
+    }
+
+    [Test]
+    public void TestDiacriticExact()
+    {
+        this.AddManxDoc("1",
+            "facade",
+            "façade"
+        );
+
+        var withoutDiacritics1 = Query("façade", new ScanOptions { NormalizeDiacritics = false });
+        var withoutDiacritics2 = Query("facade", new ScanOptions { NormalizeDiacritics = false });
+
+        Assert.That(withoutDiacritics1.NumberOfMatches, Is.EqualTo(1), "façade should be only match");
+        Assert.That(withoutDiacritics2.NumberOfMatches, Is.EqualTo(1), "facade should be only match");
+    }
+
+    [Test]
+    public void TestSample()
+    {
+        this.AddManxDoc("1",
+            "Big list of evil strings",
+            "list of this is cool"
+        );
+        this.AddManxDoc("2",
+            "maybe not as interesting",
+            "this list is still valid,,, and"
+        );
+
+        var result = Query("list");
+
+        Assert.That(result.DocumentResults, Has.Count.EqualTo(2));
+
+        {
+            var sample = result.DocumentResults[0];
+            Assert.That(sample.Ident, Is.EqualTo("1"));
+            Assert.That(sample.Sample, Is.EqualTo("Big list of evil strings"));
         }
 
-        [Test]
-        public void TestNonCedillaSearch()
         {
-            this.AddManxDoc("1",
-                "facade",       // 0: matches first
-                "façade"        // 1: perfect match
-            );
-
-            var result1 = Query("facade", new ScanOptions { NormalizeDiacritics = true });
-            var result2 = Query("façade", new ScanOptions { NormalizeDiacritics = true });
-
-            Assert.That(result1.NumberOfMatches, Is.EqualTo(2));
-            Assert.That(result2.NumberOfMatches, Is.EqualTo(2));
+            var sample = result.DocumentResults[1];
+            Assert.That(sample.Ident, Is.EqualTo("2"));
+            Assert.That(sample.Sample, Is.EqualTo("this list is still valid,,, and"));
         }
-
-        [Test]
-        public void TestDiacriticExact()
-        {
-            this.AddManxDoc("1",
-                "facade",
-                "façade"
-            );
-
-            var withoutDiacritics1 = Query("façade", new ScanOptions { NormalizeDiacritics = false });
-            var withoutDiacritics2 = Query("facade", new ScanOptions { NormalizeDiacritics = false });
-
-            Assert.That(withoutDiacritics1.NumberOfMatches, Is.EqualTo(1), "façade should be only match");
-            Assert.That(withoutDiacritics2.NumberOfMatches, Is.EqualTo(1), "facade should be only match");
-        }
-
-        [Test]
-        public void TestSample()
-        {
-            this.AddManxDoc("1",
-                "Big list of evil strings",
-                "list of this is cool"
-            );
-            this.AddManxDoc("2",
-                "maybe not as interesting",
-                "this list is still valid,,, and"
-            );
-
-            var result = Query("list");
-
-            Assert.That(result.DocumentResults, Has.Count.EqualTo(2));
-
-            {
-                var sample = result.DocumentResults[0];
-                Assert.That(sample.Ident, Is.EqualTo("1"));
-                Assert.That(sample.Sample, Is.EqualTo("Big list of evil strings"));
-            }
-
-            {
-                var sample = result.DocumentResults[1];
-                Assert.That(sample.Ident, Is.EqualTo("2"));
-                Assert.That(sample.Sample, Is.EqualTo("this list is still valid,,, and"));
-            }
             
-        }
+    }
 
-        [Test]
-        public void TestWildcardAtEnd()
-        {
-            this.AddManxDoc("1",
-               "san andreas",     // exact match
-               "sand and tonio",  // matches *
-               "sa n an"          // no match: * should not match space
-            );
+    [Test]
+    public void TestWildcardAtEnd()
+    {
+        this.AddManxDoc("1",
+            "san andreas",     // exact match
+            "sand and tonio",  // matches *
+            "sa n an"          // no match: * should not match space
+        );
 
-            var result = Query("san*");
+        var result = Query("san*");
 
-            Assert.That(result.NumberOfMatches, Is.EqualTo(2));
-            Assert.That(result.NumberOfSegments, Is.EqualTo(2));
-        }
+        Assert.That(result.NumberOfMatches, Is.EqualTo(2));
+        Assert.That(result.NumberOfSegments, Is.EqualTo(2));
+    }
 
-        [Test]
-        public void TestWildcardInMiddle()
-        {
-            this.AddManxDoc("1",
-               "san andreas",     // 1: exact match with 1 char
-               "saan andreas",    // 1: exact match with 2 chars
-               "sn",              // 1: no chars
-               "sa n an"          // 0: * should not match space
-            );
+    [Test]
+    public void TestWildcardInMiddle()
+    {
+        this.AddManxDoc("1",
+            "san andreas",     // 1: exact match with 1 char
+            "saan andreas",    // 1: exact match with 2 chars
+            "sn",              // 1: no chars
+            "sa n an"          // 0: * should not match space
+        );
 
-            var result = Query("s*n");
+        var result = Query("s*n");
 
-            Assert.That(result.NumberOfMatches, Is.EqualTo(3));
-            Assert.That(result.NumberOfSegments, Is.EqualTo(3));
-        }
+        Assert.That(result.NumberOfMatches, Is.EqualTo(3));
+        Assert.That(result.NumberOfSegments, Is.EqualTo(3));
+    }
 
-        [Test]
-        public void TestWildChar()
-        {
-            this.AddManxDoc("1",
-               "san andreas",     // 1: exact match with 1 char
-               "saan andreas",    // 0: 2 chars
-               "sn",              // 0: no chars
-               "sa n an"          // 0: _ should not match space
-            );
+    [Test]
+    public void TestWildChar()
+    {
+        this.AddManxDoc("1",
+            "san andreas",     // 1: exact match with 1 char
+            "saan andreas",    // 0: 2 chars
+            "sn",              // 0: no chars
+            "sa n an"          // 0: _ should not match space
+        );
 
-            var result = Query("s_n");
+        var result = Query("s_n");
 
-            Assert.That(result.NumberOfMatches, Is.EqualTo(1));
-            Assert.That(result.NumberOfSegments, Is.EqualTo(1));
-        }
+        Assert.That(result.NumberOfMatches, Is.EqualTo(1));
+        Assert.That(result.NumberOfSegments, Is.EqualTo(1));
+    }
 
-        [Test]
-        public void TestPlus()
-        {
-            // one or more characters
+    [Test]
+    public void TestPlus()
+    {
+        // one or more characters
 
-            this.AddManxDoc("1",
-               "san andreas",     // 1: exact match with 1 char
-               "saan andreas",    // 1: 2 chars
-               "sn",              // 0: no chars
-               "sa n an"          // 0: ? should not match space
-            );
+        this.AddManxDoc("1",
+            "san andreas",     // 1: exact match with 1 char
+            "saan andreas",    // 1: 2 chars
+            "sn",              // 0: no chars
+            "sa n an"          // 0: ? should not match space
+        );
 
-            var result = Query("s+n");
+        var result = Query("s+n");
 
-            Assert.That(result.NumberOfMatches, Is.EqualTo(2));
-            Assert.That(result.NumberOfSegments, Is.EqualTo(2));
-        }
+        Assert.That(result.NumberOfMatches, Is.EqualTo(2));
+        Assert.That(result.NumberOfSegments, Is.EqualTo(2));
+    }
 
-        [Test]
-        public void TestPlusNoDiacritics()
-        {
-            // one or more characters
+    [Test]
+    public void TestPlusNoDiacritics()
+    {
+        // one or more characters
 
-            this.AddManxDoc("1",
-               "san andreas",     // 1: exact match with 1 char
-               "saan andreas",    // 1: 2 chars
-               "sn",              // 0: no chars
-               "sa n an"          // 0: ? should not match space
-            );
+        this.AddManxDoc("1",
+            "san andreas",     // 1: exact match with 1 char
+            "saan andreas",    // 1: 2 chars
+            "sn",              // 0: no chars
+            "sa n an"          // 0: ? should not match space
+        );
 
-            var result = Query("s+n", new ScanOptions { NormalizeDiacritics = false });
+        var result = Query("s+n", new ScanOptions { NormalizeDiacritics = false });
 
-            Assert.That(result.NumberOfMatches, Is.EqualTo(2));
-            Assert.That(result.NumberOfSegments, Is.EqualTo(2));
-        }
+        Assert.That(result.NumberOfMatches, Is.EqualTo(2));
+        Assert.That(result.NumberOfSegments, Is.EqualTo(2));
+    }
 
-        [Test]
-        public void TestDate()
-        {
-            this.AddManxDoc("1", "data");
+    [Test]
+    public void TestDate()
+    {
+        this.AddManxDoc("1", "data");
 
-            var result = Query("data");
+        var result = Query("data");
 
-            Assert.That(result.DocumentResults[0].StartDate, Is.EqualTo(DOC_DATE));
-            Assert.That(result.DocumentResults[0].EndDate, Is.EqualTo(DOC_DATE));
-        }
+        Assert.That(result.DocumentResults[0].StartDate, Is.EqualTo(DOC_DATE));
+        Assert.That(result.DocumentResults[0].EndDate, Is.EqualTo(DOC_DATE));
+    }
 
-        [Test]
-        public void TestNullDate()
-        {
-            var docWithNoDate = new TestDocument("1", null);
-            AddDocument(docWithNoDate, new Line { Manx = "data", English = "" });
+    [Test]
+    public void TestNullDate()
+    {
+        var docWithNoDate = new TestDocument("1", null);
+        AddDocument(docWithNoDate, new Line { Manx = "data", English = "" });
 
-            var result = Query("data");
+        var result = Query("data");
 
-            Assert.That(result.DocumentResults[0].StartDate, Is.EqualTo(null));
-            Assert.That(result.DocumentResults[0].EndDate, Is.EqualTo(null));
-        }
+        Assert.That(result.DocumentResults[0].StartDate, Is.EqualTo(null));
+        Assert.That(result.DocumentResults[0].EndDate, Is.EqualTo(null));
+    }
 
-        [Test]
-        public void TestCount()
-        {
-            // 1: aigney
-            // 2.1: aegey, arrey
-            // 2.2: ""
-            // 2.3: aigney aigney
-            // 3: aigney
-            this.AddManxDoc("1", "Cha vel eh laccal gerjagh ta goaill soylley jeh aigney booiagh.");
-            this.AddManxDoc("2", "Ayns yn ynnyd shen va thunnag ny hoie guirr, freayl arrey gys yinnagh ny hêin aegey çheet ass ny hoohyn. ", 
-                "V’ee goaill toshiaght dy aase skee son va’n feallagh veggey tra liauyr çheet ass ny hoohyn.",
-                "aigney aigney"
-                );
-            this.AddManxDoc("3", "Cha vel eh laccal gerjagh ta goaill soylley jeh aigney booiagh.");
+    [Test]
+    public void TestCount()
+    {
+        // 1: aigney
+        // 2.1: aegey, arrey
+        // 2.2: ""
+        // 2.3: aigney aigney
+        // 3: aigney
+        this.AddManxDoc("1", "Cha vel eh laccal gerjagh ta goaill soylley jeh aigney booiagh.");
+        this.AddManxDoc("2", "Ayns yn ynnyd shen va thunnag ny hoie guirr, freayl arrey gys yinnagh ny hêin aegey çheet ass ny hoohyn. ", 
+            "V’ee goaill toshiaght dy aase skee son va’n feallagh veggey tra liauyr çheet ass ny hoohyn.",
+            "aigney aigney"
+        );
+        this.AddManxDoc("3", "Cha vel eh laccal gerjagh ta goaill soylley jeh aigney booiagh.");
 
-            var result = Query("a*y");
+        var result = Query("a*y");
 
-            Assert.That(result.NumberOfDocuments, Is.EqualTo(3));
-            Assert.That(result.NumberOfSegments, Is.EqualTo(4));
-            Assert.That(result.NumberOfMatches, Is.EqualTo(6));
-        }
+        Assert.That(result.NumberOfDocuments, Is.EqualTo(3));
+        Assert.That(result.NumberOfSegments, Is.EqualTo(4));
+        Assert.That(result.NumberOfMatches, Is.EqualTo(6));
+    }
 
-        [Test]
-        public void TestSmartQuotes()
-        {
-            // on copy/pasting smart quotes, a normal quote should be searched for.
-            this.AddManxDoc("1", "t’ayndoo");
-            var result = Query("t’ayndoo");
-            Assert.That(result.NumberOfDocuments, Is.EqualTo(1));
-        }
+    [Test]
+    public void TestSmartQuotes()
+    {
+        // on copy/pasting smart quotes, a normal quote should be searched for.
+        this.AddManxDoc("1", "t’ayndoo");
+        var result = Query("t’ayndoo");
+        Assert.That(result.NumberOfDocuments, Is.EqualTo(1));
+    }
 
-        [Test]
-        public void TestDiacriticsSpacing()
-        {
-            // aggwish -> 	latin small letter g and a combining breve (̆ )
-            this.AddManxDoc("1", "agğwish er y Chiarn");
-            var result = Query("agg");
-            Assert.That(result.NumberOfDocuments, Is.EqualTo(0));
-
-
-            var result2 = Query("agğwish");
-            Assert.That(result2.NumberOfDocuments, Is.EqualTo(1));
+    [Test]
+    public void TestDiacriticsSpacing()
+    {
+        // aggwish -> 	latin small letter g and a combining breve (̆ )
+        this.AddManxDoc("1", "agğwish er y Chiarn");
+        var result = Query("agg");
+        Assert.That(result.NumberOfDocuments, Is.EqualTo(0));
 
 
-            var result3 = Query("aggwish");
-            Assert.That(result3.NumberOfDocuments, Is.EqualTo(1));
-        }
-
-        [Test]
-        public void TestEscapeQuestionMarks()
-        {
-            // #15 - Rob used "???" to mark unknown phrases
-            // two issues:
-            // ??? was stripped as it was a non-token character
-            // ??? matched everything
-
-            // To fix this: 
-            // * use _ as the single character wildcard
-            // * Don't strip multiple instances of '??'
-
-            this.AddManxDoc("1", "???", "and");
-
-            var result = Query(@"???");
-
-            Assert.That(result.NumberOfSegments, Is.EqualTo(1));
-        }
-
-        [Test]
-        public void TrailingQuestionMarkIsSkipped()
-        {
-            // #15 - We want to search for '???'
-            // ??? was stripped as it was a non-token character
-            // So, we want to keep that, but we do want to strip a trailing '?'
-
-            this.AddManxDoc("1", "erbee", "erbee?");
-
-            var result = Query(@"erbee");
-
-            Assert.That(result.NumberOfSegments, Is.EqualTo(2));
-        }
-
-        [Test]
-        public void TrailingDoubleQuestionMarkIsNotSkipped()
-        {
-            // #15 - We want to search for '???'
-            // ??? was stripped as it was a non-token character
-            // So, we want to keep that, but we do want to strip a trailing '?'
-
-            this.AddManxDoc("1", "erbee??");
-
-            var result = Query(@"erbee");
-
-            Assert.That(result.NumberOfSegments, Is.EqualTo(1));
-        }
+        var result2 = Query("agğwish");
+        Assert.That(result2.NumberOfDocuments, Is.EqualTo(1));
 
 
-        [Test, Ignore("Fails: Converted to a dash, which is a valid character")]
-        public void TestQuestionMarkInstance()
-        {
-            this.AddManxDoc("1", "da?—Cre");
+        var result3 = Query("aggwish");
+        Assert.That(result3.NumberOfDocuments, Is.EqualTo(1));
+    }
 
-            var resultDa = Query(@"da");
-            var resultCre = Query(@"cre");
-            var resultQuestion = Query(@"*?*");
+    [Test]
+    public void TestEscapeQuestionMarks()
+    {
+        // #15 - Rob used "???" to mark unknown phrases
+        // two issues:
+        // ??? was stripped as it was a non-token character
+        // ??? matched everything
 
-            Assert.That(resultDa.NumberOfSegments, Is.EqualTo(1));
-            Assert.That(resultCre.NumberOfSegments, Is.EqualTo(1));
-            Assert.That(resultQuestion.NumberOfSegments, Is.EqualTo(0));
-        }
+        // To fix this: 
+        // * use _ as the single character wildcard
+        // * Don't strip multiple instances of '??'
 
-        [Test]
-        public void TestDashes()
-        {
-            this.AddManxDoc("1", "da cre-erbee");
+        this.AddManxDoc("1", "???", "and");
 
-            var resultDa = Query(@"da");
-            var resultCre = Query(@"cre");
-            var resultCreErbee = Query(@"cre-erbee");
+        var result = Query(@"???");
 
-            Assert.That(resultDa.NumberOfSegments, Is.EqualTo(1), "could not find 'da'");
-            Assert.That(resultCre.NumberOfSegments, Is.EqualTo(1), "could not find 'cre'");
-            Assert.That(resultCreErbee.NumberOfSegments, Is.EqualTo(1), "could not find 'cre-erbee'");
-        }
+        Assert.That(result.NumberOfSegments, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void TrailingQuestionMarkIsSkipped()
+    {
+        // #15 - We want to search for '???'
+        // ??? was stripped as it was a non-token character
+        // So, we want to keep that, but we do want to strip a trailing '?'
+
+        this.AddManxDoc("1", "erbee", "erbee?");
+
+        var result = Query(@"erbee");
+
+        Assert.That(result.NumberOfSegments, Is.EqualTo(2));
+    }
+
+    [Test]
+    public void TrailingDoubleQuestionMarkIsNotSkipped()
+    {
+        // #15 - We want to search for '???'
+        // ??? was stripped as it was a non-token character
+        // So, we want to keep that, but we do want to strip a trailing '?'
+
+        this.AddManxDoc("1", "erbee??");
+
+        var result = Query(@"erbee");
+
+        Assert.That(result.NumberOfSegments, Is.EqualTo(1));
+    }
+
+
+    [Test, Ignore("Fails: Converted to a dash, which is a valid character")]
+    public void TestQuestionMarkInstance()
+    {
+        this.AddManxDoc("1", "da?—Cre");
+
+        var resultDa = Query(@"da");
+        var resultCre = Query(@"cre");
+        var resultQuestion = Query(@"*?*");
+
+        Assert.That(resultDa.NumberOfSegments, Is.EqualTo(1));
+        Assert.That(resultCre.NumberOfSegments, Is.EqualTo(1));
+        Assert.That(resultQuestion.NumberOfSegments, Is.EqualTo(0));
+    }
+
+    [Test]
+    public void TestDashes()
+    {
+        this.AddManxDoc("1", "da cre-erbee");
+
+        var resultDa = Query(@"da");
+        var resultCre = Query(@"cre");
+        var resultCreErbee = Query(@"cre-erbee");
+
+        Assert.That(resultDa.NumberOfSegments, Is.EqualTo(1), "could not find 'da'");
+        Assert.That(resultCre.NumberOfSegments, Is.EqualTo(1), "could not find 'cre'");
+        Assert.That(resultCreErbee.NumberOfSegments, Is.EqualTo(1), "could not find 'cre-erbee'");
+    }
         
-        [Test]
-        public void OrPrefix()
-        {
-            // searching for 'orrym' failed as it started with 'or'
-            this.AddManxDoc("1", "Ta'n ennym orrym David");
+    [Test]
+    public void OrPrefix()
+    {
+        // searching for 'orrym' failed as it started with 'or'
+        this.AddManxDoc("1", "Ta'n ennym orrym David");
 
-            var result = Query("orrym");
+        var result = Query("orrym");
 
-            Assert.That(result.NumberOfMatches, Is.EqualTo(1));
-            Assert.That(result.NumberOfSegments, Is.EqualTo(1));
-        }
+        Assert.That(result.NumberOfMatches, Is.EqualTo(1));
+        Assert.That(result.NumberOfSegments, Is.EqualTo(1));
+    }
 
-        private ScanResult Query(string query, ScanOptions options)
-        {
-            return new Searcher(luceneIndex, parser).Scan(query, options);
-        }
+    private ScanResult Query(string query, ScanOptions options)
+    {
+        return new Searcher(luceneIndex, parser).Scan(query, options);
+    }
 
-        private ScanResult Query(string query)
-        {
-            return Query(query, ScanOptions.Default);
-        }
+    private ScanResult Query(string query)
+    {
+        return Query(query, ScanOptions.Default);
     }
 }

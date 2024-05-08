@@ -3,19 +3,19 @@ using Lucene.Net.Util;
 using System.Globalization;
 using System.IO;
 
-namespace CorpusSearch.Dependencies.Lucene
+namespace CorpusSearch.Dependencies.Lucene;
+
+public sealed class ManxTokenizer(LuceneVersion matchVersion, TextReader input) : CharTokenizer(matchVersion, input)
 {
-    public sealed class ManxTokenizer(LuceneVersion matchVersion, TextReader input) : CharTokenizer(matchVersion, input)
+    protected override int Normalize(int c)
     {
-        protected override int Normalize(int c)
-        {
             // TODO: See comment on test 'SearchIsNotCaseSensitive'
             char cc = (char)c;
             return char.ToLower(cc);
         }
 
-        protected override bool IsTokenChar(int c)
-        {
+    protected override bool IsTokenChar(int c)
+    {
             char cc = (char)c;
             bool ret = char.IsLetterOrDigit(cc) || cc == '-' || cc == '\'' 
                 || cc == '?'; // #15 - we need '???' or '?' as a token, but want to strip a question mark [token] + '?' i the token filter
@@ -27,5 +27,4 @@ namespace CorpusSearch.Dependencies.Lucene
 
             return ret;
         }
-    }
 }

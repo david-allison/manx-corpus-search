@@ -1,13 +1,12 @@
-﻿namespace CorpusSearch.Test.TestUtils
-{
-    public interface IDocumentStorage
-    {
-        void AddDocument(string name, params Line[] data);
-    }
+﻿namespace CorpusSearch.Test.TestUtils;
 
-    public class Line
-    {
-        public string English { get; set; }
-        public string Manx { get; set; }
-    }
+public interface IDocumentStorage
+{
+    void AddDocument(string name, params Line[] data);
+}
+
+public class Line
+{
+    public string English { get; set; }
+    public string Manx { get; set; }
 }

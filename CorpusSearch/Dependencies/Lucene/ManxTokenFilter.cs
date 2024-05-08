@@ -3,49 +3,48 @@ using Lucene.Net.Analysis;
 using Lucene.Net.Analysis.TokenAttributes;
 using System.Linq;
 
-namespace CorpusSearch.Dependencies.Lucene
+namespace CorpusSearch.Dependencies.Lucene;
+
+public sealed class ManxTokenFilter : TokenFilter
 {
-    public sealed class ManxTokenFilter : TokenFilter
+    private readonly ICharTermAttribute termAtt;
+
+    public ManxTokenFilter(TokenStream input) : base(input)
     {
-        private readonly ICharTermAttribute termAtt;
+        this.termAtt = AddAttribute<ICharTermAttribute>();
+    }
 
-        public ManxTokenFilter(TokenStream input) : base(input)
+    public override bool IncrementToken()
+    {
+        while (m_input.IncrementToken())
         {
-            this.termAtt = AddAttribute<ICharTermAttribute>();
-        }
+            var term = new string(this.termAtt.Buffer).Substring(0, termAtt.Length);
 
-        public override bool IncrementToken()
-        {
-            while (m_input.IncrementToken())
+            string newContent;
+            // trailing ? as a question mark
+            if (term.EndsWith("?") && !term.EndsWith("??"))
             {
-                var term = new string(this.termAtt.Buffer).Substring(0, termAtt.Length);
-
-                string newContent;
-                // trailing ? as a question mark
-                if (term.EndsWith("?") && !term.EndsWith("??"))
-                {
-                    newContent = DocumentLine.NormalizeManx(term.TrimEnd('?'), allowQuestionMark: true);
-                }
-                else
-                {
-                    newContent = DocumentLine.NormalizeManx(term, allowQuestionMark: true);
-                }
-
-                HandleContentChange(newContent, termAtt);
-
-                return true;
+                newContent = DocumentLine.NormalizeManx(term.TrimEnd('?'), allowQuestionMark: true);
             }
-            return false;
-        }
-
-        private static void HandleContentChange(string newContent, ICharTermAttribute termAtt)
-        {
-            termAtt.ResizeBuffer(newContent.Length);
-            termAtt.SetLength(newContent.Length);
-            foreach (var (c, i) in newContent.Select((x, i) => (x, i)))
+            else
             {
-                termAtt.Buffer[i] = c;
+                newContent = DocumentLine.NormalizeManx(term, allowQuestionMark: true);
             }
+
+            HandleContentChange(newContent, termAtt);
+
+            return true;
+        }
+        return false;
+    }
+
+    private static void HandleContentChange(string newContent, ICharTermAttribute termAtt)
+    {
+        termAtt.ResizeBuffer(newContent.Length);
+        termAtt.SetLength(newContent.Length);
+        foreach (var (c, i) in newContent.Select((x, i) => (x, i)))
+        {
+            termAtt.Buffer[i] = c;
         }
     }
 }

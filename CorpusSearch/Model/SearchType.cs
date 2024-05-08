@@ -1,8 +1,7 @@
-﻿namespace CorpusSearch.Model
+﻿namespace CorpusSearch.Model;
+
+public enum SearchType
 {
-    public enum SearchType
-    {
-        Manx,
-        English
-    }
+    Manx,
+    English
 }
