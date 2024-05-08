@@ -7,7 +7,7 @@ namespace CorpusSearch.Service;
 
 public class RecentDocumentsService
 {
-    private List<RecentDocument> documents = new List<RecentDocument>();
+    private List<RecentDocument> documents = [];
     public void Init(List<RecentDocument> latestDocuments)
     {
         Console.WriteLine("Found {0} latest documents", latestDocuments.Count);

@@ -106,7 +106,7 @@ namespace CorpusSearch.Dependencies
                         var left = ToSpanQueryInner(and.Left);
                         var right = ToSpanQueryInner(and.Right);
                         // TODO: Might be something better than an infinite slop
-                        return new SpanNearQuery(new[] { left, right }, int.MaxValue, false);
+                        return new SpanNearQuery([left, right], int.MaxValue, false);
                     }
                 case AdjacentWordExpression e:
                     var queries = e.Words.Select(ToManx);
@@ -115,7 +115,7 @@ namespace CorpusSearch.Dependencies
                     // This also feels inefficient: we want a "not" for the document, and the easiest way seems to be a "not near the span"
                     SpanQuery l = ToSpanQueryInner(e.Left);
                     SpanQuery r = ToSpanQueryInner(e.Right);
-                    var notNear = new SpanNearQuery(new[] { l, r }, int.MaxValue, false);
+                    var notNear = new SpanNearQuery([l, r], int.MaxValue, false);
                     return new SpanNotQuery(l, notNear);
                 case WrappedExpression w:
                     return ToSpanQueryInner(w.Wrapped);

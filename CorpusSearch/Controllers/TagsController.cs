@@ -102,7 +102,7 @@ public class TagsController : Controller
         var result = DocumentTree.FromDocuments(t, documents);
         if (result == null)
         {
-            return new DocumentTree(t.Name, new List<IDocument>(), new List<DocumentTree>());
+            return new DocumentTree(t.Name, [], []);
         }
 
         return result;
@@ -172,5 +172,5 @@ public record DocumentTree(string Title, List<IDocument> Documents, List<Documen
 public record Tag(string Name, List<Tag> Children, [property: JsonIgnore] Predicate<IDocument> Matcher)
 {
     public bool Matches(IDocument document) => Matcher(document) || Children.Any(x => x.Matches(document));
-    public static Tag Build(string name, Predicate<IDocument> matcher) => new(name, new List<Tag>(), matcher);
+    public static Tag Build(string name, Predicate<IDocument> matcher) => new(name, [], matcher);
 }

@@ -65,7 +65,7 @@ namespace CorpusSearch.Controllers
 
         public class SearchWorkResult : IResultContainer<DocumentLine>, ITimedResult
         {
-            public List<DocumentLine> Results { get; set; } = new();
+            public List<DocumentLine> Results { get; set; } = [];
             public int NumberOfResults { get; set; }
             public string TimeTaken { get; set; }
             public string Title { get; set; }
@@ -96,7 +96,7 @@ namespace CorpusSearch.Controllers
             public string GitHubLink { get; set; }
             public object Notes { get; internal set; }
             public string Source { get; set; }
-            public List<SourceLink> SourceLinks { get; internal set; } = new();
+            public List<SourceLink> SourceLinks { get; internal set; } = [];
             
 
             internal static SearchWorkResult Empty(string title)

@@ -51,7 +51,7 @@ namespace CorpusSearch.Service.Dictionaries
 
         public string Identifier => "Cregeen";
         public bool LinkToDictionary => true;
-        public List<string> QueryLanguages => new() { "gv" };
+        public List<string> QueryLanguages => ["gv"];
 
         public static CregeenDictionaryService Init()
         {
@@ -68,7 +68,7 @@ namespace CorpusSearch.Service.Dictionaries
             {
                 // TODO: Add to health check
                 Console.WriteLine("Failed to load Cregeen");
-                allWords = new HashSet<string>();
+                allWords = [];
             }
             
             return new CregeenDictionaryService(allWords, entries);
@@ -83,7 +83,7 @@ namespace CorpusSearch.Service.Dictionaries
             
             var text = File.ReadAllText(path);
 
-            var entries = JsonConvert.DeserializeObject<List<CregeenEntry>>(text) ?? new List<CregeenEntry>();
+            var entries = JsonConvert.DeserializeObject<List<CregeenEntry>>(text) ?? [];
 
             entries.ForEach(EnrichCedillaEntries);
             return entries;

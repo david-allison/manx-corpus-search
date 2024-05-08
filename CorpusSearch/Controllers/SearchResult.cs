@@ -28,7 +28,7 @@ namespace CorpusSearch.Controllers
 
         public static void EmptyResult<T>(this IResultContainer<T> target)
         {
-            target.Results = new List<T>();
+            target.Results = [];
             target.NumberOfResults = 0;
         }
     }

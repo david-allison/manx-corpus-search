@@ -18,7 +18,7 @@ namespace CorpusSearch.Model.Dictionary
         // nullable
         public List<CregeenEntry> Children { get; set; }
 
-        public List<CregeenEntry> SafeChildren => Children ?? new List<CregeenEntry>();
+        public List<CregeenEntry> SafeChildren => Children ?? [];
 
         public List<CregeenEntry> ChildrenRecursive => new[] { this }.Concat(SafeChildren.SelectMany(x => x.ChildrenRecursive)).ToList();
 

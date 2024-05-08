@@ -20,7 +20,7 @@ namespace CorpusSearch.Service.Dictionaries
 
         public string Identifier => "J Kelly Manx to English";
 
-        public List<string> QueryLanguages => new() { "gv" };
+        public List<string> QueryLanguages => ["gv"];
         
         public bool LinkToDictionary => false;
 
@@ -39,7 +39,7 @@ namespace CorpusSearch.Service.Dictionaries
             {
                 // TODO: Add to health check
                 Console.WriteLine("Failed to load Kelly");
-                allWords = new HashSet<string>();
+                allWords = [];
             }
             
             return new KellyManxToEnglishDictionaryService(allWords, entries);
@@ -54,7 +54,7 @@ namespace CorpusSearch.Service.Dictionaries
             
             var text = File.ReadAllText(path);
 
-            var entries = JsonConvert.DeserializeObject<List<KellyManxToEnglishEntry>>(text) ?? new List<KellyManxToEnglishEntry>();
+            var entries = JsonConvert.DeserializeObject<List<KellyManxToEnglishEntry>>(text) ?? [];
 
             entries.ForEach(EnrichCedillaEntries);
             return entries;
