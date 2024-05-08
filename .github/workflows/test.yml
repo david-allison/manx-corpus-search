@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2.1.0
-      - run: dotnet test --framework net6.0
-      - run: dotnet publish --framework net6.0 
+      - run: dotnet test --framework net8.0
+      - run: dotnet publish --framework net8.0 
       
       
