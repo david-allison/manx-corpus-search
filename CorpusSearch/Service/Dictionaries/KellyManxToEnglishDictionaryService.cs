@@ -70,15 +70,6 @@ namespace CorpusSearch.Service.Dictionaries
         public IEnumerable<DictionarySummary> GetSummaries(string query, bool basic)
         {
             if (!ContainsWordExact(query)) { yield break; }
-            
-            DictionarySummary GetDictionarySummary(KellyManxToEnglishEntry entry)
-            {
-                return new DictionarySummary
-                {
-                    PrimaryWord = entry.Words.First(),
-                    Summary = entry.Definition
-                };
-            }
 
             // PERF: extract to member
             var entries1 = entries.SelectMany(x => x.ChildrenRecursive).ToList();
@@ -86,6 +77,17 @@ namespace CorpusSearch.Service.Dictionaries
             foreach (var validEntry in entries1.Where(e => e.Words.Contains(query, StringComparer.InvariantCultureIgnoreCase)))
             {
                 yield return GetDictionarySummary(validEntry);
+            }
+
+            yield break;
+
+            DictionarySummary GetDictionarySummary(KellyManxToEnglishEntry entry)
+            {
+                return new DictionarySummary
+                {
+                    PrimaryWord = entry.Words.First(),
+                    Summary = entry.Definition
+                };
             }
         }
     }

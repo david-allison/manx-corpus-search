@@ -21,17 +21,6 @@ public class TagsController(WorkService workService) : Controller
     [HttpGet("All")]
     public async Task<List<Tag>> GetTags()
     {
-        Predicate<IDocument> PathMatcher(string path) => doc => doc.RelativeCsvPath.Contains(path);
-
-        string? GetField(IDocument document, string field)
-        {
-            var ext = document.GetAllExtensionData();
-            return !ext.TryGetValue(field, out var value) ? null : value.ToString();
-        }
-
-        Predicate<IDocument> HasType(string typeToFind) => doc => GetField(doc, "type")?.Contains(typeToFind, StringComparison.OrdinalIgnoreCase) ?? false;
-        Predicate<IDocument> HasSource(string toFind) => doc => doc.Source?.Contains(toFind, StringComparison.OrdinalIgnoreCase) ?? false;
-
         var allDocuments = await workService.GetAll();
         
         var allTags = new List<Tag>
@@ -49,6 +38,17 @@ public class TagsController(WorkService workService) : Controller
                 HasType("Newspaper"))
         };
         return allTags;
+
+        Predicate<IDocument> PathMatcher(string path) => doc => doc.RelativeCsvPath.Contains(path);
+
+        string? GetField(IDocument document, string field)
+        {
+            var ext = document.GetAllExtensionData();
+            return !ext.TryGetValue(field, out var value) ? null : value.ToString();
+        }
+
+        Predicate<IDocument> HasType(string typeToFind) => doc => GetField(doc, "type")?.Contains(typeToFind, StringComparison.OrdinalIgnoreCase) ?? false;
+
         /*
 * Suggestions
 * * Prominent Authors
@@ -77,6 +77,7 @@ public class TagsController(WorkService workService) : Controller
 * N/S/E/W Manx
 * Legal
          */
+        Predicate<IDocument> HasSource(string toFind) => doc => doc.Source?.Contains(toFind, StringComparison.OrdinalIgnoreCase) ?? false;
     }
 
     [HttpGet("List/{tagName}")]

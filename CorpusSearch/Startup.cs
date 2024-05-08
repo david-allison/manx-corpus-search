@@ -141,11 +141,6 @@ namespace CorpusSearch
 
         internal static void SetupDictionaries()
         {
-            Dictionary<string, IList<string>> ToCaseInsensitiveDict(FileStream fileStream) 
-            {
-                var dict = DeserializeAsync<Dictionary<string, IList<string>>>(fileStream).Result;
-                return new Dictionary<string, IList<string>>(dict, StringComparer.OrdinalIgnoreCase);
-            }
             // This saves ~700MB RAM compared to using F# for XML reading... sorry
             // files sourced from Phil Kelly https://www.learnmanx.com/page_342285.html
             using (FileStream manx = File.OpenRead(GetLocalFile("Resources", "manx.json")))
@@ -155,6 +150,14 @@ namespace CorpusSearch
             using (FileStream english = File.OpenRead(GetLocalFile("Resources", "english.json")))
             {
                 EnglishToManxDictionary = ToCaseInsensitiveDict(english);
+            }
+
+            return;
+
+            Dictionary<string, IList<string>> ToCaseInsensitiveDict(FileStream fileStream) 
+            {
+                var dict = DeserializeAsync<Dictionary<string, IList<string>>>(fileStream).Result;
+                return new Dictionary<string, IList<string>>(dict, StringComparer.OrdinalIgnoreCase);
             }
         }
 

@@ -80,12 +80,6 @@ namespace CorpusSearch
 
                 };
 
-                void AddField(string key, string value)
-                {
-                    // ArgumentNullException if the value is null
-                    value?.Let(val => doc.Add(new StringField(key, val, Field.Store.YES)));
-                }
-                
 
                 AddField(DOCUMENT_ORIGINAL_ENGLISH, line.EnglishOriginal);
                 AddField(DOCUMENT_ORIGINAL_MANX, line.ManxOriginal);
@@ -99,6 +93,13 @@ namespace CorpusSearch
                 line.SubEnd?.Let(end => doc.Add(new DoubleField(SUBTITLE_END, end, Field.Store.YES)));
 
                 indexWriter.AddDocument(doc);
+                continue;
+
+                void AddField(string key, string value)
+                {
+                    // ArgumentNullException if the value is null
+                    value?.Let(val => doc.Add(new StringField(key, val, Field.Store.YES)));
+                }
             }
 
             indexWriter.Flush(triggerMerge: false, applyAllDeletes: false);
@@ -123,12 +124,6 @@ namespace CorpusSearch
 
             ISet<int> acceptDocs = GetDocsForIdent(searcher, ident);
 
-            bool AcceptDocument(AtomicReaderContext leaf, Spans spans)
-            {
-                // TODO PERF: Inefficient - should be able to use GetSpans(?, acceptDocs, ?) - need to read documents to understand it
-                var docId = leaf.DocBase + spans.Doc;
-                return acceptDocs.Contains(docId);
-            }
             var spanCollection = BuildSpanCollection(query, reader, AcceptDocument);
 
             var docs = spanCollection.DistinctDocuments().Select(x =>
@@ -162,6 +157,13 @@ namespace CorpusSearch
                 Lines = docs,
                 TotalMatches = spanCollection.GetTotalCount(),
             };
+
+            bool AcceptDocument(AtomicReaderContext leaf, Spans spans)
+            {
+                // TODO PERF: Inefficient - should be able to use GetSpans(?, acceptDocs, ?) - need to read documents to understand it
+                var docId = leaf.DocBase + spans.Doc;
+                return acceptDocs.Contains(docId);
+            }
         }
 
         private static EmptySpanCollection BuildSpanCollection(Query query, IndexReader reader, Func<AtomicReaderContext,Spans, bool> acceptDocument)
