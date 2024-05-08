@@ -2,7 +2,6 @@
 using Lucene.Net.Util;
 using System.Globalization;
 using System.IO;
-using System.Linq;
 
 namespace CorpusSearch.Dependencies.Lucene
 {

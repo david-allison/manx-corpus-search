@@ -1,5 +1,4 @@
-﻿using System;
-using CorpusSearch.Controllers;
+﻿using CorpusSearch.Controllers;
 using CorpusSearch.Dependencies;
 using CorpusSearch.Model;
 using System.Collections.Generic;

@@ -2,7 +2,6 @@
 using CorpusSearch.Model;
 using CorpusSearch.Test.TestUtils;
 using NUnit.Framework;
-using static CorpusSearch.Test.TestUtils.DocumentStorageExtensions;
 
 namespace CorpusSearch.Test
 {

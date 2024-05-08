@@ -2,7 +2,6 @@
 using Lucene.Net.Index;
 using Lucene.Net.Search;
 using Lucene.Net.Util.Automaton;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 

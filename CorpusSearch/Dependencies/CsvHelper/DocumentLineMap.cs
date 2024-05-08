@@ -1,5 +1,4 @@
-﻿using System;
-using CorpusSearch.Model;
+﻿using CorpusSearch.Model;
 using CsvHelper.Configuration;
 
 namespace CorpusSearch.Dependencies.CsvHelper
