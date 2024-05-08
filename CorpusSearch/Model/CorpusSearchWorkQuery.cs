@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace CorpusSearch.Model
+﻿namespace CorpusSearch.Model
 {
     public class CorpusSearchWorkQuery(string query)
     {

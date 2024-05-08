@@ -3,7 +3,6 @@ using CorpusSearch.Dependencies.Lucene;
 using CorpusSearch.Model;
 using Lucene.Net.Index;
 using Lucene.Net.Search.Spans;
-using Lucene.Net.Util;
 using sly.parser;
 using System;
 using System.Collections.Generic;

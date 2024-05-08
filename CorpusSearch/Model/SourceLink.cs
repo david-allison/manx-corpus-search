@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-
-namespace CorpusSearch.Model
+﻿namespace CorpusSearch.Model
 {
     /// <summary>A link to a source</summary>
     public class SourceLink
