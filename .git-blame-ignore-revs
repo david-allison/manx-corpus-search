@@ -1,0 +1,13 @@
+# removes mass refactorings and automated changes from git blame & Android Studio's 'Annotate'
+# usage: git config blame.ignoreRevsFile .git-blame-ignore-revs
+# https://git-scm.com/docs/git-config#Documentation/git-config.txt-blameignoreRevsFile
+
+# automated lint fixes
+a99fa7304e362f3ab672f42071efe0a1c37b9447
+00daedff087bffb4bba52a3600160dc1843f57c1
+e60134b7ba860c0c71e8fe12a482ceec71d703f8
+b5478a73a9fa72e6a6f49c8580baf4c0145ae2f4
+6f12fa06d973271a09ff6bd71a1a249b9552d783
+3e2f608d8f12b80791064ef0ea2764d8b239ed22
+5084aeff0a41f00202c920706dc235f985eb0248
+584a08bb9d329e0855a914931ffc13e54dd2b3ee
