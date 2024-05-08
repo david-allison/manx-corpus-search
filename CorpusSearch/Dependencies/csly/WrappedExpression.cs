@@ -1,4 +1,6 @@
-﻿namespace CorpusSearch.Dependencies.csly
+﻿using CorpusSearch.Dependencies.csly.Model;
+
+namespace CorpusSearch.Dependencies.csly
 {
     internal class WrappedExpression(string v1, Expression middle, string v2) : Expression("wrapped")
     {

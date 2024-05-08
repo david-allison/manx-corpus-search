@@ -8,6 +8,7 @@ using sly.parser;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using CorpusSearch.Dependencies.csly.Model;
 
 namespace CorpusSearch.Dependencies
 {

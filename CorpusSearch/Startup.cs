@@ -14,6 +14,7 @@ using CorpusSearch.Controllers;
 using CorpusSearch.Model;
 using CorpusSearch.Dependencies.csly;
 using CorpusSearch.Dependencies;
+using CorpusSearch.Dependencies.Lucene;
 using CorpusSearch.Service;
 using CorpusSearch.Service.Dictionaries;
 using CorpusSearch.Utils;

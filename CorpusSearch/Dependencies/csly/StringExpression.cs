@@ -1,4 +1,4 @@
-﻿using Lucene.Net.Util;
+using CorpusSearch.Dependencies.csly.Model;
 
 namespace CorpusSearch.Dependencies.csly
 {

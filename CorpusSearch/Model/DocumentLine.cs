@@ -1,4 +1,5 @@
 ﻿using System.Text.Json.Serialization;
+using CorpusSearch.Extensions;
 using CorpusSearch.Services;
 
 namespace CorpusSearch.Model

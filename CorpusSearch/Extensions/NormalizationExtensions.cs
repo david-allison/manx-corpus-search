@@ -1,8 +1,8 @@
-﻿using CorpusSearch.Controllers;
+﻿using System.Text.RegularExpressions;
+using CorpusSearch.Controllers;
 using CorpusSearch.Service;
-using System.Text.RegularExpressions;
 
-namespace CorpusSearch.Services
+namespace CorpusSearch.Extensions
 {
     public static class NormalizationExtensions
     {

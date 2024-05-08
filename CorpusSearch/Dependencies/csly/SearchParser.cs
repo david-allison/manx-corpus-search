@@ -4,7 +4,7 @@ using sly.parser.generator;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
+using CorpusSearch.Dependencies.csly.Model;
 
 namespace CorpusSearch.Dependencies.csly
 {
