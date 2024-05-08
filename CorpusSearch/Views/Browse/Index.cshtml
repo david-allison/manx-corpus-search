@@ -38,7 +38,7 @@
 <body style="padding: 24px">
 
 @{
-    var documents = ViewData["Documents"] as List<IDocument> ?? new List<IDocument>();
+    var documents = ViewData["Documents"] as List<IDocument> ?? [];
 }
 
 <h1><a href="/" style="text-decoration: none">⇦</a> Full Document Listing (@documents.Count documents)</h1>

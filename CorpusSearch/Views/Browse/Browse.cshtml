@@ -81,7 +81,7 @@
 </tr>
 </thead>
     <tbody>
-        @foreach (var line in ViewData["Lines"] as List<DocumentLine> ?? new List<DocumentLine>())
+        @foreach (var line in ViewData["Lines"] as List<DocumentLine> ?? [])
         {
             <tr>
                 <td>
