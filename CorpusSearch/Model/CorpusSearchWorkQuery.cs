@@ -15,11 +15,6 @@ public class CorpusSearchWorkQuery(string query)
             return false;
         }
 
-        if (!Manx && !English)
-        {
-            return false;
-        }
-
-        return true;
+        return Manx || English;
     }
 }
