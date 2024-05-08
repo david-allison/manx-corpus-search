@@ -1,7 +1,6 @@
-﻿namespace CorpusSearch.Model
+﻿namespace CorpusSearch.Model;
+
+public interface Countable
 {
-    public interface Countable
-    {
-        public int Count { get; }
-    }
+    public int Count { get; }
 }

@@ -5,19 +5,18 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 
-namespace CorpusSearch.Dependencies.CsvHelper
+namespace CorpusSearch.Dependencies.CsvHelper;
+
+public class CsvHelperUtils
 {
-    public class CsvHelperUtils
+    public static List<DocumentLine> LoadCsv(string path)
     {
-        public static List<DocumentLine> LoadCsv(string path)
+        using (var reader = new StreamReader(path))
+        using (var csv = new CsvReader(reader, CultureInfo.InvariantCulture))
         {
-            using (var reader = new StreamReader(path))
-            using (var csv = new CsvReader(reader, CultureInfo.InvariantCulture))
-            {
-                csv.Context.RegisterClassMap<DocumentLineMap>();
-                List<DocumentLine> results = csv.GetRecords<DocumentLine>().ToList();
-                return results;
-            }
+            csv.Context.RegisterClassMap<DocumentLineMap>();
+            List<DocumentLine> results = csv.GetRecords<DocumentLine>().ToList();
+            return results;
         }
     }
 }

@@ -1,12 +1,11 @@
-﻿namespace CorpusSearch.Dependencies.csly.Model
-{
-    public abstract class Expression(string v)
-    {
-        public string Term => v;
+﻿namespace CorpusSearch.Dependencies.csly.Model;
 
-        public override string ToString()
-        {
-            return v;
-        }
+public abstract class Expression(string v)
+{
+    public string Term => v;
+
+    public override string ToString()
+    {
+        return v;
     }
 }
