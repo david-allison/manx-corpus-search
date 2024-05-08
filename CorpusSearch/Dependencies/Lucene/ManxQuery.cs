@@ -8,12 +8,8 @@ using System.Linq;
 
 namespace CorpusSearch.Dependencies.Lucene
 {
-    public class ManxQuery : AutomatonQuery
+    public class ManxQuery(Term term) : AutomatonQuery(GetTerm(term), ToAutomaton(term))
     {
-        public ManxQuery(Term term) : base(GetTerm(term), ToAutomaton(term))
-        {
-        }
-
         private static Term GetTerm(Term term)
         {
             return new Term(term.Field, DiacriticService.Replace(term.Bytes.Utf8ToString()));

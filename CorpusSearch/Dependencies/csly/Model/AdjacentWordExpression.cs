@@ -3,15 +3,9 @@ using System.Linq;
 
 namespace CorpusSearch.Dependencies.csly
 {
-    public class AdjacentWordExpression : Expression
+    public class AdjacentWordExpression(IEnumerable<string> words) : Expression("words")
     {
-        private readonly List<string> words;
-
-        public AdjacentWordExpression(IEnumerable<string> words)
-            : base("words")
-        {
-            this.words = words.ToList();
-        }
+        private readonly List<string> words = words.ToList();
 
         public IEnumerable<string> Words => words;
 

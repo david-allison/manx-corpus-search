@@ -92,15 +92,8 @@ namespace CorpusSearch.Dependencies.csly
 
     }
 
-    public class SearchParser
+    public class SearchParser(Parser<ExpressionToken, Expression> parser)
     {
-        private Parser<ExpressionToken, Expression> parser;
-
-        public SearchParser(Parser<ExpressionToken, Expression> parser)
-        {
-            this.parser = parser;
-        }
-
         public static SearchParser GetParser()
         {
             var parserInstance = new ExpressionParser();

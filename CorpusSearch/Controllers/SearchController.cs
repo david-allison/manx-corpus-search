@@ -15,21 +15,15 @@ namespace CorpusSearch.Controllers
     // TODO: Handle a search for a word at the end of a sentence
     [ApiController]
     [Route("[controller]")]
-    public partial class SearchController : ControllerBase
+    public partial class SearchController(
+        DocumentSearchService documentSearchService,
+        OverviewSearchService2 overviewSearchService,
+        IEnumerable<ISearchDictionary> dictionaryServices,
+        WorkService workService)
+        : ControllerBase
     {
         public static string PUNCTUATION_REGEX = "[,.;!?\\s]";
-        private readonly DocumentSearchService documentSearchService;
-        private readonly OverviewSearchService2 overviewSearchService;
-        private readonly ISearchDictionary[] dictionaryServices;
-        private readonly WorkService workService;
-
-        public SearchController(DocumentSearchService documentSearchService, OverviewSearchService2 overviewSearchService, IEnumerable<ISearchDictionary> dictionaryServices, WorkService workService)
-        {
-            this.documentSearchService = documentSearchService;
-            this.overviewSearchService = overviewSearchService;
-            this.dictionaryServices = dictionaryServices.ToArray();
-            this.workService = workService;
-        }
+        private readonly ISearchDictionary[] dictionaryServices = dictionaryServices.ToArray();
 
         [HttpGet]
         public string Get()
@@ -133,7 +127,7 @@ namespace CorpusSearch.Controllers
                 ret.Translations = Translations.FromEnglish(query);
             }
 
-            ret.GitHubLink = (await this.workService.ByIdent(workIdent))?.GetGitHubLink();
+            ret.GitHubLink = (await workService.ByIdent(workIdent))?.GetGitHubLink();
             ret.DefinedInDictionaries = DictionaryLookup(query, new QueryLanguages(Manx: manx, English: english));
 
             ret.EnrichWithTime(sw);

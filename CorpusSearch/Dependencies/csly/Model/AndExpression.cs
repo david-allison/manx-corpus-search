@@ -1,15 +1,9 @@
 ﻿namespace CorpusSearch.Dependencies.csly
 {
-    public class AndExpression : Expression
+    public class AndExpression(Expression left, Expression right) : Expression("and")
     {
-        public Expression Left { get; }
-        public Expression Right { get; }
-
-        public AndExpression(Expression left, Expression right) : base("and")
-        {
-            Left = left;
-            Right = right;
-        }
+        public Expression Left { get; } = left;
+        public Expression Right { get; } = right;
 
         public override string ToString()
         {

@@ -7,17 +7,9 @@ using Newtonsoft.Json;
 
 namespace CorpusSearch.Service.Dictionaries
 {
-    public class KellyManxToEnglishDictionaryService : ISearchDictionary
+    public class KellyManxToEnglishDictionaryService(ISet<string> allWords, IList<KellyManxToEnglishEntry> entries)
+        : ISearchDictionary
     {
-        private readonly ISet<string> allWords;
-        private readonly IList<KellyManxToEnglishEntry> allEntries;
-
-        public KellyManxToEnglishDictionaryService(ISet<string> allWords, IList<KellyManxToEnglishEntry> entries)
-        {
-            this.allWords = allWords;
-            this.allEntries = entries;
-        }
-
         public string Identifier => "J Kelly Manx to English";
 
         public List<string> QueryLanguages => ["gv"];
@@ -89,9 +81,9 @@ namespace CorpusSearch.Service.Dictionaries
             }
 
             // PERF: extract to member
-            var entries = allEntries.SelectMany(x => x.ChildrenRecursive).ToList();
+            var entries1 = entries.SelectMany(x => x.ChildrenRecursive).ToList();
 
-            foreach (var validEntry in entries.Where(e => e.Words.Contains(query, StringComparer.InvariantCultureIgnoreCase)))
+            foreach (var validEntry in entries1.Where(e => e.Words.Contains(query, StringComparer.InvariantCultureIgnoreCase)))
             {
                 yield return GetDictionarySummary(validEntry);
             }

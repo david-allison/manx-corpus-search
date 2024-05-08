@@ -6,17 +6,8 @@ using System.Threading.Tasks;
 
 namespace CorpusSearch.Service
 {
-    public class OverviewSearchService2
+    public class OverviewSearchService2(WorkService workService, Searcher searcher)
     {
-        private readonly WorkService worksService;
-        private readonly Searcher searcher;
-
-        public OverviewSearchService2(WorkService workService, Searcher searcher)
-        {
-            this.worksService = workService;
-            this.searcher = searcher;
-        }
-
         public async Task<IEnumerable<QueryDocumentResult>> CorpusSearch(CorpusSearchQuery searchQuery)
         {
             var result = searcher.Scan(searchQuery.Query, ToScanOptions(searchQuery));
@@ -34,7 +25,7 @@ namespace CorpusSearch.Service
         /// <summary>Returns all the identifiers which are valid for the date range</summary>
         private async Task<ISet<string>> GetValidIdents(CorpusSearchQuery searchQuery)
         {
-            var results = await worksService.GetIdentsBetween(searchQuery.MinDate, searchQuery.MaxDate);
+            var results = await workService.GetIdentsBetween(searchQuery.MinDate, searchQuery.MaxDate);
             return new HashSet<string>(results);
         }
 

@@ -2,10 +2,5 @@
 
 namespace CorpusSearch.Dependencies.csly
 {
-    internal class StringExpression : Expression
-    {
-        public StringExpression(string v) : base(v)
-        {
-        }
-    }
+    internal class StringExpression(string v) : Expression(v);
 }

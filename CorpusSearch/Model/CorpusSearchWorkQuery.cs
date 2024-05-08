@@ -2,14 +2,9 @@
 
 namespace CorpusSearch.Model
 {
-    public class CorpusSearchWorkQuery
+    public class CorpusSearchWorkQuery(string query)
     {
-        public string Query { get; }
-
-        public CorpusSearchWorkQuery(string query)
-        {
-            Query = query;
-        }
+        public string Query { get; } = query;
 
         public string Ident { get; set; }
         public bool Manx { get; set; }

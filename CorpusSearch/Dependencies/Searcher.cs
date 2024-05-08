@@ -11,17 +11,9 @@ using System.Linq;
 
 namespace CorpusSearch.Dependencies
 {
-    public class Searcher
+    public class Searcher(LuceneIndex luceneIndex, SearchParser parser)
     {
         // responsible for converting from a 
-        private readonly LuceneIndex luceneSearch;
-        private readonly SearchParser parser;
-
-        public Searcher(LuceneIndex luceneIndex, SearchParser parser)
-        {
-            this.luceneSearch = luceneIndex;
-            this.parser = parser;
-        }
 
         internal SearchResult SearchWork(string ident, string query, SearchOptions options)
         {
@@ -29,7 +21,7 @@ namespace CorpusSearch.Dependencies
             {
                 return new SearchResult
                 {
-                    Lines = luceneSearch.GetAllLines(ident, options.ReturnTranscriptData)
+                    Lines = luceneIndex.GetAllLines(ident, options.ReturnTranscriptData)
                         .Where(x => !string.IsNullOrEmpty(x.Manx) || !string.IsNullOrEmpty(x.English)).ToList(),
                     TotalMatches = null,
                 };
@@ -43,7 +35,7 @@ namespace CorpusSearch.Dependencies
             // Convert the result to a Lucene Span Query (or throw ArgumentException)
             SpanQuery spanQuery = ToSpanQuery(parsed, scanOptionsHack);
 
-            return luceneSearch.Search(ident, spanQuery, options.ReturnTranscriptData);
+            return luceneIndex.Search(ident, spanQuery, options.ReturnTranscriptData);
 
         }
 
@@ -53,7 +45,7 @@ namespace CorpusSearch.Dependencies
         /// <param name="ident">The ID of the document</param>
         internal List<DocumentLine> GetAllLines(string ident)
         {
-            return luceneSearch.GetAllLines(ident, getTranscript: false);
+            return luceneIndex.GetAllLines(ident, getTranscript: false);
         }
 
         public ScanResult Scan(string query)
@@ -70,7 +62,7 @@ namespace CorpusSearch.Dependencies
             SpanQuery spanQuery = ToSpanQuery(parsed, searchOptions);
 
             // Perform the search
-            return luceneSearch.Scan(spanQuery);
+            return luceneIndex.Scan(spanQuery);
         }
 
 
@@ -165,19 +157,19 @@ namespace CorpusSearch.Dependencies
 
         internal void OnAllDocumentsAdded()
         {
-            luceneSearch.Compact();
+            luceneIndex.Compact();
         }
 
         internal void AddDocument(IDocument document, IEnumerable<DocumentLine> data)
         {
-            this.luceneSearch.Add(document, data);
+            luceneIndex.Add(document, data);
         }
 
         public List<(string, long)> QueryTermFrequency()
         {
-            return luceneSearch.GetTermFrequencyList();
+            return luceneIndex.GetTermFrequencyList();
         }
         
-        public long CountManxTerms() => luceneSearch.CountManxTerms();
+        public long CountManxTerms() => luceneIndex.CountManxTerms();
     }
 }

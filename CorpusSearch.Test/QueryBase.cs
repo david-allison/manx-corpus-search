@@ -33,23 +33,14 @@ namespace CorpusSearch.Test
             luceneIndex.Add(doc, data.Select(x => new DocumentLine() { English = x.English, Manx = x.Manx }));
         }
 
-        protected class TestDocument : IDocument
+        protected class TestDocument(string name, DateTime? dateTime) : IDocument
         {
-            public TestDocument(string name, DateTime? dateTime)
-            {
-                Name = name;
-                this.date = dateTime;
-            }
-
-
-            public string Name { get; set; }
-
-            private readonly DateTime? date;
+            public string Name { get; set; } = name;
 
             public string Ident => Name;
 
-            public DateTime? CreatedCircaStart => date;
-            public DateTime? CreatedCircaEnd => date;
+            public DateTime? CreatedCircaStart => dateTime;
+            public DateTime? CreatedCircaEnd => dateTime;
 
             public string ExternalPdfLink => null;
             public string GoogleBooksId => null;

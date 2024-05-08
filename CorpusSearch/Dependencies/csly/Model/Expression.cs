@@ -1,14 +1,7 @@
 ﻿namespace CorpusSearch.Dependencies.csly
 {
-    public abstract class Expression
+    public abstract class Expression(string v)
     {
-        private string v;
-
-        public Expression(string v)
-        {
-            this.v = v;
-        }
-
         public string Term => v;
 
         public override string ToString()

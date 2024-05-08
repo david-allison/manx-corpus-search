@@ -1,15 +1,9 @@
 ﻿namespace CorpusSearch.Dependencies.csly
 {
-    public class OrExpression : Expression
+    public class OrExpression(Expression left, Expression right) : Expression("or")
     {
-        public Expression Left { get; }
-        public Expression Right { get; }
-
-        public OrExpression(Expression left, Expression right) : base("or")
-        {
-            this.Left = left;
-            this.Right = right;
-        }
+        public Expression Left { get; } = left;
+        public Expression Right { get; } = right;
 
         public override string ToString()
         {

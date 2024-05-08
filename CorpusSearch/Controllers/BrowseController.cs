@@ -8,17 +8,9 @@ using Microsoft.AspNetCore.Mvc;
 namespace CorpusSearch.Controllers;
 
 [Route("[controller]")]
-public class BrowseController : Controller
+public class BrowseController(DocumentSearchService documentSearchService, WorkService workService)
+    : Controller
 {
-    private readonly DocumentSearchService documentSearchService;
-    private readonly WorkService workService;
-
-    public BrowseController(DocumentSearchService documentSearchService, WorkService workService)
-    {
-        this.documentSearchService = documentSearchService;
-        this.workService = workService;
-    }
-    
     public async Task<IActionResult> Index()
     {
         ViewData["Documents"] = await workService.GetAll();
