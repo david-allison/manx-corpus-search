@@ -2,7 +2,7 @@
 #note: this script needs to be run on the manx-search-data repo
 # not the repo it lives in
 
-MAX=20
+MAX=10
 SINCE=three-months-ago
 usage="$(basename "$0") [-h] [-m MAX] [-s SINCE]  - list recently changed docs when run in manx-search-data
 
