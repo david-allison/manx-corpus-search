@@ -3,7 +3,7 @@
 # not the repo it lives in
 
 MAX=10
-SINCE=three-months-ago
+SINCE=six-months-ago
 usage="$(basename "$0") [-h] [-m MAX] [-s SINCE]  - list recently changed docs when run in manx-search-data
 
 options are:
@@ -28,9 +28,9 @@ while getopts ':hm:s:' option; do
 done
 shift $((OPTIND - 1))
 
-IGNORE_RENAME=--diff-filter=r
+FIND_UPLOADS=--diff-filter=A
 #substitute % for space because the latter is used as an array delimiter by the shell
-for  f in $(git log --since=${SINCE} ${IGNORE_RENAME} --name-only | grep ^OpenData | grep document.csv$ |  sort -u | tr ' ' '%')
+for  f in $(git log --since=${SINCE} ${FIND_UPLOADS} --name-only | grep ^OpenData | grep document.csv$ |  sort -u | tr ' ' '%')
 do
     ff=$(echo $f |  tr '%' ' ')
 
