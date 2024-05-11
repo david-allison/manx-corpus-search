@@ -43,7 +43,7 @@ useEffect(() => {
     return (<div className="NewDocList">
         <header className="NewDocList-header">
         </header>
-        <div>Recent Changes:<br/>
+        <div>Recently Uploaded:<br/>
             <div>
                 <ul>{newDocs.map(doc =>
                     <li key={doc.name}><CorpusLink name={doc.name} ident={doc.ident}/></li>)
