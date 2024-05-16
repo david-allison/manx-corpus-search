@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using CorpusSearch.Model.Dictionary;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 
 namespace CorpusSearch.Service.Dictionaries;
@@ -16,7 +17,7 @@ public class KellyManxToEnglishDictionaryService(ISet<string> allWords, IList<Ke
         
     public bool LinkToDictionary => false;
 
-    public static KellyManxToEnglishDictionaryService Init()
+    public static KellyManxToEnglishDictionaryService Init(ILogger<KellyManxToEnglishDictionaryService> log)
     {
         HashSet<string> allWords;
 
@@ -30,7 +31,7 @@ public class KellyManxToEnglishDictionaryService(ISet<string> allWords, IList<Ke
         catch (Exception)
         {
             // TODO: Add to health check
-            Console.WriteLine("Failed to load Kelly");
+            log.LogError("Failed to load Kelly");
             allWords = [];
         }
             

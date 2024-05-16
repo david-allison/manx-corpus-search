@@ -22,8 +22,10 @@
     <PackageReference Include="Lucene.Net.Analysis.Common" Version="4.8.0-beta00014" />
     <PackageReference Include="Microsoft.AspNetCore.SpaServices.Extensions" Version="5.0.2" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+    <PackageReference Include="Serilog.AspNetCore" Version="8.0.1" />
+    <PackageReference Include="Serilog.Sinks.Console" Version="5.0.1" />
     <PackageReference Include="sly" Version="2.6.4.2" />
-    <PackageReference Include="System.Text.Json" Version="5.0.1" />
+    <PackageReference Include="System.Text.Json" Version="8.0.3" />
   </ItemGroup>
 
   <ItemGroup>

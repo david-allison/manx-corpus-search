@@ -2,15 +2,17 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using CorpusSearch.Model;
+using Microsoft.Extensions.Logging;
+using Serilog;
 
 namespace CorpusSearch.Service;
 
 public class RecentDocumentsService
 {
     private List<RecentDocument> documents = [];
-    public void Init(List<RecentDocument> latestDocuments)
+    public void Init(List<RecentDocument> latestDocuments, ILogger<Startup> log)
     {
-        Console.WriteLine("Found {0} latest documents", latestDocuments.Count);
+        log.LogInformation("Found {Count} latest documents", latestDocuments.Count);
         documents = latestDocuments;
     }
 

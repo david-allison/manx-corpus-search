@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using CorpusSearch.Service;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 
 namespace CorpusSearch.Controllers;
 
@@ -32,7 +33,8 @@ public class StatisticsController : Controller
     }
 
     public static void Init((long totalDocuments, long totalManxTerms) databaseCount,
-        List<(string, long)> termFrequency)
+        List<(string, long)> termFrequency,
+        ILogger<Startup> logger)
     {
         _documentCount = databaseCount.totalDocuments;
         _manxWordCount = databaseCount.totalManxTerms;
@@ -41,7 +43,7 @@ public class StatisticsController : Controller
             Term = x.Item1,
             Frequency = x.Item2
         }).OrderByDescending(x => x.Frequency).ToList();
-        Console.WriteLine($"{databaseCount.totalManxTerms} in {databaseCount.totalDocuments} documents");
+        logger.LogInformation("{TotalManxTerms} in {TotalDocuments} documents", databaseCount.totalManxTerms, databaseCount.totalDocuments);
     }
     
     record TermFrequency
