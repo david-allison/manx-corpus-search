@@ -5,6 +5,7 @@ using System.Linq;
 using System.Web;
 using CorpusSearch.Model.Dictionary;
 using HtmlAgilityPack;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 
 namespace CorpusSearch.Service.Dictionaries;
@@ -44,7 +45,7 @@ public class CregeenDictionaryService(ISet<string> allWords, IList<CregeenEntry>
     public bool LinkToDictionary => true;
     public List<string> QueryLanguages => ["gv"];
 
-    public static CregeenDictionaryService Init()
+    public static CregeenDictionaryService Init(ILogger<CregeenDictionaryService> log)
     {
         HashSet<string> allWords;
 
@@ -58,7 +59,7 @@ public class CregeenDictionaryService(ISet<string> allWords, IList<CregeenEntry>
         catch (Exception)
         {
             // TODO: Add to health check
-            Console.WriteLine("Failed to load Cregeen");
+            log.LogError("Failed to load Cregeen");
             allWords = [];
         }
             

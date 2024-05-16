@@ -18,7 +18,10 @@ using CorpusSearch.Dependencies.Lucene;
 using CorpusSearch.Service;
 using CorpusSearch.Service.Dictionaries;
 using CorpusSearch.Utils;
+using Microsoft.Extensions.Logging;
+using Serilog;
 using static System.Text.Json.JsonSerializer;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace CorpusSearch;
 
@@ -45,11 +48,11 @@ public class Startup(IConfiguration configuration)
 
     public IConfiguration Configuration { get; } = configuration;
 
+    private ILogger<Startup> log;
 
     // This method gets called by the runtime. Use this method to add services to the container.
     public void ConfigureServices(IServiceCollection services)
     {
-
         services.AddControllersWithViews().AddJsonOptions(options =>
         {
             options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
@@ -58,9 +61,9 @@ public class Startup(IConfiguration configuration)
         services.AddSingleton(provider => LuceneIndex.GetInstance());
         services.AddSingleton(provider => SearchParser.GetParser());
         services.AddSingleton<Searcher>();
-        services.AddSingleton(provider => CregeenDictionaryService.Init());
+        services.AddSingleton(provider => CregeenDictionaryService.Init(provider.GetService<ILogger<CregeenDictionaryService>>()));
         services.AddSingleton<ISearchDictionary>(provider => provider.GetService<CregeenDictionaryService>());
-        services.AddSingleton(provider => KellyManxToEnglishDictionaryService.Init());
+        services.AddSingleton(provider => KellyManxToEnglishDictionaryService.Init(provider.GetService<ILogger<KellyManxToEnglishDictionaryService>>()));
         services.AddSingleton<ISearchDictionary>(provider => provider.GetService<KellyManxToEnglishDictionaryService>());
         services.AddSingleton<WorkService>();
         services.AddSingleton<DocumentSearchService>();
@@ -79,9 +82,11 @@ public class Startup(IConfiguration configuration)
     public void Configure(IApplicationBuilder app,
         IWebHostEnvironment env,
         WorkService workService,
+        ILogger<Startup> logger,
         Searcher searcher,
         RecentDocumentsService recentDocumentsService)
     {
+        log = logger;
         if (env.IsDevelopment())
         {
             app.UseDeveloperExceptionPage();
@@ -95,23 +100,23 @@ public class Startup(IConfiguration configuration)
 
         if (!AnonymousAnalytics.Init())
         {
-            Console.WriteLine("Failed to init anonymous analytics. Was CORPUS_SEARCH_SEGMENT_KEY set?");
+            log.LogWarning("Failed to init anonymous analytics. Was CORPUS_SEARCH_SEGMENT_KEY set?");
         }
         var lConfig = Configuration.GetSection("Loading").Get<LoadConfig>();
 
         var databaseCount = SetupDatabase(workService, searcher, lConfig);
         var termFrequency = searcher.QueryTermFrequency();
-        StatisticsController.Init(databaseCount, termFrequency);
+        StatisticsController.Init(databaseCount, termFrequency, log);
         SetupDictionaries();
 
         try
         {
             var latestDocuments = OpenDataLoader.LoadRecentDocuments(workService).Result;
-            recentDocumentsService.Init(latestDocuments);
+            recentDocumentsService.Init(latestDocuments, log);
         }
         catch (Exception e)
         {
-            Console.WriteLine("failed to read latest documents {0}", e);
+            log.LogError(e , "failed to read latest documents");
         }
             
         // app.UseHttpsRedirection();
@@ -162,7 +167,7 @@ public class Startup(IConfiguration configuration)
         }
     }
 
-    internal static (long totalDocuments, long totalManxTerms) SetupDatabase(WorkService workService, Searcher searcher, LoadConfig lConfig)
+    internal (long totalDocuments, long totalManxTerms) SetupDatabase(WorkService workService, Searcher searcher, LoadConfig lConfig)
     {
         var totalDocuments = 0L;
 
@@ -170,30 +175,30 @@ public class Startup(IConfiguration configuration)
         if (!ignoreClosedData) try
             {
                 List<Document> closedSourceDocument = ClosedDataLoader.LoadDocumentsFromFile().Cast<Document>().ToList();
-                Console.WriteLine($"Loaded {closedSourceDocument.Count} documents");
+                log.LogInformation("Loaded {Count} documents", closedSourceDocument.Count);
                 AddDocuments(closedSourceDocument, workService, searcher);
                 totalDocuments += closedSourceDocument.Count;
             }
             catch (Exception e)
             {
-                Console.WriteLine($"Failed loading documents: {e}");
+                log.LogError(e, "Failed loading documents");
             }
         // Try adding open source documents
         try
         {
             List<Document> ossDocuments = OpenDataLoader.LoadDocumentsFromFile(lConfig).Cast<Document>().ToList();
-            Console.WriteLine($"Loaded {ossDocuments.Count} documents");
+            log.LogInformation("Loaded {OssDocumentsCount} documents", ossDocuments.Count);
             AddDocuments(ossDocuments, workService, searcher);
             totalDocuments += ossDocuments.Count;
         }
         catch (Exception e)
         {
-            Console.WriteLine($"Failed loading documents: {e}");
+            log.LogError(e, "Failed loading documents");
         }
 
         var stopWatch = System.Diagnostics.Stopwatch.StartNew();
         searcher.OnAllDocumentsAdded();
-        Console.WriteLine($"compacted in {stopWatch.ElapsedMilliseconds}");
+        log.LogDebug("compacted in {CompactedInMilliseconds}", stopWatch.ElapsedMilliseconds);
 
         var totalTerms = searcher.CountManxTerms();
         return (totalDocuments, totalTerms);
