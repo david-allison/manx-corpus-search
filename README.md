@@ -41,5 +41,5 @@ Deployable on a $5 DigitalOcean droplet. See GitHub actions
 ## Server requirements
 
 - git
-- dotnet-sdk-6.0
+- dotnet-sdk-8.0
 - TODO
