@@ -1,4 +1,5 @@
-﻿using System.Text.RegularExpressions;
+﻿using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using CorpusSearch.Controllers;
 using CorpusSearch.Service;
 
@@ -29,20 +30,35 @@ public static class NormalizationExtensions
 
     public static string NormalizeMicrosoftWordQuotes(this string buffer)
     {
-        if (buffer.IndexOf('\u2013') > -1) { buffer = buffer.Replace('\u2013', '-'); }
-        if (buffer.IndexOf('\u2014') > -1) { buffer = buffer.Replace('\u2014', '-'); }
-        if (buffer.IndexOf('\u2015') > -1) { buffer = buffer.Replace('\u2015', '-'); }
-        if (buffer.IndexOf('\u2017') > -1) { buffer = buffer.Replace('\u2017', '_'); }
-        if (buffer.IndexOf('\u2018') > -1) { buffer = buffer.Replace('\u2018', '\''); }
-        if (buffer.IndexOf('\u2019') > -1) { buffer = buffer.Replace('\u2019', '\''); }
-        if (buffer.IndexOf('\u201a') > -1) { buffer = buffer.Replace('\u201a', ','); }
-        if (buffer.IndexOf('\u201b') > -1) { buffer = buffer.Replace('\u201b', '\''); }
-        if (buffer.IndexOf('\u201c') > -1) { buffer = buffer.Replace('\u201c', '\"'); }
-        if (buffer.IndexOf('\u201d') > -1) { buffer = buffer.Replace('\u201d', '\"'); }
-        if (buffer.IndexOf('\u201e') > -1) { buffer = buffer.Replace('\u201e', '\"'); }
-        if (buffer.IndexOf('\u2026') > -1) { buffer = buffer.Replace("\u2026", "..."); }
-        if (buffer.IndexOf('\u2032') > -1) { buffer = buffer.Replace('\u2032', '\''); }
-        if (buffer.IndexOf('\u2033') > -1) { buffer = buffer.Replace('\u2033', '\"'); }
+        var qmap = new Dictionary<char, char>
+        {
+            { '\u2013', '-' },
+            { '\u2014', '-' },
+            { '\u2015', '-' },
+            { '\u2017', '_' },
+            { '\u2018', '\'' },
+            { '\u2019', '\'' },
+            { '\u201a', ',' },
+            { '\u201b', '\'' },
+            { '\u201c', '\"' },
+            { '\u201d', '\"' },
+            { '\u201e', '\"' },
+            { '\u2032', '\'' },
+            { '\u2033', '\"' }
+        };
+        foreach (var key in qmap.Keys)
+        {
+            if (buffer.IndexOf(key) > -1)
+            {
+                buffer = buffer.Replace(key, qmap[key]);
+            }
+        }
+
+        if (buffer.IndexOf('\u2026') > -1)
+        {
+            buffer = buffer.Replace("\u2026", "...");
+        }
+
         return buffer;
     }
 
