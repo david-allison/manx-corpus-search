@@ -30,7 +30,6 @@ public static class NormalizationExtensions
 
     public static string NormalizeMicrosoftWordQuotes(this string buffer)
     {
-        //var quotes = new[] { ('\u2013', '-'),('\u2014', '-') };
         var qmap = new Dictionary<char, char>
         {
             { '\u2013', '-' },
@@ -48,10 +47,18 @@ public static class NormalizationExtensions
             { '\u2033', '\"' }
         };
         foreach (var key in qmap.Keys)
+        {
             if (buffer.IndexOf(key) > -1)
+            {
                 buffer = buffer.Replace(key, qmap[key]);
+            }
+        }
+
         if (buffer.IndexOf('\u2026') > -1)
+        {
             buffer = buffer.Replace("\u2026", "...");
+        }
+
         return buffer;
     }
 
