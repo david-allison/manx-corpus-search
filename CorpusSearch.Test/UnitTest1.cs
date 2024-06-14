@@ -24,11 +24,12 @@ public class Tests
         var comma = "\u201a";
         var squote = "\u2018\u2019\u201b\u2032";
         var dquote = "\u201c\u201d\u201e\u2033";
+        var ellipsis = "\u2026";
         Assert.AreEqual(new string('-', dash.Length), DocumentLine.NormalizeManx(dash));
         Assert.AreEqual(new string('\'', squote.Length), DocumentLine.NormalizeManx(squote));
         Assert.AreEqual(string.Empty, DocumentLine.NormalizeManx(dquote));
         Assert.AreEqual("_", DocumentLine.NormalizeManx(underbar));
         Assert.AreEqual(",", DocumentLine.NormalizeManx(comma));
-        Assert.AreEqual("...", DocumentLine.NormalizeManx("\u2026"));
+        Assert.AreEqual("...", DocumentLine.NormalizeManx(ellipsis));
     }
 }
