@@ -31,9 +31,9 @@ shift $((OPTIND - 1))
 FIND_UPLOADS=--diff-filter=A
 #substitute % for space because the latter is used as an array delimiter by the shell
 new=$(git log --since=${SINCE} ${FIND_UPLOADS} --name-only OpenData | grep document.csv$ |  sort -u | tr ' ' '%')
-recents=$(cat newedits.txt 2>/dev/null | tr ' ' '%')
+edits=$(cat newedits.txt 2>/dev/null | tr ' ' '%')
 
-for  f in $new $recents
+for  f in $new $edits
 do
     ff=$(echo $f |  tr '%' ' ')
 
