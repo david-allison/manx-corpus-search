@@ -10,7 +10,7 @@ public class CorpusSearchWorkQuery(string query)
 
     internal bool IsValid()
     {
-        if (string.IsNullOrWhiteSpace(Query) || string.IsNullOrEmpty(Ident) || Query.Length > 30)
+        if (string.IsNullOrWhiteSpace(Query) || string.IsNullOrEmpty(Ident) || Query.Length > 100)
         {
             return false;
         }
