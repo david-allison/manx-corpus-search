@@ -14,7 +14,7 @@ public class CorpusSearchQuery(string query)
 
     internal bool IsValid()
     {
-        if (string.IsNullOrWhiteSpace(Query) || Query.Length > 30)
+        if (string.IsNullOrWhiteSpace(Query) || Query.Length > 100)
         {
             return false;
         }
