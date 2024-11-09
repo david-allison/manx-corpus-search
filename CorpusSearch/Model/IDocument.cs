@@ -26,6 +26,11 @@ public interface IDocument
     string Notes { get; }
     string Source { get; }
         
+    /// <summary>The language which the original document is in</summary>
+    /// <remarks>
+    /// Typically <code>"Manx"</code> or <code>"English"</code>, but other values are possible
+    /// </remarks>
+    /// <remarks>By convention, we display the original on the left (if known)</remarks>
     string Original { get; }
 
     IDictionary<string, object> GetAllExtensionData();
