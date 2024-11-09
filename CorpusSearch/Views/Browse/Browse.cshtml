@@ -60,10 +60,10 @@
             {
                 var index = x.IndexOf(". ", StringComparison.Ordinal);
                 // if there's only two strings and the second is small, don't split on .
-                // This stops (Cregeen) or (Kelly) ending u[ on the second line
+                // This stops (Cregeen) or (Kelly) ending up on the second line
                 if (index == -1 || (x.Length - index < 150)) 
                 {
-                    return new[] { x };
+                    return [x];
                 }
                 return new [] { x[..(index + 1)], x[(index + 1)..] }.Where(s => !string.IsNullOrEmpty(s));
             })
