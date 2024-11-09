@@ -31,6 +31,7 @@ public class BrowseController(DocumentSearchService documentSearchService, WorkS
         ViewData["GitHubLink"] = document.GetGitHubLink();
         ViewData["DownloadText"] = document.GetDownloadTextLink();
         ViewData["DownloadMetadata"] = document.GetDownloadMetadataLink();
+        ViewData["OriginalLanguage"] = document.Original;
         ViewData["docId"] = documentId;
         ViewData["lines"] = lines;
         return View("~/Views/Browse/Browse.cshtml");

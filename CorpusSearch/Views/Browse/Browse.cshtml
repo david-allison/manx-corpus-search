@@ -1,4 +1,5 @@
-﻿@using CorpusSearch.Model
+﻿@* See BrowseController.cs *@
+@using CorpusSearch.Model
 
 <!doctype html>
 <html lang="en">
@@ -73,11 +74,15 @@
 
 @* TODO: Add all fields from the JSON here *@
 
+@{
+    var manxOnLeftSide = ViewData["OriginalLanguage"]?.ToString() != "English";
+}
+
 <table class='table table-striped text-center' style="table-layout: fixed; width: 100%">
 <thead>
 <tr>
-    <th class="text-center" style="width: 50%">Manx</th>
-    <th class="text-center" style="width: 50%">English</th>
+    <th class="text-center" style="width: 50%">@(manxOnLeftSide ? "Manx" : "English")</th>
+    <th class="text-center" style="width: 50%">@(manxOnLeftSide ? "English" : "Manx")</th>
 </tr>
 </thead>
     <tbody>
@@ -85,10 +90,10 @@
         {
             <tr>
                 <td>
-                    @line.Manx
+                    @(manxOnLeftSide ? line.Manx : line.English) 
                 </td>
                 <td>
-                    @line.English
+                    @(manxOnLeftSide ? line.English : line.Manx)
                 </td>
                     @* {line.page != null && response.pdfLink && *@
                     @* <a href={response.pdfLink + "#page=" + line.page} target="_blank" rel="noreferrer">p{line.page}</a> } *@
