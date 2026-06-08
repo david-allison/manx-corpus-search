@@ -1,5 +1,4 @@
 src/App.test.tsx
-src/index.tsx
 src/components/NavMenu.tsx
 src/components/Layout.tsx
 src/vendor
