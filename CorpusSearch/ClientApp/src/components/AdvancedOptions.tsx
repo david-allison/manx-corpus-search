@@ -1,6 +1,6 @@
 import Typography from "@mui/material/Typography"
 import Slider from "@mui/material/Slider"
-import React, {ChangeEvent, useState} from "react"
+import {ChangeEvent, useState} from "react"
 import {HomeData} from "../routes/Home"
 import "./AdvancedOptions.css"
 

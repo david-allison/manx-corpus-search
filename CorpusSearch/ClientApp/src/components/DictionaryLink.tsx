@@ -1,4 +1,4 @@
-import React, {Fragment} from "react"
+import {Fragment} from "react"
 import {DefinedInDictionaries, DictionaryDefinition} from "../api/SearchApi"
 
 export function hasDictionaryDefinitions(dictionaries?: DefinedInDictionaries) {
