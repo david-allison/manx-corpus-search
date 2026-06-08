@@ -117,7 +117,7 @@ export const DocumentView = () => {
                 console.error(e)
             })
 
-    }, [value, searchEnglish, searchManx])
+    }, [value, searchEnglish, searchManx, docIdent])
 
 
     // eslint-disable-next-line
@@ -136,7 +136,7 @@ export const DocumentView = () => {
                 setTestJson(x)
             })
             .catch(e => console.warn(e))
-    },[searchWorkResponse])
+    },[searchWorkResponse, docIdent])
 
 
     return (
