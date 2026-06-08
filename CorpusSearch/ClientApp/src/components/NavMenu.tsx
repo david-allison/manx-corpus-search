@@ -1,6 +1,8 @@
 import {useState, MouseEvent} from "react"
 import { Container, Navbar, NavbarToggler, NavItem, NavLink, Collapse } from "reactstrap"
 import {Link, useLocation, useNavigate} from "react-router-dom"
+import corpusLogo from "../assets/corpus.png"
+import corpusIcon from "../assets/corpus-search-icon.png"
 import "./NavMenu.css"
 
 export const NavMenu = (props: { onRefreshState: () => void}) => {
@@ -31,8 +33,8 @@ export const NavMenu = (props: { onRefreshState: () => void}) => {
             <Container fluid={true} className={"container"}>
                 <Link replace to={"/"} className={"noLinkColor"} onClick={onGoHome}>
                     <div>
-                        <img src={require("../corpus.png")} alt="Manx Corpus Search" className={"corpusImageLarge"} height="100px" />
-                        <img src={require("../corpus-search-icon.png")} alt="Manx Corpus Search" className={"corpusImageSmall"} height="60px" />
+                        <img src={corpusLogo} alt="Manx Corpus Search" className={"corpusImageLarge"} height="100px" />
+                        <img src={corpusIcon} alt="Manx Corpus Search" className={"corpusImageSmall"} height="60px" />
                         <span className={"corpusImageSmall titleText"}>Gaelg Corpus Search</span>
                     </div>
                 </Link>
