@@ -1,4 +1,4 @@
-import React, {ForwardedRef, useRef} from "react"
+import {ForwardedRef, useRef, forwardRef} from "react"
 import YouTube, {YouTubePlayer, YouTubeProps} from "react-youtube"
 import {setRef} from "../utils/ForwardRef"
 import "./ComparisonTable.css"
@@ -10,7 +10,7 @@ export type Player = {
 
 // event.target needs work, as does 'opts'
 /* eslint-disable @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment */
-const YouTuber = React.forwardRef((props: {videoId: string}, forwardedRef : ForwardedRef<Player>) => {
+const YouTuber = forwardRef((props: {videoId: string}, forwardedRef : ForwardedRef<Player>) => {
     const ref = useRef<YouTubePlayer>(null)
     
     const onPlayerReady: YouTubeProps["onReady"] = (event) => {

@@ -2,7 +2,7 @@
 
 import "./Home.css"
 
-import React, {useEffect, useMemo, useRef, useState} from "react"
+import {useEffect, useMemo, useRef, useState, ChangeEvent} from "react"
 import qs from "qs"
 import MainSearchResults from "../components/MainSearchResults"
 import {DictionaryLink, hasDictionaryDefinitions} from "../components/DictionaryLink"
@@ -109,7 +109,7 @@ export const Home = () => {
         
     }, [dateRange, query, searchLanguage, matchPhrase])
 
-    const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
         setQuery(event.target.value)
     }
     

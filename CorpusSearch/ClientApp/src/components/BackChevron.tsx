@@ -1,9 +1,9 @@
 import {Link, To} from "react-router-dom"
-import React from "react"
+import { MouseEvent } from "react"
 import chevronLeft from "../assets/chevron-left.png"
 
 export const BackChevron = (props: {to: To | "historyBack"}) => {
-    const maybeSkipAndGoBack = (e: React.MouseEvent) => {
+    const maybeSkipAndGoBack = (e: MouseEvent) => {
         if (props.to == "historyBack") {
             history.back()
             e.preventDefault()
