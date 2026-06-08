@@ -1,7 +1,7 @@
 import {SearchWorkResponse, SearchWorkResult} from "../api/SearchWorkApi"
 import {Translations} from "../api/SearchApi"
 import {getSelectedWordOrPhrase} from "../utils/Selection"
-import React, {CSSProperties, Fragment, useEffect, useRef, useState} from "react"
+import {CSSProperties, Fragment, useEffect, useRef, useState, ReactNode} from "react"
 import {manxDictionaryLookup} from "../api/DictionaryApi"
 import Highlighter from "react-highlight-words"
 import {Box, CircularProgress, Modal} from "@mui/material"
@@ -43,7 +43,7 @@ export const ComparisonTable = (props: {
         setModalText(stringToSearch.trim())
     }
 
-    const [modalOpen, setModalOpen] = React.useState(false)
+    const [modalOpen, setModalOpen] = useState(false)
     const [modalText, setModalText] = useState("")
     const handleModalClose = () => setModalOpen(false)
 
@@ -89,7 +89,7 @@ export const ComparisonTable = (props: {
      * If originalText exists, perform a diff and display this to the user
      * This displays changes we made to the document
      */
-    const diffCorrectedText = (originalText: string | undefined, currentText: string): React.ReactNode | null => {
+    const diffCorrectedText = (originalText: string | undefined, currentText: string): ReactNode | null => {
         if (!originalText) {
             return null
         }

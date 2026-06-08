@@ -1,4 +1,4 @@
-import React, {useState} from "react"
+import {useState, MouseEvent} from "react"
 import { Container, Navbar, NavbarToggler, NavItem, NavLink, Collapse } from "reactstrap"
 import {Link, useLocation, useNavigate} from "react-router-dom"
 import "./NavMenu.css"
@@ -11,7 +11,7 @@ export const NavMenu = (props: { onRefreshState: () => void}) => {
     const navigation = useNavigate()
     const location = useLocation()
     
-    const onGoHome = (e: React.MouseEvent) => {
+    const onGoHome = (e: MouseEvent) => {
         if (location.pathname == "/") {
             // reset the state
             navigation("/", { replace: true})

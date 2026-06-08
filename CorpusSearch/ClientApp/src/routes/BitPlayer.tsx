@@ -3,7 +3,7 @@
 since this is kind of a no-frills YouTube player*/
 
 import "./DocumentView.css"
-import React, {useRef, useState} from "react"
+import {useRef, useState, ChangeEvent} from "react"
 import YouTube, {YouTubeEvent, YouTubePlayer, YouTubeProps} from "react-youtube"
 import useInterval from "../vendor/use-interval/UseInterval"
 
@@ -49,13 +49,13 @@ function Video({vId="rLEBp8R1_XA"}) {
         const the_player = r_player.current
         setDur(the_player.getDuration())
     }
-    const onSChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const onSChange = (e: ChangeEvent<HTMLInputElement>) => {
         setStartTime(constrained_val(parseFloat(e.target.value)) )
     }
-    const onEChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const onEChange = (e: ChangeEvent<HTMLInputElement>) => {
         setEndTime(constrained_val(parseFloat(e.target.value)) )
     }
-    const onIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const onIdChange = (e: ChangeEvent<HTMLInputElement>) => {
         setVideoId(e.target.value)
     }
     const restart = () => {

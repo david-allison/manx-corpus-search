@@ -1,4 +1,4 @@
-import React, {useState} from "react"
+import {useState, useMemo, MouseEvent} from "react"
 import { Link } from "react-router-dom"
 import "./MainSearchResults.css"
 import {SearchResultEntry} from "../api/SearchApi"
@@ -11,9 +11,9 @@ type SortConfig = {
     direction: "ascending" | "descending"
 }
 const useSortableData = (items: SearchResultEntry[], config: SortConfig | null = null) => {
-    const [sortConfig, setSortConfig] = React.useState(config)
+    const [sortConfig, setSortConfig] = useState(config)
 
-    const sortedItems = React.useMemo(() => {
+    const sortedItems = useMemo(() => {
         const sortableItems = [...items]
         if (sortConfig === null) {
             return sortableItems
@@ -187,14 +187,14 @@ const ResultView = (props: { result: SearchResultEntry, query: string, manx: boo
     const canPrev = matchNumber > 1
     
     const formattedLineNumber = String(matchNumber).padStart(4, "0")  
-    const next = async (e: React.MouseEvent) => {
+    const next = async (e: MouseEvent) => {
         e.preventDefault()
         if (!canNext) {
            return   
         }
         await changeLine(matchNumber + 1)
     }
-    const prev =  async (e: React.MouseEvent) => {
+    const prev =  async (e: MouseEvent) => {
         e.preventDefault()
         if (!canPrev) {
             return
