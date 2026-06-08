@@ -18,38 +18,36 @@
     "react-highlight-words": "^0.18.0",
     "react-router-dom": "^6.4.3",
     "react-youtube": "^10.1.0",
-    "reactstrap": "^8.10.1",
-    "rimraf": "^2.6.2",
-    "source-map-explorer": "^2.5.3"
+    "reactstrap": "^8.10.1"
   },
   "devDependencies": {
     "@babel/core": "^7.13.0",
     "@types/diff": "^5.0.2",
     "@types/jest": "^29.2.2",
     "@types/node": "^18.11.9",
+    "@types/qs": "^6.15.1",
     "@types/react-dom": "^18.0.8",
     "@types/react-helmet": "^6.1.6",
     "@types/react-highlight-words": "^0.16.4",
     "@typescript-eslint/eslint-plugin": "^5.42.1",
     "@typescript-eslint/parser": "^5.42.1",
+    "@vitejs/plugin-react": "^4.7.0",
     "ajv": "^6.9.1",
-    "cross-env": "^5.2.0",
     "eslint": "^8.27.0",
     "eslint-config-react-app": "^7.0.1",
     "eslint-plugin-import": "^2.26.0",
     "eslint-plugin-jsx-a11y": "^6.2.3",
     "eslint-plugin-react": "^7.31.10",
     "eslint-plugin-react-hooks": "^4.6.0",
-    "react-scripts": "^5.0.1",
-    "typescript": "^4.8.4"
+    "typescript": "^4.8.4",
+    "vite": "^6.4.3"
   },
   "scripts": {
-    "start": "rimraf ./build && react-scripts start",
-    "analyze": "source-map-explorer 'build/static/js/*.js'",
-    "build": "react-scripts build",
-    "test": "cross-env CI=true react-scripts test --env=jsdom",
-    "eject": "react-scripts eject",
-    "lint": "eslint ./src/"
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "lint": "eslint ./src/",
+    "test": "vitest"
   },
   "browserslist": {
     "production": [

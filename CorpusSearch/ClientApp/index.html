@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <meta name="theme-color" content="#000000" />
+    <!-- Resolve the app's relative API URLs (api/Metadata, search/..., statistics) against the
+         site root, not the current route. Without this, fetches on nested routes like
+         /docs/:id resolve to /docs/api/... and fall through to the SPA (HTML, not JSON). -->
+    <base href="/" />
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="shortcut icon" href="/favicon.ico" />
+    <title>Manx Corpus Search</title>
+    <meta name="description" content="Search for words &amp; phrases within over 500 translated texts, from 1610 to the present era. Free &amp; Open Source" />
+  </head>
+  <body>
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
