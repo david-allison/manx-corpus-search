@@ -3,7 +3,6 @@
 import "./Home.css"
 
 import {useEffect, useMemo, useRef, useState, ChangeEvent} from "react"
-import qs from "qs"
 import MainSearchResults from "../components/MainSearchResults"
 import {DictionaryLink, hasDictionaryDefinitions} from "../components/DictionaryLink"
 import {hasTranslations, TranslationList} from "../components/TranslationList"
@@ -23,7 +22,7 @@ export class HomeData {
     static currentYear = new Date().getFullYear()
 }
 
-const parseLanguage = (language?: string): SearchLanguage | null => {
+const parseLanguage = (language?: string | null): SearchLanguage | null => {
     if (!language) {
         return null
     }
@@ -48,10 +47,10 @@ export const Home = () => {
     const [loading, setLoading] = useState(true)
     const [searchResponse, setSearchResponse] = useState<SearchResponse | null>(null)
     
-    const locationParams = qs.parse(location.search, { ignoreQueryPrefix: true })
-    
-    const [query, setQuery] = useState(() => locationParams?.q?.toString() ?? "")
-    const [searchLanguage, setSearchLanguage] = useState<SearchLanguage>(() => parseLanguage(locationParams?.lang?.toString()) ?? "Manx")
+    const locationParams = new URLSearchParams(location.search)
+
+    const [query, setQuery] = useState(() => locationParams.get("q") ?? "")
+    const [searchLanguage, setSearchLanguage] = useState<SearchLanguage>(() => parseLanguage(locationParams.get("lang")) ?? "Manx")
     
     
     const [dateRange, setDateRange] = useState<DateRange>( { start: 1500, end: HomeData.currentYear })

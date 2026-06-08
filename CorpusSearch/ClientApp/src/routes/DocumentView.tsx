@@ -2,7 +2,6 @@
 import "./DocumentView.css"
 
 import {useEffect, useState} from "react"
-import qs from "qs"
 import {useLocation, useMatch} from "react-router-dom"
 import {searchWork, SearchWorkResponse, SourceLink} from "../api/SearchWorkApi"
 import {SearchLanguage} from "./Home"
@@ -77,9 +76,9 @@ export const DocumentView = () => {
     const docIdent = match?.params.docId
     
     // the 'q' parameter from the querystring
-    const { q } = qs.parse(location.search, { ignoreQueryPrefix: true })
-    
-    const [value, setValue] = useState(q?.toString() ?? "*")
+    const q = new URLSearchParams(location.search).get("q")
+
+    const [value, setValue] = useState(q ?? "*")
     
     const getInitialSearchLanguage = (): SearchLanguage => {
         // eslint-disable-next-line

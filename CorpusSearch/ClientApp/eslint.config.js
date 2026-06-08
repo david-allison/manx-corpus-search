@@ -41,10 +41,8 @@ export default tseslint.config(
             "semi": ["error", "never", { beforeStatementContinuationChars: "always" }],
             "eqeqeq": "off",
 
-            // typescript-eslint v8 added these to the type-checked set. They flag pre-existing,
-            // practically-fine patterns (qs ParsedQs unions stringified, an intentional sentinel
-            // literal). Left off to keep this toolchain migration behaviour-neutral — revisit separately.
-            "@typescript-eslint/no-base-to-string": "off",
+            // typescript-eslint v8 added no-redundant-type-constituents to the type-checked set;
+            // it flags an intentional sentinel literal (To | "historyBack" in BackChevron). Left off.
             "@typescript-eslint/no-redundant-type-constituents": "off",
         },
     },
