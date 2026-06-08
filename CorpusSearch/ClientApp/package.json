@@ -24,12 +24,7 @@
     "react-youtube": "^10.1.0",
     "reactstrap": "^8.10.1",
     "rimraf": "^2.6.2",
-    "source-map-explorer": "^2.5.3",
-    "workbox-core": "^6.5.4",
-    "workbox-expiration": "^6.5.4",
-    "workbox-precaching": "^6.5.4",
-    "workbox-routing": "^6.5.4",
-    "workbox-strategies": "^6.5.4"
+    "source-map-explorer": "^2.5.3"
   },
   "devDependencies": {
     "@babel/core": "^7.13.0",
