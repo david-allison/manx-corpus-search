@@ -1,4 +1,4 @@
-import React, {useMemo, useState} from "react"
+import {useMemo, useState} from "react"
 import {SearchLanguage} from "../routes/Home"
 import "./ManxEnglishSelector.css"
 import ifEmoji from "if-emoji"

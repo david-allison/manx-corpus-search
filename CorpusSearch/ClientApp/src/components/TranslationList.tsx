@@ -1,4 +1,4 @@
-import React, {Fragment} from "react"
+import {Fragment} from "react"
 import {Translations} from "../api/SearchApi"
 
 export function hasTranslations(translations?: Translations) {

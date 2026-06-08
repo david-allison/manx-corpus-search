@@ -1,4 +1,4 @@
-import React, {ChangeEventHandler} from "react"
+import {ChangeEventHandler} from "react"
 
 export const SearchBar = (props: {query: string, onChange :ChangeEventHandler<HTMLInputElement>}) => {
     const {query, onChange} = props

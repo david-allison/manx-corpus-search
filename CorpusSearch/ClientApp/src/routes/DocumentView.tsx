@@ -1,7 +1,7 @@
 /* eslint @typescript-eslint/no-misused-promises: 0 */  
 import "./DocumentView.css"
 
-import React, {useEffect, useState} from "react"
+import {useEffect, useState} from "react"
 import qs from "qs"
 import {useLocation, useMatch} from "react-router-dom"
 import {searchWork, SearchWorkResponse, SourceLink} from "../api/SearchWorkApi"
