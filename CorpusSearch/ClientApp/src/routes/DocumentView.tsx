@@ -15,7 +15,7 @@ import {SearchBar} from "../components/SearchBar"
 import {BackChevron} from "../components/BackChevron"
 import {Helmet} from "react-helmet"
 
-/* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/restrict-template-expressions, @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment */
 const enrichSources = (x: any, sourceLinks: SourceLink[] | null) => {
     if (!sourceLinks || sourceLinks.length == 0) {
         return

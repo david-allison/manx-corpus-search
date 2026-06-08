@@ -89,7 +89,7 @@ const setRangeEndOffset = (inputRange: Range, node: Node) => {
             do {
                 range.setEnd(node,range.endOffset + 1)
             } while(!range.toString().includes(" ") && range.toString().trim() != "")
-        } catch (e) {
+        } catch {
             // TODO: find a less hacky way to end if at the end
         }
     }
