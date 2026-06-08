@@ -1,7 +1,7 @@
 using CorpusSearch.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.SpaServices.ReactDevelopmentServer;
+using Microsoft.AspNetCore.SpaServices;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -11,6 +11,7 @@ using System.Linq;
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 using CorpusSearch.Controllers;
+using CorpusSearch.Infrastructure;
 using CorpusSearch.Model;
 using CorpusSearch.Dependencies.csly;
 using CorpusSearch.Dependencies;
@@ -49,6 +50,9 @@ public class Startup(IConfiguration configuration)
     public IConfiguration Configuration { get; } = configuration;
 
     private ILogger<Startup> log;
+
+    // Dev only: the Vite dev server the SPA middleware proxies to (and launches).
+    private static readonly Uri ViteDevServerUrl = new("http://localhost:3000");
 
     // This method gets called by the runtime. Use this method to add services to the container.
     public void ConfigureServices(IServiceCollection services)
@@ -138,7 +142,8 @@ public class Startup(IConfiguration configuration)
 
             if (env.IsDevelopment())
             {
-                spa.UseReactDevelopmentServer(npmScript: "start");
+                // Start and wait for the Vite dev server and proxy to it, so `dotnet run` is one command.
+                spa.UseProxyToSpaDevelopmentServer(() => ViteDevServer.EnsureRunningAsync(ViteDevServerUrl));
             }
         });
 
