@@ -4,7 +4,7 @@ import "./MainSearchResults.css"
 import {SearchResultEntry} from "../api/SearchApi"
 import {GetMatch} from "../api/Matches"
 import {floatingPromiseReturn} from "../utils/Promise"
-import {useLazyLoader} from "../utils/LazyLoader"
+import {useLazyLoader} from "../hooks/useLazyLoader"
 
 type SortConfig = {
     key: keyof SearchResultEntry

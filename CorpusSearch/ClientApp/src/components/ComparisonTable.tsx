@@ -10,7 +10,7 @@ import {diffChars} from "diff"
 import YouTuber, {Player} from "./YouTuber"
 import useInterval from "../vendor/use-interval/UseInterval"
 import "./ComparisonTable.css"
-import {useLanguageVisibility} from "../hooks/LanguageVisibility"
+import {useLanguageVisibility} from "../hooks/useLanguageVisibility"
 
 function escapeRegex(s: string) {
     return s.replace(/[/\-\\^$*+?.()|[\]{}]/g, "\\$&")
