@@ -5,7 +5,7 @@ import chevronLeft from "../assets/chevron-left.png"
 export const BackChevron = (props: {to: To | "historyBack"}) => {
     const maybeSkipAndGoBack = (e: MouseEvent) => {
         if (props.to == "historyBack") {
-            history.back()
+            window.history.back()
             e.preventDefault()
         }
     }

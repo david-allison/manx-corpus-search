@@ -107,7 +107,7 @@ export const Home = () => {
                 console.error(e)
             })
         
-    }, [dateRange, query, searchLanguage, matchPhrase])
+    }, [dateRange, query, searchLanguage, matchPhrase, hasNoSearch])
 
     const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
         setQuery(event.target.value)
@@ -119,7 +119,7 @@ export const Home = () => {
        } else {
             navigation(`/?q=${query}&lang=${toLangParam(searchLanguage)}`, { replace: true })    
        }
-    }, [query, searchLanguage])
+    }, [query, searchLanguage, navigation])
 
     const statsMemo = useMemo(async () => {return await getCorpusStatistics()} , [])
     const [stats, setStats] = useState<Statistics | "error" | null>(null)
@@ -129,7 +129,7 @@ export const Home = () => {
         }
          
         loadStatsSync().then((x) => setStats(x)).catch(() => setStats("error"))
-    }, [])
+    }, [statsMemo])
     
     return (
         <div>
