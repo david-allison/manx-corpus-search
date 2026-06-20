@@ -1,5 +1,5 @@
 import {useState, MouseEvent} from "react"
-import { Container, Navbar, NavbarToggler, NavItem, NavLink, Collapse } from "reactstrap"
+import { Container, Navbar, NavbarToggler, NavItem, Collapse } from "reactstrap"
 import {Link, useLocation, useNavigate} from "react-router-dom"
 import corpusLogo from "../assets/corpus.png"
 import corpusIcon from "../assets/corpus-search-icon.png"
@@ -28,7 +28,7 @@ export const NavMenu = (props: { onRefreshState: () => void}) => {
     return (
       <header>
 
-        <Navbar className="navbar-expand-sm navbar-toggleable-sm ng-white border-bottom box-shadow mb-3" light>
+        <Navbar className="navbar-expand-sm navbar-toggleable-sm ng-white border-bottom box-shadow mb-3" light container={false}>
 
             <Container fluid={true} className={"container"}>
                 <Link replace to={"/"} className={"noLinkColor"} onClick={onGoHome}>
