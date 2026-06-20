@@ -1,6 +1,5 @@
-import {ForwardedRef, useRef, forwardRef} from "react"
+import {Ref, useImperativeHandle, useRef} from "react"
 import YouTube, {YouTubePlayer, YouTubeProps} from "react-youtube"
-import {setRef} from "../utils/ForwardRef"
 import "./ComparisonTable.css"
 
 export type Player = {
@@ -10,12 +9,24 @@ export type Player = {
 
 // event.target needs work, as does 'opts'
 /* eslint-disable @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment */
-const YouTuber = forwardRef((props: {videoId: string}, forwardedRef : ForwardedRef<Player>) => {
-    const ref = useRef<YouTubePlayer>(null)
-    
+const YouTuber = ({videoId, ref}: {videoId: string, ref?: Ref<Player>}) => {
+    const player = useRef<YouTubePlayer>(null)
+
+    const seek = (time: number) => {
+        if (player.current == undefined) {
+            return
+        }
+        player.current.seekTo(time, true)
+        player.current.playVideo()
+    }
+
+    useImperativeHandle(ref, () => ({
+        seek,
+        getCurrentTime: () => player.current?.getCurrentTime() ?? 0,
+    }))
+
     const onPlayerReady: YouTubeProps["onReady"] = (event) => {
-        ref.current = event.target 
-        setRef(forwardedRef, { seek: seek, getCurrentTime: () => event.target.getCurrentTime() })
+        player.current = event.target
     }
 
     const opts: YouTubeProps["opts"] = {
@@ -25,21 +36,12 @@ const YouTuber = forwardRef((props: {videoId: string}, forwardedRef : ForwardedR
             autoplay: 0,
         },
     }
-    
-    const seek = (time: number) => {
-        if (ref.current == undefined) {
-            return
-        }
-        ref.current.seekTo(time, true)
-        ref.current.playVideo()
-    }
-
 
     return <>
-        <YouTube videoId={props.videoId} opts={opts} iframeClassName={"youtube-iframe"} onReady={onPlayerReady} />
+        <YouTube videoId={videoId} opts={opts} iframeClassName={"youtube-iframe"} onReady={onPlayerReady} />
     </>
     /* eslint-enable */
-})
+}
 
 
 export default YouTuber
