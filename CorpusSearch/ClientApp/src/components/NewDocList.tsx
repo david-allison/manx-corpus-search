@@ -2,7 +2,7 @@
  * Provides a list of links to the latest and greatest files in the Corpus
  * Which means those document.csv files that git detects as having recent changes
  */
-import {useEffect, useState} from "react"
+import {JSX, useEffect, useState} from "react"
 
 /**
  * Produces a link to a document, with an emoji denoting the type of content

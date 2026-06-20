@@ -12,7 +12,7 @@ import "./custom.css"
 
 export const App = () => {
 
-    const [k,onRefresh] = useReducer<(num: number) => number>(x => x + 1, 1)
+    const [k,onRefresh] = useReducer(x => x + 1, 1)
 
     return (
           <Layout onRefresh={onRefresh}>
