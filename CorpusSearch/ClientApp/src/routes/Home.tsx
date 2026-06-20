@@ -2,7 +2,7 @@
 
 import "./Home.css"
 
-import {useEffect, useMemo, useRef, useState, useTransition, ChangeEvent} from "react"
+import {Suspense, use, useEffect, useRef, useState, useTransition, ChangeEvent, useMemo} from "react"
 import MainSearchResults from "../components/MainSearchResults"
 import {DictionaryLink, hasDictionaryDefinitions} from "../components/DictionaryLink"
 import {hasTranslations, TranslationList} from "../components/TranslationList"
@@ -115,16 +115,8 @@ export const Home = () => {
        }
     }, [query, searchLanguage, navigation])
 
-    const statsMemo = useMemo(async () => {return await getCorpusStatistics()} , [])
-    const [stats, setStats] = useState<Statistics | "error" | null>(null)
-    useEffect(() => {
-        const loadStatsSync = async () => {
-            return await statsMemo
-        }
-         
-        loadStatsSync().then((x) => setStats(x)).catch(() => setStats("error"))
-    }, [statsMemo])
-    
+    const statsPromise = useMemo(() => getCorpusStatistics().catch(() => "error" as const), [])
+
     return (
         <div>
             <div className="search-options">
@@ -140,25 +132,9 @@ export const Home = () => {
 
             </div>
 
-            {hasNoSearch && !stats && <ProgressBar/>}
-            {hasNoSearch && stats && <span className={"homeText"}>
-                {stats != "error" ?
-                    <span className={"homeText"} style={{textAlign: "center"}}>
-                        <span style={{display: "inline"}}>Search our growing collection of over <b title={`${stats.uniqueManxWordCount.toLocaleString()} unique words`}>{stats.manxWordCount.toLocaleString()} Manx words</b> or&nbsp;<a href={"/Browse"}>browse&nbsp;{stats.documentCount.toLocaleString()} documents</a></span>
-                    </span>    
-                :
-                    <>
-                        <span className={"homeText"}>
-                            <span style={{display: "inline"}}>Enter a search term, or&nbsp;<a href={"/Browse"}>Browse</a>&nbsp;all content</span>
-                        </span>
-                    </>
-                }
-                <div><NewDocList/></div>
-                <span style={{display: "inline", marginTop: "1em"}}>Support our revitalisation efforts by <a href={"/MailingList"}>signing up for our mailing list</a>. We'll email once in a while with updates to the corpus & other projects.</span>
-                <br/>
-                <span>If we're missing anything, please let us know at</span>
-                <span><a href="mailto:corpus-submissions@gaelg.im">corpus-submissions@gaelg.im</a>.</span>
-            </span>}
+            {hasNoSearch && <Suspense fallback={<ProgressBar/>}>
+                <HomeIntro statsPromise={statsPromise}/>
+            </Suspense>}
             
             {!hasNoSearch && hasError && <span className={"homeText"}>
                 Something went wrong, please try again
@@ -179,6 +155,30 @@ export const Home = () => {
                 </div>}
 
         </div>
+    )
+}
+
+const HomeIntro = ({ statsPromise }: { statsPromise: Promise<Statistics | "error"> }) => {
+    const stats = use(statsPromise)
+    return (
+        <span className={"homeText"}>
+            {stats != "error" ?
+                <span className={"homeText"} style={{textAlign: "center"}}>
+                    <span style={{display: "inline"}}>Search our growing collection of over <b title={`${stats.uniqueManxWordCount.toLocaleString()} unique words`}>{stats.manxWordCount.toLocaleString()} Manx words</b> or&nbsp;<a href={"/Browse"}>browse&nbsp;{stats.documentCount.toLocaleString()} documents</a></span>
+                </span>
+            :
+                <>
+                    <span className={"homeText"}>
+                        <span style={{display: "inline"}}>Enter a search term, or&nbsp;<a href={"/Browse"}>Browse</a>&nbsp;all content</span>
+                    </span>
+                </>
+            }
+            <div><NewDocList/></div>
+            <span style={{display: "inline", marginTop: "1em"}}>Support our revitalisation efforts by <a href={"/MailingList"}>signing up for our mailing list</a>. We'll email once in a while with updates to the corpus & other projects.</span>
+            <br/>
+            <span>If we're missing anything, please let us know at</span>
+            <span><a href="mailto:corpus-submissions@gaelg.im">corpus-submissions@gaelg.im</a>.</span>
+        </span>
     )
 }
 
