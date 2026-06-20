@@ -112,6 +112,30 @@ export const Home = () => {
 
     const statsPromise = useMemo(() => getCorpusStatistics().catch(() => "error" as const), [])
 
+    const renderContent = () => {
+        if (hasNoSearch) {
+            return <Suspense fallback={<ProgressBar/>}>
+                <HomeIntro statsPromise={statsPromise}/>
+            </Suspense>
+        }
+        if (result === null) {
+            return isPending ? <ProgressBar/> : null
+        }
+        if (result.status === "error") {
+            return <span className={"homeText"}>Something went wrong, please try again</span>
+        }
+        // dim stale results when there is a pending update
+        return <div style={{opacity: isPending ? 0.5 : 1, transition: "opacity 150ms ease"}}>
+            <SearchResultHeader
+                response={result.data} />
+            <MainSearchResults
+                query={result.data.query}
+                results={result.data.results}
+                manx={ searchLanguage == "Manx" }
+                english={ searchLanguage == "English" }/>
+        </div>
+    }
+
     return (
         <div>
             <div className="search-options">
@@ -127,27 +151,7 @@ export const Home = () => {
 
             </div>
 
-            {hasNoSearch && <Suspense fallback={<ProgressBar/>}>
-                <HomeIntro statsPromise={statsPromise}/>
-            </Suspense>}
-
-            {!hasNoSearch && result?.status === "error" && <span className={"homeText"}>
-                Something went wrong, please try again
-            </span>}
-
-            {!hasNoSearch && result === null && isPending && <ProgressBar/>}
-
-            {!hasNoSearch && result?.status === "success" &&
-                // dim stale results when there is a pending update
-                <div style={{opacity: isPending ? 0.5 : 1, transition: "opacity 150ms ease"}}>
-                    <SearchResultHeader
-                        response={result.data} />
-                    <MainSearchResults
-                        query={result.data.query}
-                        results={result.data.results}
-                        manx={ searchLanguage == "Manx" }
-                        english={ searchLanguage == "English" }/>
-                </div>}
+            {renderContent()}
 
         </div>
     )
