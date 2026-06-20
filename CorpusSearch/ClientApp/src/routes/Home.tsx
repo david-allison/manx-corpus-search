@@ -8,7 +8,7 @@ import {DictionaryLink, hasDictionaryDefinitions} from "../components/Dictionary
 import {hasTranslations, TranslationList} from "../components/TranslationList"
 import AdvancedOptions, {DateRange} from "../components/AdvancedOptions"
 import {useSearchParams} from "react-router-dom"
-import {search, SearchResponse} from "../api/SearchApi"
+import {search, SearchResponse, SearchParams} from "../api/SearchApi"
 import {CircularProgress} from "@mui/material"
 import {ManxEnglishSelector} from "../components/ManxEnglishSelector"
 import {getCorpusStatistics, Statistics} from "../api/CorpusStatistics"
@@ -61,7 +61,15 @@ export const Home = () => {
     const [dateRange, setDateRange] = useState<DateRange>( { start: 1500, end: HomeData.currentYear })
     const [matchPhrase, setMatchPhrase] = useState(false)
 
-    const hasNoSearch = query.trim() == "" 
+    const request = useMemo<SearchParams>(() => ({
+        query: matchPhrase ? `*${query}*` : query,
+        minDate: dateRange.start,
+        maxDate: dateRange.end,
+        manx: searchLanguage === "Manx",
+        english: searchLanguage === "English",
+    }), [query, searchLanguage, dateRange, matchPhrase])
+
+    const hasNoSearch = query.trim() == ""
     
     const currentQuery = useRef(query)
     currentQuery.current = query
@@ -69,22 +77,13 @@ export const Home = () => {
     // load the data
     useEffect(() => {
         const getData = async () => {
-            
-            const parsedQuery = matchPhrase ? `*${query}*` : query
-            
-            const data = await search({
-                query: parsedQuery,
-                minDate: dateRange.start,
-                maxDate: dateRange.end,
-                manx: searchLanguage == "Manx",
-                english: searchLanguage == "English"
-            })
+            const data = await search(request)
 
             // ensure the return value is valid
-            if (data.query != parsedQuery) {
+            if (data.query != request.query) {
                 return null
             }
-            
+
             return data
         }
 
@@ -104,7 +103,7 @@ export const Home = () => {
                 console.error(e)
             }
         })
-    }, [dateRange, query, searchLanguage, matchPhrase, hasNoSearch])
+    }, [request, hasNoSearch])
 
     const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
         setQuery(event.target.value)
