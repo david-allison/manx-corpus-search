@@ -2,7 +2,7 @@
 
 import "./Home.css"
 
-import {Suspense, use, useEffect, useRef, useState, useTransition, ChangeEvent, useMemo} from "react"
+import {Suspense, use, useEffect, useState, useTransition, ChangeEvent, useMemo} from "react"
 import MainSearchResults from "../components/MainSearchResults"
 import {DictionaryLink, hasDictionaryDefinitions} from "../components/DictionaryLink"
 import {hasTranslations, TranslationList} from "../components/TranslationList"
@@ -71,38 +71,25 @@ export const Home = () => {
 
     const hasNoSearch = query.trim() == ""
     
-    const currentQuery = useRef(query)
-    currentQuery.current = query
-    
     // load the data
     useEffect(() => {
-        const getData = async () => {
-            const data = await search(request)
-
-            // ensure the return value is valid
-            if (data.query != request.query) {
-                return null
-            }
-
-            return data
-        }
-
         if (hasNoSearch) {
             return
         }
 
+        const controller = new AbortController()
         startTransition(async () => {
             try {
-                const maybeData = await getData()
-                if (maybeData == null || maybeData.query != currentQuery.current) {
-                    return
-                }
-                setResult({ status: "success", data: maybeData })
+                const data = await search(request, controller.signal)
+                if (controller.signal.aborted) return
+                setResult({ status: "success", data })
             } catch (e) {
+                if (controller.signal.aborted) return
                 setResult({ status: "error" })
                 console.error(e)
             }
         })
+        return () => controller.abort()
     }, [request, hasNoSearch])
 
     const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
