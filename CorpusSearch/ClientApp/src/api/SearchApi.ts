@@ -36,9 +36,9 @@ export type SearchParams = {
     english: boolean
 }
 
-export const search = async (params: SearchParams): Promise<SearchResponse> => {
+export const search = async (params: SearchParams, signal?: AbortSignal): Promise<SearchResponse> => {
     const query = encodeURIComponent(params.query)
-    const response = await fetch(`search/search/${query}?minDate=${params.minDate}&maxDate=${params.maxDate}&manx=${params.manx.toString()}&english=${params.english.toString()}`)
+    const response = await fetch(`search/search/${query}?minDate=${params.minDate}&maxDate=${params.maxDate}&manx=${params.manx.toString()}&english=${params.english.toString()}`, { signal })
     // TODO: Validation
     const ret = await response.json() as SearchResponse
 

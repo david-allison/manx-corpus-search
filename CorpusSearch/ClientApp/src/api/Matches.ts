@@ -25,7 +25,7 @@ type MatchQuery = {
  * [1] => "as hooar Isaac Jacob, **as** hooar Jacob Judas as e"
  * [3] => "3 **As** hooar Judas Phares as Zarah"
  */
-export const GetMatch = async (params: MatchQuery): Promise<MatchReference> => {
-    const response = await fetch(`search/Match/${params.docIdent}/?query=${params.query}&match=${params.match}`)
+export const GetMatch = async (params: MatchQuery, signal?: AbortSignal): Promise<MatchReference> => {
+    const response = await fetch(`search/Match/${params.docIdent}/?query=${params.query}&match=${params.match}`, { signal })
     return await response.json() as MatchReference
 }
