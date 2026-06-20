@@ -28,7 +28,7 @@ export type SearchResultEntry = {
 }
 
 
-type SearchParams = {
+export type SearchParams = {
     query: string
     minDate: number
     maxDate: number
