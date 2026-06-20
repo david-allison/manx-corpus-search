@@ -17,6 +17,9 @@ import {NewDocList} from "../components/NewDocList"
 
 export type SearchLanguage = "English" | "Manx"
 
+type SearchResult = { status: "success"; data: SearchResponse } 
+    | { status: "error" }
+
 export class HomeData {
     static displayName = HomeData.name
     static currentYear = new Date().getFullYear()
@@ -53,12 +56,11 @@ export const Home = () => {
     const setSearchLanguage = (next: SearchLanguage) => updateSearch(query, next)
 
     const [isPending, startTransition] = useTransition()
-    const [searchResponse, setSearchResponse] = useState<SearchResponse | null>(null)
+    const [result, setResult] = useState<SearchResult | null>(null) // null until a search runs
 
     const [dateRange, setDateRange] = useState<DateRange>( { start: 1500, end: HomeData.currentYear })
     const [matchPhrase, setMatchPhrase] = useState(false)
-    const [hasError, setHasError] = useState(false)
-    
+
     const hasNoSearch = query.trim() == "" 
     
     const currentQuery = useRef(query)
@@ -96,10 +98,9 @@ export const Home = () => {
                 if (maybeData == null || maybeData.query != currentQuery.current) {
                     return
                 }
-                setHasError(false)
-                setSearchResponse(maybeData)
+                setResult({ status: "success", data: maybeData })
             } catch (e) {
-                setHasError(true)
+                setResult({ status: "error" })
                 console.error(e)
             }
         })
@@ -129,21 +130,21 @@ export const Home = () => {
             {hasNoSearch && <Suspense fallback={<ProgressBar/>}>
                 <HomeIntro statsPromise={statsPromise}/>
             </Suspense>}
-            
-            {!hasNoSearch && hasError && <span className={"homeText"}>
+
+            {!hasNoSearch && result?.status === "error" && <span className={"homeText"}>
                 Something went wrong, please try again
             </span>}
 
-            {!hasNoSearch && !hasError && isPending && searchResponse == null && <ProgressBar/>}
+            {!hasNoSearch && result === null && isPending && <ProgressBar/>}
 
-            {!hasNoSearch && !hasError && searchResponse != null &&
+            {!hasNoSearch && result?.status === "success" &&
                 // dim stale results when there is a pending update
                 <div style={{opacity: isPending ? 0.5 : 1, transition: "opacity 150ms ease"}}>
                     <SearchResultHeader
-                        response={searchResponse} />
+                        response={result.data} />
                     <MainSearchResults
-                        query={searchResponse.query}
-                        results={searchResponse.results}
+                        query={result.data.query}
+                        results={result.data.results}
                         manx={ searchLanguage == "Manx" }
                         english={ searchLanguage == "English" }/>
                 </div>}
