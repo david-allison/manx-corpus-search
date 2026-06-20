@@ -37,6 +37,12 @@
     "vite": "^6.4.3",
     "vitest": "^4.1.8"
   },
+  "overrides": {
+    "react-popper": {
+      "react": "$react",
+      "react-dom": "$react-dom"
+    }
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
