@@ -2,7 +2,7 @@
 
 import "./Home.css"
 
-import {useEffect, useMemo, useRef, useState, ChangeEvent} from "react"
+import {useEffect, useMemo, useRef, useState, useTransition, ChangeEvent} from "react"
 import MainSearchResults from "../components/MainSearchResults"
 import {DictionaryLink, hasDictionaryDefinitions} from "../components/DictionaryLink"
 import {hasTranslations, TranslationList} from "../components/TranslationList"
@@ -44,7 +44,7 @@ export const Home = () => {
     const location = useLocation()
     const navigation = useNavigate()
     
-    const [loading, setLoading] = useState(true)
+    const [isPending, startTransition] = useTransition()
     const [searchResponse, setSearchResponse] = useState<SearchResponse | null>(null)
     
     const locationParams = new URLSearchParams(location.search)
@@ -85,27 +85,22 @@ export const Home = () => {
         }
 
         if (hasNoSearch) {
-            setLoading(false)
             return
         }
-        
-        setLoading(true)
-        
-        getData()
-            .then(maybeData => {
-                setLoading(false)
+
+        startTransition(async () => {
+            try {
+                const maybeData = await getData()
                 if (maybeData == null || maybeData.query != currentQuery.current) {
                     return
                 }
                 setHasError(false)
                 setSearchResponse(maybeData)
-            })
-            .catch(e => {
-                setLoading(false)
+            } catch (e) {
                 setHasError(true)
                 console.error(e)
-            })
-        
+            }
+        })
     }, [dateRange, query, searchLanguage, matchPhrase, hasNoSearch])
 
     const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -169,18 +164,19 @@ export const Home = () => {
                 Something went wrong, please try again
             </span>}
 
-            {!hasNoSearch && !hasError && loading && <ProgressBar/>}
-            
-            {!hasNoSearch && !hasError && !loading && searchResponse != null && <>
-                <SearchResultHeader
-                    response={searchResponse} />
-                <MainSearchResults
-                    query={searchResponse.query}
-                    results={searchResponse.results}
-                    manx={ searchLanguage == "Manx" }
-                    english={ searchLanguage == "English" }/>
+            {!hasNoSearch && !hasError && isPending && searchResponse == null && <ProgressBar/>}
 
-            </>}
+            {!hasNoSearch && !hasError && searchResponse != null &&
+                // dim stale results when there is a pending update
+                <div style={{opacity: isPending ? 0.5 : 1, transition: "opacity 150ms ease"}}>
+                    <SearchResultHeader
+                        response={searchResponse} />
+                    <MainSearchResults
+                        query={searchResponse.query}
+                        results={searchResponse.results}
+                        manx={ searchLanguage == "Manx" }
+                        english={ searchLanguage == "English" }/>
+                </div>}
 
         </div>
     )
