@@ -43,8 +43,8 @@ type WorkSearch = {
     searchManx: boolean
 }
 
-export const searchWork = async (params: WorkSearch): Promise<SearchWorkResponse> => {
+export const searchWork = async (params: WorkSearch, signal?: AbortSignal): Promise<SearchWorkResponse> => {
     const searchValue = !params.value ? "*" : params.value
-    const response = await fetch(`search/searchWork/${params.docIdent}/${encodeURIComponent(searchValue)}?english=${params.searchEnglish.toString()}&manx=${params.searchManx.toString()}`)
+    const response = await fetch(`search/searchWork/${params.docIdent}/${encodeURIComponent(searchValue)}?english=${params.searchEnglish.toString()}&manx=${params.searchManx.toString()}`, { signal })
     return await response.json() as SearchWorkResponse
 }
