@@ -124,8 +124,22 @@ public class Startup(IConfiguration configuration)
         }
             
         // app.UseHttpsRedirection();
+        
+        // if index.html is stale, it points to files in /assets/ which no longer exist.
+        var noCacheHtml = new StaticFileOptions
+        {
+            OnPrepareResponse = ctx =>
+            {
+                var path = ctx.Context.Request.Path.Value ?? "";
+                if (path is "/index.html" or "/manifest.json")
+                {
+                    ctx.Context.Response.Headers.CacheControl = "no-cache";
+                }
+            }
+        };
+
         app.UseStaticFiles();
-        app.UseSpaStaticFiles();
+        app.UseSpaStaticFiles(noCacheHtml);
 
         app.UseRouting();
 
@@ -139,6 +153,7 @@ public class Startup(IConfiguration configuration)
         app.UseSpa(spa =>
         {
             spa.Options.SourcePath = "ClientApp";
+            spa.Options.DefaultPageStaticFileOptions = noCacheHtml;
 
             if (env.IsDevelopment())
             {
