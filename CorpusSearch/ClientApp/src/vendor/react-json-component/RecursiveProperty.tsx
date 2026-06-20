@@ -30,23 +30,30 @@ const parseLink = (obj: any): React.ReactNode => {
     return <a rel="noreferrer" target="_blank" href={obj.url}>{obj.text}</a>
 }
 
-const RecursiveProperty: React.FC<Props> = props => {
+const RecursiveProperty: React.FC<Props> = ({
+    property,
+    propertyName,
+    excludeBottomBorder = false,
+    emptyPropertyLabel = 'Property is empty',
+    rootProperty,
+    propertyNameProcessor = camelCaseToNormal,
+}) => {
     return (
         <div style={
                 {
                     paddingTop: 10,
                     paddingLeft: 3,
                     marginLeft: 10,
-                    borderBottom: props.excludeBottomBorder ? '' : '1px solid #b2d6ff',
+                    borderBottom: excludeBottomBorder ? '' : '1px solid #b2d6ff',
                     color: "#666",
                     fontSize: 16,
                 }
             }>
-            {props.property ? (
-                typeof props.property === 'number' ||
-                typeof props.property === 'string' ||
-                typeof props.property === 'boolean' ||
-                isLink(props.property)    
+            {property ? (
+                typeof property === 'number' ||
+                typeof property === 'string' ||
+                typeof property === 'boolean' ||
+                isLink(property)
                     ? (
                     <React.Fragment>
                         <span style={{
@@ -54,34 +61,28 @@ const RecursiveProperty: React.FC<Props> = props => {
                             fontSize: 14,
                             fontWeight: "bold"
                         }}>
-                        {props.propertyNameProcessor!(props.propertyName)}: 
+                        {propertyNameProcessor(propertyName)}:
                         </span>
                         {" "}
-                        {isLink(props.property) ? parseLink(props.property) : props.property.toString()}
+                        {isLink(property) ? parseLink(property) : property.toString()}
                     </React.Fragment>
                 ) : (
-                    <ExpandableProperty title={props.propertyNameProcessor!(props.propertyName)} expanded={!!props.rootProperty}>
-                        {Object.values(props.property).map((property, index, { length }) => (
+                    <ExpandableProperty title={propertyNameProcessor(propertyName)} expanded={!!rootProperty}>
+                        {Object.values(property).map((value, index, { length }) => (
                             <RecursiveProperty
                                 key={index}
-                                property={property}
-                                propertyName={Object.getOwnPropertyNames(props.property)[index]}
-                                propertyNameProcessor={props.propertyNameProcessor}
+                                property={value}
+                                propertyName={Object.getOwnPropertyNames(property)[index]}
+                                propertyNameProcessor={propertyNameProcessor}
                                 excludeBottomBorder={index === length - 1}
                             />
                         ))}
                     </ExpandableProperty>
                 )
-            ) : props.emptyPropertyLabel
+            ) : emptyPropertyLabel
             }
         </div>
     );
 }
-
-RecursiveProperty.defaultProps = {
-    emptyPropertyLabel: 'Property is empty',
-    excludeBottomBorder: false,
-    propertyNameProcessor: camelCaseToNormal
-};
 
 export default RecursiveProperty;
