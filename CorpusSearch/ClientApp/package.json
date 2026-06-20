@@ -14,7 +14,7 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-helmet": "^6.1.0",
-    "react-highlight-words": "^0.18.0",
+    "react-highlight-words": "^0.21.0",
     "react-router-dom": "^6.4.3",
     "react-youtube": "^10.1.0",
     "reactstrap": "^9.2.3"
@@ -27,7 +27,7 @@
     "@types/node": "^20.19.42",
     "@types/react-dom": "^18.0.8",
     "@types/react-helmet": "^6.1.6",
-    "@types/react-highlight-words": "^0.16.4",
+    "@types/react-highlight-words": "^0.20.1",
     "@vitejs/plugin-react": "^4.7.0",
     "eslint": "^9.39.4",
     "eslint-plugin-react-hooks": "^5.2.0",
