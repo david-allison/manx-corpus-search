@@ -1,7 +1,7 @@
 /* eslint @typescript-eslint/no-misused-promises: 0 */  
 import "./DocumentView.css"
 
-import {useEffect, useState} from "react"
+import {useEffect, useState, useTransition} from "react"
 import {useLocation, useMatch} from "react-router-dom"
 import {searchWork, SearchWorkResponse, SourceLink} from "../api/SearchWorkApi"
 import {SearchLanguage} from "./Home"
@@ -69,7 +69,8 @@ export const DocumentView = () => {
     const location = useLocation()
     const match = useMatch("/docs/:docId")
 
-    const [loading, setLoading] = useState(true)
+    // keep the previous results on screen during a refetch, rather than unmounting them
+    const [isPending, startTransition] = useTransition()
     const [title, setTitle] = useState(" ") // use a space to avoid a layout shift
     
     const docIdent = match?.params.docId
@@ -96,25 +97,19 @@ export const DocumentView = () => {
 
     // load the data
     useEffect(() => {
-        const getData = async () => {
-            if (!docIdent) {
-                throw new Error("no identifier provided")
-            }
-            return await searchWork({ docIdent, value, searchEnglish, searchManx })
+        if (!docIdent) {
+            return
         }
 
-        setLoading(true)
-        getData()
-            .then(data => {
+        startTransition(async () => {
+            try {
+                const data = await searchWork({ docIdent, value, searchEnglish, searchManx })
                 setSearchWorkResponse(data)
                 setTitle(data.title)
-                setLoading(false)
-            })
-            .catch(e => {
-                setLoading(false)
+            } catch (e) {
                 console.error(e)
-            })
-
+            }
+        })
     }, [value, searchEnglish, searchManx, docIdent])
 
 
@@ -139,8 +134,9 @@ export const DocumentView = () => {
 
     return (
         <div>
-            {!loading && <title>{ title } | Manx Corpus Search</title>}
-            {loading  && <title>Manx Corpus Search</title>}
+            {searchWorkResponse == null
+                ? <title>Manx Corpus Search</title>
+                : <title>{ title } | Manx Corpus Search</title>}
             <meta name="description" content="Search for words &amp; phrases within over 500 translated texts, from 1610 to the present era. Free &amp; Open Source"/>
             <h1 id="tabelLabel" style={{display: "flex"}} >
                 <BackChevron to={"historyBack"}/>
@@ -151,7 +147,7 @@ export const DocumentView = () => {
                 <ManxEnglishSelector initialLanguage={searchLanguage} onLanguageChange={setSearchLanguage}/>
                 <SearchBar query={value} onChange={(x) => setValue(x.target.value)}/>
             </div>
-            {loading && <div style={{
+            {isPending && searchWorkResponse == null && <div style={{
                 marginTop: 40,
                 display: "flex",
                 alignItems: "center",
@@ -159,8 +155,9 @@ export const DocumentView = () => {
             }}>
                 <CircularProgress style={{alignSelf: "center"}} />
             </div>}
-            {loading || searchWorkResponse == null ||
-                <>
+            {searchWorkResponse != null &&
+                // During  are-fetch, dim the results
+                <div style={{opacity: isPending ? 0.5 : 1, transition: "opacity 150ms ease"}}>
                     { searchWorkResponse.totalMatches ? `${searchWorkResponse.totalMatches} results;` : ""} { searchWorkResponse.numberOfResults} lines [{searchWorkResponse.timeTaken}]
                     <RecursiveProperty
                         // eslint-disable-next-line
@@ -176,7 +173,7 @@ export const DocumentView = () => {
                     value={value}
                     highlightManx={searchManx}
                     highlightEnglish={searchEnglish}
-                    translations={searchWorkResponse.translations}/></> }
+                    translations={searchWorkResponse.translations}/></div> }
         </div>
     )
 
