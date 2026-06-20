@@ -2,7 +2,7 @@
  * Provides a list of links to the latest and greatest files in the Corpus
  * Which means those document.csv files that git detects as having recent changes
  */
-import {JSX, useEffect, useState} from "react"
+import {JSX, use} from "react"
 
 /**
  * Produces a link to a document, with an emoji denoting the type of content
@@ -22,22 +22,23 @@ function CorpusLink({ident = "", name = ""}): JSX.Element {
     </div>
 }
 
-export const NewDocList = () => {
 type DocType = { name: string, ident: string, uploaded: string }
-const [newDocs, setNewDocs]
-    = useState<DocType[]>([])
-useEffect(() => {
-        const fetchNewDocs = async () => {
-            await fetch("api/metadata/latest").then((res) => {
-                if (!res.ok) console.warn(`fetch api/metadata/latest returned: ${res.status}`)
-                return res.json()
-            }).then((json: DocType[]) => {
-                setNewDocs(json)
-            })
-        }
-        fetchNewDocs().catch((e: Error) => console.warn(`fetchNewDocs returned:" ${e.message}`))
-    }, []
-    )
+
+// called once per page load - could be changed to occur on mount
+const fetchNewDocs = async (): Promise<DocType[]> => {
+    const res = await fetch("api/metadata/latest")
+    if (!res.ok) console.warn(`fetch api/metadata/latest returned: ${res.status}`)
+    return (await res.json()) as DocType[]
+}
+
+const newDocsPromise = fetchNewDocs().catch((e: Error) => {
+    console.warn(`fetchNewDocs returned:" ${e.message}`)
+    return [] as DocType[]
+})
+
+export const NewDocList = () => {
+    const newDocs = use(newDocsPromise)
+
     const len = newDocs.length
     if (!len) return <></>
     return (<div className="NewDocList">
