@@ -7,7 +7,7 @@ import MainSearchResults from "../components/MainSearchResults"
 import {DictionaryLink, hasDictionaryDefinitions} from "../components/DictionaryLink"
 import {hasTranslations, TranslationList} from "../components/TranslationList"
 import AdvancedOptions, {DateRange} from "../components/AdvancedOptions"
-import {useLocation, useNavigate} from "react-router-dom"
+import {useSearchParams} from "react-router-dom"
 import {search, SearchResponse} from "../api/SearchApi"
 import {CircularProgress} from "@mui/material"
 import {ManxEnglishSelector} from "../components/ManxEnglishSelector"
@@ -41,18 +41,20 @@ const toLangParam = (param: SearchLanguage): string => {
 }
 
 export const Home = () => {
-    const location = useLocation()
-    const navigation = useNavigate()
-    
+    const [searchParams, setSearchParams] = useSearchParams()
+    const query = searchParams.get("q") ?? ""
+    const searchLanguage = parseLanguage(searchParams.get("lang")) ?? "Manx"
+
+    const updateSearch = (q: string, lang: SearchLanguage) => {
+        const nextParams: Record<string, string> = (!q && lang === "Manx") ? {} : { q, lang: toLangParam(lang) }
+        setSearchParams(nextParams, { replace: true })
+    }
+    const setQuery = (next: string) => updateSearch(next, searchLanguage)
+    const setSearchLanguage = (next: SearchLanguage) => updateSearch(query, next)
+
     const [isPending, startTransition] = useTransition()
     const [searchResponse, setSearchResponse] = useState<SearchResponse | null>(null)
-    
-    const locationParams = new URLSearchParams(location.search)
 
-    const [query, setQuery] = useState(() => locationParams.get("q") ?? "")
-    const [searchLanguage, setSearchLanguage] = useState<SearchLanguage>(() => parseLanguage(locationParams.get("lang")) ?? "Manx")
-    
-    
     const [dateRange, setDateRange] = useState<DateRange>( { start: 1500, end: HomeData.currentYear })
     const [matchPhrase, setMatchPhrase] = useState(false)
     const [hasError, setHasError] = useState(false)
@@ -106,14 +108,6 @@ export const Home = () => {
     const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
         setQuery(event.target.value)
     }
-    
-    useEffect(() => {
-        if (!query && searchLanguage == "Manx") {
-            navigation("/", { replace: true })
-       } else {
-            navigation(`/?q=${query}&lang=${toLangParam(searchLanguage)}`, { replace: true })    
-       }
-    }, [query, searchLanguage, navigation])
 
     const statsPromise = useMemo(() => getCorpusStatistics().catch(() => "error" as const), [])
 
