@@ -2,17 +2,21 @@
 import "./DocumentView.css"
 import "../components/AdvancedOptions.css"
 
-import {Fragment, ReactNode, useEffect, useState, useTransition} from "react"
-import {useLocation, useMatch} from "react-router-dom"
-import {searchWork, SearchWorkResponse, SourceLink} from "../api/SearchWorkApi"
-import {SearchLanguage} from "./Home"
-import {CircularProgress} from "@mui/material"
-import {ManxEnglishSelector} from "../components/ManxEnglishSelector"
-import {metadataLookup} from "../api/MetadataApi"
-import {ComparisonTable} from  "../components/ComparisonTable"
-import {SearchBar} from "../components/SearchBar"
-import {BackChevron} from "../components/BackChevron"
-import {useLanguageVisibility} from "../hooks/useLanguageVisibility"
+import { Fragment, ReactNode, useEffect, useState, useTransition } from "react"
+import { useLocation, useMatch } from "react-router-dom"
+import {
+    searchWork,
+    SearchWorkResponse,
+    SourceLink,
+} from "../api/SearchWorkApi"
+import { SearchLanguage } from "./Home"
+import { CircularProgress } from "@mui/material"
+import { ManxEnglishSelector } from "../components/ManxEnglishSelector"
+import { metadataLookup } from "../api/MetadataApi"
+import { ComparisonTable } from "../components/ComparisonTable"
+import { SearchBar } from "../components/SearchBar"
+import { BackChevron } from "../components/BackChevron"
+import { useLanguageVisibility } from "../hooks/useLanguageVisibility"
 
 type Metadata = Record<string, unknown>
 
@@ -44,13 +48,27 @@ const getYearLabel = (metadata: Metadata | null): string => {
 
 /** Metadata keys surfaced elsewhere on the page (title, year badge, note, links…) */
 const handledMetadataKeys = new Set([
-    "name", "identifier", "ident", "notes", "source",
-    "created", "createdCircaStart", "createdCircaEnd",
-    "gitHubRepo", "relativeCsvPath", "externalPdfLink", "googleBooksId",
+    "name",
+    "identifier",
+    "ident",
+    "notes",
+    "source",
+    "created",
+    "createdCircaStart",
+    "createdCircaEnd",
+    "gitHubRepo",
+    "relativeCsvPath",
+    "externalPdfLink",
+    "googleBooksId",
     "mnhNewsComponent",
 ])
 
-type MetaRow = { label: string, value: ReactNode, length: number, preserveCase?: boolean }
+type MetaRow = {
+    label: string
+    value: ReactNode
+    length: number
+    preserveCase?: boolean
+}
 
 /** keys whose brand casing is shown as-is, instead of being split and uppercased */
 const brandLabels: Record<string, string> = {
@@ -58,22 +76,42 @@ const brandLabels: Record<string, string> = {
 }
 
 /** Inline label/value pairs for the metadata strip: SOURCE first, then any other scalar metadata */
-const buildMetaRows = (metadata: Metadata | null, source: string | undefined, sourceLinks: SourceLink[] | null): MetaRow[] => {
+const buildMetaRows = (
+    metadata: Metadata | null,
+    source: string | undefined,
+    sourceLinks: SourceLink[] | null,
+): MetaRow[] => {
     const rows: MetaRow[] = []
 
     const metadataSource = metadata?.["source"]
-    const sourceName = source ?? (typeof metadataSource === "string" ? metadataSource : undefined)
+    const sourceName =
+        source ??
+        (typeof metadataSource === "string" ? metadataSource : undefined)
     if (sourceName || sourceLinks?.length) {
-        const nameNode = sourceName && /^https?:\/\//.test(sourceName)
-            ? <a href={sourceName} target="_blank" rel="noreferrer">{sourceName}</a>
-            : sourceName
+        const nameNode =
+            sourceName && /^https?:\/\//.test(sourceName) ? (
+                <a href={sourceName} target="_blank" rel="noreferrer">
+                    {sourceName}
+                </a>
+            ) : (
+                sourceName
+            )
         rows.push({
             label: "Source",
-            value: <>
-                {nameNode}
-                {(sourceLinks ?? []).map(link =>
-                    <Fragment key={link.url}> · <a href={link.url} target="_blank" rel="noreferrer">{link.text}</a></Fragment>)}
-            </>,
+            value: (
+                <>
+                    {nameNode}
+                    {(sourceLinks ?? []).map((link) => (
+                        <Fragment key={link.url}>
+                            {" "}
+                            ·{" "}
+                            <a href={link.url} target="_blank" rel="noreferrer">
+                                {link.text}
+                            </a>
+                        </Fragment>
+                    ))}
+                </>
+            ),
             length: sourceName?.length ?? 0,
         })
     }
@@ -83,14 +121,29 @@ const buildMetaRows = (metadata: Metadata | null, source: string | undefined, so
             continue
         }
         // only scalars fit the label/value strip; everything else is in Metadata (JSON)
-        if (typeof value !== "string" && typeof value !== "number" && typeof value !== "boolean") {
+        if (
+            typeof value !== "string" &&
+            typeof value !== "number" &&
+            typeof value !== "boolean"
+        ) {
             continue
         }
         const text = String(value)
         const brand = brandLabels[key]
-        rows.push(brand != null
-            ? { label: brand, value: text, length: text.length, preserveCase: true }
-            : { label: key.replace(/([a-z0-9])([A-Z])/g, "$1 $2"), value: text, length: text.length })
+        rows.push(
+            brand != null
+                ? {
+                      label: brand,
+                      value: text,
+                      length: text.length,
+                      preserveCase: true,
+                  }
+                : {
+                      label: key.replace(/([a-z0-9])([A-Z])/g, "$1 $2"),
+                      value: text,
+                      length: text.length,
+                  },
+        )
     }
     return rows
 }
@@ -100,7 +153,9 @@ const META_SHORT_VALUE = 90
 const META_COLLAPSED_ROWS = 4
 
 const collapseMetaRows = (rows: MetaRow[]): MetaRow[] =>
-    rows.filter(row => row.length <= META_SHORT_VALUE).slice(0, META_COLLAPSED_ROWS)
+    rows
+        .filter((row) => row.length <= META_SHORT_VALUE)
+        .slice(0, META_COLLAPSED_ROWS)
 
 export const DocumentView = () => {
     const location = useLocation()
@@ -120,16 +175,22 @@ export const DocumentView = () => {
     const getInitialSearchLanguage = (): SearchLanguage => {
         // eslint-disable-next-line
         switch (location.state?.searchLanguage) {
-            case "English": return "English"
-            case "Manx": return "Manx"
-            default: return "Manx"
+            case "English":
+                return "English"
+            case "Manx":
+                return "Manx"
+            default:
+                return "Manx"
         }
     }
-    const [searchLanguage, setSearchLanguage] = useState<SearchLanguage>(getInitialSearchLanguage)
+    const [searchLanguage, setSearchLanguage] = useState<SearchLanguage>(
+        getInitialSearchLanguage,
+    )
     const searchManx = searchLanguage == "Manx"
     const searchEnglish = searchLanguage == "English"
 
-    const [searchWorkResponse, setSearchWorkResponse] = useState<SearchWorkResponse | null>(null)
+    const [searchWorkResponse, setSearchWorkResponse] =
+        useState<SearchWorkResponse | null>(null)
 
     // which language column is displayed (the "Show" toggle)
     const languageVisibility = useLanguageVisibility()
@@ -142,7 +203,12 @@ export const DocumentView = () => {
 
         startTransition(async () => {
             try {
-                const data = await searchWork({ docIdent, value, searchEnglish, searchManx })
+                const data = await searchWork({
+                    docIdent,
+                    value,
+                    searchEnglish,
+                    searchManx,
+                })
                 setSearchWorkResponse(data)
                 setTitle(data.title)
             } catch (e) {
@@ -161,12 +227,16 @@ export const DocumentView = () => {
 
         setShowAllMeta(false)
         metadataLookup(docIdent)
-            .then(x => setMetadata(x as Metadata))
-            .catch(e => console.warn(e))
+            .then((x) => setMetadata(x as Metadata))
+            .catch((e) => console.warn(e))
     }, [docIdent])
 
     const yearLabel = getYearLabel(metadata)
-    const metaRows = buildMetaRows(metadata, searchWorkResponse?.source, searchWorkResponse?.sourceLinks ?? null)
+    const metaRows = buildMetaRows(
+        metadata,
+        searchWorkResponse?.source,
+        searchWorkResponse?.sourceLinks ?? null,
+    )
     const collapsedMetaRows = collapseMetaRows(metaRows)
     const visibleMetaRows = showAllMeta ? metaRows : collapsedMetaRows
     const hiddenMetaCount = metaRows.length - collapsedMetaRows.length
@@ -181,20 +251,33 @@ export const DocumentView = () => {
         : undefined
 
     const hasQuery = value.trim() != "" && value != "*"
-    const matchLabel = (response: SearchWorkResponse) => hasQuery
-        ? `${(response.totalMatches ?? 0).toLocaleString()} matches for “${value}” · ${response.numberOfResults.toLocaleString()} lines`
-        : `${response.numberOfResults.toLocaleString()} lines`
+    const matchLabel = (response: SearchWorkResponse) =>
+        hasQuery
+            ? `${(response.totalMatches ?? 0).toLocaleString()} matches for “${value}” · ${response.numberOfResults.toLocaleString()} lines`
+            : `${response.numberOfResults.toLocaleString()} lines`
 
     return (
         <div>
-            {searchWorkResponse == null
-                ? <title>Manx Corpus Search</title>
-                : <title>{ title } | Manx Corpus Search</title>}
-            <meta name="description" content="Search for words &amp; phrases within over 500 translated texts, from 1610 to the present era. Free &amp; Open Source"/>
+            {searchWorkResponse == null ? (
+                <title>Manx Corpus Search</title>
+            ) : (
+                <title>{title} | Manx Corpus Search</title>
+            )}
+            <meta
+                name="description"
+                content="Search for words &amp; phrases within over 500 translated texts, from 1610 to the present era. Free &amp; Open Source"
+            />
 
             <div className="search-row search-row-hero">
-                <SearchBar query={value} onChange={(x) => setValue(x.target.value)} language={searchLanguage}/>
-                <ManxEnglishSelector initialLanguage={searchLanguage} onLanguageChange={setSearchLanguage}/>
+                <SearchBar
+                    query={value}
+                    onChange={(x) => setValue(x.target.value)}
+                    language={searchLanguage}
+                />
+                <ManxEnglishSelector
+                    initialLanguage={searchLanguage}
+                    onLanguageChange={setSearchLanguage}
+                />
             </div>
 
             <details className="advanced-options">
@@ -204,67 +287,159 @@ export const DocumentView = () => {
                     <div className="seg-control">
                         <button
                             type="button"
-                            className={languageVisibility.visibleLanguage == "Manx" ? "active" : undefined}
-                            onClick={() => languageVisibility.setVisibleLanguage("Manx")}>Gaelg</button>
+                            className={
+                                languageVisibility.visibleLanguage == "Manx"
+                                    ? "active"
+                                    : undefined
+                            }
+                            onClick={() =>
+                                languageVisibility.setVisibleLanguage("Manx")
+                            }
+                        >
+                            Gaelg
+                        </button>
                         <button
                             type="button"
-                            className={languageVisibility.visibleLanguage == "English" ? "active" : undefined}
-                            onClick={() => languageVisibility.setVisibleLanguage("English")}>English</button>
+                            className={
+                                languageVisibility.visibleLanguage == "English"
+                                    ? "active"
+                                    : undefined
+                            }
+                            onClick={() =>
+                                languageVisibility.setVisibleLanguage("English")
+                            }
+                        >
+                            English
+                        </button>
                         <button
                             type="button"
-                            className={languageVisibility.visibleLanguage == "Both" ? "active" : undefined}
-                            onClick={() => languageVisibility.setVisibleLanguage("Both")}>Gaelg &amp; Baarle</button>
+                            className={
+                                languageVisibility.visibleLanguage == "Both"
+                                    ? "active"
+                                    : undefined
+                            }
+                            onClick={() =>
+                                languageVisibility.setVisibleLanguage("Both")
+                            }
+                        >
+                            Gaelg &amp; Baarle
+                        </button>
                     </div>
                 </div>
             </details>
 
             <div className="doc-header">
                 <div className="doc-title-row">
-                    <BackChevron to={"historyBack"}/>
+                    <BackChevron to={"historyBack"} />
                     <h1 className="page-title" id="tabelLabel">
-                        {searchWorkResponse == null
-                            ? "\u00A0" /* keep the line height; no title or year badge until loaded */
-                            : <>
-                                { title }
-                                {yearLabel != "" && <span className="year-badge doc-year-badge">{yearLabel}</span>}
-                            </>}
+                        {searchWorkResponse == null ? (
+                            "\u00A0" /* keep the line height; no title or year badge until loaded */
+                        ) : (
+                            <>
+                                {title}
+                                {yearLabel != "" && (
+                                    <span className="year-badge doc-year-badge">
+                                        {yearLabel}
+                                    </span>
+                                )}
+                            </>
+                        )}
                     </h1>
                 </div>
-                {searchWorkResponse != null && <div className="doc-match-label">{matchLabel(searchWorkResponse)}</div>}
+                {searchWorkResponse != null && (
+                    <div className="doc-match-label">
+                        {matchLabel(searchWorkResponse)}
+                    </div>
+                )}
             </div>
 
-            {isPending && searchWorkResponse == null && <div style={{
-                marginTop: 40,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-            }}>
-                <CircularProgress style={{alignSelf: "center"}} />
-            </div>}
-            {searchWorkResponse != null &&
+            {isPending && searchWorkResponse == null && (
+                <div
+                    style={{
+                        marginTop: 40,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                    }}
+                >
+                    <CircularProgress style={{ alignSelf: "center" }} />
+                </div>
+            )}
+            {searchWorkResponse != null && (
                 // During a re-fetch, dim the results
-                <div style={{opacity: isPending ? 0.5 : 1, transition: "opacity 150ms ease"}}>
-
-                    {(metaRows.length > 0 || gitHubLink) &&
+                <div
+                    style={{
+                        opacity: isPending ? 0.5 : 1,
+                        transition: "opacity 150ms ease",
+                    }}
+                >
+                    {(metaRows.length > 0 || gitHubLink) && (
                         <div className="doc-meta-strip">
-                            {visibleMetaRows.map(row =>
+                            {visibleMetaRows.map((row) => (
                                 <span className="doc-meta-pair" key={row.label}>
-                                    <span className={"doc-meta-key" + (row.preserveCase ? " doc-meta-key-brand" : "")}>{row.label}</span>
-                                    <span className="doc-meta-value">{row.value}</span>
-                                </span>)}
-                            {hiddenMetaCount > 0 &&
-                                <button type="button" className="doc-meta-toggle" onClick={() => setShowAllMeta(x => !x)}>
-                                    {showAllMeta ? "Show less ▴" : `Show ${hiddenMetaCount} more ▾`}
-                                </button>}
-                            {gitHubLink &&
+                                    <span
+                                        className={
+                                            "doc-meta-key" +
+                                            (row.preserveCase
+                                                ? " doc-meta-key-brand"
+                                                : "")
+                                        }
+                                    >
+                                        {row.label}
+                                    </span>
+                                    <span className="doc-meta-value">
+                                        {row.value}
+                                    </span>
+                                </span>
+                            ))}
+                            {hiddenMetaCount > 0 && (
+                                <button
+                                    type="button"
+                                    className="doc-meta-toggle"
+                                    onClick={() => setShowAllMeta((x) => !x)}
+                                >
+                                    {showAllMeta
+                                        ? "Show less ▴"
+                                        : `Show ${hiddenMetaCount} more ▾`}
+                                </button>
+                            )}
+                            {gitHubLink && (
                                 <span className="doc-meta-links">
-                                    <a href={gitHubLink} target="_blank" rel="noreferrer">Edit on GitHub</a>
-                                    {csvLink && <a href={csvLink} target="_blank" rel="noreferrer">Text (CSV)</a>}
-                                    {jsonLink && <a href={jsonLink} target="_blank" rel="noreferrer">Metadata (JSON)</a>}
-                                </span>}
-                        </div>}
+                                    <a
+                                        href={gitHubLink}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                    >
+                                        Edit on GitHub
+                                    </a>
+                                    {csvLink && (
+                                        <a
+                                            href={csvLink}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                        >
+                                            Text (CSV)
+                                        </a>
+                                    )}
+                                    {jsonLink && (
+                                        <a
+                                            href={jsonLink}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                        >
+                                            Metadata (JSON)
+                                        </a>
+                                    )}
+                                </span>
+                            )}
+                        </div>
+                    )}
 
-                    { searchWorkResponse.notes && <div className="doc-note">{searchWorkResponse.notes}</div>}
+                    {searchWorkResponse.notes && (
+                        <div className="doc-note">
+                            {searchWorkResponse.notes}
+                        </div>
+                    )}
 
                     <ComparisonTable
                         response={searchWorkResponse}
@@ -273,9 +448,10 @@ export const DocumentView = () => {
                         highlightEnglish={searchEnglish}
                         manxVisible={languageVisibility.manxVisible}
                         englishVisible={languageVisibility.englishVisible}
-                        translations={searchWorkResponse.translations}/>
-                </div> }
+                        translations={searchWorkResponse.translations}
+                    />
+                </div>
+            )}
         </div>
     )
-
 }

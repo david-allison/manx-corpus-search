@@ -1,5 +1,5 @@
 export type DictionaryDefinition = {
-    entries: string[],
+    entries: string[]
     allowLookup: boolean
 }
 
@@ -27,7 +27,6 @@ export type SearchResultEntry = {
     sample: string
 }
 
-
 export type SearchParams = {
     query: string
     minDate: number
@@ -36,16 +35,22 @@ export type SearchParams = {
     english: boolean
 }
 
-export const search = async (params: SearchParams, signal?: AbortSignal): Promise<SearchResponse> => {
+export const search = async (
+    params: SearchParams,
+    signal?: AbortSignal,
+): Promise<SearchResponse> => {
     const query = encodeURIComponent(params.query)
-    const response = await fetch(`search/search/${query}?minDate=${params.minDate}&maxDate=${params.maxDate}&manx=${params.manx.toString()}&english=${params.english.toString()}`, { signal })
+    const response = await fetch(
+        `search/search/${query}?minDate=${params.minDate}&maxDate=${params.maxDate}&manx=${params.manx.toString()}&english=${params.english.toString()}`,
+        { signal },
+    )
     // TODO: Validation
-    const ret = await response.json() as SearchResponse
+    const ret = (await response.json()) as SearchResponse
 
     // Handle C# casting an empty list to null
     if (ret.results === null) {
         ret.results = []
     }
-    
+
     return ret
 }

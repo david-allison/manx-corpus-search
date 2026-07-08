@@ -1,4 +1,4 @@
-import {Component, ErrorInfo, ReactNode} from "react"
+import { Component, ErrorInfo, ReactNode } from "react"
 
 type Props = { children: ReactNode }
 type State = { error: Error | null }
@@ -22,15 +22,28 @@ export class ErrorBoundary extends Component<Props, State> {
             return this.props.children
         }
 
-        return <div className="error-boundary">
-            <div className="error-boundary-title">Something went wrong</div>
-            <div className="error-boundary-text">
-                Try reloading the page. If it keeps happening, please{" "}
-                <a href="https://github.com/david-allison/manx-corpus-search/issues" target="_blank" rel="noreferrer">report it on GitHub</a>.
+        return (
+            <div className="error-boundary">
+                <div className="error-boundary-title">Something went wrong</div>
+                <div className="error-boundary-text">
+                    Try reloading the page. If it keeps happening, please{" "}
+                    <a
+                        href="https://github.com/david-allison/manx-corpus-search/issues"
+                        target="_blank"
+                        rel="noreferrer"
+                    >
+                        report it on GitHub
+                    </a>
+                    .
+                </div>
+                <button
+                    type="button"
+                    className="error-boundary-reload"
+                    onClick={() => window.location.reload()}
+                >
+                    Reload
+                </button>
             </div>
-            <button type="button" className="error-boundary-reload" onClick={() => window.location.reload()}>
-                Reload
-            </button>
-        </div>
+        )
     }
 }

@@ -7,7 +7,11 @@ const ThrowError = (): never => {
 }
 
 it("renders children when nothing throws", () => {
-    render(<ErrorBoundary><span>content</span></ErrorBoundary>)
+    render(
+        <ErrorBoundary>
+            <span>content</span>
+        </ErrorBoundary>,
+    )
     expect(screen.getByText("content")).toBeDefined()
 })
 
@@ -15,7 +19,11 @@ it("renders the fallback when a child throws", () => {
     // React logs the caught error; keep the test output clean
     const spy = vi.spyOn(console, "error").mockImplementation(() => {})
     try {
-        render(<ErrorBoundary><ThrowError/></ErrorBoundary>)
+        render(
+            <ErrorBoundary>
+                <ThrowError />
+            </ErrorBoundary>,
+        )
     } finally {
         spy.mockRestore()
     }

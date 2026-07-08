@@ -1,5 +1,5 @@
-import {Ref, useImperativeHandle, useRef} from "react"
-import YouTube, {YouTubePlayer, YouTubeProps} from "react-youtube"
+import { Ref, useImperativeHandle, useRef } from "react"
+import YouTube, { YouTubePlayer, YouTubeProps } from "react-youtube"
 import "./ComparisonTable.css"
 
 export type Player = {
@@ -9,7 +9,7 @@ export type Player = {
 
 // event.target needs work, as does 'opts'
 /* eslint-disable @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment */
-const YouTuber = ({videoId, ref}: {videoId: string, ref?: Ref<Player>}) => {
+const YouTuber = ({ videoId, ref }: { videoId: string; ref?: Ref<Player> }) => {
     const player = useRef<YouTubePlayer>(null)
 
     const seek = (time: number) => {
@@ -37,11 +37,17 @@ const YouTuber = ({videoId, ref}: {videoId: string, ref?: Ref<Player>}) => {
         },
     }
 
-    return <>
-        <YouTube videoId={videoId} opts={opts} iframeClassName={"youtube-iframe"} onReady={onPlayerReady} />
-    </>
+    return (
+        <>
+            <YouTube
+                videoId={videoId}
+                opts={opts}
+                iframeClassName={"youtube-iframe"}
+                onReady={onPlayerReady}
+            />
+        </>
+    )
     /* eslint-enable */
 }
-
 
 export default YouTuber

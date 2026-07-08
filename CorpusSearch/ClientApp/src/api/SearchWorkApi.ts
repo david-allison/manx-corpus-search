@@ -1,5 +1,4 @@
-import {Translations} from "./SearchApi"
-
+import { Translations } from "./SearchApi"
 
 export type SourceLink = {
     url: string
@@ -23,7 +22,7 @@ export type SearchWorkResult = {
 export type SearchWorkResponse = {
     results: SearchWorkResult[]
     title: string
-    translations : Translations
+    translations: Translations
     totalMatches: number | null
     timeTaken: string
     numberOfResults: number
@@ -37,14 +36,20 @@ export type SearchWorkResponse = {
 }
 
 type WorkSearch = {
-    docIdent: string,
+    docIdent: string
     value: string
     searchEnglish: boolean
     searchManx: boolean
 }
 
-export const searchWork = async (params: WorkSearch, signal?: AbortSignal): Promise<SearchWorkResponse> => {
+export const searchWork = async (
+    params: WorkSearch,
+    signal?: AbortSignal,
+): Promise<SearchWorkResponse> => {
     const searchValue = !params.value ? "*" : params.value
-    const response = await fetch(`search/searchWork/${params.docIdent}/${encodeURIComponent(searchValue)}?english=${params.searchEnglish.toString()}&manx=${params.searchManx.toString()}`, { signal })
-    return await response.json() as SearchWorkResponse
+    const response = await fetch(
+        `search/searchWork/${params.docIdent}/${encodeURIComponent(searchValue)}?english=${params.searchEnglish.toString()}&manx=${params.searchManx.toString()}`,
+        { signal },
+    )
+    return (await response.json()) as SearchWorkResponse
 }
