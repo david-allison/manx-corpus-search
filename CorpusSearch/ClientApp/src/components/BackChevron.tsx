@@ -1,6 +1,5 @@
 import {Link, To} from "react-router-dom"
 import { MouseEvent } from "react"
-import chevronLeft from "../assets/chevron-left.png"
 
 export const BackChevron = (props: {to: To | "historyBack"}) => {
     const maybeSkipAndGoBack = (e: MouseEvent) => {
@@ -9,8 +8,9 @@ export const BackChevron = (props: {to: To | "historyBack"}) => {
             e.preventDefault()
         }
     }
-    
-    return <Link to={props.to != "historyBack" ? props.to : ""} style={{ textDecoration: "none", display: "flex", alignItems: "center"}} onClick={maybeSkipAndGoBack}>
-        <img style={{height: "1em", display: "flex", paddingRight: "1ch"}} src={chevronLeft} alt="Back" />
+
+    return <Link className="doc-back" to={props.to != "historyBack" ? props.to : ""} onClick={maybeSkipAndGoBack}>
+        <span aria-hidden="true" className="doc-back-chevron">‹</span>
+        Back
     </Link>
 }

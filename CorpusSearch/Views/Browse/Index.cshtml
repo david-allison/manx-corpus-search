@@ -1,56 +1,85 @@
-﻿@using CorpusSearch.Model
+@using CorpusSearch.Model
 
 <!doctype html>
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
     <title>Manx Corpus - Full Document Listing</title>
-
-    <!-- Bootstrap -->
-   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-Zenh87qX5JnK2Jl0vWa8Ck2rdkQ2Bzep5IDxbcnCeuOxjzrPF/et3URy9Bv1WTRi" crossorigin="anonymous">
-    
-    <style>
-    .noteRow {
-       background-color: aliceblue;
-       font-size: small;
-       padding: 0.15rem;
-       text-align: center;
-    }
-    .lead {
-       display: inline-block;
-    }
-    @@media only screen and (max-width: 600px) {
-        .lead {
-           margin-bottom: 18px;
-        }
-    }
-    @@media only screen and (min-width: 600px) {
-        .lead {
-           margin-bottom: 6px;
-        }
-    }
-    </style>
+    <link rel="shortcut icon" href="/favicon.ico">
+    @* version query = server start time, so a rebuild+restart always busts cached CSS *@
+    <link href="/site-design.css?v=@(System.Diagnostics.Process.GetCurrentProcess().StartTime.Ticks)" rel="stylesheet">
 </head>
-<body style="padding: 24px">
+<body>
 
 @{
+    ViewData["ActiveNav"] = "browse";
     var documents = ViewData["Documents"] as List<IDocument> ?? [];
 }
 
-<h1><a href="/" style="text-decoration: none">⇦</a> Full Document Listing (@documents.Count documents)</h1>
+@await Html.PartialAsync("_SiteHeader")
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-OERcA2EqjJCMA+/3y+gxIOqMEjwtxJY7qPCqsdltbNJuaOe923+mo//f6V8Qbsw3" crossorigin="anonymous"></script>
- 
+<div class="page-main">
+    <h1 class="page-title">Full Document Listing</h1>
 
-@foreach (var document in documents.OrderBy(x => x.CreatedCircaStart))
-{
-    <a class="lead" href="/Browse/@document.Ident">@document.Name</a> @document.GetFullYear()<br/>
-}
+    <div class="browse-controls">
+        <div class="browse-count">@documents.Count.ToString("N0") documents</div>
+        <div class="browse-order">
+            <span class="browse-order-label">Order by</span>
+            <div class="seg-control">
+                <button type="button" id="order-date" class="active">Date</button>
+                <button type="button" id="order-alpha">A–Z</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="browse-list" id="browse-list">
+        @foreach (var document in documents.OrderBy(x => x.CreatedCircaStart))
+        {
+            var year = document.GetFullYear();
+            <div class="browse-row" data-title="@document.Name">
+                <span class="browse-year">
+                    @if (!string.IsNullOrEmpty(year))
+                    {
+                        <span class="year-badge">@year</span>
+                    }
+                </span>
+                <span class="browse-text">
+                    <a href="/docs/@Uri.EscapeDataString(document.Ident)">@document.Name</a>
+                    @if (!string.IsNullOrEmpty(document.Source))
+                    {
+                        <span class="browse-source">@document.Source</span>
+                    }
+                </span>
+            </div>
+        }
+    </div>
+
+    @await Html.PartialAsync("_SiteFooter")
+</div>
+
+<script>
+    (function () {
+        const list = document.getElementById("browse-list");
+        const dateButton = document.getElementById("order-date");
+        const alphaButton = document.getElementById("order-alpha");
+        const byDate = Array.from(list.children);
+        // sort on the first letter: ignore leading whitespace, quotes and emoji (e.g. "🎥 Captan…" under C)
+        const sortKey = row => (row.dataset.title || "")
+            .replace(/^[^\p{L}\p{N}]+/u, "")
+            .toLowerCase();
+        const byTitle = byDate.slice().sort((a, b) => sortKey(a).localeCompare(sortKey(b)));
+
+        function show(rows, active, inactive) {
+            list.replaceChildren(...rows);
+            active.classList.add("active");
+            inactive.classList.remove("active");
+        }
+
+        dateButton.addEventListener("click", () => show(byDate, dateButton, alphaButton));
+        alphaButton.addEventListener("click", () => show(byTitle, alphaButton, dateButton));
+    })();
+</script>
 
 </body>
 </html>
-
-

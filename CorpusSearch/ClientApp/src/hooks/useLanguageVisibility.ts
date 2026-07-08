@@ -1,36 +1,45 @@
 import {useEffect, useState} from "react"
 
-export type LanguageVisibility = { manxVisible: boolean, englishVisible: boolean}
+export type VisibleLanguage = "Manx" | "English" | "Both"
+
+export type LanguageVisibility = {
+    manxVisible: boolean,
+    englishVisible: boolean,
+    visibleLanguage: VisibleLanguage,
+    setVisibleLanguage: (language: VisibleLanguage) => void,
+}
+
+const isTextEntry = (target: EventTarget | null): boolean =>
+    target instanceof HTMLElement && ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName)
+
+/**
+ * Which language column(s) are displayed (the "Show" toggle), defaulting to both.
+ * Keyboard shortcuts: 'm' shows Manx only, 'e' shows English only; pressing the
+ * same key again returns to both.
+ */
 export const useLanguageVisibility = (): LanguageVisibility => {
-    const [manxVisible, setManxVisible] = useState(true)
-    const [englishVisible, setEnglishVisible] = useState(true)
-    
-    // rare issue, tapping too quickly can hide both
-    if (!manxVisible && !englishVisible) {
-        setManxVisible(true)
-    }
-    
+    const [visibleLanguage, setVisibleLanguage] = useState<VisibleLanguage>("Both")
+
     useEffect(() => {
-        function handleKeyDown(e: KeyboardEvent) {
+        function handleKeyUp(e: KeyboardEvent) {
+            if (isTextEntry(e.target)) {
+                return // don't toggle columns while typing a search
+            }
             if (e.key?.toLowerCase() == "e") {
-                if (!manxVisible && englishVisible) {
-                    // the user is making English invisible. Show the Manx
-                    setManxVisible(true)
-                }
-                setEnglishVisible(x => !x)
-                
+                setVisibleLanguage(current => current == "English" ? "Both" : "English")
             } else if (e.key?.toLowerCase() == "m") {
-                if (!englishVisible && manxVisible) {
-                    // the user is making Manx invisible. Show the English
-                    setEnglishVisible(true)
-                } 
-                setManxVisible(x => !x)
+                setVisibleLanguage(current => current == "Manx" ? "Both" : "Manx")
             }
         }
 
-        document.addEventListener("keyup", handleKeyDown)
-        return () => document.removeEventListener("keyup", handleKeyDown)
-    }, [englishVisible, manxVisible])
+        document.addEventListener("keyup", handleKeyUp)
+        return () => document.removeEventListener("keyup", handleKeyUp)
+    }, [])
 
-    return { manxVisible, englishVisible }
+    return {
+        visibleLanguage,
+        setVisibleLanguage,
+        manxVisible: visibleLanguage != "English",
+        englishVisible: visibleLanguage != "Manx",
+    }
 }

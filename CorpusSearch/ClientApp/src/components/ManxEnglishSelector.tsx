@@ -1,27 +1,24 @@
-import {useMemo, useState} from "react"
+import {useState} from "react"
 import {SearchLanguage} from "../routes/Home"
-import "./ManxEnglishSelector.css"
-import ifEmoji from "if-emoji"
 
 export const ManxEnglishSelector = (props: { onLanguageChange: (lang: SearchLanguage) => void, initialLanguage?: SearchLanguage }) => {
     const [language, setLanguage] = useState<SearchLanguage>(props.initialLanguage ?? "Manx")
 
-    const toggleLanguage = () => {
-        const newLanguage: SearchLanguage = language == "Manx" ? "English" : "Manx"
+    const setLang = (newLanguage: SearchLanguage) => {
         setLanguage(newLanguage)
         props.onLanguageChange(newLanguage)
     }
-    
-    const canUseEmoji = useMemo(() => {
-        return ifEmoji("🇮🇲")
-    }, [])
-    
-    const manxText = canUseEmoji ? "🇮🇲 Gaelg": "Manx"
-    const englishText = canUseEmoji ? "🇬🇧 English": "English"
 
-    return <div className={"languageSelectorButtonContainer"}>
-        <button className={"languageSelectorButton"} onClick={() => toggleLanguage()}>
-            {language == "Manx" ? manxText : englishText}
-        </button>
+    return <div className="seg-control seg-search">
+        <button
+            type="button"
+            title="Search in Manx"
+            className={language == "Manx" ? "active" : undefined}
+            onClick={() => setLang("Manx")}>Gaelg</button>
+        <button
+            type="button"
+            title="Search in English"
+            className={language == "English" ? "active" : undefined}
+            onClick={() => setLang("English")}>English</button>
     </div>
 }

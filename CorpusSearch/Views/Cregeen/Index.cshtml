@@ -1,108 +1,126 @@
-﻿@using CorpusSearch.Model.Dictionary;
+@using CorpusSearch.Model.Dictionary;
 @using CorpusSearch.Service.Dictionaries
-@{
-    ViewData["Title"] = "Index";
-}
 
-<script>
-    function search() {
-        let query = document.getElementById("searchInput").value;
-        window.location.href = `/Dictionary/Cregeen/${query}`;
-        return false;
-    }
-</script>
-
-<h2>Cregeen's Dictionary</h2>
-
-<input type="text" id="searchInput" onkeyup="if (event.keyCode == 13) { search() }" style="width:90%" value="@ViewData["query"]?.ToString()" />
-<input type="submit" id="searchButton" onclick="search()" value="Search" />
-<br />
-
-<script>
-    var input = document.getElementById("searchInput");
-    input.focus();
-    input.select();
-</script>
-
-<div style="text-align:center">
-    @{
-        // Display large "A-Y" buttons
-        foreach (var k in CregeenDictionaryService.LetterLookup.Keys.Where(x => x != ' '))
-        {
-            <a style="font-size:xx-large;margin-left:5px;margin-right:5px" href="/Dictionary/Cregeen/@k">@k</a>
-        }
-        <br />
-    }
-</div>
-
-<hr />
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Cregeen's Dictionary</title>
+    <link rel="shortcut icon" href="/favicon.ico">
+    @* version query = server start time, so a rebuild+restart always busts cached CSS *@
+    <link href="/site-design.css?v=@(System.Diagnostics.Process.GetCurrentProcess().StartTime.Ticks)" rel="stylesheet">
+</head>
+<body>
 
 @{
-    bool renderRecursive = true;
-    void RenderEntry(CregeenEntry entry, int depth)
-    {
-        var elDepth = depth * 30 + "px";
-        <p>
-            @* Non-breaking hyphen doesn't appear on macOS *@
-            <span style="margin-left: @elDepth;" class="word"> @Html.Raw(entry.HeadingHtml.Replace("&#8209;", "-"))</span>;
-            <span class="entry"> @Html.Raw(entry.EntryHtml.Replace("&#8209;", "-"))</span>
-        </p>
-        if (!renderRecursive)
-        {
-            return;
-        }
-        foreach (var child in entry.SafeChildren)
-        {
-            RenderEntry(child, depth + 1);
-        }
+    ViewData["ActiveNav"] = "dictionary";
 
-    }
-
-    var entries = CregeenDictionaryService.GetEntries();
-
-    var dict = CregeenDictionaryService.LetterLookup;
-
-    IEnumerable<CregeenEntry> search;
     var query = ViewData["query"]?.ToString();
     if (!CregeenDictionaryService.IsValidSearch(query))
     {
         query = "A";
     }
-
-    int entryCount = 0;
-    if (query.Length == 1)
-    {
-        var start = char.ToUpperInvariant(query[0]);
-        var end = (char)(start + 1);
-
-        if (end == 'X') { end = 'Y'; }
-        if (!dict.ContainsKey(end)) { end = ' '; }
-
-        search = entries.SkipWhile(x => x.Words.First() != dict[start]).TakeWhile(x => x.Words.First() != dict[end]);
-    }
-    else
-    {
-        search = CregeenDictionaryService.FuzzySearch(query, entries);
-
-        entryCount = search.Count();
-        renderRecursive = false;
-    }
-
-    if (entryCount != 0)
-    {
-        string res = entryCount == 1 ? "result" : "results";
-        <p>@entryCount @res</p>
-    }
-
-
-    foreach (var entry in search)
-    {
-        RenderEntry(entry, 0);
-        <hr />
-    }
-
-    if (!search.Any())
-    {
-        <p>No results</p>
-    }
+    var isLetterBrowse = query.Length == 1;
+    var activeLetter = isLetterBrowse ? char.ToUpperInvariant(query[0]) : ' ';
 }
+
+@await Html.PartialAsync("_SiteHeader")
+
+<div class="page-main">
+    <h1 class="page-title">Cregeen's Dictionary</h1>
+    <div class="page-byline">A Dictionary of the Manks Language — Archibald Cregeen, 1835</div>
+
+    <input type="search" id="searchInput" class="corpus-search-input dict-search"
+           placeholder="Search the dictionary…"
+           onkeyup="if (event.keyCode == 13) { search() }"
+           value="@ViewData["query"]?.ToString()" />
+
+    <script>
+        function search() {
+            let query = document.getElementById("searchInput").value;
+            window.location.href = `/Dictionary/Cregeen/${query}`;
+            return false;
+        }
+
+        var input = document.getElementById("searchInput");
+        input.focus();
+        input.select();
+    </script>
+
+    <div class="dict-letters">
+        @foreach (var k in CregeenDictionaryService.LetterLookup.Keys.Where(x => x != ' '))
+        {
+            <a href="/Dictionary/Cregeen/@k" class="@(k == activeLetter ? "active" : null)">@k</a>
+        }
+    </div>
+
+    @{
+        bool renderRecursive = true;
+        void RenderEntry(CregeenEntry entry, int depth)
+        {
+            <div class="dict-entry" style="margin-left: @(depth * 26)px">
+                @* Non-breaking hyphen doesn't appear on macOS *@
+                <span class="dict-entry-word">@Html.Raw(entry.HeadingHtml.Replace("&#8209;", "-"))</span><span class="dict-entry-def">, @Html.Raw(entry.EntryHtml.Replace("&#8209;", "-"))</span>
+            </div>
+            if (!renderRecursive)
+            {
+                return;
+            }
+            foreach (var child in entry.SafeChildren)
+            {
+                RenderEntry(child, depth + 1);
+            }
+        }
+
+        var entries = CregeenDictionaryService.GetEntries();
+        var dict = CregeenDictionaryService.LetterLookup;
+
+        IEnumerable<CregeenEntry> search;
+        int entryCount = 0;
+        if (isLetterBrowse)
+        {
+            var start = activeLetter;
+            var end = (char)(start + 1);
+
+            if (end == 'X') { end = 'Y'; }
+            if (!dict.ContainsKey(end)) { end = ' '; }
+
+            search = entries.SkipWhile(x => x.Words.First() != dict[start]).TakeWhile(x => x.Words.First() != dict[end]);
+        }
+        else
+        {
+            search = CregeenDictionaryService.FuzzySearch(query, entries);
+            entryCount = search.Count();
+            renderRecursive = false;
+        }
+    }
+
+    <div class="section-label dict-section-label">
+        @if (isLetterBrowse)
+        {
+            <text>Entries under @activeLetter</text>
+        }
+        else
+        {
+            <text>@entryCount.ToString("N0") @(entryCount == 1 ? "result" : "results") for “@query”</text>
+        }
+    </div>
+
+    @{
+        foreach (var entry in search)
+        {
+            RenderEntry(entry, 0);
+        }
+
+        if (!search.Any())
+        {
+            <div class="dict-no-results">No results for “@query” — try another spelling.</div>
+        }
+    }
+
+    @await Html.PartialAsync("_SiteFooter")
+</div>
+
+</body>
+</html>

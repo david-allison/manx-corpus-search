@@ -1,18 +1,12 @@
-import {useState, MouseEvent} from "react"
-import { Container, Navbar, NavbarToggler, NavItem, Collapse } from "reactstrap"
+import {MouseEvent} from "react"
 import {Link, useLocation, useNavigate} from "react-router-dom"
-import corpusLogo from "../assets/corpus.png"
 import corpusIcon from "../assets/corpus-search-icon.png"
-import "./NavMenu.css"
 
 export const NavMenu = (props: { onRefreshState: () => void}) => {
 
-    const [collapsed, setCollapsed] = useState(true)
-    const toggleNavbar = () => setCollapsed(x => !x)
-
     const navigation = useNavigate()
     const location = useLocation()
-    
+
     const onGoHome = (e: MouseEvent) => {
         if (location.pathname == "/") {
             // reset the state
@@ -25,39 +19,25 @@ export const NavMenu = (props: { onRefreshState: () => void}) => {
         }
         // otherwise, we want to replace in the history.
     }
+
     return (
-      <header>
-
-        <Navbar className="navbar-expand-sm navbar-toggleable-sm ng-white border-bottom box-shadow mb-3" light container={false}>
-
-            <Container fluid={true} className={"container"}>
-                <Link replace to={"/"} className={"noLinkColor"} onClick={onGoHome}>
-                    <div>
-                        <img src={corpusLogo} alt="Manx Corpus Search" className={"corpusImageLarge"} height="100px" />
-                        <img src={corpusIcon} alt="Manx Corpus Search" className={"corpusImageSmall"} height="60px" />
-                        <span className={"corpusImageSmall titleText"}>Gaelg Corpus Search</span>
-                    </div>
+        <header className="site-header">
+            <div className="site-header-inner">
+                <Link replace to={"/"} className="brand" onClick={onGoHome}>
+                    <img src={corpusIcon} alt="Gaelg Corpus Search" />
+                    <span className="brand-lockup">
+                        <span className="brand-name">Gaelg</span>
+                        <span className="brand-sub">CORPUS SEARCH</span>
+                    </span>
                 </Link>
-                <NavbarToggler onClick={toggleNavbar} className="mr-2" />
-                <Collapse className="d-sm-inline-flex flex-sm-row-reverse" isOpen={!collapsed} navbar>
-                    <ul className="navbar-nav flex-grow">
-                        <NavItem>
-                            {/*Not a NavLink as we want to replace*/}
-                            <Link replace className="text-dark nav-link" onClick={onGoHome} to="/">Home</Link>
-                        </NavItem>
-                        <NavItem>
-                            <a className="text-dark nav-link" href="/Dictionary/Cregeen" target="_blank">Dictionary</a>
-                        </NavItem>
-                        <NavItem>
-                            <a className="text-dark nav-link" href="/Browse" target="_blank">Browse All</a>
-                        </NavItem>
-                        <NavItem>
-                            <a className="text-dark nav-link" href="https://www.learnmanx.com/resources/translations/" target="_blank">Translations</a>
-                        </NavItem>
-                    </ul>
-                </Collapse>
-            </Container>
-            </Navbar>
+                <nav className="site-nav">
+                    {/*Not a NavLink as we want to replace*/}
+                    <Link replace className="active" onClick={onGoHome} to="/">Home</Link>
+                    <a href="/Dictionary/Cregeen">Dictionary</a>
+                    <a href="/Browse">Browse All</a>
+                    <a href="https://www.learnmanx.com/resources/translations/" target="_blank" rel="noreferrer">Translations</a>
+                </nav>
+            </div>
         </header>
     )
 }

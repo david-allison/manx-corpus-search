@@ -1,70 +1,189 @@
-﻿.search-options {
-    width: 100%;
+/* Search row (all corpus pages): input + language segmented control */
+.search-row {
+    display: flex;
+    gap: 12px;
+    align-items: stretch;
 }
 
-#corpus-search-box-container {
-    margin-bottom: 10px;
+/* Home only: the search is the hero of the page */
+.search-row-hero .corpus-search-input {
+    font-size: 21px;
+    padding: 14px 26px;
+    border-width: 2px;
+    box-shadow: 0 3px 14px rgba(62, 80, 88, 0.10);
 }
 
-#corpus-search-box {
-    padding: 5px 10px 5px 10px;
-    font-size: 20px;
-    border-radius: 40px;
-    outline: none;
+.search-row-hero .corpus-search-input:focus {
+    box-shadow: var(--focus-ring), 0 3px 14px rgba(62, 80, 88, 0.10);
 }
 
-#manxSearch {
-    margin-right: 0.5em;
+.search-row-hero .seg-control button {
+    font-size: 14.5px;
+    padding: 0 18px;
 }
 
-.search-language label {
-    font-weight: bold;
+/* ============ Home (empty state) ============ */
+.home-intro {
+    text-align: center;
+    margin-top: 44px;
+    font-family: var(--font-display);
+    font-size: 22px;
+    line-height: 1.5;
+    color: var(--c-heading);
+    text-wrap: pretty;
 }
 
-#manxSearchLabel {
-    margin-left: 0.5em;
+.recent-docs {
+    margin-top: 52px;
+    max-width: 640px;
+    margin-left: auto;
+    margin-right: auto;
 }
 
-
-.document-name {
-    display: inline;
-}
-
-.full-search-results thead td {
-    font-weight: bold;
-    padding-right: 10px;
-}
-
-.search-buttons {
-    display: inline-flex;
-    width: 100%;
-    justify-content: space-evenly;
-}
-
-.advanced-options {
-    padding-top: 3px;
-    padding-bottom: 3px;
-}
-
-.advanced-options summary {
-    outline: none;
-    user-select: none;
-}
-
-tr:nth-child(even) {
-    background-color: gainsboro;
-}
-
-th {
-    border-bottom: 1px solid gray;
-}
-
-.homeText {
-    /** Done for Firefox */
+.recent-docs-list {
     display: flex;
     flex-direction: column;
-    
-    margin-top: 10px;
-    font-size: large;
-    align-content: center;
+    gap: 11px;
+    font-size: 15px;
+}
+
+.recent-doc-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.recent-doc-row a {
+    text-decoration: none;
+    color: var(--c-ink);
+    font-family: var(--font-display);
+}
+
+.recent-doc-row a:hover {
+    color: var(--c-link);
+}
+
+.recent-doc-date {
+    color: var(--c-muted-2);
+    font-size: 13px;
+}
+
+.home-support {
+    margin-top: 34px;
+    text-align: center;
+    font-size: 14.5px;
+    color: var(--c-secondary);
+    line-height: 1.7;
+    text-wrap: pretty;
+}
+
+.home-error {
+    margin-top: 40px;
+    text-align: center;
+    font-size: 15px;
+    color: var(--c-secondary);
+}
+
+/* ============ Results header ============ */
+.results-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    margin-top: 30px;
+    flex-wrap: wrap;
+}
+
+.results-count {
+    font-family: var(--font-display);
+    font-size: 19px;
+    color: var(--c-heading);
+}
+
+.results-count-matches {
+    color: var(--c-accent);
+}
+
+.results-controls {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-size: 13px;
+    color: var(--c-secondary);
+}
+
+.results-controls label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 0;
+}
+
+/* the View (density) control: in the results header on desktop, under Advanced options on mobile */
+.view-control-mobile {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+@media (min-width: 601px) {
+    .view-control-mobile {
+        display: none;
+    }
+}
+
+@media (max-width: 600px) {
+    .results-controls .view-control-desktop {
+        display: none;
+    }
+}
+
+/* ============ Dictionary strip ============ */
+.dict-strip {
+    margin-top: 14px;
+    background: var(--c-dict-strip);
+    border: 1px solid var(--c-dict-strip-border);
+    border-radius: 4px;
+    padding: 12px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    font-size: 14.5px;
+}
+
+.dict-strip-row {
+    display: flex;
+    gap: 10px;
+    align-items: baseline;
+    flex-wrap: wrap;
+}
+
+.dict-strip-label {
+    color: var(--c-accent);
+    font-weight: 600;
+    white-space: nowrap;
+    text-decoration: none;
+}
+
+a.dict-strip-label:hover {
+    color: var(--c-link-hover);
+    text-decoration: underline;
+}
+
+.dict-strip-text {
+    font-family: var(--font-display);
+    color: var(--c-ink);
+    flex: 1;
+    min-width: 240px;
+    line-height: 1.55;
+}
+
+/* ============ No results ============ */
+.no-results {
+    text-align: center;
+    margin-top: 50px;
+    color: var(--c-secondary);
+    font-family: var(--font-display);
+    font-size: 18px;
 }

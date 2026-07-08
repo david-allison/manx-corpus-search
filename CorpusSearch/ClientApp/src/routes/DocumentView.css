@@ -1,14 +1,205 @@
-﻿mark.textHighlight {
-    background-color: yellow;
+/* ============ Document header ============ */
+.doc-header {
+    margin-top: 28px;
 }
 
-mark.textHighlightAlternate {
-    background-color: #b0edde;
+.doc-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 13.5px;
+    color: var(--c-secondary);
+    text-decoration: none;
+    background: var(--c-surface);
+    border: 1px solid var(--c-border-input);
+    border-radius: 4px;
+    padding: 5px 12px 5px 10px;
+    box-shadow: var(--shadow-card);
 }
 
-.noteRow {
-    background-color: aliceblue;
-    font-size: x-small;
-    padding: 0.15rem;
+.doc-back:hover {
+    color: var(--c-ink);
+    border-color: var(--c-muted-2);
+}
+
+.doc-back-chevron {
+    font-size: 17px;
+    line-height: 1;
+    margin-top: -2px;
+    color: var(--c-link);
+}
+
+.doc-back:hover .doc-back-chevron {
+    color: var(--c-link-hover);
+}
+
+.doc-title-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.doc-title-row .page-title {
+    flex: 1;
+    min-width: 0;
+}
+
+/* rides along inside the h1, so it always follows the title's last word */
+.doc-year-badge {
+    font-family: var(--font-ui);
+    vertical-align: middle;
+    margin-left: 12px;
+}
+
+.doc-match-label {
+    font-size: 13.5px;
+    color: var(--c-muted);
+    margin-top: 6px;
+}
+
+/* ============ Metadata strip ============ */
+.doc-meta-strip {
+    margin-top: 18px;
+    border-top: 1px solid var(--c-border-meta);
+    border-bottom: 1px solid var(--c-border-meta);
+    padding: 12px 2px;
+    display: flex;
+    gap: 12px 28px;
+    flex-wrap: wrap;
+    align-items: baseline;
+    font-size: 13.5px;
+}
+
+.doc-meta-key {
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--c-accent);
+    font-weight: 600;
+    margin-right: 8px;
+    text-transform: uppercase;
+}
+
+/* brand-cased labels, e.g. "iMuseum" */
+.doc-meta-key-brand {
+    text-transform: none;
+}
+
+.doc-meta-value {
+    color: var(--c-body-results);
+}
+
+.doc-meta-toggle {
+    border: none;
+    background: none;
+    cursor: pointer;
+    padding: 0;
+    font-size: 12.5px;
+    color: var(--c-link);
+    white-space: nowrap;
+}
+
+.doc-meta-toggle:hover {
+    color: var(--c-link-hover);
+    text-decoration: underline;
+}
+
+.doc-meta-links {
+    margin-left: auto;
+    display: flex;
+    gap: 16px;
+    font-size: 13px;
+    white-space: nowrap;
+}
+
+/* ============ Document note ============ */
+.doc-note {
+    margin-top: 14px;
+    font-size: 14px;
+    color: var(--c-muted);
+    font-style: italic;
+    font-family: var(--font-display);
+    white-space: pre-wrap;
+}
+
+/* ============ Show (language) toggle ============ */
+.doc-show-label {
+    font-size: 12px;
+    color: var(--c-muted);
+    margin-right: 2px;
+}
+
+/* ============ Line table ============ */
+.doc-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 12px;
+}
+
+.doc-table th {
+    text-align: left;
+    padding: 8px 10px;
+    font-size: 15px;
+    font-weight: bold;
+    color: var(--c-ink);
+    border-bottom: 1px solid var(--c-border-table-head);
+}
+
+.doc-table td {
+    padding: 8px 10px;
+    font-size: 15px;
+    line-height: 1.6;
+    color: var(--c-ink);
+    vertical-align: top;
+    overflow-wrap: break-word;
+}
+
+.doc-row-striped {
+    background: var(--c-row-stripe);
+}
+
+.doc-row-playing {
+    background: var(--c-audio-active-row);
+}
+
+.doc-table .noteRow td {
+    background: var(--c-note-row);
+    padding: 3px 10px;
+    font-size: 13px;
+    color: var(--c-secondary);
     text-align: center;
+}
+
+.doc-play-btn {
+    border: none;
+    background: none;
+    cursor: pointer;
+    color: var(--c-link);
+    font-size: 12px;
+    padding: 2px;
+    text-align: left;
+}
+
+.doc-speaker-time {
+    font-size: 12px;
+    color: var(--c-muted-2);
+    font-variant-numeric: tabular-nums;
+}
+
+.doc-link-cell {
+    font-size: 13px;
+}
+
+/* ============ Match highlights ============ */
+mark.textHighlight {
+    color: var(--c-accent);
+    background-color: var(--c-match-bg);
+    border-radius: 3px;
+    padding: 0 3px;
+    font-weight: bold;
+}
+
+/* the "other language" translations of the search term */
+mark.textHighlightAlternate {
+    background-color: var(--c-audio-active-row);
+    border-radius: 3px;
 }

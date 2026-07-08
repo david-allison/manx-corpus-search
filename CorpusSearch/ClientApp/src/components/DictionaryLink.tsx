@@ -1,4 +1,3 @@
-import {Fragment} from "react"
 import {DefinedInDictionaries, DictionaryDefinition} from "../api/SearchApi"
 
 export function hasDictionaryDefinitions(dictionaries?: DefinedInDictionaries) {
@@ -9,36 +8,29 @@ export function hasDictionaryDefinitions(dictionaries?: DefinedInDictionaries) {
 }
 
 export const DictionaryLink = (props: { query: string, dictionaries: DefinedInDictionaries}) => {
-        return <>{Object.keys(props.dictionaries).map(dictionaryName => {
-                const element = props.dictionaries[dictionaryName]
-                return (
-                    <Fragment key={dictionaryName}>
-                        <DictionaryNameHeader dictionary={element} dictionaryName={dictionaryName} query={props.query} />
-                        : {/*: A literal colon*/}
-                        {
-                            element.entries.map((e, i) => 
-                            <Fragment key={e+i.toString()}>
-                                <b>{`${i+1})`}</b>
-                                {` ${e}`}
-                                {i == element.entries.length -1 ? "" : "; "}
-                            </Fragment>)
-                        }
-                        <br />
-                    </Fragment>
-                )})
-        }</>
-    
+    return <>{Object.keys(props.dictionaries)
+        .filter(dictionaryName => props.dictionaries[dictionaryName].entries.length > 0)
+        .map(dictionaryName => {
+            const element = props.dictionaries[dictionaryName]
+            return (
+                <div className="dict-strip-row" key={dictionaryName}>
+                    <DictionaryNameHeader dictionary={element} dictionaryName={dictionaryName} query={props.query} />
+                    <span className="dict-strip-text">
+                        {element.entries.map((e, i) => `${i + 1}) ${e}`).join(" ")}
+                    </span>
+                </div>
+            )})
+    }</>
 }
 
 const DictionaryNameHeader = (props: { dictionary: DictionaryDefinition, dictionaryName: string, query: string}) => {
-        const {dictionaryName, query, dictionary } = props
-    
+    const {dictionaryName, query, dictionary } = props
+
     if (!dictionary.allowLookup) {
-        return <span style={{ "fontWeight": "bold" }}>{dictionaryName}</span>
+        return <span className="dict-strip-label">{dictionaryName}:</span>
     }
-    
-    return <a href={`/Dictionary/${dictionaryName}/${query}`} target="_blank" rel="noreferrer" style={{ "fontWeight": "bold" }}>
-                {dictionaryName}
-            </a>
-            
+
+    return <a className="dict-strip-label" href={`/Dictionary/${dictionaryName}/${query}`} target="_blank" rel="noreferrer">
+        {dictionaryName}:
+    </a>
 }

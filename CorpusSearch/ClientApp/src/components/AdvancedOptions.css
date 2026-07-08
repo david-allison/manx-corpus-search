@@ -1,3 +1,52 @@
+.advanced-options {
+    margin-top: 12px;
+}
+
+.advanced-options summary {
+    cursor: pointer;
+    user-select: none;
+    font-size: 14px;
+    color: var(--c-secondary);
+    outline: none;
+}
+
+.advanced-options summary a {
+    float: right;
+    font-size: 13px;
+}
+
+.advanced-options-content {
+    display: flex;
+    align-items: center;
+    gap: 28px;
+    flex-wrap: wrap;
+    padding: 14px 6px 4px 6px;
+    font-size: 14px;
+    color: var(--c-ink);
+}
+
+.advanced-options-dates {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.advanced-options-dates-label {
+    color: var(--c-secondary);
+}
+
+.advanced-options-dates-dash {
+    color: var(--c-muted-2);
+}
+
+.advanced-options-match {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    margin-bottom: 0;
+}
+
 .noUnderline {
     display: inline-block;
     text-decoration: none !important;
