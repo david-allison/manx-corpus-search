@@ -121,7 +121,12 @@ public class LuceneIndex(IndexWriter indexWriter)
 
         ISet<int> acceptDocs = GetDocsForIdent(searcher, ident);
 
-        var spanCollection = BuildSpanCollection(query, reader, AcceptDocument);
+        var rewritten = (SpanQuery)query.Rewrite(reader);
+        var spanCollection = BuildSpanCollection(rewritten, reader, AcceptDocument);
+
+        var matchedDocs = new HashSet<int>(spanCollection.DistinctDocumentIds());
+        var highlightTokenSpans = CollectHighlightTokenSpans(rewritten, reader, matchedDocs);
+        string searchedField = rewritten.Field;
 
         var docs = spanCollection.DistinctDocuments().Select(x =>
         {
@@ -133,6 +138,10 @@ public class LuceneIndex(IndexWriter indexWriter)
             string notes = document.GetField(DOCUMENT_NOTES)?.GetStringValue();
             int lineNumber = document.GetField(DOCUMENT_LINE_NUMBER)?.GetInt32Value() ?? -1;
 
+            var highlights = ComputeHighlights(reader, docId, searchedField,
+                searchedField == DOCUMENT_NORMALIZED_ENGLISH ? english : manx,
+                highlightTokenSpans.GetValueOrDefault(docId));
+
             return new DocumentLine
             {
                 English = english,
@@ -140,6 +149,8 @@ public class LuceneIndex(IndexWriter indexWriter)
                 Page = document.GetPageAsInt(),
                 Notes = notes,
                 CsvLineNumber = lineNumber,
+                ManxHighlights = searchedField == DOCUMENT_NORMALIZED_MANX ? highlights : null,
+                EnglishHighlights = searchedField == DOCUMENT_NORMALIZED_ENGLISH ? highlights : null,
                 ManxOriginal = document.GetField(DOCUMENT_ORIGINAL_MANX)?.GetStringValue(),
                 EnglishOriginal = document.GetField(DOCUMENT_ORIGINAL_ENGLISH)?.GetStringValue(),
                 SubStart = getTranscriptData ? document.GetField(SUBTITLE_START)?.GetDoubleValue() : null,
@@ -163,14 +174,13 @@ public class LuceneIndex(IndexWriter indexWriter)
         }
     }
 
-    private static EmptySpanCollection BuildSpanCollection(Query query, IndexReader reader, Func<AtomicReaderContext,Spans, bool> acceptDocument)
+    private static EmptySpanCollection BuildSpanCollection(SpanQuery rewritten, IndexReader reader, Func<AtomicReaderContext,Spans, bool> acceptDocument)
     {
-        var spanQuery = (SpanQuery)query.Rewrite(reader);
         EmptySpanCollection spanCollection = new();
         foreach (var leaf in reader.Leaves)
         {
             var dict = new Dictionary<Term, TermContext>();
-            var spans = spanQuery.GetSpans(leaf, null, dict);
+            var spans = rewritten.GetSpans(leaf, null, dict);
 
             while (spans.MoveNext())
             {
@@ -184,6 +194,111 @@ public class LuceneIndex(IndexWriter indexWriter)
         }
 
         return spanCollection;
+    }
+
+    /// <summary>
+    /// The token positions to highlight in each matched document.
+    /// A second walk over the spans: <see cref="BuildSpanCollection"/> counts matches of the
+    /// full query, this collects the positions of each term/phrase of it (see
+    /// <see cref="SpanQueryHighlightExtractor"/>) in the documents which matched.
+    /// </summary>
+    private static Dictionary<int, List<(int Start, int End)>> CollectHighlightTokenSpans(
+        SpanQuery rewritten, IndexReader reader, ISet<int> matchedDocs)
+    {
+        var result = new Dictionary<int, List<(int Start, int End)>>();
+        if (matchedDocs.Count == 0)
+        {
+            return result;
+        }
+
+        foreach (var leafQuery in SpanQueryHighlightExtractor.GetHighlightLeaves(rewritten))
+        {
+            foreach (var leaf in reader.Leaves)
+            {
+                var dict = new Dictionary<Term, TermContext>();
+                var spans = leafQuery.GetSpans(leaf, null, dict);
+
+                while (spans.MoveNext())
+                {
+                    int docId = leaf.DocBase + spans.Doc;
+                    if (!matchedDocs.Contains(docId))
+                    {
+                        continue;
+                    }
+                    if (!result.TryGetValue(docId, out var spanList))
+                    {
+                        result[docId] = spanList = [];
+                    }
+                    spanList.Add((spans.Start, spans.End));
+                }
+            }
+        }
+        return result;
+    }
+
+    /// <summary>
+    /// Converts the matched token positions of one document to character ranges of the raw text:
+    /// token position -> character offsets in the normalized field text (via the term vector)
+    /// -> character offsets in the raw text (via <see cref="MappedText"/>).
+    /// </summary>
+    /// <returns>ranges ordered by start, overlaps merged; null if nothing can be highlighted</returns>
+    private static List<HighlightRange> ComputeHighlights(IndexReader reader, int docId, string field,
+        string rawText, List<(int Start, int End)> tokenSpans)
+    {
+        if (tokenSpans == null || tokenSpans.Count == 0 || string.IsNullOrEmpty(rawText))
+        {
+            return null;
+        }
+
+        var positionOffsets = TermVectorOffsetReader.GetPositionOffsets(reader, docId, field);
+        if (positionOffsets == null)
+        {
+            return null;
+        }
+
+        MappedText normalized = field == DOCUMENT_NORMALIZED_ENGLISH
+            ? NormalizationMapper.PaddedEnglish(rawText)
+            : NormalizationMapper.PaddedManx(rawText);
+
+        var ranges = new List<HighlightRange>();
+        foreach (var (start, end) in tokenSpans)
+        {
+            // the offsets of a span's first and last token bound the matched text
+            if (!positionOffsets.TryGetValue(start, out var first)
+                || !positionOffsets.TryGetValue(end - 1, out var last))
+            {
+                continue;
+            }
+            var range = normalized.MapRangeToSource(first.Start, last.End);
+            if (range != null)
+            {
+                ranges.Add(new HighlightRange(range.Value.Start, range.Value.End));
+            }
+        }
+
+        return ranges.Count != 0 ? MergeOverlapping(ranges) : null;
+    }
+
+    private static List<HighlightRange> MergeOverlapping(List<HighlightRange> ranges)
+    {
+        ranges.Sort((a, b) => a.Start != b.Start ? a.Start.CompareTo(b.Start) : a.End.CompareTo(b.End));
+        var merged = new List<HighlightRange> { ranges[0] };
+        foreach (var range in ranges.Skip(1))
+        {
+            var previous = merged[^1];
+            if (range.Start < previous.End)
+            {
+                if (range.End > previous.End)
+                {
+                    merged[^1] = previous with { End = range.End };
+                }
+            }
+            else
+            {
+                merged.Add(range);
+            }
+        }
+        return merged;
     }
 
     private ISet<int> GetDocsForIdent(IndexSearcher searcher, string ident)
