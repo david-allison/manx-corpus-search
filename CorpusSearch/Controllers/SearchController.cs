@@ -141,9 +141,11 @@ public partial class SearchController(
         var workResult = await SearchWork(workIdent, query: query, manx: true, english: false);
         var selectedIndex = QueryMatchIndex(workResult.Results, matchNumber);
         if (selectedIndex == null) return null;
-        return new MatchReference(workIdent, matchNumber, workResult.Results[selectedIndex.Value.LineIndex].Manx, 
-            selectedIndex.Value.IndexInLine, 
-            LineNumber: selectedIndex.Value.LineIndex + 1);
+        var line = workResult.Results[selectedIndex.Value.LineIndex];
+        return new MatchReference(workIdent, matchNumber, line.Manx,
+            selectedIndex.Value.IndexInLine,
+            LineNumber: selectedIndex.Value.LineIndex + 1,
+            Highlights: line.ManxHighlights);
     }
 
     private (int LineIndex, int IndexInLine)? QueryMatchIndex(List<DocumentLine> workResultResults, int line)
@@ -246,5 +248,10 @@ public record QueryLanguages(bool Manx, bool English)
     }
 }
 
+/// <param name="Highlights">
+/// Ranges of <paramref name="Manx"/> which matched the query (all matches in the line;
+/// <paramref name="MatchIndexInLine"/> selects the current one)
+/// </param>
 [SuppressMessage("ReSharper", "NotAccessedPositionalProperty.Global")]
-public record MatchReference(string WorkIdent, int MatchNumber, string Manx, long MatchIndexInLine, long LineNumber);
+public record MatchReference(string WorkIdent, int MatchNumber, string Manx, long MatchIndexInLine, long LineNumber,
+    IReadOnlyList<HighlightRange> Highlights);
