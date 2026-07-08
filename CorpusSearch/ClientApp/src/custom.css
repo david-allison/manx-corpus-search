@@ -312,3 +312,38 @@ input, button, select {
     border-radius: 3px;
     padding: 0 3px;
 }
+
+/* ============ Error boundary ============ */
+.error-boundary {
+    text-align: center;
+    margin-top: 60px;
+}
+
+.error-boundary-title {
+    font-family: var(--font-display);
+    font-size: 22px;
+    color: var(--c-heading);
+}
+
+.error-boundary-text {
+    margin-top: 10px;
+    font-size: 14.5px;
+    color: var(--c-secondary);
+    line-height: 1.7;
+}
+
+.error-boundary-reload {
+    margin-top: 18px;
+    border: none;
+    background: var(--c-slate);
+    color: var(--c-surface);
+    border-radius: 4px;
+    padding: 8px 22px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.error-boundary-reload:hover {
+    background: var(--c-audio-bar);
+}
