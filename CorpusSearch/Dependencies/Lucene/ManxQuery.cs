@@ -24,7 +24,7 @@ public class ManxQuery(Term term) : AutomatonQuery(GetTerm(term), ToAutomaton(te
     {
         IList<Automaton> automata = new List<Automaton>();
 
-        string wildcardText = term.Text();
+        string wildcardText = term.Text;
 
         for (int i = 0; i < wildcardText.Length; i++)
         {
