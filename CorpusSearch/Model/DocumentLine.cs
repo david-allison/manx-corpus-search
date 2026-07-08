@@ -1,4 +1,5 @@
-﻿using System.Text.Json.Serialization;
+﻿using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace CorpusSearch.Model;
 
@@ -8,6 +9,12 @@ public class DocumentLine
     public string Manx { get; set; }
     public int? Page { get; set; }
     public string Notes { get; set; }
+
+    /// <summary>Ranges of <see cref="Manx"/> which matched the query. Null unless Manx was searched.</summary>
+    public IReadOnlyList<HighlightRange> ManxHighlights { get; set; }
+
+    /// <summary>Ranges of <see cref="English"/> which matched the query. Null unless English was searched.</summary>
+    public IReadOnlyList<HighlightRange> EnglishHighlights { get; set; }
 
     public string ManxOriginal { get; set; }
     public string EnglishOriginal { get; set; }
