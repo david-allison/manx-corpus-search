@@ -136,7 +136,7 @@ export const Home = () => {
                 density={density}
                 onDensityChange={setDensity} />
             {result.data.results.length === 0
-                ? <div className="no-results">No matches for “{result.data.query || query}” — try another spelling, or widen the date range.</div>
+                ? <div className="no-results">No matches for “{result.data.query || query}”. Try another spelling, or widen the date range.</div>
                 : <MainSearchResults
                     query={result.data.query}
                     results={result.data.results}
@@ -173,12 +173,12 @@ const HomeIntro = ({ statsPromise }: { statsPromise: Promise<Statistics | "error
                 {stats != "error" ?
                     <>
                         Search our growing collection of over <b title={`${stats.uniqueManxWordCount.toLocaleString()} unique words`}>{stats.manxWordCount.toLocaleString()} Manx words</b><br/>
-                        or <a href={"/Browse"}>browse {stats.documentCount.toLocaleString()} documents</a> — from 1610 to the present era.
+                        or <a href={"/Browse"}>browse {stats.documentCount.toLocaleString()} documents</a> .
                     </>
                 :
                     <>
                         Enter a search term,<br/>
-                        or <a href={"/Browse"}>browse all documents</a> — from 1610 to the present era.
+                        or <a href={"/Browse"}>browse all documents</a>.
                     </>
                 }
             </div>
