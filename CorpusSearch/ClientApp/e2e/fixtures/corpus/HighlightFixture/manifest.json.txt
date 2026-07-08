@@ -1,0 +1,8 @@
+{
+  "created": "1900-01-01",
+  "ident": "e2e-highlight-fixture",
+  "name": "Highlight Fixture",
+  "original": "Manx",
+  "notes": "Synthetic document exercising the normalization/highlighting edge cases of #40. Used by the Playwright end-to-end tests.",
+  "source": "e2e test fixture"
+}

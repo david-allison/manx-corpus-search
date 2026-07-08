@@ -38,6 +38,8 @@ public class LoadConfig
     public bool VideoOnly { get; set;}
     public bool OpenDataOnly { get; set;}
     public int MaxOpenData { get; set;}
+    /// <summary>Overrides the directory documents are loaded from (e2e tests use a fixture corpus)</summary>
+    public string OpenDataPath { get; set; }
     //public LoadConfig(bool videoOnlyConfig) => videoOnlyConfig = videoOnly;
 }
 

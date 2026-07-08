@@ -47,10 +47,13 @@ public class OpenDataLoader
     public static List<string> GetJsonPaths(LoadConfig lConfig)
     {
         bool videoOnly = lConfig?.VideoOnly ?? false;
-        String path = Path.Combine(
-            AppDomain.CurrentDomain.BaseDirectory,
-            "OpenData" +(videoOnly ? "/Video" : "")
-        );
+        String path = string.IsNullOrEmpty(lConfig?.OpenDataPath)
+            ? Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "OpenData")
+            : lConfig.OpenDataPath;
+        if (videoOnly)
+        {
+            path = Path.Combine(path, "Video");
+        }
             
         // We use .json.txt so the file opens in the system text editor without explanation.
         // This isn't ideal, but we're likely working with non-technical users outside their comfort zone,
