@@ -1,9 +1,14 @@
-type Summary = { summary: string, primaryWord: string }
+type Summary = { summary: string; primaryWord: string }
 export type DictionaryResponse = Summary[]
 
-export const manxDictionaryLookup = async (queryUnsafe: string, signal?: AbortSignal): Promise<DictionaryResponse> => {
+export const manxDictionaryLookup = async (
+    queryUnsafe: string,
+    signal?: AbortSignal,
+): Promise<DictionaryResponse> => {
     const query = encodeURIComponent(queryUnsafe)
-    const response = await fetch(`api/Dictionary/?lang=gv&word=${query}`, { signal })
+    const response = await fetch(`api/Dictionary/?lang=gv&word=${query}`, {
+        signal,
+    })
     // TODO: Validation
-    return await response.json() as DictionaryResponse
+    return (await response.json()) as DictionaryResponse
 }

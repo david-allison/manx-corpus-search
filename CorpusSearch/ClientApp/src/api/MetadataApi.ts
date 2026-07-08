@@ -2,10 +2,13 @@
 type json = any
 export type MetadataResponse = json
 
-export const metadataLookup = async (docId: string, signal?: AbortSignal): Promise<MetadataResponse> => {
+export const metadataLookup = async (
+    docId: string,
+    signal?: AbortSignal,
+): Promise<MetadataResponse> => {
     const query = encodeURIComponent(docId)
     const response = await fetch(`api/Metadata/?&docId=${query}`, { signal })
     // TODO: Validation
-    return await response.json() 
+    return await response.json()
 }
 /* eslint-enable */

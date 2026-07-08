@@ -9,4 +9,5 @@ const root = createRoot(rootElement!)
 root.render(
     <BrowserRouter basename={baseUrl}>
         <App />
-    </BrowserRouter>)
+    </BrowserRouter>,
+)

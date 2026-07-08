@@ -1,16 +1,15 @@
-import {MouseEvent} from "react"
-import {Link, useLocation, useNavigate} from "react-router-dom"
+import { MouseEvent } from "react"
+import { Link, useLocation, useNavigate } from "react-router-dom"
 import corpusIcon from "../assets/corpus-search-icon.png"
 
-export const NavMenu = (props: { onRefreshState: () => void}) => {
-
+export const NavMenu = (props: { onRefreshState: () => void }) => {
     const navigation = useNavigate()
     const location = useLocation()
 
     const onGoHome = (e: MouseEvent) => {
         if (location.pathname == "/") {
             // reset the state
-            navigation("/", { replace: true})
+            navigation("/", { replace: true })
             props.onRefreshState()
             e.preventDefault()
         } else if (location?.state?.previousPage == "/") {
@@ -32,10 +31,18 @@ export const NavMenu = (props: { onRefreshState: () => void}) => {
                 </Link>
                 <nav className="site-nav">
                     {/*Not a NavLink as we want to replace*/}
-                    <Link replace className="active" onClick={onGoHome} to="/">Home</Link>
+                    <Link replace className="active" onClick={onGoHome} to="/">
+                        Home
+                    </Link>
                     <a href="/Dictionary/Cregeen">Dictionary</a>
                     <a href="/Browse">Browse All</a>
-                    <a href="https://www.learnmanx.com/resources/translations/" target="_blank" rel="noreferrer">Translations</a>
+                    <a
+                        href="https://www.learnmanx.com/resources/translations/"
+                        target="_blank"
+                        rel="noreferrer"
+                    >
+                        Translations
+                    </a>
                 </nav>
             </div>
         </header>
