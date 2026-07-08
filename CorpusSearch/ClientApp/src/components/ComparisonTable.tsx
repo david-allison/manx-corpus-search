@@ -1,5 +1,5 @@
 import { SearchWorkResponse, SearchWorkResult } from "../api/SearchWorkApi"
-import { Translations } from "../api/SearchApi"
+import { HighlightRange, Translations } from "../api/SearchApi"
 import { getSelectedWordOrPhrase } from "../utils/Selection"
 import {
     CSSProperties,
@@ -20,6 +20,32 @@ import "./ComparisonTable.css"
 
 function escapeRegex(s: string) {
     return s.replace(/[/\-\\^$*+?.()|[\]{}]/g, "\\$&")
+}
+
+/**
+ * Shifts server highlight ranges (offsets into the full line) into offsets local to one
+ * newline-separated segment of it, clipping ranges which cross the boundary.
+ *
+ * @example
+ * // the cell "abc\ncre def" is rendered as two segments:
+ * //   "abc"     (segmentStart 0, length 3)
+ * //   "cre def" (segmentStart 4, length 7)
+ * // a server range of {start: 4, end: 7} ("cre") only affects the second segment:
+ * segmentChunks([{ start: 4, end: 7 }], 0, 3) // => []
+ * segmentChunks([{ start: 4, end: 7 }], 4, 7) // => [{ start: 0, end: 3 }]
+ */
+export function segmentChunks(
+    highlights: HighlightRange[],
+    segmentStart: number,
+    segmentLength: number,
+): { start: number; end: number }[] {
+    const segmentEnd = segmentStart + segmentLength
+    return highlights
+        .filter((x) => x.start < segmentEnd && x.end > segmentStart)
+        .map((x) => ({
+            start: Math.max(x.start - segmentStart, 0),
+            end: Math.min(x.end - segmentStart, segmentLength),
+        }))
 }
 
 const formatTime = (seconds: number): string => {
@@ -101,39 +127,52 @@ export const ComparisonTable = (props: {
         shouldHighlight: boolean,
         languageCode: "gv" | "en",
         lineValue: string,
+        highlights?: HighlightRange[],
     ) => {
-        const manxValue = shouldHighlight
-            ? [value]
+        // The searched language: highlight the ranges the server matched (#40).
+        // The other language: fuzzy-match the dictionary translations of the query.
+        const translationWords = shouldHighlight
+            ? []
             : getTranslations(languageCode)
-        const manx = manxValue.map((x) => `(${escapeRegex(x)})`).join("|")
+        const translationPattern = translationWords
+            .map((x) => `(${escapeRegex(x)})`)
+            .join("|")
         // no highlighting if we don't have a value
-        const manxHighlight =
-            manxValue.length > 0 && value
-                ? [` [,\\.!]?(${manx})[,\\.!]?[ (—)]`]
+        const searchWords =
+            translationWords.length > 0 && value
+                ? [` [,\\.!]?(${translationPattern})[,\\.!]?[ (—)]`]
                 : []
-        return lineValue.split("\n").map((item, key) => (
-            <div
-                onClick={() => {
-                    if (languageCode == "gv") {
-                        onClickWordForDictionaryLookup()
-                    }
-                }}
-                style={{ textAlign: "justify" }}
-                key={key}
-            >
-                <Highlighter
-                    highlightClassName={
-                        shouldHighlight
-                            ? "textHighlight"
-                            : "textHighlightAlternate"
-                    }
-                    searchWords={manxHighlight}
-                    autoEscape={false}
-                    textToHighlight={item}
-                />
-                <br />
-            </div>
-        ))
+        let segmentStart = 0
+        return lineValue.split("\n").map((item, key) => {
+            const chunks = shouldHighlight
+                ? segmentChunks(highlights ?? [], segmentStart, item.length)
+                : null
+            segmentStart += item.length + 1 // + the removed "\n"
+            return (
+                <div
+                    onClick={() => {
+                        if (languageCode == "gv") {
+                            onClickWordForDictionaryLookup()
+                        }
+                    }}
+                    style={{ textAlign: "justify" }}
+                    key={key}
+                >
+                    <Highlighter
+                        highlightClassName={
+                            shouldHighlight
+                                ? "textHighlight"
+                                : "textHighlightAlternate"
+                        }
+                        searchWords={searchWords}
+                        autoEscape={false}
+                        findChunks={chunks ? () => chunks : undefined}
+                        textToHighlight={item}
+                    />
+                    <br />
+                </div>
+            )
+        })
     }
 
     /**
@@ -312,6 +351,7 @@ export const ComparisonTable = (props: {
                                         highlightManx,
                                         "gv",
                                         line.manx,
+                                        line.manxHighlights,
                                     )
                                 const englishText =
                                     diffCorrectedText(
@@ -322,6 +362,7 @@ export const ComparisonTable = (props: {
                                         highlightEnglish,
                                         "en",
                                         line.english,
+                                        line.englishHighlights,
                                     )
 
                                 return (

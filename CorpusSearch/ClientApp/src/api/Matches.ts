@@ -1,9 +1,13 @@
-type MatchReference = {
+import { HighlightRange } from "./SearchApi"
+
+export type MatchReference = {
     workIdent: string
     matchNumber: number
     manx: string
     matchIndexInLine: number
     lineNumber: number
+    /** Ranges of `manx` which matched (all matches in the line; `matchIndexInLine` selects the current one) */
+    highlights?: HighlightRange[]
 }
 
 type MatchQuery = {

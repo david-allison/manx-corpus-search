@@ -6,6 +6,16 @@ export type DictionaryDefinition = {
 export type DefinedInDictionaries = Record<string, DictionaryDefinition> // Dictionary<string, string[]>
 export type Translations = Record<string, string[]> // Dictionary<string, IList<string>>
 
+/**
+ * A range of a returned (raw) text line which matched the query: character offsets, end
+ * exclusive. Computed server-side, as matching is done on normalized text (case, diacritics,
+ * punctuation): the query may not occur verbatim in the text.
+ */
+export type HighlightRange = {
+    start: number
+    end: number
+}
+
 export type SearchResponse = {
     results: SearchResultEntry[]
     query: string
@@ -25,6 +35,8 @@ export type SearchResultEntry = {
     endDate: date
     ident: string
     sample: string
+    /** Ranges of `sample` which matched. Absent when unavailable (e.g. English searches) */
+    sampleHighlights?: HighlightRange[]
 }
 
 export type SearchParams = {

@@ -1,7 +1,7 @@
 import { useState, useMemo, MouseEvent, ReactNode } from "react"
 import { Link } from "react-router-dom"
 import "./MainSearchResults.css"
-import { SearchResultEntry } from "../api/SearchApi"
+import { HighlightRange, SearchResultEntry } from "../api/SearchApi"
 import { GetMatch } from "../api/Matches"
 import { floatingPromiseReturn } from "../utils/Promise"
 import { useLazyLoader } from "../hooks/useLazyLoader"
@@ -58,50 +58,30 @@ function getFullYear(date: string, edate: string) {
     return `${new Date(date).getFullYear()}-${new Date(edate).getFullYear()}`
 }
 
-const nthIndexOf = (
-    inputString: string,
-    searchString: string,
-    index: number,
-) => {
-    let i = -1
-
-    while (index-- && i++ < inputString.length) {
-        i = inputString.indexOf(searchString, i)
-        if (i < 0) break
-    }
-
-    return i
-}
-function findNth(string: string, query: string, fromIndex: number) {
-    // TODO: make this work
-    const searchable =
-        " " +
-        string
-            .toLowerCase()
-            .replace(" ", " ")
-            .replace(/[^\w\s]/gi, " ")
-            .replace("\r", " ")
-            .replace("\n", " ") +
-        " "
-
-    // assume per-word
-    const stringStartIndex = nthIndexOf(
-        searchable,
-        " " + query.toLowerCase() + " ",
-        fromIndex + 1,
-    )
-    const stringEndIndex = stringStartIndex + query.length
-
-    if (stringStartIndex === -1) {
+/**
+ * Splits a sample line around the highlighted match (server-computed offsets, see #40),
+ * keeping up to 5 words of context on each side.
+ *
+ * @param indexInLine which match of the line to focus (clamped)
+ * @returns null when the server provided no highlights (e.g. English searches):
+ * the caller shows the sample unhighlighted
+ */
+export function buildKwic(
+    sample: string,
+    highlights: HighlightRange[],
+    indexInLine: number,
+): { pre: string; match: string; post: string } | null {
+    if (highlights.length === 0) {
         return null
     }
+    const match = highlights[Math.min(indexInLine, highlights.length - 1)]
 
-    let startIndex = stringStartIndex
+    let startIndex = match.start
     let count = 0
     let lastSpace = false
     while (startIndex > 0 && count < 5) {
         startIndex--
-        if (string[startIndex] === " ") {
+        if (sample[startIndex] === " ") {
             if (!lastSpace) {
                 count++
             }
@@ -111,12 +91,12 @@ function findNth(string: string, query: string, fromIndex: number) {
         }
     }
 
-    let endIndex = stringEndIndex
+    let endIndex = match.end
     count = 0
     lastSpace = false
-    while (endIndex < string.length && count < 5) {
+    while (endIndex < sample.length && count < 5) {
         endIndex++
-        if (string[endIndex] === " ") {
+        if (sample[endIndex] === " ") {
             if (!lastSpace) {
                 count++
             }
@@ -127,9 +107,9 @@ function findNth(string: string, query: string, fromIndex: number) {
     }
 
     return {
-        pre: string.substring(startIndex, stringStartIndex),
-        match: string.substring(stringStartIndex, stringEndIndex),
-        post: string.substring(stringEndIndex, endIndex),
+        pre: sample.substring(startIndex, match.start),
+        match: sample.substring(match.start, match.end),
+        post: sample.substring(match.end, endIndex),
     }
 }
 
@@ -186,6 +166,7 @@ export default function MainSearchResults(props: {
 const useMatchStepper = (result: SearchResultEntry, query: string) => {
     const [matchNumber, setMatchNumber] = useState(1) // 1-based
     const [sample, setSample] = useState(result.sample)
+    const [highlights, setHighlights] = useState(result.sampleHighlights ?? [])
     const [indexInLine, setIndexInLine] = useState(0) // 0-based
 
     const changeLine = async (line: number) => {
@@ -195,6 +176,7 @@ const useMatchStepper = (result: SearchResultEntry, query: string) => {
             docIdent: result.ident,
         })
         setSample(lineResult.manx)
+        setHighlights(lineResult.highlights ?? [])
         setMatchNumber(lineResult.matchNumber)
         setIndexInLine(lineResult.matchIndexInLine)
     }
@@ -218,8 +200,8 @@ const useMatchStepper = (result: SearchResultEntry, query: string) => {
     }
 
     const kwicSample = useLazyLoader(
-        () => findNth(sample, query, indexInLine),
-        [sample, query, indexInLine],
+        () => buildKwic(sample, highlights, indexInLine),
+        [sample, highlights, indexInLine],
     )
 
     return { matchNumber, sample, canNext, canPrev, next, prev, kwicSample }
