@@ -226,7 +226,7 @@ public partial class SearchController(
     private BadRequestObjectResult QueryTooLongResult() =>
         BadRequest($"Query too long: the maximum is {CorpusSearchQuery.MAX_LENGTH} characters");
 
-    private Dictionary<string, DictionaryData> DictionaryLookup(string query, QueryLanguages languages)
+    internal Dictionary<string, DictionaryData> DictionaryLookup(string query, QueryLanguages languages)
     {
         var requestedLanguages = languages.AsList(); 
         var lookup = dictionaryServices.Where(x => x.QueryLanguages.Any(supportedLanguages => requestedLanguages.Contains(supportedLanguages))).ToDictionary(x => x.Identifier,

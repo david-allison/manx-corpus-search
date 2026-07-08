@@ -1,6 +1,9 @@
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using CorpusSearch.Controllers;
 using CorpusSearch.Model;
+using CorpusSearch.Service;
 using Microsoft.AspNetCore.Mvc;
 using NUnit.Framework;
 
@@ -59,5 +62,52 @@ public class SearchControllerTest
     {
         var query = new CorpusSearchWorkQuery(TooLongQuery) { Ident = "anyIdent", Manx = true };
         Assert.That(query.IsValid(), Is.False);
+    }
+
+    // #150: a Manx query mapped to "en", so a Manx-only search hit the English dictionaries
+    [Test]
+    public void QueryLanguagesManxMapsToGv()
+    {
+        Assert.That(new QueryLanguages(Manx: true, English: false).AsList(), Is.EqualTo(new[] { "gv" }));
+        Assert.That(new QueryLanguages(Manx: false, English: true).AsList(), Is.EqualTo(new[] { "en" }));
+        Assert.That(new QueryLanguages(Manx: true, English: true).AsList(), Is.EquivalentTo(new[] { "en", "gv" }));
+        Assert.That(new QueryLanguages(Manx: false, English: false).AsList(), Is.Empty);
+    }
+
+    [Test]
+    public void ManxOnlyLookupQueriesOnlyManxDictionaries()
+    {
+        var result = DictionaryLookup(new QueryLanguages(Manx: true, English: false));
+        Assert.That(result.Keys, Is.EquivalentTo(new[] { "manxDictionary" }));
+    }
+
+    [Test]
+    public void EnglishOnlyLookupQueriesOnlyEnglishDictionaries()
+    {
+        var result = DictionaryLookup(new QueryLanguages(Manx: false, English: true));
+        Assert.That(result.Keys, Is.EquivalentTo(new[] { "englishDictionary" }));
+    }
+
+    [Test]
+    public void BilingualLookupQueriesAllDictionaries()
+    {
+        var result = DictionaryLookup(new QueryLanguages(Manx: true, English: true));
+        Assert.That(result.Keys, Is.EquivalentTo(new[] { "manxDictionary", "englishDictionary" }));
+    }
+
+    private static Dictionary<string, SearchController.DictionaryData> DictionaryLookup(QueryLanguages languages)
+    {
+        ISearchDictionary[] dictionaries = [new FakeDictionary("manxDictionary", "gv"), new FakeDictionary("englishDictionary", "en")];
+        var controller = new SearchController(null, null, dictionaries, null);
+        return controller.DictionaryLookup("moddey", languages);
+    }
+
+    private class FakeDictionary(string identifier, params string[] queryLanguages) : ISearchDictionary
+    {
+        public string Identifier => identifier;
+        public List<string> QueryLanguages => queryLanguages.ToList();
+        public bool LinkToDictionary => false;
+        public IEnumerable<DictionarySummary> GetSummaries(string query, bool basic = false) =>
+            [new DictionarySummary { Summary = $"definition of {query}", PrimaryWord = query }];
     }
 }
