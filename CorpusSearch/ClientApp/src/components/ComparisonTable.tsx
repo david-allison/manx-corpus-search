@@ -74,7 +74,7 @@ export const ComparisonTable = (props: {
         translations,
     } = props
 
-    const onClickWordForDictionaryLookup = () => {
+    const onClickWordForDictionaryLookup = (context: string) => {
         const selection = window.getSelection()
         if (selection == null) {
             return
@@ -91,10 +91,13 @@ export const ComparisonTable = (props: {
 
         setModalOpen(true)
         setModalText(stringToSearch.trim())
+        setModalContext(context)
     }
 
     const [modalOpen, setModalOpen] = useState(false)
     const [modalText, setModalText] = useState("")
+    // the text surrounding modalText: lets the server match phrases/idioms (#135)
+    const [modalContext, setModalContext] = useState("")
     const handleModalClose = () => setModalOpen(false)
     const modalMultidictWord = getMultidictLookupWord(modalText)
 
@@ -103,7 +106,7 @@ export const ComparisonTable = (props: {
     useEffect(() => {
         setModalValue(null)
         if (!modalText) return
-        manxDictionaryLookup(modalText)
+        manxDictionaryLookup(modalText, modalContext)
             .then((summaries) => {
                 // we need a primaryWord as we something match 'dy hroggal' -> 'hroggal'
                 // This also matches 'cha greck' -> 'greck' and we need to differentiate this.
@@ -118,7 +121,7 @@ export const ComparisonTable = (props: {
             .catch((e) => {
                 console.warn(e)
             })
-    }, [modalText])
+    }, [modalText, modalContext])
 
     // TODO: We use original for two concepts:
     // The Original text (compared to a corrected text)
@@ -154,7 +157,7 @@ export const ComparisonTable = (props: {
                 <div
                     onClick={() => {
                         if (languageCode == "gv") {
-                            onClickWordForDictionaryLookup()
+                            onClickWordForDictionaryLookup(lineValue)
                         }
                     }}
                     style={{ textAlign: "justify" }}
@@ -195,7 +198,7 @@ export const ComparisonTable = (props: {
         return (
             <div
                 onClick={() => {
-                    onClickWordForDictionaryLookup()
+                    onClickWordForDictionaryLookup(currentText)
                 }}
                 style={{ textAlign: "justify" }}
             >
