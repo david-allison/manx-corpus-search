@@ -387,6 +387,30 @@ public class QueryParserTest : QueryBase
     }
 
     [Test]
+    public void TrailingFullStopIsSkipped()
+    {
+        // #237 - a search ending in a full stop returned no results
+        this.AddManxDoc("1", "T'eh cair da'n slane shiaghtin ve shiaght shamyryn currit da jee.");
+
+        var singleWord = Query("jee.");
+        var phrase = Query("currit da jee.");
+
+        Assert.That(singleWord.NumberOfMatches, Is.EqualTo(1), "could not find 'jee.'");
+        Assert.That(phrase.NumberOfMatches, Is.EqualTo(1), "could not find 'currit da jee.'");
+    }
+
+    [Test]
+    public void TrailingPunctuationIsSkipped()
+    {
+        // #237 - same as the full stop: ',', ';' and '!' are all replaced with spaces on the query
+        this.AddManxDoc("1", "currit da jee");
+
+        Assert.That(Query("jee,").NumberOfMatches, Is.EqualTo(1), "could not find 'jee,'");
+        Assert.That(Query("jee;").NumberOfMatches, Is.EqualTo(1), "could not find 'jee;'");
+        Assert.That(Query("jee!").NumberOfMatches, Is.EqualTo(1), "could not find 'jee!'");
+    }
+
+    [Test]
     public void TrailingQuestionMarkIsSkipped()
     {
         // #15 - We want to search for '???'
