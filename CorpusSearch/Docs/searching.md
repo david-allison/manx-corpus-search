@@ -35,3 +35,15 @@ The system allows three wildcards. These can appear at either end, or the middle
 * `*` - matches zero or more characters. `as*` will match `as` and `ashoonyn`
 * `+` - matches one or more character. `as+` will match `ashoonyn`, but not `as`
 * `_` - matches one character. `agh_` will match `aght` but not `agh` or `aghin`
+
+## Ignore hyphens
+
+By default, hyphens are significant: `lhiam-lhiat`, `lhiam lhiat` and `lhiamlhiat` are three different searches.
+
+Ticking `Ignore hyphens` under `Advanced options` makes hyphens, spaces and joined words interchangeable, so any of the three searches above matches all of:
+
+* `lhiam-lhiat`
+* `lhiam lhiat`
+* `lhiamlhiat`
+
+The exception: a search with no hyphen or space (`lhiamlhiat`) will not match the spaced form (`lhiam lhiat`), as the system cannot know where the word would be split.

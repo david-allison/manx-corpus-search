@@ -7,6 +7,8 @@ public class CorpusSearchWorkQuery(string query)
     public string Ident { get; set; }
     public bool Manx { get; set; }
     public bool English { get; set; }
+    /// <inheritdoc cref="ScanOptions.IgnoreHyphens"/>
+    public bool IgnoreHyphens { get; set; }
 
     internal bool IsValid()
     {

@@ -103,6 +103,7 @@ export const Home = () => {
         end: HomeData.currentYear,
     })
     const [matchPhrase, setMatchPhrase] = useState(false)
+    const [ignoreHyphens, setIgnoreHyphens] = useState(false)
 
     const [sortKey, setSortKey] = useState<ResultsSortKey>("year")
     const [density, setDensityState] = useState<ResultsDensity>(loadDensity)
@@ -122,8 +123,9 @@ export const Home = () => {
             maxDate: dateRange.end,
             manx: searchLanguage === "Manx",
             english: searchLanguage === "English",
+            ignoreHyphens,
         }),
-        [query, searchLanguage, dateRange, matchPhrase],
+        [query, searchLanguage, dateRange, matchPhrase, ignoreHyphens],
     )
 
     const hasNoSearch = query.trim() == ""
@@ -213,6 +215,7 @@ export const Home = () => {
                         results={result.data.results}
                         manx={searchLanguage == "Manx"}
                         english={searchLanguage == "English"}
+                        ignoreHyphens={ignoreHyphens}
                         sortKey={sortKey}
                         density={density}
                     />
@@ -241,6 +244,7 @@ export const Home = () => {
             <AdvancedOptions
                 onDateRangeChange={setDateRange}
                 onMatchChange={setMatchPhrase}
+                onIgnoreHyphensChange={setIgnoreHyphens}
             >
                 {/*on mobile the View control lives here rather than in the results header*/}
                 {!hasNoSearch && (

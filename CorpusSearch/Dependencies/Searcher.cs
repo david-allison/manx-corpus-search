@@ -18,7 +18,7 @@ public class Searcher(LuceneIndex luceneIndex, SearchParser parser)
     internal SearchResult SearchWork(string ident, string query, SearchOptions options)
     {
         // HACK: use the ScanOptions as they're the same for now
-        var scanOptionsHack = new ScanOptions { SearchType = options.Type };
+        var scanOptionsHack = new ScanOptions { SearchType = options.Type, IgnoreHyphens = options.IgnoreHyphens };
 
         // Detect '*' on the normalized*query to handle '.*'.
         // Intended for good faith use, not security hardening.
@@ -105,6 +105,14 @@ public class Searcher(LuceneIndex luceneIndex, SearchParser parser)
                 return new SpanNearQuery([left, right], int.MaxValue, false);
             }
             case AdjacentWordExpression e:
+                if (searchOptions.IgnoreHyphens)
+                {
+                    var atoms = e.Words.SelectMany(w => SplitAtoms(GetTerm(w, searchOptions))).ToList();
+                    if (atoms.Count > 0)
+                    {
+                        return HyphenAgnosticQuery(atoms, searchOptions);
+                    }
+                }
                 var queries = e.Words.Select(ToManx);
                 return new SpanNearQuery(queries.ToArray(), 0, true);
             case NotExpression e:
@@ -122,15 +130,86 @@ public class Searcher(LuceneIndex luceneIndex, SearchParser parser)
 
     private static SpanQuery ManxTermQuery(string value, ScanOptions searchOptions)
     {
-        Term term = new Term(GetTermKey(searchOptions), GetTerm(value, searchOptions));
+        var normalizedTerm = GetTerm(value, searchOptions);
+        if (searchOptions.IgnoreHyphens)
+        {
+            var atoms = SplitAtoms(normalizedTerm);
+            if (atoms.Length > 0)
+            {
+                return HyphenAgnosticQuery(atoms, searchOptions);
+            }
+        }
+        return SingleTokenQuery(normalizedTerm, searchOptions, ignoreHyphens: false);
+    }
+
+    /// <summary>
+    /// A query where hyphens, spaces and joined words are interchangeable: the atoms of
+    /// 'lhiam-lhiat' (or of 'lhiam lhiat') match 'lhiam-lhiat', 'lhiam lhiat' and 'lhiamlhiat'.
+    /// </summary>
+    /// <param name="atoms">the hyphen/space-separated parts of the query, in order</param>
+    private static SpanQuery HyphenAgnosticQuery(IReadOnlyList<string> atoms, ScanOptions searchOptions)
+    {
+        // one alternative per way of regrouping adjacent atoms into tokens:
+        // [lhiam, lhiat] => the token 'lhiamlhiat' (which also matches 'lhiam-lhiat', see
+        // ManxQuery) or the phrase 'lhiam lhiat'
+        var alternatives = Segmentations(atoms)
+            .Select(tokens => tokens.Count == 1
+                ? TokenQuery(tokens[0])
+                : new SpanNearQuery(tokens.Select(TokenQuery).ToArray(), 0, true))
+            .ToArray();
+        return alternatives.Length == 1 ? alternatives[0] : new SpanOrQuery(alternatives);
+
+        SpanQuery TokenQuery(string token) => SingleTokenQuery(token, searchOptions, ignoreHyphens: true);
+    }
+
+    /// <summary>Every way of regrouping adjacent atoms into tokens (2^(n-1) for n atoms)</summary>
+    private static List<List<string>> Segmentations(IReadOnlyList<string> atoms)
+    {
+        // guard against pathological queries: only the fully-split and fully-joined forms
+        const int maxAtomsForFullExpansion = 5;
+        if (atoms.Count > maxAtomsForFullExpansion)
+        {
+            return [atoms.ToList(), [string.Concat(atoms)]];
+        }
+
+        var result = new List<List<string>>();
+        for (int joinMask = 0; joinMask < 1 << (atoms.Count - 1); joinMask++)
+        {
+            var tokens = new List<string>();
+            var current = atoms[0];
+            for (int i = 1; i < atoms.Count; i++)
+            {
+                if ((joinMask & (1 << (i - 1))) != 0)
+                {
+                    current += atoms[i];
+                }
+                else
+                {
+                    tokens.Add(current);
+                    current = atoms[i];
+                }
+            }
+            tokens.Add(current);
+            result.Add(tokens);
+        }
+        return result;
+    }
+
+    /// <summary>Splits a normalized term on hyphens (and any spaces normalization introduced)</summary>
+    private static string[] SplitAtoms(string normalizedTerm) =>
+        normalizedTerm.Split(['-', ' '], StringSplitOptions.RemoveEmptyEntries);
+
+    private static SpanQuery SingleTokenQuery(string normalizedTerm, ScanOptions searchOptions, bool ignoreHyphens)
+    {
+        Term term = new Term(GetTermKey(searchOptions), normalizedTerm);
         if (searchOptions.NormalizeDiacritics)
         {
-            var manx = new ManxQuery(term);
+            var manx = new ManxQuery(term, ignoreHyphens);
             return new SpanMultiTermQueryWrapper<ManxQuery>(manx);
         }
-        else if (ExtendedWildcardQuery.AppliesTo(value))
+        else if (ExtendedWildcardQuery.AppliesTo(normalizedTerm))
         {
-            return new SpanMultiTermQueryWrapper<ExtendedWildcardQuery>(new ExtendedWildcardQuery(term)); 
+            return new SpanMultiTermQueryWrapper<ExtendedWildcardQuery>(new ExtendedWildcardQuery(term));
         }
         else
         {

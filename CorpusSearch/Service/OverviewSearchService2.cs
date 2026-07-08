@@ -36,6 +36,7 @@ public class OverviewSearchService2(WorkService workService, Searcher searcher)
         options.MaxDate = searchQuery.MaxDate;
         options.MinDate = searchQuery.MinDate;
         options.SearchType = searchQuery.Manx ? SearchType.Manx : SearchType.English;
+        options.IgnoreHyphens = searchQuery.IgnoreHyphens;
 
         return options;
     }

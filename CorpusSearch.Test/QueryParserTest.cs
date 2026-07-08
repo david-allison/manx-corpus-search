@@ -466,6 +466,116 @@ public class QueryParserTest : QueryBase
         Assert.That(resultCre.NumberOfSegments, Is.EqualTo(1), "could not find 'cre'");
         Assert.That(resultCreErbee.NumberOfSegments, Is.EqualTo(1), "could not find 'cre-erbee'");
     }
+
+    [Test]
+    public void TestIgnoreHyphensWithHyphenatedQuery()
+    {
+        // #18 - hyphens, spaces and joined words are interchangeable
+        this.AddManxDoc("1", "lhiam-lhiat", "lhiam lhiat", "lhiamlhiat");
+
+        var withOption = Query("lhiam-lhiat", new ScanOptions { IgnoreHyphens = true });
+        var withoutOption = Query("lhiam-lhiat");
+
+        Assert.That(withOption.NumberOfSegments, Is.EqualTo(3), "should match all three forms");
+        Assert.That(withoutOption.NumberOfSegments, Is.EqualTo(1), "by default, only the hyphenated form should match");
+    }
+
+    [Test]
+    public void TestIgnoreHyphensWithSpacedQuery()
+    {
+        // #18 - a space-separated query should also match the hyphenated/joined forms
+        this.AddManxDoc("1", "lhiam-lhiat", "lhiam lhiat", "lhiamlhiat");
+
+        var withOption = Query("lhiam lhiat", new ScanOptions { IgnoreHyphens = true });
+        var withoutOption = Query("lhiam lhiat");
+
+        Assert.That(withOption.NumberOfSegments, Is.EqualTo(3), "should match all three forms");
+        Assert.That(withoutOption.NumberOfSegments, Is.EqualTo(1), "by default, only the spaced form should match");
+    }
+
+    [Test]
+    public void TestIgnoreHyphensWithJoinedQuery()
+    {
+        // a joined query cannot know where a space would fall, so 'lhiam lhiat' is not matched
+        this.AddManxDoc("1", "lhiam-lhiat", "lhiam lhiat", "lhiamlhiat");
+
+        var withOption = Query("lhiamlhiat", new ScanOptions { IgnoreHyphens = true });
+        var withoutOption = Query("lhiamlhiat");
+
+        Assert.That(withOption.NumberOfSegments, Is.EqualTo(2), "should match the hyphenated and joined forms");
+        Assert.That(withoutOption.NumberOfSegments, Is.EqualTo(1), "by default, only the joined form should match");
+    }
+
+    [Test]
+    public void TestIgnoreHyphensWithinPhrase()
+    {
+        // the hyphenated word can sit inside a longer phrase
+        this.AddManxDoc("1", "yn lhiam-lhiat mooar", "yn lhiam lhiat mooar", "yn lhiamlhiat mooar");
+
+        var result = Query("yn lhiam lhiat mooar", new ScanOptions { IgnoreHyphens = true });
+
+        Assert.That(result.NumberOfSegments, Is.EqualTo(3));
+    }
+
+    [Test]
+    public void TestIgnoreHyphensWithDiacritics()
+    {
+        // IgnoreHyphens composes with diacritic normalization
+        this.AddManxDoc("1", "çhione-jiarg");
+
+        var result = Query("chione jiarg", new ScanOptions { IgnoreHyphens = true });
+
+        Assert.That(result.NumberOfSegments, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void TestIgnoreHyphensWithThreePartWord()
+    {
+        // all mixed groupings of a three-part word match
+        this.AddManxDoc("1", "cur-my-ner", "cur my ner", "curmyner", "cur-my ner", "cur my-ner");
+
+        var result = Query("cur my ner", new ScanOptions { IgnoreHyphens = true });
+
+        Assert.That(result.NumberOfSegments, Is.EqualTo(5));
+    }
+
+    [Test]
+    public void TestIgnoreHyphensWithHyphenRuns()
+    {
+        // a run of hyphens (e.g. an ASCII em-dash: 'a---b') is still 'a hyphen'
+        this.AddManxDoc("1", "cur---my");
+
+        Assert.That(Query("cur---my", new ScanOptions { IgnoreHyphens = true }).NumberOfSegments,
+            Is.EqualTo(1), "could not find 'cur---my' with its own text");
+        Assert.That(Query("cur-my", new ScanOptions { IgnoreHyphens = true }).NumberOfSegments,
+            Is.EqualTo(1), "could not find 'cur---my' with 'cur-my'");
+        Assert.That(Query("cur my", new ScanOptions { IgnoreHyphens = true }).NumberOfSegments,
+            Is.EqualTo(1), "could not find 'cur---my' with 'cur my'");
+        Assert.That(Query("curmy", new ScanOptions { IgnoreHyphens = true }).NumberOfSegments,
+            Is.EqualTo(1), "could not find 'cur---my' with 'curmy'");
+    }
+
+    [Test]
+    public void TestIgnoreHyphensWithLeadingHyphen()
+    {
+        // dialogue dashes: '—Cre' is indexed as the single token '-cre'
+        this.AddManxDoc("1", "—Cre t’ou");
+
+        var result = Query("cre", new ScanOptions { IgnoreHyphens = true });
+
+        Assert.That(result.NumberOfSegments, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void TestIgnoreHyphensWithEnDash()
+    {
+        // '–' is normalized to '-' on both the index and the query
+        this.AddManxDoc("1", "lhiam–lhiat");
+
+        var result = Query("lhiam lhiat", new ScanOptions { IgnoreHyphens = true });
+
+        Assert.That(result.NumberOfSegments, Is.EqualTo(1));
+    }
         
     [Test]
     public void OrPrefix()
