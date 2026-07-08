@@ -185,7 +185,7 @@ const HomeIntro = ({ statsPromise }: { statsPromise: Promise<Statistics | "error
             <Suspense fallback={null}><NewDocList/></Suspense>
             <div className="home-support">
                 Support our revitalisation efforts by <a href={"/MailingList"}>signing up for our mailing list</a>.<br/>
-                If we&apos;re missing anything, let us know at <a href="mailto:corpus-submissions@gaelg.im">corpus-submissions@gaelg.im</a>.
+                If you know about texts we're missing or want to get in touch, please email us at <a href="mailto:corpus-submissions@gaelg.im">corpus-submissions@gaelg.im</a>.
             </div>
         </>
     )
