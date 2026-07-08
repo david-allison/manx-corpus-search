@@ -207,7 +207,7 @@ export const Home = () => {
                 {result.data.results.length === 0 ? (
                     <div className="no-results">
                         No matches for “{result.data.query || query}”. Try
-                        another spelling, or widen the date range.
+                        another spelling, or a synonym.
                     </div>
                 ) : (
                     <MainSearchResults
