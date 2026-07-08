@@ -37,7 +37,7 @@ public partial class SearchController(
     {
         public static Translations FromManx(string query)
         {
-            var results = Startup.ManxToEnglishDictionary.GetValueOrDefault(query, new List<string>());
+            var results = Startup.ManxToEnglishDictionary.GetValueOrDefault(query.Trim(), new List<string>());
             var ret = new Translations
             {
                 { "Phil Kelly (en)", results }
@@ -47,7 +47,7 @@ public partial class SearchController(
 
         public static Translations FromEnglish(string query)
         {
-            var results = Startup.EnglishToManxDictionary.GetValueOrDefault(query, new List<string>());
+            var results = Startup.EnglishToManxDictionary.GetValueOrDefault(query.Trim(), new List<string>());
             var ret = new Translations
             {
                 { "Phil Kelly (gv)", results }
@@ -230,7 +230,9 @@ public partial class SearchController(
 
     internal Dictionary<string, DictionaryData> DictionaryLookup(string query, QueryLanguages languages)
     {
-        var requestedLanguages = languages.AsList(); 
+        // #159: the dictionaries perform exact-match lookups, so surrounding whitespace returns no results
+        query = query.Trim();
+        var requestedLanguages = languages.AsList();
         var lookup = dictionaryServices.Where(x => x.QueryLanguages.Any(supportedLanguages => requestedLanguages.Contains(supportedLanguages))).ToDictionary(x => x.Identifier,
             x => new { summaries = x.GetSummaries(query), AllowLookup = x.LinkToDictionary });
         return lookup

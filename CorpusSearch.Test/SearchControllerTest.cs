@@ -95,11 +95,40 @@ public class SearchControllerTest
         Assert.That(result.Keys, Is.EquivalentTo(new[] { "manxDictionary", "englishDictionary" }));
     }
 
-    private static Dictionary<string, SearchController.DictionaryData> DictionaryLookup(QueryLanguages languages)
+    // #159: 'aall ' returned no translations, as the dictionaries perform exact-match lookups
+    [Test]
+    public void TranslationsFromManxTrimsQuery()
+    {
+        Startup.ManxToEnglishDictionary = new Dictionary<string, IList<string>> { ["aall"] = new List<string> { "fork" } };
+
+        var result = SearchController.Translations.FromManx("aall ");
+
+        Assert.That(result["Phil Kelly (en)"], Is.EqualTo(new[] { "fork" }));
+    }
+
+    [Test]
+    public void TranslationsFromEnglishTrimsQuery()
+    {
+        Startup.EnglishToManxDictionary = new Dictionary<string, IList<string>> { ["fork"] = new List<string> { "aall" } };
+
+        var result = SearchController.Translations.FromEnglish(" fork");
+
+        Assert.That(result["Phil Kelly (gv)"], Is.EqualTo(new[] { "aall" }));
+    }
+
+    [Test]
+    public void DictionaryLookupTrimsQuery()
+    {
+        var result = DictionaryLookup(new QueryLanguages(Manx: true, English: false), "moddey ");
+
+        Assert.That(result["manxDictionary"].Entries, Is.EqualTo(new[] { "definition of moddey" }));
+    }
+
+    private static Dictionary<string, SearchController.DictionaryData> DictionaryLookup(QueryLanguages languages, string query = "moddey")
     {
         ISearchDictionary[] dictionaries = [new FakeDictionary("manxDictionary", "gv"), new FakeDictionary("englishDictionary", "en")];
         var controller = new SearchController(null, null, dictionaries, null);
-        return controller.DictionaryLookup("moddey", languages);
+        return controller.DictionaryLookup(query, languages);
     }
 
     private class FakeDictionary(string identifier, params string[] queryLanguages) : ISearchDictionary
