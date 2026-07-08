@@ -134,11 +134,11 @@ input, button, select {
 .page-main {
     max-width: 1020px;
     margin: 0 auto;
-    padding: 34px 24px 80px 24px;
+    padding: 34px 24px 16px 24px;
 }
 
 .site-footer {
-    margin-top: 70px;
+    margin-top: 16px;
     border-top: 1px solid var(--c-border-header);
     padding-top: 18px;
     display: flex;

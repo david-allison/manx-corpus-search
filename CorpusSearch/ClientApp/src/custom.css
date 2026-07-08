@@ -152,7 +152,7 @@ input, button, select {
 
 /* ============ Footer (all pages) ============ */
 .site-footer {
-    margin-top: 70px;
+    margin-top: 16px;
     border-top: 1px solid var(--c-border-header);
     padding-top: 18px;
     display: flex;
