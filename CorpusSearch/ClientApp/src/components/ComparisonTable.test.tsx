@@ -1,7 +1,23 @@
-import { describe, expect, it } from "vitest"
-import { render } from "@testing-library/react"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
+import { act, fireEvent, render } from "@testing-library/react"
 import { ComparisonTable, segmentChunks } from "./ComparisonTable"
 import { SearchWorkResponse, SearchWorkResult } from "../api/SearchWorkApi"
+import { Ref } from "react"
+import { Player } from "./YouTuber"
+
+const mockPlayer = vi.hoisted(() => ({
+    seek: vi.fn(),
+    getCurrentTime: vi.fn((): number | null => null),
+}))
+
+vi.mock("./YouTuber", async () => {
+    const { useImperativeHandle } = await import("react")
+    const MockYouTuber = ({ ref }: { videoId: string; ref?: Ref<Player> }) => {
+        useImperativeHandle(ref, () => mockPlayer)
+        return null
+    }
+    return { default: MockYouTuber }
+})
 
 const line = (overrides: Partial<SearchWorkResult>): SearchWorkResult => ({
     english: "",
@@ -103,6 +119,58 @@ describe("ComparisonTable highlighting", () => {
         ])
         const marks = container.querySelectorAll("mark")
         expect(Array.from(marks).map((x) => x.textContent)).toEqual(["çhengey"])
+    })
+})
+
+describe("ComparisonTable video (#200)", () => {
+    // a 'subStart' of 0 is valid: the first subtitle of a video starts at 0s
+    const videoLine = line({ manx: "moghrey mie", subStart: 0, subEnd: 5 })
+    const renderVideoTable = () =>
+        renderTable([videoLine], {
+            response: {
+                ...response([videoLine]),
+                source: "https://www.youtube.com/watch?v=abc123",
+            },
+        })
+
+    beforeEach(() => {
+        vi.useFakeTimers()
+        mockPlayer.seek.mockClear()
+        mockPlayer.getCurrentTime.mockReturnValue(null)
+    })
+
+    afterEach(() => {
+        vi.useRealTimers()
+    })
+
+    it("seeks to 0 when playing a line with a subStart of 0", () => {
+        const { container } = renderVideoTable()
+        fireEvent.click(container.querySelector(".doc-play-btn")!)
+        expect(mockPlayer.seek).toHaveBeenCalledWith(0)
+    })
+
+    it("shows the play tooltip for a subStart of 0", () => {
+        const { container } = renderVideoTable()
+        const button = container.querySelector(".doc-play-btn")
+        expect(button?.getAttribute("title")).toBe("Play from 0:00")
+    })
+
+    it("does not highlight a line starting at 0 while the video never loaded", async () => {
+        const { container } = renderVideoTable()
+        // let the playback-position polling fire while getCurrentTime() is null
+        await act(async () => {
+            await vi.advanceTimersByTimeAsync(50)
+        })
+        expect(container.querySelector(".doc-row-playing")).toBeNull()
+    })
+
+    it("highlights a line starting at 0 once the video plays at 0s", async () => {
+        mockPlayer.getCurrentTime.mockReturnValue(0)
+        const { container } = renderVideoTable()
+        await act(async () => {
+            await vi.advanceTimersByTimeAsync(50)
+        })
+        expect(container.querySelector(".doc-row-playing")).not.toBeNull()
     })
 })
 
