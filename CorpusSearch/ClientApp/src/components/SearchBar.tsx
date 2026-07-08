@@ -3,7 +3,7 @@ import {SearchLanguage} from "../routes/Home"
 
 export const SearchBar = (props: {query: string, onChange: ChangeEventHandler<HTMLInputElement>, language?: SearchLanguage}) => {
     const {query, onChange, language} = props
-    const placeholder = language == "English" ? "Enter an English search term…" : "Enter a Manx search term…"
+    const placeholder = language == "English" ? "Search in English…" : "Search in Manx…"
     return <input
         size={5}
         id="corpus-search-box"
