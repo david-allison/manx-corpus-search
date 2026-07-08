@@ -1,4 +1,4 @@
-﻿FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
+﻿FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS base
 RUN apt-get update && apt-get install -y curl jq git
 # set in init.sh
 #USER $APP_UID
@@ -9,7 +9,7 @@ VOLUME /var/corpus-search/open-data
 VOLUME /var/corpus-search/closed-data
 EXPOSE 8080
 
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 ARG BUILD_CONFIGURATION=Release
 # Install Node.js and npm
 RUN rm /bin/sh && ln -s /bin/bash /bin/sh
