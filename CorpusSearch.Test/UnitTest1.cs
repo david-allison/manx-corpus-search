@@ -32,4 +32,13 @@ public class Tests
         Assert.That(",", Is.EqualTo(DocumentLine.NormalizeManx(comma)));
         Assert.That("...", Is.EqualTo(DocumentLine.NormalizeManx(ellipsis)));
     }
+
+    [Test]
+    public void TestNormalizeTrailingPunctuation()
+    {
+        // #237 - punctuation becomes a space, which should not remain on the ends of the result
+        Assert.That("jee", Is.EqualTo(DocumentLine.NormalizeManx("jee.")));
+        Assert.That("jee", Is.EqualTo(DocumentLine.NormalizeManx("jee,")));
+        Assert.That("god", Is.EqualTo(DocumentLine.NormalizeEnglish("God.")));
+    }
 }

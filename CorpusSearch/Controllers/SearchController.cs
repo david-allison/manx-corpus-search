@@ -12,7 +12,6 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace CorpusSearch.Controllers;
 
-// TODO: Handle a search for a word at the end of a sentence
 [ApiController]
 [Route("[controller]")]
 public partial class SearchController(

@@ -45,9 +45,11 @@ public class DocumentLine
     /// <summary>The Line Number in the CSV</summary>
     public int CsvLineNumber { get; set; }
 
+    // Trim: punctuation is replaced with spaces, so "jee." would otherwise become "jee " and never
+    // match an indexed term (#237)
     public static string NormalizeEnglish(string english, bool allowQuestionMark = false)
     {
-        return english.RemovePunctuation(" ", allowQuestionMark).RemoveNewLines().NormalizeMicrosoftWordQuotes().RemoveBrackets().RemoveDoubleQuotes().ToLower();
+        return english.RemovePunctuation(" ", allowQuestionMark).RemoveNewLines().NormalizeMicrosoftWordQuotes().RemoveBrackets().RemoveDoubleQuotes().ToLower().Trim();
     }
 
     public static string NormalizeManx(string manx, bool allowQuestionMark = true)
@@ -58,7 +60,8 @@ public class DocumentLine
             .RemoveBrackets()
             .RemoveColon() //example: "gra:"
             .RemoveDoubleQuotes()
-            .ToLower();
+            .ToLower()
+            .Trim();
         return handled;
     }
 
