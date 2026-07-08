@@ -15,6 +15,8 @@ export default defineConfig({
         strictPort: true
     },
     test: {
-        environment: "happy-dom"
+        environment: "happy-dom",
+        // don't pick up the Playwright specs in e2e/
+        include: ["src/**/*.{test,spec}.{ts,tsx}"]
     }
 })
