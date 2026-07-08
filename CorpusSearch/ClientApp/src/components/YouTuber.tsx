@@ -4,7 +4,8 @@ import "./ComparisonTable.css"
 
 export type Player = {
     seek: (time: number) => void
-    getCurrentTime: () => number
+    /** The current playback time, or null if the video never loaded */
+    getCurrentTime: () => number | null
 }
 
 // event.target needs work, as does 'opts'
@@ -22,7 +23,7 @@ const YouTuber = ({ videoId, ref }: { videoId: string; ref?: Ref<Player> }) => {
 
     useImperativeHandle(ref, () => ({
         seek,
-        getCurrentTime: () => player.current?.getCurrentTime() ?? 0,
+        getCurrentTime: () => player.current?.getCurrentTime() ?? null,
     }))
 
     const onPlayerReady: YouTubeProps["onReady"] = (event) => {

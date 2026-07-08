@@ -239,9 +239,13 @@ export const ComparisonTable = (props: {
         return translations[key] ?? []
     }
 
-    const [videoTime, setVideoTime] = useState(0)
+    // null until the video loads: lines with subStart 0 must not highlight before then
+    const [videoTime, setVideoTime] = useState<number | null>(null)
 
-    useInterval(() => setVideoTime(player.current?.getCurrentTime() ?? 0), 10)
+    useInterval(
+        () => setVideoTime(player.current?.getCurrentTime() ?? null),
+        10,
+    )
 
     const getVideoId = (source: string) => {
         try {
@@ -262,7 +266,8 @@ export const ComparisonTable = (props: {
     const player = useRef<Player>(null)
 
     const isPlaying = (line: SearchWorkResult): boolean => {
-        if (!isVideo || !line.subStart || !line.subEnd) return false
+        if (!isVideo || videoTime == null) return false
+        if (line.subStart == null || line.subEnd == null) return false
         return videoTime >= line.subStart && videoTime <= line.subEnd
     }
 
@@ -387,13 +392,15 @@ export const ComparisonTable = (props: {
                                                         type="button"
                                                         className="doc-play-btn"
                                                         title={
-                                                            line.subStart
+                                                            line.subStart !=
+                                                            null
                                                                 ? `Play from ${formatTime(line.subStart)}`
                                                                 : undefined
                                                         }
                                                         onClick={() => {
                                                             if (
-                                                                line.subStart &&
+                                                                line.subStart !=
+                                                                    null &&
                                                                 player.current
                                                             ) {
                                                                 player.current.seek(
