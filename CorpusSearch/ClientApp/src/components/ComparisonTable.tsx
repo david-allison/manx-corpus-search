@@ -10,6 +10,7 @@ import {
     ReactNode,
 } from "react"
 import { manxDictionaryLookup } from "../api/DictionaryApi"
+import { getMultidictLookupWord, MultidictLink } from "./MultidictLink"
 import Highlighter from "react-highlight-words"
 import { Box, CircularProgress, Modal } from "@mui/material"
 import Typography from "@mui/material/Typography"
@@ -95,6 +96,7 @@ export const ComparisonTable = (props: {
     const [modalOpen, setModalOpen] = useState(false)
     const [modalText, setModalText] = useState("")
     const handleModalClose = () => setModalOpen(false)
+    const modalMultidictWord = getMultidictLookupWord(modalText)
 
     const [modalValue, setModalValue] = useState<string | null>(null)
 
@@ -532,7 +534,18 @@ export const ComparisonTable = (props: {
                             />
                         )}
                         {modalValue == "" && (
-                            <span>Could not find definition</span>
+                            <span>
+                                Could not find definition
+                                {modalMultidictWord != null && (
+                                    <>
+                                        {". Try searching "}
+                                        <MultidictLink
+                                            word={modalMultidictWord}
+                                            language="Manx"
+                                        />
+                                    </>
+                                )}
+                            </span>
                         )}
                     </Typography>
                 </Box>
