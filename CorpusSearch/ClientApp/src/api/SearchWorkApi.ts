@@ -1,4 +1,4 @@
-import { Translations } from "./SearchApi"
+import { HighlightRange, Translations } from "./SearchApi"
 
 export type SourceLink = {
     url: string
@@ -17,6 +17,10 @@ export type SearchWorkResult = {
     subStart?: number
     subEnd?: number
     speaker?: string
+    /** Ranges of `manx` which matched. Absent unless Manx was searched */
+    manxHighlights?: HighlightRange[]
+    /** Ranges of `english` which matched. Absent unless English was searched */
+    englishHighlights?: HighlightRange[]
 }
 
 export type SearchWorkResponse = {
