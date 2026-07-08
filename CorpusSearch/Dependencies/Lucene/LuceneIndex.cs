@@ -423,9 +423,14 @@ public class LuceneIndex(IndexWriter indexWriter)
     public List<(string, long)> GetTermFrequencyList()
     {
         var termList = new List<(string, long)>();
-            
+
         using var reader = UseReader();
         var terms = MultiFields.GetTerms(reader, DOCUMENT_NORMALIZED_MANX);
+        if (terms == null)
+        {
+            // no documents were loaded: don't crash on startup
+            return termList;
+        }
         foreach (var term in terms)
         {
             termList.Add((term.Term.Utf8ToString(), term.TotalTermFreq));
