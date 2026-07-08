@@ -17,7 +17,13 @@ public class Searcher(LuceneIndex luceneIndex, SearchParser parser)
 
     internal SearchResult SearchWork(string ident, string query, SearchOptions options)
     {
-        if (query.Trim() == "*")
+        // HACK: use the ScanOptions as they're the same for now
+        var scanOptionsHack = new ScanOptions { SearchType = options.Type };
+
+        // Detect '*' on the normalized*query to handle '.*'.
+        // Intended for good faith use, not security hardening.
+        var normalizedQuery = GetTerm(query, scanOptionsHack);
+        if (normalizedQuery.Length > 0 && normalizedQuery.All(x => x == '*'))
         {
             return new SearchResult
             {
@@ -26,8 +32,6 @@ public class Searcher(LuceneIndex luceneIndex, SearchParser parser)
                 TotalMatches = null,
             };
         }
-        // HACK: use the ScanOptions as they're the same for now
-        var scanOptionsHack = new ScanOptions { SearchType = options.Type };
 
         // parse the string into a Result<Expression>
         var parsed = parser.Parse(query);
