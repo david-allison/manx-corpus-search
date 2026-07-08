@@ -11,11 +11,8 @@ namespace CorpusSearch.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/[controller]")]
-public class DictionaryController(IEnumerable<ISearchDictionary> dictionaryServices)
+public class DictionaryController(DictionaryLookupService lookupService)
 {
-    private readonly ISearchDictionary[] dictionaryServices = dictionaryServices.ToArray();
-
-
     /// <summary>
     /// Returns diction
     /// </summary>
@@ -25,10 +22,8 @@ public class DictionaryController(IEnumerable<ISearchDictionary> dictionaryServi
     [HttpGet]
     public IEnumerable<DictionarySummary> Get([FromQuery] string lang, [FromQuery] string word)
     {
-        word = word.Replace(".", "").Replace(",", "").Replace("?", "").Replace(";", "")
-            .Replace("(", "").Replace(")", "");
-        var result = dictionaryServices.Where(x => x.QueryLanguages.Contains(lang)).SelectMany(x => x.GetSummaries(word, basic: true)).ToList();
+        var result = lookupService.Lookup(lang, word);
         AnonymousAnalytics.Track("Dictionary Lookup", new Dictionary<string, object> { ["success"] = result.Any() });
         return result;
-    }    
+    }
 }

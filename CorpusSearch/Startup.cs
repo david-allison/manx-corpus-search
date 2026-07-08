@@ -71,6 +71,7 @@ public class Startup(IConfiguration configuration)
         services.AddSingleton<ISearchDictionary>(provider => provider.GetService<CregeenDictionaryService>());
         services.AddSingleton(provider => KellyManxToEnglishDictionaryService.Init(provider.GetService<ILogger<KellyManxToEnglishDictionaryService>>()));
         services.AddSingleton<ISearchDictionary>(provider => provider.GetService<KellyManxToEnglishDictionaryService>());
+        services.AddSingleton<DictionaryLookupService>();
         services.AddSingleton<WorkService>();
         services.AddSingleton<DocumentSearchService>();
         services.AddSingleton<NewspaperSourceEnricher>();
