@@ -189,6 +189,19 @@ public class HighlightingTest : QueryBase
         Assert.That(result.Lines.Select(x => x.MatchesInLine), Is.EquivalentTo(new long?[] { 2, 1 }));
     }
 
+    [Test]
+    public void WildcardOnlyQueriesBrowseInsteadOfHighlightingEveryToken(
+        [Values("*", " * ", ".*", ",*", "*.", "**")] string query)
+    {
+        // '.*' normalizes to '*' and previously bypassed the browse short-circuit,
+        // matching (and highlighting) every token of every line
+        this.AddManxDoc(DOC, "Ta çhengey aym", "gyn veg");
+        var result = SearchWork(query);
+        Assert.That(result.Lines, Has.Count.EqualTo(2));
+        Assert.That(result.TotalMatches, Is.Null, "browse results have no match count");
+        Assert.That(result.Lines.Select(x => x.ManxHighlights), Is.All.Null);
+    }
+
     private ScanResult Scan(string query, ScanOptions options = null)
     {
         return new Searcher(luceneIndex, parser).Scan(query, options ?? ScanOptions.Default);
