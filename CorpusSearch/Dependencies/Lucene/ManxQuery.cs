@@ -29,7 +29,7 @@ public class ManxQuery(Term term, bool ignoreHyphens = false) : AutomatonQuery(G
     {
         IList<Automaton> automata = new List<Automaton>();
 
-        string wildcardText = term.Text();
+        string wildcardText = term.Text;
 
         for (int i = 0; i < wildcardText.Length; i++)
         {

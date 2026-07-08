@@ -28,7 +28,7 @@ public class ExtendedWildcardQuery(Term term) : AutomatonQuery(GetTerm(term), To
     {
             IList<Automaton> automata = new List<Automaton>();
 
-            string wildcardText = term.Text();
+            string wildcardText = term.Text;
 
             for (int i = 0; i < wildcardText.Length; i++)
             {
