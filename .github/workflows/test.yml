@@ -8,6 +8,21 @@ on:
       - "master"
 
 jobs:
+  client-lint:
+    name: Client Lint
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: CorpusSearch/ClientApp
+    steps:
+      - uses: actions/checkout@v2.1.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run format:check
+
   tests:
     env:
       DOTNET_CLI_TELEMETRY_OPTOUT: 1

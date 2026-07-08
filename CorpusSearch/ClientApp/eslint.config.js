@@ -34,11 +34,9 @@ export default tseslint.config(
             "react-hooks/exhaustive-deps": "warn",
 
             // House style (carried over from the old .eslintrc.js)
+            // Formatting (quotes, semicolons, indentation) is owned by Prettier
             "@typescript-eslint/no-shadow": "error",
             "no-shadow": "off",
-            "quotes": ["error", "double"],
-            "no-unexpected-multiline": "error",
-            "semi": ["error", "never", { beforeStatementContinuationChars: "always" }],
             "eqeqeq": "off",
 
             // typescript-eslint v8 added no-redundant-type-constituents to the type-checked set;

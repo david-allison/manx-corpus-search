@@ -15,6 +15,10 @@ communicating via `fetch`.
 
 Run the parent `CorpusSearch` app in Development mode.
 
+## Pre-commit
+
+Run `pre-commit install` to install pre-commit hooks.
+
 ### Routes
 
 | Path             | Purpose                                                               |
