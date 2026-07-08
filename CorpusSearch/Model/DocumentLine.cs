@@ -1,5 +1,4 @@
 ﻿using System.Text.Json.Serialization;
-using CorpusSearch.Extensions;
 
 namespace CorpusSearch.Model;
 
@@ -49,20 +48,12 @@ public class DocumentLine
     // match an indexed term (#237)
     public static string NormalizeEnglish(string english, bool allowQuestionMark = false)
     {
-        return english.RemovePunctuation(" ", allowQuestionMark).RemoveNewLines().NormalizeMicrosoftWordQuotes().RemoveBrackets().RemoveDoubleQuotes().ToLower().Trim();
+        return NormalizationMapper.NormalizeEnglishMapped(english, allowQuestionMark).Text;
     }
 
     public static string NormalizeManx(string manx, bool allowQuestionMark = true)
     {
-        string handled = manx.RemovePunctuation(" ", allowQuestionMark)
-            .RemoveNewLines()
-            .NormalizeMicrosoftWordQuotes()
-            .RemoveBrackets()
-            .RemoveColon() //example: "gra:"
-            .RemoveDoubleQuotes()
-            .ToLower()
-            .Trim();
-        return handled;
+        return NormalizationMapper.NormalizeManxMapped(manx, allowQuestionMark).Text;
     }
 
 }
