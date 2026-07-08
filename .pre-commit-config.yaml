@@ -1,0 +1,13 @@
+# Install once per clone: `pre-commit install` (https://pre-commit.com)
+repos:
+  - repo: local
+    hooks:
+      - id: prettier
+        name: prettier
+        # Keep this version in sync with CorpusSearch/ClientApp/package.json
+        entry: prettier --write
+        language: node
+        additional_dependencies: ["prettier@3.9.4"]
+        files: ^CorpusSearch/ClientApp/src/
+        exclude: ^CorpusSearch/ClientApp/src/vendor/
+        types_or: [ts, tsx]
