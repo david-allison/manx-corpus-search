@@ -1,9 +1,9 @@
-/* eslint @typescript-eslint/no-misused-promises: 0 */  
+/* eslint @typescript-eslint/no-misused-promises: 0 */
 
 import "./Home.css"
 
 import {Suspense, use, useEffect, useState, useTransition, ChangeEvent, useMemo} from "react"
-import MainSearchResults from "../components/MainSearchResults"
+import MainSearchResults, {ResultsDensity, ResultsSortKey} from "../components/MainSearchResults"
 import {DictionaryLink, hasDictionaryDefinitions} from "../components/DictionaryLink"
 import {hasTranslations, TranslationList} from "../components/TranslationList"
 import AdvancedOptions, {DateRange} from "../components/AdvancedOptions"
@@ -17,7 +17,7 @@ import {NewDocList} from "../components/NewDocList"
 
 export type SearchLanguage = "English" | "Manx"
 
-type SearchResult = { status: "success"; data: SearchResponse } 
+type SearchResult = { status: "success"; data: SearchResponse }
     | { status: "error" }
 
 export class HomeData {
@@ -43,6 +43,14 @@ const toLangParam = (param: SearchLanguage): string => {
     }
 }
 
+const loadDensity = (): ResultsDensity => {
+    try {
+        return localStorage.getItem("resultsDensity") === "compact" ? "compact" : "comfortable"
+    } catch {
+        return "comfortable"
+    }
+}
+
 export const Home = () => {
     const [searchParams, setSearchParams] = useSearchParams()
     const query = searchParams.get("q") ?? ""
@@ -61,6 +69,15 @@ export const Home = () => {
     const [dateRange, setDateRange] = useState<DateRange>( { start: 1500, end: HomeData.currentYear })
     const [matchPhrase, setMatchPhrase] = useState(false)
 
+    const [sortKey, setSortKey] = useState<ResultsSortKey>("year")
+    const [density, setDensityState] = useState<ResultsDensity>(loadDensity)
+    const setDensity = (next: ResultsDensity) => {
+        setDensityState(next)
+        try {
+            localStorage.setItem("resultsDensity", next)
+        } catch { /* preference only - ignore storage failures */ }
+    }
+
     const request = useMemo<SearchParams>(() => ({
         query: matchPhrase ? `*${query}*` : query,
         minDate: dateRange.start,
@@ -70,7 +87,7 @@ export const Home = () => {
     }), [query, searchLanguage, dateRange, matchPhrase])
 
     const hasNoSearch = query.trim() == ""
-    
+
     // load the data
     useEffect(() => {
         if (hasNoSearch) {
@@ -108,34 +125,39 @@ export const Home = () => {
             return isPending ? <ProgressBar/> : null
         }
         if (result.status === "error") {
-            return <span className={"homeText"}>Something went wrong, please try again</span>
+            return <div className={"home-error"}>Something went wrong, please try again</div>
         }
         // dim stale results when there is a pending update
         return <div style={{opacity: isPending ? 0.5 : 1, transition: "opacity 150ms ease"}}>
             <SearchResultHeader
-                response={result.data} />
-            <MainSearchResults
-                query={result.data.query}
-                results={result.data.results}
-                manx={ searchLanguage == "Manx" }
-                english={ searchLanguage == "English" }/>
+                response={result.data}
+                sortKey={sortKey}
+                onSortKeyChange={setSortKey}
+                density={density}
+                onDensityChange={setDensity} />
+            {result.data.results.length === 0
+                ? <div className="no-results">No matches for “{result.data.query || query}” — try another spelling, or widen the date range.</div>
+                : <MainSearchResults
+                    query={result.data.query}
+                    results={result.data.results}
+                    manx={ searchLanguage == "Manx" }
+                    english={ searchLanguage == "English" }
+                    sortKey={sortKey}
+                    density={density}/>}
         </div>
     }
 
     return (
         <div>
-            <div className="search-options">
-
-                <div id={"corpus-search-box-container"} style={{display: "flex", flex: 1}}>
-                    <ManxEnglishSelector initialLanguage={searchLanguage} onLanguageChange={setSearchLanguage}/>
-                    <SearchBar query={query} onChange={handleChange}/>
-                </div>
-
-                <div style={{clear: "both"}} />
-
-                <AdvancedOptions onDateRangeChange={setDateRange} onMatchChange={setMatchPhrase} />
-
+            <div className="search-row search-row-hero" id={"corpus-search-box-container"}>
+                <SearchBar query={query} onChange={handleChange} language={searchLanguage}/>
+                <ManxEnglishSelector initialLanguage={searchLanguage} onLanguageChange={setSearchLanguage}/>
             </div>
+
+            <AdvancedOptions onDateRangeChange={setDateRange} onMatchChange={setMatchPhrase}>
+                {/*on mobile the View control lives here rather than in the results header*/}
+                {!hasNoSearch && <ViewSelect density={density} onDensityChange={setDensity} className="view-control-mobile"/>}
+            </AdvancedOptions>
 
             {renderContent()}
 
@@ -146,42 +168,81 @@ export const Home = () => {
 const HomeIntro = ({ statsPromise }: { statsPromise: Promise<Statistics | "error"> }) => {
     const stats = use(statsPromise)
     return (
-        <span className={"homeText"}>
-            {stats != "error" ?
-                <span className={"homeText"} style={{textAlign: "center"}}>
-                    <span style={{display: "inline"}}>Search our growing collection of over <b title={`${stats.uniqueManxWordCount.toLocaleString()} unique words`}>{stats.manxWordCount.toLocaleString()} Manx words</b> or&nbsp;<a href={"/Browse"}>browse&nbsp;{stats.documentCount.toLocaleString()} documents</a></span>
-                </span>
-            :
-                <>
-                    <span className={"homeText"}>
-                        <span style={{display: "inline"}}>Enter a search term, or&nbsp;<a href={"/Browse"}>Browse</a>&nbsp;all content</span>
-                    </span>
-                </>
-            }
-            <div><Suspense fallback={null}><NewDocList/></Suspense></div>
-            <span style={{display: "inline", marginTop: "1em"}}>Support our revitalisation efforts by <a href={"/MailingList"}>signing up for our mailing list</a>. We'll email once in a while with updates to the corpus & other projects.</span>
-            <br/>
-            <span>If we're missing anything, please let us know at</span>
-            <span><a href="mailto:corpus-submissions@gaelg.im">corpus-submissions@gaelg.im</a>.</span>
-        </span>
+        <>
+            <div className="home-intro">
+                {stats != "error" ?
+                    <>
+                        Search our growing collection of over <b title={`${stats.uniqueManxWordCount.toLocaleString()} unique words`}>{stats.manxWordCount.toLocaleString()} Manx words</b><br/>
+                        or <a href={"/Browse"}>browse {stats.documentCount.toLocaleString()} documents</a> — from 1610 to the present era.
+                    </>
+                :
+                    <>
+                        Enter a search term,<br/>
+                        or <a href={"/Browse"}>browse all documents</a> — from 1610 to the present era.
+                    </>
+                }
+            </div>
+            <Suspense fallback={null}><NewDocList/></Suspense>
+            <div className="home-support">
+                Support our revitalisation efforts by <a href={"/MailingList"}>signing up for our mailing list</a>.<br/>
+                If we&apos;re missing anything, let us know at <a href="mailto:corpus-submissions@gaelg.im">corpus-submissions@gaelg.im</a>.
+            </div>
+        </>
     )
 }
 
-const SearchResultHeader = (props: { response: SearchResponse })  => {
+const ViewSelect = (props: {
+    density: ResultsDensity,
+    onDensityChange: (density: ResultsDensity) => void,
+    className: string,
+}) => (
+    <label className={props.className}>
+        View
+        <select className="corpus-select" value={props.density}
+            onChange={e => props.onDensityChange(e.target.value as ResultsDensity)}>
+            <option value="comfortable">Comfortable</option>
+            <option value="compact">Compact</option>
+        </select>
+    </label>
+)
+
+const SearchResultHeader = (props: {
+    response: SearchResponse,
+    sortKey: ResultsSortKey,
+    onSortKeyChange: (key: ResultsSortKey) => void,
+    density: ResultsDensity,
+    onDensityChange: (density: ResultsDensity) => void,
+})  => {
     const { response } = props
     const query = response.query ?? ""
 
     const isDict = hasDictionaryDefinitions(response.definedInDictionaries)
     const isTranslation = hasTranslations(response.translations)
-    
+
     return (
         <div>
-            <hr />
-            Found { response.numberOfResults} matches in { response.numberOfDocuments} texts
-            <br/><br/>
-            { isDict && <><DictionaryLink query={ query } dictionaries={ response.definedInDictionaries }/></> }
-            { isTranslation && <><TranslationList translations={response.translations} /></ >}
-            { (isDict || isTranslation) && <br/>}
+            <div className="results-header">
+                <div className="results-count">
+                    Found <b className="results-count-matches">{response.numberOfResults.toLocaleString()}</b> matches in <b>{response.numberOfDocuments.toLocaleString()}</b> texts
+                </div>
+                <div className="results-controls">
+                    <ViewSelect density={props.density} onDensityChange={props.onDensityChange} className="view-control-desktop"/>
+                    <label>
+                        Sort by
+                        <select className="corpus-select" value={props.sortKey}
+                            onChange={e => props.onSortKeyChange(e.target.value as ResultsSortKey)}>
+                            <option value="year">Date</option>
+                            <option value="title">Title</option>
+                            <option value="count">Matches</option>
+                        </select>
+                    </label>
+                </div>
+            </div>
+            {(isDict || isTranslation) &&
+                <div className="dict-strip">
+                    { isDict && <DictionaryLink query={ query } dictionaries={ response.definedInDictionaries }/> }
+                    { isTranslation && <TranslationList translations={response.translations} /> }
+                </div>}
         </div>
     )
 }

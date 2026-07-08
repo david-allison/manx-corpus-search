@@ -1,29 +1,314 @@
-/* Provide sufficient contrast against white background */
-a {
-  color: #0366d6;
-}
+/* ============================================================
+   Design tokens — Manx Corpus Search redesign
+   See design_handoff_corpus_redesign/README.md
+   ============================================================ */
+:root {
+    --c-page-bg: #FDF5E6;          /* oldlace */
+    --c-surface: #FFFEF9;          /* header, cards, inputs */
+    --c-ink: #2E3F46;              /* primary text */
+    --c-heading: #33454D;
+    --c-secondary: #5C6B72;
+    --c-body-results: #40525A;
+    --c-muted: #8A8168;
+    --c-muted-2: #A99F8A;
+    --c-accent: #A6392C;           /* brand red, match highlights, section labels */
+    --c-link: #8A3B2C;
+    --c-link-hover: #5E2317;
+    --c-match-bg: #F9E7D9;
+    --c-slate: #4A5D66;            /* badges, active segments, audio bar */
+    --c-audio-bar: #33454D;
+    --c-progress: #C96F53;
+    --c-border-input: #D8CCB4;
+    --c-border-card: #E8DDC4;
+    --c-border-header: #E8DFC9;
+    --c-border-meta: #E4D8BC;
+    --c-border-table-head: #B5A98D;
+    --c-border-row: #F0E6CE;
+    --c-row-stripe: #F8F0DD;
+    --c-note-row: #F3EDDD;
+    --c-dict-strip: #F6ECD9;
+    --c-dict-strip-border: #E4D5B4;
+    --c-audio-active-row: #EAF0F2;
+    --c-selection: #E9D9BC;
+    --c-stepper-disabled: #D5CBB4;
 
-body {
-    background-color: oldlace;
-}
+    --font-ui: Helvetica, Arial, sans-serif;
+    --font-display: Georgia, serif;
 
-code {
-  color: #E01A76;
-}
-
-.btn-primary {
-  color: #fff;
-  background-color: #1b6ec2;
-  border-color: #1861ac;
+    --shadow-header: 0 2px 12px rgba(62, 80, 88, 0.06);
+    --shadow-card: 0 1px 3px rgba(62, 80, 88, 0.05);
+    --focus-ring: 0 0 0 3px rgba(51, 69, 77, 0.10);
 }
 
 html {
     overflow-y: scroll;
+    font-size: 14px;
 }
 
-.new-container {
-    width: 100%;
-    max-width: 85vw;
-    margin-right: auto;
-    margin-left: auto;
+body {
+    margin: 0;
+    background: var(--c-page-bg);
+    color: var(--c-ink);
+    font-family: var(--font-ui);
+    -webkit-font-smoothing: antialiased;
+}
+
+a {
+    color: var(--c-link);
+}
+
+a:hover {
+    color: var(--c-link-hover);
+}
+
+input, button, select {
+    font-family: inherit;
+}
+
+::selection {
+    background: var(--c-selection);
+}
+
+/* ============ Header (all pages) ============ */
+.site-header {
+    background: var(--c-surface);
+    border-bottom: 1px solid var(--c-border-header);
+    box-shadow: var(--shadow-header);
+}
+
+.site-header-inner {
+    max-width: 1020px;
+    margin: 0 auto;
+    padding: 12px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    text-decoration: none;
+    color: inherit;
+}
+
+.brand img {
+    height: 46px;
+    width: auto;
+}
+
+.brand-lockup {
+    display: flex;
+    flex-direction: column;
+    line-height: 1;
+}
+
+.brand-name {
+    font-family: var(--font-display);
+    font-size: 27px;
+    color: var(--c-heading);
+}
+
+.brand-sub {
+    font-size: 10px;
+    letter-spacing: 3.5px;
+    color: var(--c-accent);
+    margin-top: 4px;
+    font-weight: 600;
+}
+
+.site-nav {
+    display: flex;
+    align-items: center;
+    gap: 26px;
+    font-size: 15px;
+}
+
+.site-nav a {
+    text-decoration: none;
+    padding-bottom: 2px;
+    color: var(--c-secondary);
+    border-bottom: 2px solid transparent;
+}
+
+.site-nav a:hover {
+    color: var(--c-ink);
+}
+
+.site-nav a.active {
+    color: var(--c-ink);
+    border-bottom-color: var(--c-accent);
+}
+
+/* ============ Main column ============ */
+.page-main {
+    max-width: 1020px;
+    margin: 0 auto;
+    padding: 34px 24px 80px 24px;
+}
+
+/* ============ Footer (all pages) ============ */
+.site-footer {
+    margin-top: 70px;
+    border-top: 1px solid var(--c-border-header);
+    padding-top: 18px;
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    font-size: 12.5px;
+    color: var(--c-muted-2);
+    flex-wrap: wrap;
+}
+
+.site-footer a {
+    color: var(--c-muted);
+}
+
+/* ============ Search input ============ */
+.corpus-search-input {
+    border: 1.5px solid var(--c-border-input);
+    background: var(--c-surface);
+    border-radius: 14px;
+    padding: 10px 22px;
+    font-size: 19px;
+    color: var(--c-ink);
+    outline: none;
+    box-shadow: var(--shadow-card);
+}
+
+.corpus-search-input:focus {
+    border-color: var(--c-heading);
+    box-shadow: var(--focus-ring);
+}
+
+/* the native clear button sits inside the generous padding - pull it back toward the edge */
+.corpus-search-input::-webkit-search-cancel-button {
+    margin-right: -12px;
+}
+
+/* ============ Segmented control ============ */
+.seg-control {
+    display: flex;
+    align-items: stretch;
+    border: 1px solid var(--c-border-input);
+    border-radius: 6px;
+    overflow: hidden;
+    background: var(--c-surface);
+}
+
+.seg-control button {
+    white-space: nowrap;
+    border: none;
+    cursor: pointer;
+    padding: 5px 14px;
+    font-size: 13px;
+    background: transparent;
+    color: var(--c-secondary);
+    font-weight: 400;
+}
+
+.seg-control button + button {
+    border-left: 1px solid var(--c-border-card);
+}
+
+.seg-control button.active {
+    background: var(--c-slate);
+    color: var(--c-surface);
+    font-weight: 600;
+}
+
+.seg-control button:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring) inset;
+}
+
+/* Search-row variant: taller (stretches to the input) and slightly larger text */
+.seg-control.seg-search button {
+    padding: 0 14px;
+    font-size: 13.5px;
+}
+
+/* ============ Small form controls ============ */
+.corpus-select,
+.corpus-num-input {
+    border: 1px solid var(--c-border-input);
+    background: var(--c-surface);
+    border-radius: 6px;
+    padding: 4px 8px;
+    font-size: 13px;
+    color: var(--c-ink);
+}
+
+.corpus-num-input {
+    width: 72px;
+    padding: 5px 8px;
+    font-size: 14px;
+}
+
+.corpus-select:focus,
+.corpus-num-input:focus {
+    outline: none;
+    border-color: var(--c-heading);
+    box-shadow: var(--focus-ring);
+}
+
+/* ============ Common pieces ============ */
+.year-badge {
+    font-size: 12.5px;
+    color: var(--c-surface);
+    background: var(--c-slate);
+    border-radius: 3px;
+    padding: 2px 8px;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.section-label {
+    font-size: 11px;
+    letter-spacing: 2.5px;
+    color: var(--c-accent);
+    font-weight: 600;
+    margin-bottom: 12px;
+    border-bottom: 1px solid var(--c-border-meta);
+    padding-bottom: 8px;
+    text-transform: uppercase;
+}
+
+.page-title {
+    font-family: var(--font-display);
+    font-size: 28px;
+    color: var(--c-heading);
+    margin: 0;
+    font-weight: normal;
+}
+
+/* KWIC counter + match steppers */
+.kwic-counter {
+    font-family: monospace;
+    font-size: 12px;
+    color: var(--c-muted-2);
+}
+
+.kwic-step {
+    border: none;
+    background: none;
+    cursor: pointer;
+    color: var(--c-link);
+    font-size: 15px;
+    padding: 0 3px;
+}
+
+.kwic-step:disabled {
+    color: var(--c-stepper-disabled);
+    cursor: default;
+}
+
+.kwic-match {
+    color: var(--c-accent);
+    background: var(--c-match-bg);
+    border-radius: 3px;
+    padding: 0 3px;
 }

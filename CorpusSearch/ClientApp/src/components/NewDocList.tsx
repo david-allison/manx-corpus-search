@@ -2,25 +2,7 @@
  * Provides a list of links to the latest and greatest files in the Corpus
  * Which means those document.csv files that git detects as having recent changes
  */
-import {JSX, use} from "react"
-
-/**
- * Produces a link to a document, with an emoji denoting the type of content
- * @example "🎥 Jack as Ned" as a link; no link underline for "🎥 "
- */
-function CorpusLink({ident = "", name = ""}): JSX.Element {
-    let emojiPrefix = "📖"
-    if (name.slice(0, 2) == "🎥") {
-        name = name.substring(2).trim() // trim the emoji from the name (and any leading spaces)
-        emojiPrefix = "🎥"
-    }
-    const href = "docs/" + ident
-    return <div>
-        {/* Better visuals if the prefix is not underlined; maintain the link for UX */}
-        <a style={{textDecoration: "none"}} href={href}>{emojiPrefix}&nbsp;</a>
-        <a href={href}>{name}</a>
-    </div>
-}
+import {use} from "react"
 
 type DocType = { name: string, ident: string, uploaded: string }
 
@@ -36,20 +18,37 @@ const newDocsPromise = fetchNewDocs().catch((e: Error) => {
     return [] as DocType[]
 })
 
+const formatUploaded = (uploaded: string): string => {
+    const date = new Date(uploaded)
+    if (isNaN(date.getTime())) return ""
+    return date.toLocaleDateString("en-GB", { month: "long", year: "numeric" })
+}
+
+/**
+ * A row in the list: a link to the document + a muted right-aligned upload date
+ * A leading 🎥 emoji in the name denotes video content; keep it, unstyled by the link
+ */
+const RecentDocRow = ({doc}: {doc: DocType}) => {
+    let name = doc.name
+    let emojiPrefix = ""
+    if (name.slice(0, 2) == "🎥") {
+        name = name.substring(2).trim() // trim the emoji from the name (and any leading spaces)
+        emojiPrefix = "🎥 "
+    }
+    return <div className="recent-doc-row">
+        <a href={"docs/" + doc.ident}>{emojiPrefix}{name}</a>
+        <span className="recent-doc-date">{formatUploaded(doc.uploaded)}</span>
+    </div>
+}
+
 export const NewDocList = () => {
     const newDocs = use(newDocsPromise)
 
-    const len = newDocs.length
-    if (!len) return <></>
-    return (<div className="NewDocList">
-        <header className="NewDocList-header">
-        </header>
-        <div>Recently Uploaded:<br/>
-            <div>
-                <ul>{newDocs.map(doc =>
-                    <li key={doc.name}><CorpusLink name={doc.name} ident={doc.ident}/></li>)
-                }</ul>
-            </div>
+    if (!newDocs.length) return <></>
+    return (<div className="recent-docs">
+        <div className="section-label">Recently added</div>
+        <div className="recent-docs-list">
+            {newDocs.map(doc => <RecentDocRow key={doc.ident} doc={doc}/>)}
         </div>
     </div>)
 }

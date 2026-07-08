@@ -11,12 +11,11 @@ export const TranslationList = (props: { translations: Translations }) => {
     return <>
         {Object.keys(translations).map(langCode => {
             const langCodeTranslations = translations[langCode]
-            if (langCodeTranslations.length == 0) { return <></> }
-            return <Fragment key={langCode}>
-                <strong>{langCode}:</strong> {langCodeTranslations.join(", ")}
-            </Fragment>}
+            if (langCodeTranslations.length == 0) { return <Fragment key={langCode}></Fragment> }
+            return <div className="dict-strip-row" key={langCode}>
+                <span className="dict-strip-label">{langCode}:</span>
+                <span className="dict-strip-text">{langCodeTranslations.join(", ")}</span>
+            </div>}
         )}
-        {/*return a newline if we had results*/}
-        <br/>
     </>
 }

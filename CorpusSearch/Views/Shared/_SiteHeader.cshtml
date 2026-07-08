@@ -1,0 +1,20 @@
+@{
+    var activeNav = ViewData["ActiveNav"] as string;
+}
+<header class="site-header">
+    <div class="site-header-inner">
+        <a href="/" class="brand">
+            <img src="/corpus-search-icon.png" alt="Gaelg Corpus Search"/>
+            <span class="brand-lockup">
+                <span class="brand-name">Gaelg</span>
+                <span class="brand-sub">CORPUS SEARCH</span>
+            </span>
+        </a>
+        <nav class="site-nav">
+            <a href="/">Home</a>
+            <a href="/Dictionary/Cregeen" class="@(activeNav == "dictionary" ? "active" : null)">Dictionary</a>
+            <a href="/Browse" class="@(activeNav == "browse" ? "active" : null)">Browse All</a>
+            <a href="https://www.learnmanx.com/resources/translations/" target="_blank" rel="noreferrer">Translations</a>
+        </nav>
+    </div>
+</header>

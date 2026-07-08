@@ -10,10 +10,15 @@ import {diffChars} from "diff"
 import YouTuber, {Player} from "./YouTuber"
 import useInterval from "../vendor/use-interval/UseInterval"
 import "./ComparisonTable.css"
-import {useLanguageVisibility} from "../hooks/useLanguageVisibility"
 
 function escapeRegex(s: string) {
     return s.replace(/[/\-\\^$*+?.()|[\]{}]/g, "\\$&")
+}
+
+const formatTime = (seconds: number): string => {
+    const m = Math.floor(seconds / 60)
+    const s = Math.floor(seconds % 60)
+    return `${m}:${String(s).padStart(2, "0")}`
 }
 
 export const ComparisonTable = (props: {
@@ -21,8 +26,10 @@ export const ComparisonTable = (props: {
     value: string,
     highlightManx: boolean,
     highlightEnglish: boolean,
+    manxVisible: boolean,
+    englishVisible: boolean,
     translations?: Translations }) => {
-    const {response, value, highlightManx, highlightEnglish, translations } = props
+    const {response, value, highlightManx, highlightEnglish, manxVisible, englishVisible, translations } = props
 
     const onClickWordForDictionaryLookup = () => {
         const selection = window.getSelection()
@@ -70,7 +77,7 @@ export const ComparisonTable = (props: {
     const highlightText = (shouldHighlight: boolean, languageCode: "gv" | "en", lineValue: string) => {
         const manxValue = shouldHighlight ? [value] : getTranslations(languageCode)
         const manx = manxValue.map(x => `(${escapeRegex(x)})`).join("|")
-        // no highlighting if we don't have a value 
+        // no highlighting if we don't have a value
         const manxHighlight = manxValue.length > 0 && value ? [` [,\\.!]?(${manx})[,\\.!]?[ (—)]`] : []
         return lineValue.split("\n").map((item, key) => <div onClick={() => {
                 if (languageCode == "gv") {
@@ -115,7 +122,7 @@ export const ComparisonTable = (props: {
     }
 
     const [videoTime, setVideoTime] = useState(0)
-    
+
     useInterval(() => setVideoTime(player.current?.getCurrentTime() ?? 0), 10)
 
     const getVideoId = (source:string) => {
@@ -133,17 +140,19 @@ export const ComparisonTable = (props: {
         isVideo = false
     }
     const player = useRef<Player>(null)
-    
-    const getLineStyle = (line: SearchWorkResult): CSSProperties => {
-        if (!isVideo || !line.subStart || !line.subEnd) return {}
-        if (videoTime < line.subStart || videoTime > line.subEnd) return {}
-        return {
-            backgroundColor: "aliceblue",
-        }
+
+    const isPlaying = (line: SearchWorkResult): boolean => {
+        if (!isVideo || !line.subStart || !line.subEnd) return false
+        return videoTime >= line.subStart && videoTime <= line.subEnd
     }
-    
+
+    const getRowClassName = (line: SearchWorkResult, index: number): string | undefined => {
+        if (isPlaying(line)) return "doc-row-playing"
+        return index % 2 === 1 ? "doc-row-striped" : undefined
+    }
+
     const hasSpeakerColumn = isVideo && response.results.filter(x => x.speaker != null && x.speaker != "").length > 0
-    
+
     const tableStyle = (): CSSProperties => {
         if (!isVideo) return {}
         return {
@@ -153,45 +162,52 @@ export const ComparisonTable = (props: {
         }
     }
 
-    const languageVisibility = useLanguageVisibility()
-    const leftVisible = (languageVisibility.manxVisible && originalManx) || (languageVisibility.englishVisible && !originalManx)
-    const rightVisible = (languageVisibility.englishVisible && originalManx) || (languageVisibility.manxVisible && !originalManx)
+    const leftVisible = (manxVisible && originalManx) || (englishVisible && !originalManx)
+    const rightVisible = (englishVisible && originalManx) || (manxVisible && !originalManx)
     // TODO: optimise this - no need to iterate each render
     const linkVisible = response.gitHubLink || response.results.filter(x => x.page != null && (response.pdfLink || response.googleBooksId)).length > 0
     const leftLang = originalManx ? "gv" : "en"
     const rightLang = originalManx ? "en" : "gv"
+    const visibleColumnCount = [isVideo, hasSpeakerColumn, leftVisible, rightVisible, linkVisible].filter(Boolean).length
     return (
         <>
             <div>
                 {/*TODO: Lazy Load Youtube player*/}
                 {isVideo && videoId != null && <div className={"youtube-container center"}><YouTuber ref={player} videoId={videoId} /></div>}
                 <div>
-                <table className='table table-striped' style={{tableLayout: "fixed", ...tableStyle()}} aria-labelledby="tabelLabel">
+                <table className="doc-table" style={{tableLayout: "fixed", ...tableStyle()}} aria-labelledby="tabelLabel">
                     <thead>
                     <tr>
-                        {isVideo && <th>{""}</th>}
-                        {hasSpeakerColumn && <th>Speaker</th>}
+                        {isVideo && <th style={{width: 44}}>{""}</th>}
+                        {hasSpeakerColumn && <th style={{width: 120}}>Speaker</th>}
                         {leftVisible && <th>{originalManx ? "Manx" : "English"}</th>}
                         {rightVisible && <th>{originalManx ? "English" : "Manx"}</th>}
-                        {linkVisible && <th style={{width: 45}}>Link</th>}
+                        {linkVisible && <th style={{width: 70}}>Link</th>}
                     </tr>
                     </thead>
                     <tbody>
-                    {response.results.map(line => {
-                            // TODO: Only due to technical reasons, we can't mix highlights and diffs. 
+                    {response.results.map((line, index) => {
+                            // TODO: Only due to technical reasons, we can't mix highlights and diffs.
                             // This should be fixed via vendoring react-highlight-words's `Highlighter` class
                             const manxText = diffCorrectedText(line.manxOriginal, line.manx) ?? highlightText(highlightManx, "gv", line.manx)
                             const englishText = diffCorrectedText(line.englishOriginal, line.english) ?? highlightText(highlightEnglish, "en", line.english)
 
                             return <Fragment key={response.title + line.csvLineNumber.toString()}>
-                                <tr key={line.date} style={getLineStyle(line)}>
-                                {isVideo && <td style={{cursor: "pointer"}} onClick={() => {
-                                    if (line.subStart && player.current) {
-                                    player.current.seek(line.subStart)
-                                }
-                                }}>▶️</td>}
+                                <tr key={line.date} className={getRowClassName(line, index)}>
+                                {isVideo && <td>
+                                    <button
+                                        type="button"
+                                        className="doc-play-btn"
+                                        title={line.subStart ? `Play from ${formatTime(line.subStart)}` : undefined}
+                                        onClick={() => {
+                                            if (line.subStart && player.current) {
+                                                player.current.seek(line.subStart)
+                                            }
+                                        }}>▶</button>
+                                </td>}
                                 {hasSpeakerColumn && <td>
                                     {line.speaker}
+                                    {line.subStart != null && <>{" "}<span className="doc-speaker-time">{formatTime(line.subStart)}</span></>}
                                 </td>}
                                 {leftVisible && <td lang={leftLang}>
                                     {originalManx ? manxText : englishText}
@@ -199,17 +215,17 @@ export const ComparisonTable = (props: {
                                 {rightVisible && <td lang={rightLang}>
                                     {originalManx ? englishText : manxText }
                                 </td>}
-                                {linkVisible && <td>
+                                {linkVisible && <td className="doc-link-cell">
                                     {line.page != null && response.pdfLink &&
-                                        <><a href={response.pdfLink + "#page=" + line.page} target="_blank" rel="noreferrer">p{line.page}</a>{" "}</> }
+                                        <><a href={response.pdfLink + "#page=" + line.page} target="_blank" rel="noreferrer">p.{line.page}</a>{" "}</> }
                                     {line.page != null && response.googleBooksId &&
-                                        <><a href={`https://books.google.im/books?id=${response.googleBooksId}&pg=PA${line.page}`} target="_blank" rel="noreferrer">p{line.page}</a>{" "}</> }
+                                        <><a href={`https://books.google.im/books?id=${response.googleBooksId}&pg=PA${line.page}`} target="_blank" rel="noreferrer">p.{line.page}</a>{" "}</> }
                                     {response.gitHubLink && <a href={`${response.gitHubLink}#L${line.csvLineNumber}`}>
                                         edit
                                     </a>}
                                 </td>}
                             </tr>
-                                {line.notes ? <tr><td colSpan={3} className="noteRow">{line.notes}</td></tr> : null}
+                                {line.notes ? <tr className="noteRow"><td colSpan={visibleColumnCount}>{line.notes}</td></tr> : null}
                             </Fragment>
                         }
                     )}
@@ -225,10 +241,10 @@ export const ComparisonTable = (props: {
                 aria-describedby="modal-modal-description"
             >
                 <Box sx={style}>
-                    <Typography id="modal-modal-title" variant="h6" component="h2">
+                    <Typography id="modal-modal-title" variant="h6" component="h2" sx={{fontFamily: "Georgia, serif", color: "#33454D"}}>
                         {modalText}
                     </Typography>
-                    <Typography id="modal-modal-description" sx={{ mt: 2 }}>
+                    <Typography id="modal-modal-description" sx={{ mt: 2, color: "#2E3F46" }}>
                         {modalValue == null && <div style={{
                             marginTop: 40,
                             display: "flex",
@@ -254,8 +270,10 @@ const style = {
     left: "50%",
     transform: "translate(-50%, -50%)",
     width: 400,
-    bgcolor: "background.paper",
-    border: "2px solid #000",
-    boxShadow: 24,
+    maxWidth: "90vw",
+    bgcolor: "#FFFEF9",
+    border: "1px solid #E8DDC4",
+    borderRadius: "4px",
+    boxShadow: "0 2px 12px rgba(62,80,88,0.2)",
     p: 4,
 }
