@@ -188,4 +188,49 @@ public class HighlightingTest : QueryBase
         Assert.That(result.TotalMatches, Is.EqualTo(3));
         Assert.That(result.Lines.Select(x => x.MatchesInLine), Is.EquivalentTo(new long?[] { 2, 1 }));
     }
+
+    private ScanResult Scan(string query, ScanOptions options = null)
+    {
+        return new Searcher(luceneIndex, parser).Scan(query, options ?? ScanOptions.Default);
+    }
+
+    [Test]
+    public void ScanHighlightsTheSampleLine()
+    {
+        this.AddManxDoc(DOC, "Ta çhengey aym");
+        var result = Scan("chengey").DocumentResults.Single();
+        Assert.That(Highlighted(result.Sample, result.SampleHighlights), Is.EqualTo(new[] { "çhengey" }));
+    }
+
+    [Test]
+    public void ScanHighlightsReferToTheFirstMatchingLine()
+    {
+        this.AddManxDoc(DOC, "gyn veg ayn", "cre shoh, as cre shen");
+        var result = Scan("cre").DocumentResults.Single();
+        Assert.That(result.Sample, Is.EqualTo("cre shoh, as cre shen"));
+        Assert.That(Highlighted(result.Sample, result.SampleHighlights), Is.EqualTo(new[] { "cre", "cre" }));
+        Assert.That(result.Count, Is.EqualTo(2));
+    }
+
+    [Test]
+    public void ScanHighlightsEachDocumentsOwnSample()
+    {
+        this.AddManxDoc("doc1", "çhengey elley");
+        this.AddManxDoc("doc2", "yn çhengey ain");
+        var results = Scan("chengey").DocumentResults;
+        Assert.That(results, Has.Count.EqualTo(2));
+        foreach (var result in results)
+        {
+            Assert.That(Highlighted(result.Sample, result.SampleHighlights), Is.EqualTo(new[] { "çhengey" }));
+        }
+    }
+
+    [Test]
+    public void EnglishScanDoesNotHighlightTheManxSample()
+    {
+        AddDocument(DOC, new Line { Manx = "yn çhengey", English = "the tongue" });
+        var result = Scan("tongue", new ScanOptions { SearchType = SearchType.English })
+            .DocumentResults.Single();
+        Assert.That(result.SampleHighlights, Is.Null);
+    }
 }

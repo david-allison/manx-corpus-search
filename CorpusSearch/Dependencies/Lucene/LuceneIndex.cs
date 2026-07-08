@@ -324,6 +324,12 @@ public class LuceneIndex(IndexWriter indexWriter)
         // key: ident of corpus document, value: docIds of each segment
         var corpusDocumentMapping = documentMapping.ToLookup(x => x.Value.GetField(DOCUMENT_IDENT).GetStringValue(), x => x.Key);
 
+        // The sample displayed on the Home page is always the Manx text: only highlight it when Manx was searched
+        var sampleDocIds = new HashSet<int>(corpusDocuments.Select(x => x.Key));
+        var highlightTokenSpans = spanQuery.Field == DOCUMENT_NORMALIZED_MANX
+            ? CollectHighlightTokenSpans(spanQuery, reader, sampleDocIds)
+            : [];
+
         var samples = corpusDocuments.Select(kvp =>
         {
             var doc = kvp.Value;
@@ -335,12 +341,15 @@ public class LuceneIndex(IndexWriter indexWriter)
             DateTime? endDate = maybeEndDate != null ? DateTime.Parse(maybeEndDate) : null;
 
             var ident = doc.GetField(DOCUMENT_IDENT).GetStringValue();
+            var sample = doc.GetField(DOCUMENT_REAL_MANX).GetStringValue();
 
             return new QueryDocumentResult
             {
                 Ident = ident,
                 DocumentName = doc.GetField(DOCUMENT_NAME).GetStringValue(),
-                Sample = doc.GetField(DOCUMENT_REAL_MANX).GetStringValue(),
+                Sample = sample,
+                SampleHighlights = ComputeHighlights(reader, kvp.Key, DOCUMENT_NORMALIZED_MANX, sample,
+                    highlightTokenSpans.GetValueOrDefault(kvp.Key)),
                 EndDate = endDate,
                 StartDate = startDate,
                 Count = corpusDocumentMapping[ident].Sum(docIdForIdent => spanCollection.GetCount(docIdForIdent))
