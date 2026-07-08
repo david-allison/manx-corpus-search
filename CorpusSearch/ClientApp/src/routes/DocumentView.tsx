@@ -17,6 +17,8 @@ import { ComparisonTable } from "../components/ComparisonTable"
 import { SearchBar } from "../components/SearchBar"
 import { BackChevron } from "../components/BackChevron"
 import { useLanguageVisibility } from "../hooks/useLanguageVisibility"
+import { iMuseumUrl } from "../utils/IMuseum"
+import { isUrl } from "../utils/Url"
 
 type Metadata = Record<string, unknown>
 
@@ -75,6 +77,12 @@ const brandLabels: Record<string, string> = {
     iMuseum: "iMuseum",
 }
 
+const iMuseumLink = (value: string): ReactNode => (
+    <a href={iMuseumUrl(value)} target="_blank" rel="noreferrer">
+        {value}
+    </a>
+)
+
 /** Inline label/value pairs for the metadata strip: SOURCE first, then any other scalar metadata */
 const buildMetaRows = (
     metadata: Metadata | null,
@@ -89,7 +97,7 @@ const buildMetaRows = (
         (typeof metadataSource === "string" ? metadataSource : undefined)
     if (sourceName || sourceLinks?.length) {
         const nameNode =
-            sourceName && /^https?:\/\//.test(sourceName) ? (
+            sourceName && isUrl(sourceName) ? (
                 <a href={sourceName} target="_blank" rel="noreferrer">
                     {sourceName}
                 </a>
@@ -130,20 +138,12 @@ const buildMetaRows = (
         }
         const text = String(value)
         const brand = brandLabels[key]
-        rows.push(
-            brand != null
-                ? {
-                      label: brand,
-                      value: text,
-                      length: text.length,
-                      preserveCase: true,
-                  }
-                : {
-                      label: key.replace(/([a-z0-9])([A-Z])/g, "$1 $2"),
-                      value: text,
-                      length: text.length,
-                  },
-        )
+        rows.push({
+            label: brand ?? key.replace(/([a-z0-9])([A-Z])/g, "$1 $2"),
+            value: key == "iMuseum" ? iMuseumLink(text) : text,
+            length: text.length,
+            preserveCase: brand != null,
+        })
     }
     return rows
 }
