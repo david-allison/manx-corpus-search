@@ -4,6 +4,9 @@ namespace CorpusSearch.Model;
 
 public class CorpusSearchQuery(string query)
 {
+    /// <summary>Keep this in sync with `MAX_QUERY_LENGTH`</summary>
+    public const int MAX_LENGTH = 100;
+
     public string Query { get; } = query;
 
     public bool Manx { get; internal set; }
@@ -14,7 +17,7 @@ public class CorpusSearchQuery(string query)
 
     internal bool IsValid()
     {
-        if (string.IsNullOrWhiteSpace(Query) || Query.Length > 100)
+        if (string.IsNullOrWhiteSpace(Query) || Query.Length > MAX_LENGTH)
         {
             return false;
         }

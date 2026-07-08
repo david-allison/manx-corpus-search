@@ -105,8 +105,12 @@ public partial class SearchController(
     }
 
     [HttpGet("SearchWork/{workIdent}/{query}")]
-    public async Task<SearchWorkResult> SearchWork(string workIdent, string query = null, bool manx = true, bool english = true)
+    public async Task<ActionResult<SearchWorkResult>> SearchWork(string workIdent, string query = null, bool manx = true, bool english = true)
     {
+        if (QueryTooLong(query))
+        {
+            return QueryTooLongResult();
+        }
         var sw = Stopwatch.StartNew();
         AnonymousAnalytics.Track("Search Work");
         var workQuery = new CorpusSearchWorkQuery(query)
@@ -138,7 +142,8 @@ public partial class SearchController(
     {
         // PREF: Much slower than necessary
         if (matchNumber < 1 || query == null || workIdent == null) return null;
-        var workResult = await SearchWork(workIdent, query: query, manx: true, english: false);
+        var workResult = (await SearchWork(workIdent, query: query, manx: true, english: false)).Value;
+        if (workResult == null) return null;
         var selectedIndex = QueryMatchIndex(workResult.Results, matchNumber);
         if (selectedIndex == null) return null;
         return new MatchReference(workIdent, matchNumber, workResult.Results[selectedIndex.Value.LineIndex].Manx, 
@@ -168,8 +173,12 @@ public partial class SearchController(
     }
 
     [HttpGet("Search/{query}")]
-    public async Task<QueryDocumentSearchResult> SearchCorpus(string query, bool manx = true, bool english = true, int minDate = 1600, int maxDate = 2100)
+    public async Task<ActionResult<QueryDocumentSearchResult>> SearchCorpus(string query, bool manx = true, bool english = true, int minDate = 1600, int maxDate = 2100)
     {
+        if (QueryTooLong(query))
+        {
+            return QueryTooLongResult();
+        }
         var sw = Stopwatch.StartNew();
         AnonymousAnalytics.Track("Search Corpus");
         QueryDocumentSearchResult ret = new QueryDocumentSearchResult()
@@ -209,6 +218,11 @@ public partial class SearchController(
         ret.NumberOfDocuments = ret.Results.Count;
         return ret;
     }
+
+    private static bool QueryTooLong(string query) => query is { Length: > CorpusSearchQuery.MAX_LENGTH };
+
+    private BadRequestObjectResult QueryTooLongResult() =>
+        BadRequest($"Query too long: the maximum is {CorpusSearchQuery.MAX_LENGTH} characters");
 
     private Dictionary<string, DictionaryData> DictionaryLookup(string query, QueryLanguages languages)
     {

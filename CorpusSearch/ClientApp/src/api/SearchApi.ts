@@ -1,3 +1,6 @@
+// Keep in sync with CorpusSearchQuery.MAX_LENGTH
+export const MAX_QUERY_LENGTH = 100
+
 export type DictionaryDefinition = {
     entries: string[]
     allowLookup: boolean
@@ -44,6 +47,9 @@ export const search = async (
         `search/search/${query}?minDate=${params.minDate}&maxDate=${params.maxDate}&manx=${params.manx.toString()}&english=${params.english.toString()}`,
         { signal },
     )
+    if (!response.ok) {
+        throw new Error(`search failed: ${response.status}`)
+    }
     // TODO: Validation
     const ret = (await response.json()) as SearchResponse
 
