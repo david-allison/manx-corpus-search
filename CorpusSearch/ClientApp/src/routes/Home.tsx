@@ -19,6 +19,10 @@ import {
     DictionaryLink,
     hasDictionaryDefinitions,
 } from "../components/DictionaryLink"
+import {
+    getMultidictLookupWord,
+    MultidictNotFoundRow,
+} from "../components/MultidictLink"
 import { hasTranslations, TranslationList } from "../components/TranslationList"
 import AdvancedOptions, { DateRange } from "../components/AdvancedOptions"
 import { useSearchParams } from "react-router-dom"
@@ -192,6 +196,7 @@ export const Home = () => {
             >
                 <SearchResultHeader
                     response={result.data}
+                    searchLanguage={searchLanguage}
                     sortKey={sortKey}
                     onSortKeyChange={setSortKey}
                     density={density}
@@ -325,6 +330,7 @@ const ViewSelect = (props: {
 
 const SearchResultHeader = (props: {
     response: SearchResponse
+    searchLanguage: SearchLanguage
     sortKey: ResultsSortKey
     onSortKeyChange: (key: ResultsSortKey) => void
     density: ResultsDensity
@@ -335,6 +341,9 @@ const SearchResultHeader = (props: {
 
     const isDict = hasDictionaryDefinitions(response.definedInDictionaries)
     const isTranslation = hasTranslations(response.translations)
+    // if no dictionary knows the word, offer an external Multidict lookup
+    const multidictWord =
+        !isDict && !isTranslation ? getMultidictLookupWord(query) : null
 
     return (
         <div>
@@ -371,7 +380,7 @@ const SearchResultHeader = (props: {
                     </label>
                 </div>
             </div>
-            {(isDict || isTranslation) && (
+            {(isDict || isTranslation || multidictWord != null) && (
                 <div className="dict-strip">
                     {isDict && (
                         <DictionaryLink
@@ -381,6 +390,12 @@ const SearchResultHeader = (props: {
                     )}
                     {isTranslation && (
                         <TranslationList translations={response.translations} />
+                    )}
+                    {multidictWord != null && (
+                        <MultidictNotFoundRow
+                            word={multidictWord}
+                            language={props.searchLanguage}
+                        />
                     )}
                 </div>
             )}
