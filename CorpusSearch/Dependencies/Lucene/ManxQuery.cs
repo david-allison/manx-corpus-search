@@ -20,6 +20,11 @@ public class ManxQuery(Term term, bool ignoreHyphens = false) : AutomatonQuery(G
     /// </summary>
     public virtual Term Term => base.m_term;
 
+    /// <summary>The automaton this query matches index terms with; exposed so 'did you mean'
+    /// suggestions can enumerate the vocabulary it accepts (#158)</summary>
+    internal static Automaton BuildAutomaton(Term term, bool ignoreHyphens) =>
+        ToAutomaton(term, ignoreHyphens);
+
     private static Automaton ToAutomaton(Term term, bool ignoreHyphens)
     {
         IList<Automaton> automata = new List<Automaton>();

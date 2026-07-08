@@ -19,6 +19,14 @@ export type HighlightRange = {
     end: number
 }
 
+/** A 'did you mean' alternative for a query which found nothing (#158) */
+export type SearchSuggestion = {
+    /** the suggested query, e.g. "lum-lane" when "lumlane" was searched */
+    query: string
+    /** the number of matches the suggestion returns */
+    count: number
+}
+
 export type SearchResponse = {
     results: SearchResultEntry[]
     query: string
@@ -27,6 +35,8 @@ export type SearchResponse = {
     timeTaken: string
     definedInDictionaries: DefinedInDictionaries
     translations: Translations
+    /** populated when the search found nothing (#158) */
+    suggestions?: SearchSuggestion[]
 }
 
 type date = string

@@ -10,6 +10,7 @@ export type DateRange = {
 const AdvancedOptions = (props: {
     onDateRangeChange: (range: DateRange) => void
     onMatchChange: (match: boolean) => void
+    ignoreHyphens: boolean
     onIgnoreHyphensChange: (ignoreHyphens: boolean) => void
     children?: ReactNode
 }) => {
@@ -66,6 +67,7 @@ const AdvancedOptions = (props: {
                 </span>
                 <MatchWithinWords onMatchChange={props.onMatchChange} />
                 <IgnoreHyphens
+                    ignoreHyphens={props.ignoreHyphens}
                     onIgnoreHyphensChange={props.onIgnoreHyphensChange}
                 />
                 {props.children}
@@ -74,16 +76,11 @@ const AdvancedOptions = (props: {
     )
 }
 
+// controlled from Home: the 'no results' suggestion can also enable the option (#158)
 const IgnoreHyphens = (props: {
+    ignoreHyphens: boolean
     onIgnoreHyphensChange: (ignoreHyphens: boolean) => void
 }) => {
-    const [ignoreHyphens, setIgnoreHyphens] = useState(false)
-
-    const onIgnoreHyphensChanged = (event: ChangeEvent<HTMLInputElement>) => {
-        setIgnoreHyphens(event.target.checked)
-        props.onIgnoreHyphensChange(event.target.checked)
-    }
-
     return (
         <label
             className="advanced-options-match"
@@ -92,8 +89,8 @@ const IgnoreHyphens = (props: {
             <input
                 id="ignoreHyphens"
                 type="checkbox"
-                checked={ignoreHyphens}
-                onChange={onIgnoreHyphensChanged}
+                checked={props.ignoreHyphens}
+                onChange={(e) => props.onIgnoreHyphensChange(e.target.checked)}
             />
             Ignore hyphens
         </label>

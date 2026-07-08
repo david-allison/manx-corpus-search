@@ -77,6 +77,62 @@ const emptySearchResponse = (query: string): SearchResponse => ({
     translations: {},
 })
 
+// #158
+describe("did-you-mean suggestion", () => {
+    const hyphenatedResults: SearchResponse = {
+        ...emptySearchResponse("lum-lane"),
+        numberOfResults: 2,
+        numberOfDocuments: 1,
+        results: [
+            {
+                startDate: "1900-01-01",
+                endDate: "1900-01-01",
+                documentName: "Test Doc",
+                count: 2,
+                ident: "doc1",
+                sample: "yn lum-lane mooar",
+            },
+        ],
+    }
+
+    it("suggests the alternate forms the server returned", async () => {
+        fetchMock.mockImplementation((url) =>
+            Promise.resolve(
+                Response.json(
+                    typeof url === "string" && url.includes("lum-lane")
+                        ? hyphenatedResults
+                        : {
+                              ...emptySearchResponse("lumlane"),
+                              suggestions: [{ query: "lum-lane", count: 2 }],
+                          },
+                ),
+            ),
+        )
+        renderWithQuery("lumlane")
+
+        const suggestion = await screen.findByRole("button", {
+            name: "lum-lane",
+        })
+        screen.getByText(/2 matches/)
+
+        fireEvent.click(suggestion)
+
+        // the suggestion becomes the query
+        await screen.findByText("Test Doc")
+        expect(searchRequests().at(-1)?.[0]).toContain("lum-lane")
+    })
+
+    it("shows no suggestion when the server offers none", async () => {
+        fetchMock.mockImplementation(() =>
+            Promise.resolve(Response.json(emptySearchResponse("xyzzy"))),
+        )
+        renderWithQuery("xyzzy")
+
+        await screen.findByText(/No matches/)
+        expect(screen.queryByText(/Did you mean/)).toBeNull()
+    })
+})
+
 // #134
 describe("multidict lookup", () => {
     it("links to Multidict when no dictionary knows the word", async () => {
