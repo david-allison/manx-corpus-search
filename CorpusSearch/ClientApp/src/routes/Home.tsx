@@ -173,7 +173,7 @@ const HomeIntro = ({ statsPromise }: { statsPromise: Promise<Statistics | "error
                 {stats != "error" ?
                     <>
                         Search our growing collection of over <b title={`${stats.uniqueManxWordCount.toLocaleString()} unique words`}>{stats.manxWordCount.toLocaleString()} Manx words</b><br/>
-                        or <a href={"/Browse"}>browse {stats.documentCount.toLocaleString()} documents</a> .
+                        or <a href={"/Browse"}>browse {stats.documentCount.toLocaleString()} documents</a>.
                     </>
                 :
                     <>
