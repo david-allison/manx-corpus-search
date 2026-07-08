@@ -50,14 +50,17 @@
 .recent-doc-row {
     display: flex;
     justify-content: space-between;
+    align-items: baseline;
     gap: 16px;
-    flex-wrap: wrap;
 }
 
 .recent-doc-row a {
     text-decoration: none;
     color: var(--c-ink);
     font-family: var(--font-display);
+    /* long titles wrap in their own column; the date stays pinned right */
+    flex: 1;
+    min-width: 0;
 }
 
 .recent-doc-row a:hover {
@@ -67,6 +70,7 @@
 .recent-doc-date {
     color: var(--c-muted-2);
     font-size: 13px;
+    white-space: nowrap;
 }
 
 .home-support {
