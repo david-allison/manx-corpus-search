@@ -22,7 +22,12 @@ import {
 import { hasTranslations, TranslationList } from "../components/TranslationList"
 import AdvancedOptions, { DateRange } from "../components/AdvancedOptions"
 import { useSearchParams } from "react-router-dom"
-import { search, SearchResponse, SearchParams } from "../api/SearchApi"
+import {
+    search,
+    SearchResponse,
+    SearchParams,
+    MAX_QUERY_LENGTH,
+} from "../api/SearchApi"
 import { CircularProgress } from "@mui/material"
 import { ManxEnglishSelector } from "../components/ManxEnglishSelector"
 import { getCorpusStatistics, Statistics } from "../api/CorpusStatistics"
@@ -118,10 +123,12 @@ export const Home = () => {
     )
 
     const hasNoSearch = query.trim() == ""
+    // the server rejects long queries; "match phrase" adds 2 characters
+    const queryTooLong = request.query.length > MAX_QUERY_LENGTH
 
     // load the data
     useEffect(() => {
-        if (hasNoSearch) {
+        if (hasNoSearch || queryTooLong) {
             return
         }
 
@@ -138,7 +145,7 @@ export const Home = () => {
             }
         })
         return () => controller.abort()
-    }, [request, hasNoSearch])
+    }, [request, hasNoSearch, queryTooLong])
 
     const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
         setQuery(event.target.value)
@@ -155,6 +162,14 @@ export const Home = () => {
                 <Suspense fallback={<ProgressBar />}>
                     <HomeIntro statsPromise={statsPromise} />
                 </Suspense>
+            )
+        }
+        if (queryTooLong) {
+            return (
+                <div className={"home-error"}>
+                    Search text is too long. The maximum is {MAX_QUERY_LENGTH}{" "}
+                    characters.
+                </div>
             )
         }
         if (result === null) {

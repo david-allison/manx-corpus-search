@@ -42,6 +42,9 @@ type WorkSearch = {
     searchManx: boolean
 }
 
+/**
+ * @throws Error if the search fails (e.g. query is too long)
+ */
 export const searchWork = async (
     params: WorkSearch,
     signal?: AbortSignal,
@@ -51,5 +54,8 @@ export const searchWork = async (
         `search/searchWork/${params.docIdent}/${encodeURIComponent(searchValue)}?english=${params.searchEnglish.toString()}&manx=${params.searchManx.toString()}`,
         { signal },
     )
+    if (!response.ok) {
+        throw new Error(`work search failed: ${response.status}`)
+    }
     return (await response.json()) as SearchWorkResponse
 }
