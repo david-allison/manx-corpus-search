@@ -199,6 +199,52 @@ public class Searcher(LuceneIndex luceneIndex, SearchParser parser)
     private static string[] SplitAtoms(string normalizedTerm) =>
         normalizedTerm.Split(['-', ' '], StringSplitOptions.RemoveEmptyEntries);
 
+    /// <summary>
+    /// 'Did you mean' candidates for a query which found nothing (#158): index terms which
+    /// differ only in hyphenation ('lumlane' => 'lum-lane'), plus the space-separated form
+    /// of a hyphenated query. Callers should drop candidates without matches.
+    /// </summary>
+    public List<string> GetHyphenAlternates(string query, ScanOptions searchOptions)
+    {
+        var parsed = parser.Parse(query);
+        if (!parsed.IsOk || parsed.Result == null)
+        {
+            return [];
+        }
+
+        var words = PlainWords(parsed.Result);
+        if (words == null)
+        {
+            return [];
+        }
+
+        var atoms = words.SelectMany(w => SplitAtoms(GetTerm(w, searchOptions))).ToList();
+        // a wildcard matches far more of the vocabulary than hyphen variants
+        if (atoms.Count == 0 || atoms.Any(a => a.Any(c => c is '*' or '_' or '+' or '?')))
+        {
+            return [];
+        }
+
+        var termKey = GetTermKey(searchOptions);
+        var automaton = ManxQuery.BuildAutomaton(new Term(termKey, string.Concat(atoms)), ignoreHyphens: true);
+        var alternates = luceneIndex.GetMatchingTerms(termKey, automaton, limit: 5);
+        if (atoms.Count > 1)
+        {
+            alternates.Add(string.Join(" ", atoms));
+        }
+
+        var normalizedQuery = GetTerm(query, searchOptions);
+        return alternates.Where(x => x != normalizedQuery).Distinct().ToList();
+    }
+
+    /// <summary>The words of a plain word/phrase query; null for operators etc.</summary>
+    private static List<string> PlainWords(Expression expression) => expression switch
+    {
+        StringExpression s => [s.Term],
+        AdjacentWordExpression e => e.Words.ToList(),
+        _ => null,
+    };
+
     private static SpanQuery SingleTokenQuery(string normalizedTerm, ScanOptions searchOptions, bool ignoreHyphens)
     {
         Term term = new Term(GetTermKey(searchOptions), normalizedTerm);

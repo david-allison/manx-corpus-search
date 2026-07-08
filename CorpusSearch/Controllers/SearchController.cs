@@ -218,6 +218,11 @@ public partial class SearchController(
 
         ret.DefinedInDictionaries = DictionaryLookup(query, new QueryLanguages(Manx: manx, English: english));
         ret.SetResults(results);
+        if (ret.Results.Count == 0 && !ignoreHyphens)
+        {
+            // #158: 'lumlane' found nothing, but 'lum-lane' exists
+            ret.Suggestions = await overviewSearchService.GetSuggestions(searchQuery);
+        }
         ret.EnrichWithTime(sw);
         ret.NumberOfDocuments = ret.Results.Count;
         return ret;
@@ -252,6 +257,8 @@ public partial class SearchController(
         public string TimeTaken { get; set; }
         public Dictionary<string, DictionaryData> DefinedInDictionaries { get; internal set; } = new();
         public Translations Translations { get; set; } = new();
+        /// <summary>'Did you mean' alternatives, populated when the search found nothing (#158)</summary>
+        public List<SearchSuggestion> Suggestions { get; set; } = [];
     }
 }
 

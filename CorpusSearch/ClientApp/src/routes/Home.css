@@ -191,3 +191,23 @@ a.dict-strip-label:hover {
     font-family: var(--font-display);
     font-size: 18px;
 }
+
+/* 'Did you mean lum-lane (2 matches)?' (#158) */
+.no-results-suggestions {
+    margin-top: 12px;
+}
+
+/* link-styled button: it re-runs the search rather than navigating */
+.no-results-suggestion {
+    padding: 0;
+    border: none;
+    background: none;
+    font: inherit;
+    color: var(--c-link);
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.no-results-suggestion:hover {
+    color: var(--c-link-hover);
+}

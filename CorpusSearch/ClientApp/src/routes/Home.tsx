@@ -3,6 +3,7 @@
 import "./Home.css"
 
 import {
+    Fragment,
     Suspense,
     use,
     useEffect,
@@ -208,6 +209,32 @@ export const Home = () => {
                     <div className="no-results">
                         No matches for “{result.data.query || query}”. Try
                         another spelling, or a synonym.
+                        {(result.data.suggestions?.length ?? 0) > 0 && (
+                            <div className="no-results-suggestions">
+                                Did you mean{" "}
+                                {result.data.suggestions?.map(
+                                    (suggestion, i) => (
+                                        <Fragment key={suggestion.query}>
+                                            {i > 0 && " or "}
+                                            <button
+                                                className="no-results-suggestion"
+                                                onClick={() =>
+                                                    setQuery(suggestion.query)
+                                                }
+                                            >
+                                                {suggestion.query}
+                                            </button>{" "}
+                                            ({suggestion.count.toLocaleString()}{" "}
+                                            {suggestion.count === 1
+                                                ? "match"
+                                                : "matches"}
+                                            )
+                                        </Fragment>
+                                    ),
+                                )}
+                                ?
+                            </div>
+                        )}
                     </div>
                 ) : (
                     <MainSearchResults
@@ -244,6 +271,7 @@ export const Home = () => {
             <AdvancedOptions
                 onDateRangeChange={setDateRange}
                 onMatchChange={setMatchPhrase}
+                ignoreHyphens={ignoreHyphens}
                 onIgnoreHyphensChange={setIgnoreHyphens}
             >
                 {/*on mobile the View control lives here rather than in the results header*/}

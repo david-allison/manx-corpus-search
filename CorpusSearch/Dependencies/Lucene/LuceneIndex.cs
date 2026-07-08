@@ -9,6 +9,7 @@ using Lucene.Net.Search;
 using Lucene.Net.Search.Spans;
 using Lucene.Net.Store;
 using Lucene.Net.Util;
+using Lucene.Net.Util.Automaton;
 using Document = Lucene.Net.Documents.Document;
 
 namespace CorpusSearch.Dependencies.Lucene;
@@ -420,6 +421,30 @@ public class LuceneIndex(IndexWriter indexWriter)
         return totalMatches;
     }
         
+    /// <summary>
+    /// Index terms accepted by <paramref name="automaton"/>: e.g. 'lum-lane' for the
+    /// hyphen-tolerant automaton of 'lumlane'. Used for 'did you mean' suggestions (#158).
+    /// </summary>
+    public List<string> GetMatchingTerms(string field, Automaton automaton, int limit)
+    {
+        var ret = new List<string>();
+
+        using var reader = UseReader();
+        var terms = MultiFields.GetTerms(reader, field);
+        if (terms == null)
+        {
+            return ret;
+        }
+
+        var termsEnum = new CompiledAutomaton(automaton).GetTermsEnum(terms);
+        while (ret.Count < limit && termsEnum.MoveNext())
+        {
+            ret.Add(termsEnum.Term.Utf8ToString());
+        }
+
+        return ret;
+    }
+
     public List<(string, long)> GetTermFrequencyList()
     {
         var termList = new List<(string, long)>();
