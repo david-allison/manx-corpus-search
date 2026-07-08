@@ -14,6 +14,8 @@ public class CorpusSearchQuery(string query)
     public DateTime MinDate { get; internal set; }
     public DateTime MaxDate { get; internal set; }
     public bool CaseSensitive { get; internal set; }
+    /// <inheritdoc cref="ScanOptions.IgnoreHyphens"/>
+    public bool IgnoreHyphens { get; internal set; }
 
     internal bool IsValid()
     {

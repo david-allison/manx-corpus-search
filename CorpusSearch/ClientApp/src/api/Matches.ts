@@ -14,6 +14,7 @@ type MatchQuery = {
     docIdent: string
     query: string
     match: number
+    ignoreHyphens: boolean
 }
 
 /** Given (document, query, matchIndex):  return a the matched line + information on the match,
@@ -34,7 +35,7 @@ export const GetMatch = async (
     signal?: AbortSignal,
 ): Promise<MatchReference> => {
     const response = await fetch(
-        `search/Match/${params.docIdent}/?query=${params.query}&match=${params.match}`,
+        `search/Match/${params.docIdent}/?query=${params.query}&match=${params.match}&ignoreHyphens=${params.ignoreHyphens.toString()}`,
         { signal },
     )
     return (await response.json()) as MatchReference

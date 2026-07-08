@@ -169,6 +169,9 @@ export const DocumentView = () => {
 
     // the 'q' parameter from the querystring
     const q = new URLSearchParams(location.search).get("q")
+    // set when following a result of a hyphen-insensitive corpus search, so the counts match
+    const ignoreHyphens =
+        new URLSearchParams(location.search).get("ignoreHyphens") === "true"
 
     const [value, setValue] = useState(q ?? "*")
 
@@ -208,6 +211,7 @@ export const DocumentView = () => {
                     value,
                     searchEnglish,
                     searchManx,
+                    ignoreHyphens,
                 })
                 setSearchWorkResponse(data)
                 setTitle(data.title)
@@ -215,7 +219,7 @@ export const DocumentView = () => {
                 console.error(e)
             }
         })
-    }, [value, searchEnglish, searchManx, docIdent])
+    }, [value, searchEnglish, searchManx, docIdent, ignoreHyphens])
 
     const [metadata, setMetadata] = useState<Metadata | null>(null)
     const [showAllMeta, setShowAllMeta] = useState(false)

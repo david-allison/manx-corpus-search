@@ -15,10 +15,10 @@ public class HighlightingTest : QueryBase
 {
     private const string DOC = "doc";
 
-    private SearchResult SearchWork(string query, SearchType type = SearchType.Manx)
+    private SearchResult SearchWork(string query, SearchType type = SearchType.Manx, bool ignoreHyphens = false)
     {
         return new Searcher(luceneIndex, parser)
-            .SearchWork(DOC, query, new SearchOptions { Type = type });
+            .SearchWork(DOC, query, new SearchOptions { Type = type, IgnoreHyphens = ignoreHyphens });
     }
 
     /// <summary>The substrings of the raw text selected by the returned highlight ranges</summary>
@@ -202,9 +202,55 @@ public class HighlightingTest : QueryBase
         Assert.That(result.Lines.Select(x => x.ManxHighlights), Is.All.Null);
     }
 
+    [Test]
+    public void IgnoreHyphensHighlightsTheSpacedForm()
+    {
+        // #18 - a hyphenated query matches (and must highlight) the spaced form
+        this.AddManxDoc(DOC, "s’beg lhiam lhiat");
+        var line = SearchWork("lhiam-lhiat", ignoreHyphens: true).Lines.Single();
+        Assert.That(Highlighted(line.Manx, line.ManxHighlights), Is.EqualTo(new[] { "lhiam lhiat" }));
+    }
+
+    [Test]
+    public void IgnoreHyphensHighlightsThePunctuatedSpacedForm()
+    {
+        // punctuation is a token separator, so 'lhiam, lhiat' matches as a phrase:
+        // the highlight covers the whole stretch, comma included
+        this.AddManxDoc(DOC, "S’beg lhiam, lhiat, lesh");
+        var line = SearchWork("lhiam-lhiat", ignoreHyphens: true).Lines.Single();
+        Assert.That(Highlighted(line.Manx, line.ManxHighlights), Is.EqualTo(new[] { "lhiam, lhiat" }));
+    }
+
+    [Test]
+    public void IgnoreHyphensHighlightsTheHyphenatedForm()
+    {
+        // #18 - the reverse direction: a spaced query highlights the single hyphenated token
+        this.AddManxDoc(DOC, "she lhiam-lhiat eh");
+        var line = SearchWork("lhiam lhiat", ignoreHyphens: true).Lines.Single();
+        Assert.That(Highlighted(line.Manx, line.ManxHighlights), Is.EqualTo(new[] { "lhiam-lhiat" }));
+    }
+
+    [Test]
+    public void IgnoreHyphensJoinedQueryHighlightsTheHyphenatedForm()
+    {
+        this.AddManxDoc(DOC, "she lhiam-lhiat eh");
+        var line = SearchWork("lhiamlhiat", ignoreHyphens: true).Lines.Single();
+        Assert.That(Highlighted(line.Manx, line.ManxHighlights), Is.EqualTo(new[] { "lhiam-lhiat" }));
+    }
+
     private ScanResult Scan(string query, ScanOptions options = null)
     {
         return new Searcher(luceneIndex, parser).Scan(query, options ?? ScanOptions.Default);
+    }
+
+    [Test]
+    public void ScanIgnoringHyphensHighlightsTheSample()
+    {
+        // the corpus-search sample line gets the same hyphen-insensitive highlights
+        this.AddManxDoc(DOC, "she lhiam-lhiat eh");
+        var result = Scan("lhiam lhiat", new ScanOptions { IgnoreHyphens = true })
+            .DocumentResults.Single();
+        Assert.That(Highlighted(result.Sample, result.SampleHighlights), Is.EqualTo(new[] { "lhiam-lhiat" }));
     }
 
     [Test]

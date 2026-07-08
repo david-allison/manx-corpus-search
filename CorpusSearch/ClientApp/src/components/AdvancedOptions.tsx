@@ -10,6 +10,7 @@ export type DateRange = {
 const AdvancedOptions = (props: {
     onDateRangeChange: (range: DateRange) => void
     onMatchChange: (match: boolean) => void
+    onIgnoreHyphensChange: (ignoreHyphens: boolean) => void
     children?: ReactNode
 }) => {
     // keep the raw text so clearing a field while typing doesn't snap the value back
@@ -64,9 +65,38 @@ const AdvancedOptions = (props: {
                     />
                 </span>
                 <MatchWithinWords onMatchChange={props.onMatchChange} />
+                <IgnoreHyphens
+                    onIgnoreHyphensChange={props.onIgnoreHyphensChange}
+                />
                 {props.children}
             </div>
         </details>
+    )
+}
+
+const IgnoreHyphens = (props: {
+    onIgnoreHyphensChange: (ignoreHyphens: boolean) => void
+}) => {
+    const [ignoreHyphens, setIgnoreHyphens] = useState(false)
+
+    const onIgnoreHyphensChanged = (event: ChangeEvent<HTMLInputElement>) => {
+        setIgnoreHyphens(event.target.checked)
+        props.onIgnoreHyphensChange(event.target.checked)
+    }
+
+    return (
+        <label
+            className="advanced-options-match"
+            title="“lhiam-lhiat” also matches “lhiam lhiat” and “lhiamlhiat” (and vice-versa)"
+        >
+            <input
+                id="ignoreHyphens"
+                type="checkbox"
+                checked={ignoreHyphens}
+                onChange={onIgnoreHyphensChanged}
+            />
+            Ignore hyphens
+        </label>
     )
 }
 

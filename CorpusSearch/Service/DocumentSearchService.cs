@@ -60,6 +60,7 @@ public class DocumentSearchService(
         return new SearchOptions
         {
             Type = workQuery.Manx ? SearchType.Manx : SearchType.English,
+            IgnoreHyphens = workQuery.IgnoreHyphens,
         };
     }
 }

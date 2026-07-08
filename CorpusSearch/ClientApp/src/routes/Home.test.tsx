@@ -1,5 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
-import { cleanup, render, screen } from "@testing-library/react"
+import {
+    cleanup,
+    fireEvent,
+    render,
+    screen,
+    waitFor,
+} from "@testing-library/react"
 import { MemoryRouter } from "react-router-dom"
 import { Home } from "./Home"
 import { MAX_QUERY_LENGTH, SearchResponse } from "../api/SearchApi"
@@ -44,6 +50,20 @@ describe("query too long", () => {
         await screen.findByText(/Something went wrong/)
         expect(screen.queryByText(/too long/)).toBeNull()
         expect(searchRequests()).toHaveLength(1)
+    })
+})
+
+describe("ignore hyphens option", () => {
+    it("is sent to the server when toggled", async () => {
+        renderWithQuery("lhiam-lhiat")
+
+        await screen.findByText(/Something went wrong/)
+        expect(searchRequests().at(-1)?.[0]).toContain("ignoreHyphens=false")
+
+        fireEvent.click(screen.getByLabelText("Ignore hyphens"))
+
+        await waitFor(() => expect(searchRequests()).toHaveLength(2))
+        expect(searchRequests().at(-1)?.[0]).toContain("ignoreHyphens=true")
     })
 })
 

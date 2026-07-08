@@ -8,7 +8,7 @@ using System.Linq;
 
 namespace CorpusSearch.Dependencies.Lucene;
 
-public class ManxQuery(Term term) : AutomatonQuery(GetTerm(term), ToAutomaton(term))
+public class ManxQuery(Term term, bool ignoreHyphens = false) : AutomatonQuery(GetTerm(term), ToAutomaton(term, ignoreHyphens))
 {
     private static Term GetTerm(Term term)
     {
@@ -20,7 +20,7 @@ public class ManxQuery(Term term) : AutomatonQuery(GetTerm(term), ToAutomaton(te
     /// </summary>
     public virtual Term Term => base.m_term;
 
-    private static Automaton ToAutomaton(Term term)
+    private static Automaton ToAutomaton(Term term, bool ignoreHyphens)
     {
         IList<Automaton> automata = new List<Automaton>();
 
@@ -29,6 +29,19 @@ public class ManxQuery(Term term) : AutomatonQuery(GetTerm(term), ToAutomaton(te
         for (int i = 0; i < wildcardText.Length; i++)
         {
             char c = wildcardText[i];
+
+            // hyphens in the token are ignorable: drop them from the query and allow any run
+            // of hyphens before each character instead, so 'lhiamlhiat' matches 'lhiam-lhiat',
+            // 'cur-my' matches 'cur---my' (an ASCII em-dash) and 'cre' matches '-cre'
+            // (a dialogue dash)
+            if (ignoreHyphens)
+            {
+                if (c == '-')
+                {
+                    continue;
+                }
+                automata.Add(BasicOperations.Repeat(BasicAutomata.MakeChar('-')));
+            }
 
             // any string
             if (c ==  '*')
