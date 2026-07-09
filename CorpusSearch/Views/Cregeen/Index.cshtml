@@ -9,6 +9,7 @@
     <title>Cregeen's Dictionary</title>
     <link rel="shortcut icon" href="/favicon.ico">
     @* version query = server start time, so a rebuild+restart always busts cached CSS *@
+    <link href="/site-chrome.css?v=@(System.Diagnostics.Process.GetCurrentProcess().StartTime.Ticks)" rel="stylesheet">
     <link href="/site-design.css?v=@(System.Diagnostics.Process.GetCurrentProcess().StartTime.Ticks)" rel="stylesheet">
 </head>
 <body>
