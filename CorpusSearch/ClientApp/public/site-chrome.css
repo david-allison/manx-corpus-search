@@ -1,0 +1,287 @@
+/* ============================================================
+   Shared site chrome — design tokens, header, footer, page
+   column and the shared pieces used by every page.
+
+   Loaded by BOTH front ends (keep it that way — #313 was the
+   two drifting apart):
+     - the React app:             ClientApp/index.html
+     - the server-rendered pages: Views/Browse, Views/Cregeen
+
+   App-only styles live in src/custom.css; server-page-only
+   styles in public/site-design.css. Both load after this file,
+   so they can add to the chrome but should not redefine it.
+   Tokens: see design_handoff_corpus_redesign/README.md
+   ============================================================ */
+:root {
+    --c-page-bg: #FDF5E6;          /* oldlace */
+    --c-surface: #FFFEF9;          /* header, cards, inputs */
+    --c-ink: #2E3F46;              /* primary text */
+    --c-heading: #33454D;
+    --c-secondary: #5C6B72;
+    --c-body-results: #40525A;
+    --c-muted: #8A8168;
+    --c-muted-2: #A99F8A;
+    --c-accent: #A6392C;           /* brand red, match highlights, section labels */
+    --c-link: #8A3B2C;
+    --c-link-hover: #5E2317;
+    --c-match-bg: #F9E7D9;
+    --c-slate: #4A5D66;            /* badges, active segments, audio bar */
+    --c-audio-bar: #33454D;
+    --c-progress: #C96F53;
+    --c-border-input: #D8CCB4;
+    --c-border-card: #E8DDC4;
+    --c-border-header: #E8DFC9;
+    --c-border-meta: #E4D8BC;
+    --c-border-table-head: #B5A98D;
+    --c-border-row: #F0E6CE;
+    --c-row-stripe: #F8F0DD;
+    --c-note-row: #F3EDDD;
+    --c-expand-row: #EDE3C8;
+    --c-dict-strip: #F6ECD9;
+    --c-dict-strip-border: #E4D5B4;
+    --c-audio-active-row: #EAF0F2;
+    --c-selection: #E9D9BC;
+
+    --font-ui: Helvetica, Arial, sans-serif;
+    --font-display: Georgia, serif;
+
+    /* side padding of the main column; content (e.g. the video) can bleed
+       through it with a negative margin */
+    --page-gutter: 24px;
+
+    --shadow-header: 0 2px 12px rgba(62, 80, 88, 0.06);
+    --shadow-card: 0 1px 3px rgba(62, 80, 88, 0.05);
+    --focus-ring: 0 0 0 3px rgba(51, 69, 77, 0.10);
+}
+
+body {
+    margin: 0;
+    background: var(--c-page-bg);
+    color: var(--c-ink);
+    font-family: var(--font-ui);
+    -webkit-font-smoothing: antialiased;
+}
+
+a {
+    color: var(--c-link);
+}
+
+a:hover {
+    color: var(--c-link-hover);
+}
+
+input, button, select {
+    font-family: inherit;
+}
+
+::selection {
+    background: var(--c-selection);
+}
+
+/* ============ Header (all pages) ============ */
+.site-header {
+    background: var(--c-surface);
+    border-bottom: 1px solid var(--c-border-header);
+    box-shadow: var(--shadow-header);
+}
+
+.site-header-inner {
+    max-width: 1020px;
+    margin: 0 auto;
+    padding: 12px var(--page-gutter);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    text-decoration: none;
+    color: inherit;
+}
+
+.brand img {
+    height: 46px;
+    width: auto;
+}
+
+.brand-lockup {
+    display: flex;
+    flex-direction: column;
+    line-height: 1;
+}
+
+.brand-name {
+    font-family: var(--font-display);
+    font-size: 27px;
+    color: var(--c-heading);
+}
+
+.brand-sub {
+    font-size: 10px;
+    letter-spacing: 3.5px;
+    color: var(--c-accent);
+    margin-top: 4px;
+    font-weight: 600;
+}
+
+.site-nav {
+    display: flex;
+    align-items: center;
+    gap: 26px;
+    font-size: 15px;
+}
+
+.site-nav a {
+    text-decoration: none;
+    padding-bottom: 2px;
+    color: var(--c-secondary);
+    border-bottom: 2px solid transparent;
+}
+
+.site-nav a:hover {
+    color: var(--c-ink);
+}
+
+.site-nav a.active {
+    color: var(--c-ink);
+    border-bottom-color: var(--c-accent);
+}
+
+/* ============ Main column ============ */
+.page-main {
+    max-width: 1020px;
+    margin: 0 auto;
+    padding: 34px var(--page-gutter) 16px;
+}
+
+/* ============ Footer (all pages) ============ */
+.site-footer {
+    margin-top: 16px;
+    border-top: 1px solid var(--c-border-header);
+    padding-top: 18px;
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    font-size: 12.5px;
+    color: var(--c-muted-2);
+    flex-wrap: wrap;
+}
+
+.site-footer a {
+    color: var(--c-muted);
+}
+
+/* ============ Shared pieces ============ */
+.page-title {
+    font-family: var(--font-display);
+    font-size: 28px;
+    color: var(--c-heading);
+    margin: 0;
+    font-weight: normal;
+}
+
+.section-label {
+    font-size: 11px;
+    letter-spacing: 2.5px;
+    color: var(--c-accent);
+    font-weight: 600;
+    margin-bottom: 12px;
+    border-bottom: 1px solid var(--c-border-meta);
+    padding-bottom: 8px;
+    text-transform: uppercase;
+}
+
+.year-badge {
+    font-size: 12.5px;
+    color: var(--c-surface);
+    background: var(--c-slate);
+    border-radius: 3px;
+    padding: 2px 8px;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.seg-control {
+    display: flex;
+    align-items: stretch;
+    border: 1px solid var(--c-border-input);
+    border-radius: 6px;
+    overflow: hidden;
+    background: var(--c-surface);
+}
+
+.seg-control button {
+    white-space: nowrap;
+    border: none;
+    cursor: pointer;
+    padding: 5px 14px;
+    font-size: 13px;
+    background: transparent;
+    color: var(--c-secondary);
+    font-weight: 400;
+}
+
+.seg-control button + button {
+    border-left: 1px solid var(--c-border-card);
+}
+
+.seg-control button.active {
+    background: var(--c-slate);
+    color: var(--c-surface);
+    font-weight: 600;
+}
+
+/* ============ Mobile: chrome earns less of the screen ============ */
+@media (max-width: 600px) {
+    :root {
+        --page-gutter: 14px;
+    }
+
+    .site-header-inner {
+        padding: 8px var(--page-gutter);
+        gap: 2px 14px;
+    }
+
+    .brand {
+        gap: 10px;
+    }
+
+    .brand img {
+        height: 30px;
+    }
+
+    .brand-name {
+        font-size: 20px;
+    }
+
+    .brand-sub {
+        font-size: 8.5px;
+        letter-spacing: 2.5px;
+        margin-top: 3px;
+    }
+
+    .site-nav {
+        gap: 16px;
+        font-size: 13.5px;
+    }
+
+    .page-main {
+        padding-top: 16px;
+    }
+
+    .page-title {
+        font-size: 22px;
+    }
+
+    .site-footer {
+        margin-top: 20px;
+        padding-top: 12px;
+        gap: 8px;
+        font-size: 12px;
+    }
+}
