@@ -11,7 +11,7 @@ public class OverviewSearchService2(WorkService workService, Searcher searcher)
 {
     public async Task<IEnumerable<QueryDocumentResult>> CorpusSearch(CorpusSearchQuery searchQuery)
     {
-        var result = searcher.Scan(searchQuery.Query, ToSearchOptions(searchQuery));
+        var result = searcher.Scan(searchQuery.Query, searchQuery.ToSearchOptions());
 
         var docResults = result.DocumentResults;
 
@@ -29,7 +29,7 @@ public class OverviewSearchService2(WorkService workService, Searcher searcher)
     /// </summary>
     public async Task<List<SearchSuggestion>> GetSuggestions(CorpusSearchQuery searchQuery)
     {
-        var alternates = searcher.GetHyphenAlternates(searchQuery.Query, ToSearchOptions(searchQuery));
+        var alternates = searcher.GetHyphenAlternates(searchQuery.Query, searchQuery.ToSearchOptions());
 
         var suggestions = new List<SearchSuggestion>();
         foreach (var alternate in alternates)
@@ -38,15 +38,7 @@ public class OverviewSearchService2(WorkService workService, Searcher searcher)
             try
             {
                 // the real pipeline, so the counts respect the date range
-                var results = await CorpusSearch(new CorpusSearchQuery(alternate)
-                {
-                    Manx = searchQuery.Manx,
-                    English = searchQuery.English,
-                    MinDate = searchQuery.MinDate,
-                    MaxDate = searchQuery.MaxDate,
-                    CaseSensitive = searchQuery.CaseSensitive,
-                    NormalizeDiacritics = searchQuery.NormalizeDiacritics,
-                });
+                var results = await CorpusSearch(searchQuery with { Query = alternate });
                 count = results.Sum(x => x.Count);
             }
             catch (ArgumentException)
@@ -68,16 +60,5 @@ public class OverviewSearchService2(WorkService workService, Searcher searcher)
     {
         var results = await workService.GetIdentsBetween(searchQuery.MinDate, searchQuery.MaxDate);
         return new HashSet<string>(results);
-    }
-
-    private static SearchOptions ToSearchOptions(CorpusSearchQuery searchQuery)
-    {
-        return new SearchOptions
-        {
-            SearchType = searchQuery.Manx ? SearchType.Manx : SearchType.English,
-            IgnoreHyphens = searchQuery.IgnoreHyphens,
-            CaseSensitive = searchQuery.CaseSensitive,
-            NormalizeDiacritics = searchQuery.NormalizeDiacritics,
-        };
     }
 }

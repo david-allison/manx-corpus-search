@@ -1,4 +1,4 @@
-﻿namespace CorpusSearch.Model;
+namespace CorpusSearch.Model;
 
 public class CorpusSearchWorkQuery(string query)
 {
@@ -7,12 +7,11 @@ public class CorpusSearchWorkQuery(string query)
     public string Ident { get; set; }
     public bool Manx { get; set; }
     public bool English { get; set; }
-    /// <inheritdoc cref="SearchOptions.IgnoreHyphens"/>
-    public bool IgnoreHyphens { get; set; }
-    /// <inheritdoc cref="SearchOptions.CaseSensitive"/>
-    public bool CaseSensitive { get; set; }
-    /// <inheritdoc cref="SearchOptions.NormalizeDiacritics"/>
-    public bool NormalizeDiacritics { get; set; } = true;
+    public SearchOptions Options { get; set; } = SearchOptions.Default;
+
+    /// <summary>The options for the index query: a search targets a single language (Manx preferred)</summary>
+    public SearchOptions ToSearchOptions() =>
+        Options with { SearchType = Manx ? SearchType.Manx : SearchType.English };
 
     internal bool IsValid()
     {
