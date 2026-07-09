@@ -370,9 +370,72 @@ public class LuceneIndex(IndexWriter indexWriter)
     {
         using var reader = UseReader();
         var searcher = new IndexSearcher(reader);
-            
+
         TopDocs docs = searcher.Search(new TermQuery(new Term(DOCUMENT_IDENT, ident)), Int32.MaxValue);
 
+        var fieldsToLoad = LineFields(getTranscript);
+
+        return docs.ScoreDocs
+            .Select(x => searcher.Doc(x.Doc, fieldsToLoad))
+            .Select(x => ToDocumentLine(x, getTranscript)).ToList();
+    }
+
+    /// <summary>
+    /// The non-blank lines of a document with a CsvLineNumber in [start, end], in document order:
+    /// the first <paramref name="limit"/> of them, or the last if <paramref name="fromEnd"/>.
+    /// Expands the context around a search result (#286).
+    /// </summary>
+    /// <returns>the lines, and the count in the range before the limit was applied: if it is no
+    /// more than the limit, the range is exhausted</returns>
+    public (List<DocumentLine> Lines, int TotalInRange) GetLines(string ident, int start, int end, int limit,
+        bool fromEnd, bool getTranscript)
+    {
+        using var reader = UseReader();
+        var searcher = new IndexSearcher(reader);
+
+        var query = new BooleanQuery
+        {
+            { new TermQuery(new Term(DOCUMENT_IDENT, ident)), Occur.MUST },
+            { NumericRangeQuery.NewInt32Range(DOCUMENT_LINE_NUMBER, start, end, minInclusive: true, maxInclusive: true), Occur.MUST },
+        };
+
+        var probeFields = new HashSet<string> { DOCUMENT_LINE_NUMBER, DOCUMENT_REAL_MANX, DOCUMENT_REAL_ENGLISH };
+        var candidates = searcher.Search(query, int.MaxValue).ScoreDocs
+            .Select(x => (x.Doc, Probe: searcher.Doc(x.Doc, probeFields)))
+            .Where(x => !string.IsNullOrEmpty(x.Probe.GetField(DOCUMENT_REAL_MANX)?.GetStringValue())
+                        || !string.IsNullOrEmpty(x.Probe.GetField(DOCUMENT_REAL_ENGLISH)?.GetStringValue()))
+            .OrderBy(x => x.Probe.GetField(DOCUMENT_LINE_NUMBER)?.GetInt32Value() ?? -1)
+            .ToList();
+
+        var window = fromEnd ? candidates.Skip(Math.Max(0, candidates.Count - limit)) : candidates.Take(limit);
+        var fieldsToLoad = LineFields(getTranscript);
+        var lines = window
+            .Select(x => ToDocumentLine(searcher.Doc(x.Doc, fieldsToLoad), getTranscript))
+            .ToList();
+        return (lines, candidates.Count);
+    }
+
+    /// <summary>The first and last CsvLineNumber of a document; null if the document has no lines</summary>
+    public (int First, int Last)? GetLineNumberRange(string ident)
+    {
+        using var reader = UseReader();
+        var searcher = new IndexSearcher(reader);
+        var fieldsToLoad = new HashSet<string> { DOCUMENT_LINE_NUMBER };
+
+        int? first = null, last = null;
+        foreach (var scoreDoc in searcher.Search(new TermQuery(new Term(DOCUMENT_IDENT, ident)), int.MaxValue).ScoreDocs)
+        {
+            var line = searcher.Doc(scoreDoc.Doc, fieldsToLoad).GetField(DOCUMENT_LINE_NUMBER)?.GetInt32Value();
+            if (line == null) continue;
+            if (first == null || line < first) first = line;
+            if (last == null || line > last) last = line;
+        }
+
+        return first == null ? null : (first.Value, last.Value);
+    }
+
+    private static HashSet<string> LineFields(bool getTranscript)
+    {
         var fieldsToLoad = new HashSet<string> { DOCUMENT_REAL_MANX, DOCUMENT_REAL_ENGLISH, DOCUMENT_NOTES,
             DOCUMENT_PAGE,
             DOCUMENT_LINE_NUMBER, DOCUMENT_ORIGINAL_MANX, DOCUMENT_ORIGINAL_ENGLISH };
@@ -382,23 +445,23 @@ public class LuceneIndex(IndexWriter indexWriter)
             fieldsToLoad.Add(SUBTITLE_START);
             fieldsToLoad.Add(DOCUMENT_SPEAKER);
         }
-            
-        return docs.ScoreDocs
-            .Select(x => searcher.Doc(x.Doc, fieldsToLoad))
-            .Select(x => new DocumentLine
-            {
-                Manx = x.GetField(DOCUMENT_REAL_MANX)?.GetStringValue(),
-                English = x.GetField(DOCUMENT_REAL_ENGLISH)?.GetStringValue(),
-                Page = x.GetPageAsInt(),
-                Notes = x.GetField(DOCUMENT_NOTES)?.GetStringValue(),
-                CsvLineNumber = x.GetField(DOCUMENT_LINE_NUMBER)?.GetInt32Value() ?? -1,
-                ManxOriginal = x.GetField(DOCUMENT_ORIGINAL_MANX)?.GetStringValue(),
-                EnglishOriginal = x.GetField(DOCUMENT_ORIGINAL_ENGLISH)?.GetStringValue(),
-                SubStart = getTranscript ? x.GetField(SUBTITLE_START)?.GetDoubleValue() : null,
-                SubEnd = getTranscript ? x.GetField(SUBTITLE_END)?.GetDoubleValue() : null,
-                Speaker = getTranscript ? x.GetField(DOCUMENT_SPEAKER)?.GetStringValue() : null
-            }).ToList();
+
+        return fieldsToLoad;
     }
+
+    private static DocumentLine ToDocumentLine(Document document, bool getTranscript) => new()
+    {
+        Manx = document.GetField(DOCUMENT_REAL_MANX)?.GetStringValue(),
+        English = document.GetField(DOCUMENT_REAL_ENGLISH)?.GetStringValue(),
+        Page = document.GetPageAsInt(),
+        Notes = document.GetField(DOCUMENT_NOTES)?.GetStringValue(),
+        CsvLineNumber = document.GetField(DOCUMENT_LINE_NUMBER)?.GetInt32Value() ?? -1,
+        ManxOriginal = document.GetField(DOCUMENT_ORIGINAL_MANX)?.GetStringValue(),
+        EnglishOriginal = document.GetField(DOCUMENT_ORIGINAL_ENGLISH)?.GetStringValue(),
+        SubStart = getTranscript ? document.GetField(SUBTITLE_START)?.GetDoubleValue() : null,
+        SubEnd = getTranscript ? document.GetField(SUBTITLE_END)?.GetDoubleValue() : null,
+        Speaker = getTranscript ? document.GetField(DOCUMENT_SPEAKER)?.GetStringValue() : null
+    };
 
     public long CountManxTerms()
     {

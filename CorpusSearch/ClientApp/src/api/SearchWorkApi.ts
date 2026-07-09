@@ -37,6 +37,19 @@ export type SearchWorkResponse = {
     googleBooksId: string | undefined
     gitHubLink: string
     original?: string
+    /** The document's first CSV line number: lets us offer 'expand context' above the first
+     * result (#286). Absent when searching for '*' or when there are no results */
+    firstLineNumber?: number
+    /** The document's last CSV line number (see `firstLineNumber`) */
+    lastLineNumber?: number
+}
+
+export type WorkLinesResponse = {
+    /** The requested lines, in document order */
+    lines: SearchWorkResult[]
+    /** Lines in [start, end] before the limit was applied: if this is no more than the
+     * limit, the range is exhausted */
+    totalInRange: number
 }
 
 type WorkSearch = {
@@ -64,4 +77,26 @@ export const searchWork = async (
         throw new Error(`work search failed: ${response.status}`)
     }
     return (await response.json()) as SearchWorkResponse
+}
+
+/**
+ * Lines of the document with a csvLineNumber in [start, end]: the first `limit` of them, or
+ * the last if `fromEnd`. Expands the context around a search result (#286).
+ *
+ * @throws Error if the fetch fails
+ */
+export const fetchLines = async (params: {
+    docIdent: string
+    start: number
+    end: number
+    limit: number
+    fromEnd: boolean
+}): Promise<WorkLinesResponse> => {
+    const response = await fetch(
+        `search/lines/${params.docIdent}?start=${params.start.toString()}&end=${params.end.toString()}&limit=${params.limit.toString()}&fromEnd=${params.fromEnd.toString()}`,
+    )
+    if (!response.ok) {
+        throw new Error(`line fetch failed: ${response.status}`)
+    }
+    return (await response.json()) as WorkLinesResponse
 }

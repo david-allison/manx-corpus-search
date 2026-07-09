@@ -447,6 +447,7 @@ export const DocumentView = () => {
 
                     <ComparisonTable
                         response={searchWorkResponse}
+                        docIdent={docIdent}
                         value={value}
                         highlightManx={searchManx}
                         highlightEnglish={searchEnglish}

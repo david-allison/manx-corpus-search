@@ -17,6 +17,13 @@ import Typography from "@mui/material/Typography"
 import { diffChars } from "diff"
 import YouTuber, { Player } from "./YouTuber"
 import useInterval from "../vendor/use-interval/UseInterval"
+import {
+    CONTEXT_CHUNK,
+    ContextGap,
+    ExpandDirection,
+    SMALL_GAP,
+    useContextExpansion,
+} from "../hooks/useContextExpansion"
 import "./ComparisonTable.css"
 
 function escapeRegex(s: string) {
@@ -55,6 +62,92 @@ const formatTime = (seconds: number): string => {
     return `${m}:${String(s).padStart(2, "0")}`
 }
 
+/** "line" / "5 lines": the count is omitted for a single line */
+const countedLines = (n: number) => (n == 1 ? "line" : `${n} lines`)
+
+const Chevron = ({ direction }: { direction: "up" | "down" }) => (
+    <svg
+        className="doc-expand-chevron"
+        width="12"
+        height="12"
+        viewBox="0 0 16 16"
+        aria-hidden="true"
+    >
+        <path
+            d={direction == "down" ? "M3 6l5 5 5-5" : "M3 10l5-5 5 5"}
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+        />
+    </svg>
+)
+
+/** A GitHub-style 'expand hunk' divider for the hidden lines between search results (#286) */
+const ExpanderRow = (props: {
+    gap: ContextGap
+    /** empty cells before the band (the video/speaker columns) */
+    leadingCells: number
+    /** how many language columns the band covers */
+    languageColSpan: number
+    /** the Link column is present: keep the band off it */
+    hasLinkCell: boolean
+    onExpand: (gap: ContextGap, direction: ExpandDirection) => void
+}) => {
+    const { gap, leadingCells, languageColSpan, hasLinkCell, onExpand } = props
+    const span = gap.end - gap.start + 1
+    const chunk = Math.min(CONTEXT_CHUNK, span)
+    // the edges of the document only reveal towards the nearest result
+    const showDown = gap.position != "leading"
+    const showUp = gap.position != "trailing"
+    const showAll = gap.position == "middle" && span <= SMALL_GAP
+
+    // an extremity fills the whole band: balance it with a chevron on each side
+    const isEdge = gap.position != "middle"
+    const button = (direction: ExpandDirection, label: string) => (
+        <button
+            type="button"
+            className={`doc-expand-btn doc-expand-btn-${direction}`}
+            disabled={gap.loading}
+            onClick={() => onExpand(gap, direction)}
+        >
+            {direction != "all" && <Chevron direction={direction} />}
+            {label}
+            {direction != "all" && isEdge && <Chevron direction={direction} />}
+        </button>
+    )
+
+    return (
+        <tr className="doc-expand-row">
+            {Array.from({ length: leadingCells }, (_, i) => (
+                <td key={i} />
+            ))}
+            <td colSpan={languageColSpan}>
+                <div className="doc-expand-buttons">
+                    {showAll ? (
+                        button("all", "Show context")
+                    ) : (
+                        <>
+                            {showDown &&
+                                button(
+                                    "down",
+                                    `Show next ${countedLines(chunk)}`,
+                                )}
+                            {showUp &&
+                                button(
+                                    "up",
+                                    `Show previous ${countedLines(chunk)}`,
+                                )}
+                        </>
+                    )}
+                </div>
+            </td>
+            {hasLinkCell && <td />}
+        </tr>
+    )
+}
+
 export const ComparisonTable = (props: {
     response: SearchWorkResponse
     value: string
@@ -63,6 +156,8 @@ export const ComparisonTable = (props: {
     manxVisible: boolean
     englishVisible: boolean
     translations?: Translations
+    /** enables 'expand context' between the results (#286) */
+    docIdent?: string
 }) => {
     const {
         response,
@@ -72,6 +167,7 @@ export const ComparisonTable = (props: {
         manxVisible,
         englishVisible,
         translations,
+        docIdent,
     } = props
 
     const onClickWordForDictionaryLookup = (context: string) => {
@@ -277,14 +373,28 @@ export const ComparisonTable = (props: {
     const getRowClassName = (
         line: SearchWorkResult,
         index: number,
+        isContext: boolean,
     ): string | undefined => {
-        if (isPlaying(line)) return "doc-row-playing"
-        return index % 2 === 1 ? "doc-row-striped" : undefined
+        const classes: string[] = []
+        if (isPlaying(line)) {
+            classes.push("doc-row-playing")
+        } else if (index % 2 === 1) {
+            classes.push("doc-row-striped")
+        }
+        if (isContext) {
+            classes.push("doc-row-context")
+        }
+        return classes.length > 0 ? classes.join(" ") : undefined
     }
+
+    const { entries, expand } = useContextExpansion(response, docIdent)
+    const displayedLines = entries.flatMap((x) =>
+        x.type == "line" ? [x.line] : [],
+    )
 
     const hasSpeakerColumn =
         isVideo &&
-        response.results.filter((x) => x.speaker != null && x.speaker != "")
+        displayedLines.filter((x) => x.speaker != null && x.speaker != "")
             .length > 0
 
     const tableStyle = (): CSSProperties => {
@@ -303,7 +413,7 @@ export const ComparisonTable = (props: {
     // TODO: optimise this - no need to iterate each render
     const linkVisible =
         response.gitHubLink ||
-        response.results.filter(
+        displayedLines.filter(
             (x) =>
                 x.page != null && (response.pdfLink || response.googleBooksId),
         ).length > 0
@@ -338,10 +448,14 @@ export const ComparisonTable = (props: {
                                     <th style={{ width: 120 }}>Speaker</th>
                                 )}
                                 {leftVisible && (
-                                    <th>{originalManx ? "Manx" : "English"}</th>
+                                    <th className="doc-lang-head">
+                                        {originalManx ? "Manx" : "English"}
+                                    </th>
                                 )}
                                 {rightVisible && (
-                                    <th>{originalManx ? "English" : "Manx"}</th>
+                                    <th className="doc-lang-head">
+                                        {originalManx ? "English" : "Manx"}
+                                    </th>
                                 )}
                                 {linkVisible && (
                                     <th style={{ width: 70 }}>Link</th>
@@ -349,7 +463,27 @@ export const ComparisonTable = (props: {
                             </tr>
                         </thead>
                         <tbody>
-                            {response.results.map((line, index) => {
+                            {entries.map((entry) => {
+                                if (entry.type == "gap") {
+                                    return (
+                                        <ExpanderRow
+                                            key={`gap-${entry.gap.start}`}
+                                            gap={entry.gap}
+                                            leadingCells={
+                                                (isVideo ? 1 : 0) +
+                                                (hasSpeakerColumn ? 1 : 0)
+                                            }
+                                            languageColSpan={Math.max(
+                                                1,
+                                                (leftVisible ? 1 : 0) +
+                                                    (rightVisible ? 1 : 0),
+                                            )}
+                                            hasLinkCell={Boolean(linkVisible)}
+                                            onExpand={expand}
+                                        />
+                                    )
+                                }
+                                const { line, index, isContext } = entry
                                 // TODO: Only due to technical reasons, we can't mix highlights and diffs.
                                 // This should be fixed via vendoring react-highlight-words's `Highlighter` class
                                 const manxText =
@@ -387,6 +521,7 @@ export const ComparisonTable = (props: {
                                             className={getRowClassName(
                                                 line,
                                                 index,
+                                                isContext,
                                             )}
                                         >
                                             {isVideo && (

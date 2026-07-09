@@ -52,6 +52,23 @@ public class Searcher(LuceneIndex luceneIndex, SearchParser parser)
         return luceneIndex.GetAllLines(ident, getTranscript: false);
     }
 
+    /// <summary>
+    /// The lines of a document with a CsvLineNumber in [start, end]: the first
+    /// <paramref name="limit"/> of them, or the last if <paramref name="fromEnd"/>.
+    /// Expands the context around a search result (#286).
+    /// </summary>
+    internal (List<DocumentLine> Lines, int TotalInRange) GetLines(string ident, int start, int end, int limit,
+        bool fromEnd, bool getTranscript)
+    {
+        return luceneIndex.GetLines(ident, start, end, limit, fromEnd, getTranscript);
+    }
+
+    /// <summary>The first and last CsvLineNumber of a document; null if the document has no lines</summary>
+    internal (int First, int Last)? GetLineNumberRange(string ident)
+    {
+        return luceneIndex.GetLineNumberRange(ident);
+    }
+
     public ScanResult Scan(string query)
     {
         return Scan(query, ScanOptions.Default);
