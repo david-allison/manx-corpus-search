@@ -119,6 +119,7 @@ export default function MainSearchResults(props: {
     english: boolean
     manx: boolean
     ignoreHyphens: boolean
+    caseSensitive: boolean
     sortKey: ResultsSortKey
     density: ResultsDensity
 }) {
@@ -143,6 +144,7 @@ export default function MainSearchResults(props: {
                         query={query}
                         manx={props.manx}
                         ignoreHyphens={props.ignoreHyphens}
+                        caseSensitive={props.caseSensitive}
                         striped={i % 2 === 1}
                     />
                 ))}
@@ -159,6 +161,7 @@ export default function MainSearchResults(props: {
                     query={query}
                     manx={props.manx}
                     ignoreHyphens={props.ignoreHyphens}
+                    caseSensitive={props.caseSensitive}
                 />
             ))}
         </div>
@@ -170,6 +173,7 @@ const useMatchStepper = (
     result: SearchResultEntry,
     query: string,
     ignoreHyphens: boolean,
+    caseSensitive: boolean,
 ) => {
     const [matchNumber, setMatchNumber] = useState(1) // 1-based
     const [sample, setSample] = useState(result.sample)
@@ -182,6 +186,7 @@ const useMatchStepper = (
             match: line,
             docIdent: result.ident,
             ignoreHyphens,
+            caseSensitive,
         })
         setSample(lineResult.manx)
         setHighlights(lineResult.highlights ?? [])
@@ -270,10 +275,14 @@ const documentLink = (
     query: string,
     manx: boolean,
     ignoreHyphens: boolean,
+    caseSensitive: boolean,
 ) => ({
     to: {
         pathname: `/docs/${result.ident}`,
-        search: `?q=${query}` + (ignoreHyphens ? "&ignoreHyphens=true" : ""),
+        search:
+            `?q=${query}` +
+            (ignoreHyphens ? "&ignoreHyphens=true" : "") +
+            (caseSensitive ? "&caseSensitive=true" : ""),
     },
     state: { searchLanguage: manx ? "Manx" : "English", previousPage: "/" },
 })
@@ -284,10 +293,11 @@ const ResultCard = (props: {
     query: string
     manx: boolean
     ignoreHyphens: boolean
+    caseSensitive: boolean
 }) => {
-    const { result, query, manx, ignoreHyphens } = props
-    const stepper = useMatchStepper(result, query, ignoreHyphens)
-    const link = documentLink(result, query, manx, ignoreHyphens)
+    const { result, query, manx, ignoreHyphens, caseSensitive } = props
+    const stepper = useMatchStepper(result, query, ignoreHyphens, caseSensitive)
+    const link = documentLink(result, query, manx, ignoreHyphens, caseSensitive)
 
     return (
         <div className="result-card">
@@ -321,11 +331,12 @@ const ResultRow = (props: {
     query: string
     manx: boolean
     ignoreHyphens: boolean
+    caseSensitive: boolean
     striped: boolean
 }) => {
-    const { result, query, manx, ignoreHyphens, striped } = props
-    const stepper = useMatchStepper(result, query, ignoreHyphens)
-    const link = documentLink(result, query, manx, ignoreHyphens)
+    const { result, query, manx, ignoreHyphens, caseSensitive, striped } = props
+    const stepper = useMatchStepper(result, query, ignoreHyphens, caseSensitive)
+    const link = documentLink(result, query, manx, ignoreHyphens, caseSensitive)
 
     return (
         <div className={"results-compact-row" + (striped ? " striped" : "")}>

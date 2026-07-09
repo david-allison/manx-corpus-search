@@ -44,6 +44,7 @@ public class OverviewSearchService2(WorkService workService, Searcher searcher)
                     English = searchQuery.English,
                     MinDate = searchQuery.MinDate,
                     MaxDate = searchQuery.MaxDate,
+                    CaseSensitive = searchQuery.CaseSensitive,
                 });
                 count = results.Sum(x => x.Count);
             }
@@ -76,6 +77,7 @@ public class OverviewSearchService2(WorkService workService, Searcher searcher)
         options.MinDate = searchQuery.MinDate;
         options.SearchType = searchQuery.Manx ? SearchType.Manx : SearchType.English;
         options.IgnoreHyphens = searchQuery.IgnoreHyphens;
+        options.CaseSensitive = searchQuery.CaseSensitive;
 
         return options;
     }

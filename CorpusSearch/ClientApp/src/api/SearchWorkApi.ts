@@ -59,6 +59,8 @@ type WorkSearch = {
     searchManx: boolean
     /** Hyphens, spaces and joined words are interchangeable: "lhiam-lhiat" matches "lhiam lhiat" and "lhiamlhiat" */
     ignoreHyphens: boolean
+    /** Case must match: "Moir" does not match "moir" */
+    caseSensitive: boolean
 }
 
 /**
@@ -70,7 +72,7 @@ export const searchWork = async (
 ): Promise<SearchWorkResponse> => {
     const searchValue = !params.value ? "*" : params.value
     const response = await fetch(
-        `search/searchWork/${params.docIdent}/${encodeURIComponent(searchValue)}?english=${params.searchEnglish.toString()}&manx=${params.searchManx.toString()}&ignoreHyphens=${params.ignoreHyphens.toString()}`,
+        `search/searchWork/${params.docIdent}/${encodeURIComponent(searchValue)}?english=${params.searchEnglish.toString()}&manx=${params.searchManx.toString()}&ignoreHyphens=${params.ignoreHyphens.toString()}&caseSensitive=${params.caseSensitive.toString()}`,
         { signal },
     )
     if (!response.ok) {

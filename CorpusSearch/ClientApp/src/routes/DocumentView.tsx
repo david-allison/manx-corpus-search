@@ -16,6 +16,7 @@ import { metadataLookup } from "../api/MetadataApi"
 import { ComparisonTable } from "../components/ComparisonTable"
 import { SearchBar } from "../components/SearchBar"
 import { BackChevron } from "../components/BackChevron"
+import { CaseSensitive } from "../components/AdvancedOptions"
 import { useLanguageVisibility } from "../hooks/useLanguageVisibility"
 import { iMuseumUrl } from "../utils/IMuseum"
 import { isUrl } from "../utils/Url"
@@ -174,6 +175,10 @@ export const DocumentView = () => {
         new URLSearchParams(location.search).get("ignoreHyphens") === "true"
 
     const [value, setValue] = useState(q ?? "*")
+    // initially set when following a result of a case-sensitive corpus search (#19)
+    const [caseSensitive, setCaseSensitive] = useState(
+        new URLSearchParams(location.search).get("caseSensitive") === "true",
+    )
 
     const getInitialSearchLanguage = (): SearchLanguage => {
         // eslint-disable-next-line
@@ -212,6 +217,7 @@ export const DocumentView = () => {
                     searchEnglish,
                     searchManx,
                     ignoreHyphens,
+                    caseSensitive,
                 })
                 setSearchWorkResponse(data)
                 setTitle(data.title)
@@ -219,7 +225,14 @@ export const DocumentView = () => {
                 console.error(e)
             }
         })
-    }, [value, searchEnglish, searchManx, docIdent, ignoreHyphens])
+    }, [
+        value,
+        searchEnglish,
+        searchManx,
+        docIdent,
+        ignoreHyphens,
+        caseSensitive,
+    ])
 
     const [metadata, setMetadata] = useState<Metadata | null>(null)
     const [showAllMeta, setShowAllMeta] = useState(false)
@@ -329,6 +342,10 @@ export const DocumentView = () => {
                             Gaelg &amp; Baarle
                         </button>
                     </div>
+                    <CaseSensitive
+                        caseSensitive={caseSensitive}
+                        onCaseSensitiveChange={setCaseSensitive}
+                    />
                 </div>
             </details>
 

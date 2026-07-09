@@ -27,12 +27,23 @@ public class LuceneIndex(IndexWriter indexWriter)
     public const string DOCUMENT_NORMALIZED_ENGLISH = "english";
     public const string DOCUMENT_REAL_ENGLISH = "real_english";
     public const string DOCUMENT_ORIGINAL_ENGLISH = "original_english";
+    /// <summary>Case-preserving <see cref="DOCUMENT_NORMALIZED_MANX"/>: targeted by case-sensitive queries (#19)</summary>
+    public const string DOCUMENT_CASED_MANX = "manx_cased";
+    /// <summary>Case-preserving <see cref="DOCUMENT_NORMALIZED_ENGLISH"/>: targeted by case-sensitive queries (#19)</summary>
+    public const string DOCUMENT_CASED_ENGLISH = "english_cased";
     public const string DOCUMENT_CREATED_START = "created_start";
     public const string DOCUMENT_CREATED_END = "created_end";
     public const string DOCUMENT_SPEAKER = "speaker";
 
     public const string SUBTITLE_START = "subtitle_start";
     public const string SUBTITLE_END = "subtitle_end";
+
+    /// <summary>Whether the field preserves case (so its analyzer must not case-fold)</summary>
+    internal static bool IsCasedField(string field) => field is DOCUMENT_CASED_MANX or DOCUMENT_CASED_ENGLISH;
+
+    private static bool IsManxField(string field) => field is DOCUMENT_NORMALIZED_MANX or DOCUMENT_CASED_MANX;
+
+    private static bool IsEnglishField(string field) => field is DOCUMENT_NORMALIZED_ENGLISH or DOCUMENT_CASED_ENGLISH;
 
     private IndexReader UseReader() => indexWriter.GetReader(applyAllDeletes: true);
 
@@ -62,6 +73,14 @@ public class LuceneIndex(IndexWriter indexWriter)
             StoreTermVectorOffsets = true
         };
 
+        // the cased fields are only queried, never read back: no need to store the text
+        var casedFieldType = new FieldType(TextField.TYPE_NOT_STORED)
+        {
+            StoreTermVectorPositions = true,
+            StoreTermVectors = true,
+            StoreTermVectorOffsets = true
+        };
+
         foreach (var line in data)
         {
             var doc = new Document
@@ -75,6 +94,8 @@ public class LuceneIndex(IndexWriter indexWriter)
                 new Field(DOCUMENT_NORMALIZED_MANX, line.NormalizedManx , fieldType),
                 // TODO: Confirm that the analyzer that we use is also appropriate for English
                 new Field(DOCUMENT_NORMALIZED_ENGLISH, line.NormalizedEnglish, fieldType),
+                new Field(DOCUMENT_CASED_MANX, line.NormalizedManxCased, casedFieldType),
+                new Field(DOCUMENT_CASED_ENGLISH, line.NormalizedEnglishCased, casedFieldType),
 
             };
 
@@ -140,7 +161,7 @@ public class LuceneIndex(IndexWriter indexWriter)
             int lineNumber = document.GetField(DOCUMENT_LINE_NUMBER)?.GetInt32Value() ?? -1;
 
             var highlights = ComputeHighlights(reader, docId, searchedField,
-                searchedField == DOCUMENT_NORMALIZED_ENGLISH ? english : manx,
+                IsEnglishField(searchedField) ? english : manx,
                 highlightTokenSpans.GetValueOrDefault(docId));
 
             return new DocumentLine
@@ -150,8 +171,8 @@ public class LuceneIndex(IndexWriter indexWriter)
                 Page = document.GetPageAsInt(),
                 Notes = notes,
                 CsvLineNumber = lineNumber,
-                ManxHighlights = searchedField == DOCUMENT_NORMALIZED_MANX ? highlights : null,
-                EnglishHighlights = searchedField == DOCUMENT_NORMALIZED_ENGLISH ? highlights : null,
+                ManxHighlights = IsManxField(searchedField) ? highlights : null,
+                EnglishHighlights = IsEnglishField(searchedField) ? highlights : null,
                 ManxOriginal = document.GetField(DOCUMENT_ORIGINAL_MANX)?.GetStringValue(),
                 EnglishOriginal = document.GetField(DOCUMENT_ORIGINAL_ENGLISH)?.GetStringValue(),
                 SubStart = getTranscriptData ? document.GetField(SUBTITLE_START)?.GetDoubleValue() : null,
@@ -257,9 +278,9 @@ public class LuceneIndex(IndexWriter indexWriter)
             return null;
         }
 
-        MappedText normalized = field == DOCUMENT_NORMALIZED_ENGLISH
-            ? NormalizationMapper.PaddedEnglish(rawText)
-            : NormalizationMapper.PaddedManx(rawText);
+        MappedText normalized = IsEnglishField(field)
+            ? NormalizationMapper.PaddedEnglish(rawText, preserveCase: IsCasedField(field))
+            : NormalizationMapper.PaddedManx(rawText, preserveCase: IsCasedField(field));
 
         var ranges = new List<HighlightRange>();
         foreach (var (start, end) in tokenSpans)
@@ -327,7 +348,7 @@ public class LuceneIndex(IndexWriter indexWriter)
 
         // The sample displayed on the Home page is always the Manx text: only highlight it when Manx was searched
         var sampleDocIds = new HashSet<int>(corpusDocuments.Select(x => x.Key));
-        var highlightTokenSpans = spanQuery.Field == DOCUMENT_NORMALIZED_MANX
+        var highlightTokenSpans = IsManxField(spanQuery.Field)
             ? CollectHighlightTokenSpans(spanQuery, reader, sampleDocIds)
             : [];
 
@@ -349,7 +370,7 @@ public class LuceneIndex(IndexWriter indexWriter)
                 Ident = ident,
                 DocumentName = doc.GetField(DOCUMENT_NAME).GetStringValue(),
                 Sample = sample,
-                SampleHighlights = ComputeHighlights(reader, kvp.Key, DOCUMENT_NORMALIZED_MANX, sample,
+                SampleHighlights = ComputeHighlights(reader, kvp.Key, spanQuery.Field, sample,
                     highlightTokenSpans.GetValueOrDefault(kvp.Key)),
                 EndDate = endDate,
                 StartDate = startDate,

@@ -6,4 +6,6 @@ public class SearchOptions
     public bool ReturnTranscriptData { get; set; }
     /// <inheritdoc cref="ScanOptions.IgnoreHyphens"/>
     public bool IgnoreHyphens { get; set; }
+    /// <inheritdoc cref="ScanOptions.CaseSensitive"/>
+    public bool CaseSensitive { get; set; }
 }

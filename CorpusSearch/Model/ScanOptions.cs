@@ -16,6 +16,12 @@ public class ScanOptions
     /// 'lhiam-lhiat' matches 'lhiam lhiat' and 'lhiamlhiat' (and vice-versa)
     /// </summary>
     public bool IgnoreHyphens { get; set; }
+
+    /// <summary>
+    /// Whether case must match: 'Moir' does not match 'moir' (#19).
+    /// Independent of <see cref="NormalizeDiacritics"/>: 'Chengey' still matches 'Çhengey'.
+    /// </summary>
+    public bool CaseSensitive { get; set; }
     public DateTime MaxDate { get; internal set; }
     public DateTime MinDate { get; internal set; }
     public SearchType SearchType { get; internal set; }

@@ -67,6 +67,21 @@ describe("ignore hyphens option", () => {
     })
 })
 
+// #19
+describe("match case option", () => {
+    it("is sent to the server when toggled", async () => {
+        renderWithQuery("Moir")
+
+        await screen.findByText(/Something went wrong/)
+        expect(searchRequests().at(-1)?.[0]).toContain("caseSensitive=false")
+
+        fireEvent.click(screen.getByLabelText("Match case"))
+
+        await waitFor(() => expect(searchRequests()).toHaveLength(2))
+        expect(searchRequests().at(-1)?.[0]).toContain("caseSensitive=true")
+    })
+})
+
 const emptySearchResponse = (query: string): SearchResponse => ({
     results: [],
     query,

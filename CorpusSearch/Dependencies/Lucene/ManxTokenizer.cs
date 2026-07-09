@@ -5,11 +5,15 @@ using System.IO;
 
 namespace CorpusSearch.Dependencies.Lucene;
 
-public sealed class ManxTokenizer(LuceneVersion matchVersion, TextReader input) : CharTokenizer(matchVersion, input)
+public sealed class ManxTokenizer(LuceneVersion matchVersion, TextReader input, bool preserveCase = false) : CharTokenizer(matchVersion, input)
 {
     protected override int Normalize(int c)
     {
-            // TODO: See comment on test 'SearchIsNotCaseSensitive'
+            // the default fields are case-folded; the cased fields back the case-sensitive option
+            if (preserveCase)
+            {
+                return c;
+            }
             char cc = (char)c;
             return char.ToLower(cc);
         }

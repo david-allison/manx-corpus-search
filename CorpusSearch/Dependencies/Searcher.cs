@@ -18,7 +18,12 @@ public class Searcher(LuceneIndex luceneIndex, SearchParser parser)
     internal SearchResult SearchWork(string ident, string query, SearchOptions options)
     {
         // HACK: use the ScanOptions as they're the same for now
-        var scanOptionsHack = new ScanOptions { SearchType = options.Type, IgnoreHyphens = options.IgnoreHyphens };
+        var scanOptionsHack = new ScanOptions
+        {
+            SearchType = options.Type,
+            IgnoreHyphens = options.IgnoreHyphens,
+            CaseSensitive = options.CaseSensitive,
+        };
 
         // Detect '*' on the normalized*query to handle '.*'.
         // Intended for good faith use, not security hardening.
@@ -285,8 +290,8 @@ public class Searcher(LuceneIndex luceneIndex, SearchParser parser)
     {
         switch (searchOptions.SearchType)
         {
-            case SearchType.Manx: return DocumentLine.NormalizeManx(value, allowQuestionMark: true);
-            case SearchType.English: return DocumentLine.NormalizeEnglish(value, allowQuestionMark: true);
+            case SearchType.Manx: return DocumentLine.NormalizeManx(value, allowQuestionMark: true, preserveCase: searchOptions.CaseSensitive);
+            case SearchType.English: return DocumentLine.NormalizeEnglish(value, allowQuestionMark: true, preserveCase: searchOptions.CaseSensitive);
             default: throw new ArgumentException("Unhandlded case: " + searchOptions.SearchType);
         }
     }
@@ -295,8 +300,10 @@ public class Searcher(LuceneIndex luceneIndex, SearchParser parser)
     {
         switch (searchOptions.SearchType)
         {
-            case SearchType.Manx: return LuceneIndex.DOCUMENT_NORMALIZED_MANX;
-            case SearchType.English: return LuceneIndex.DOCUMENT_NORMALIZED_ENGLISH;
+            case SearchType.Manx:
+                return searchOptions.CaseSensitive ? LuceneIndex.DOCUMENT_CASED_MANX : LuceneIndex.DOCUMENT_NORMALIZED_MANX;
+            case SearchType.English:
+                return searchOptions.CaseSensitive ? LuceneIndex.DOCUMENT_CASED_ENGLISH : LuceneIndex.DOCUMENT_NORMALIZED_ENGLISH;
             default: throw new ArgumentException("Unhandlded case: " + searchOptions.SearchType);
         }
     }

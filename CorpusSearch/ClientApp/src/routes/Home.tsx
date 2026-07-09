@@ -105,6 +105,7 @@ export const Home = () => {
     })
     const [matchPhrase, setMatchPhrase] = useState(false)
     const [ignoreHyphens, setIgnoreHyphens] = useState(false)
+    const [caseSensitive, setCaseSensitive] = useState(false)
 
     const [sortKey, setSortKey] = useState<ResultsSortKey>("year")
     const [density, setDensityState] = useState<ResultsDensity>(loadDensity)
@@ -125,8 +126,16 @@ export const Home = () => {
             manx: searchLanguage === "Manx",
             english: searchLanguage === "English",
             ignoreHyphens,
+            caseSensitive,
         }),
-        [query, searchLanguage, dateRange, matchPhrase, ignoreHyphens],
+        [
+            query,
+            searchLanguage,
+            dateRange,
+            matchPhrase,
+            ignoreHyphens,
+            caseSensitive,
+        ],
     )
 
     const hasNoSearch = query.trim() == ""
@@ -243,6 +252,7 @@ export const Home = () => {
                         manx={searchLanguage == "Manx"}
                         english={searchLanguage == "English"}
                         ignoreHyphens={ignoreHyphens}
+                        caseSensitive={caseSensitive}
                         sortKey={sortKey}
                         density={density}
                     />
@@ -273,6 +283,8 @@ export const Home = () => {
                 onMatchChange={setMatchPhrase}
                 ignoreHyphens={ignoreHyphens}
                 onIgnoreHyphensChange={setIgnoreHyphens}
+                caseSensitive={caseSensitive}
+                onCaseSensitiveChange={setCaseSensitive}
             >
                 {/*on mobile the View control lives here rather than in the results header*/}
                 {!hasNoSearch && (
