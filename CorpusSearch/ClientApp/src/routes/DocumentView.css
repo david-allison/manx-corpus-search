@@ -207,6 +207,9 @@
     display: flex;
     /* too narrow for both halves: stack them instead of spilling over the Link column */
     flex-wrap: wrap;
+    /* the container shows through the 1px gap as a divider between the halves */
+    gap: 1px;
+    background: var(--c-border-input);
 }
 
 /* each direction is a half-width (full-width when alone) coloured band */
@@ -223,15 +226,7 @@
     font-weight: 600;
     color: var(--c-link);
     white-space: nowrap;
-}
-
-.doc-expand-btn-down,
-.doc-expand-btn-all {
     background: var(--c-expand-row);
-}
-
-.doc-expand-btn-up {
-    background: var(--c-expand-row-alt);
 }
 
 .doc-expand-btn:hover {
