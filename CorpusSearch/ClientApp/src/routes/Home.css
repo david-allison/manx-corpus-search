@@ -22,6 +22,22 @@
     padding: 0 18px;
 }
 
+@media (max-width: 600px) {
+    .search-row {
+        gap: 8px;
+    }
+
+    .search-row-hero .corpus-search-input {
+        font-size: 17px;
+        padding: 10px 16px;
+    }
+
+    .search-row-hero .seg-control button {
+        font-size: 13px;
+        padding: 0 12px;
+    }
+}
+
 /* ============ Home (empty state) ============ */
 .home-intro {
     text-align: center;

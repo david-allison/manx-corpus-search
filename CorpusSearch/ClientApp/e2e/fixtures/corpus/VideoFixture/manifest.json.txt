@@ -1,0 +1,8 @@
+{
+  "created": "1952-01-01",
+  "ident": "e2e-video-fixture",
+  "name": "Video Fixture",
+  "original": "Manx",
+  "notes": "Synthetic video document (YouTube source, timed and attributed lines). Used by the Playwright end-to-end tests.",
+  "source": "https://www.youtube.com/watch?v=rdLv_DTXqAQ"
+}

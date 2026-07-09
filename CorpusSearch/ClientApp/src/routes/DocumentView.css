@@ -157,6 +157,22 @@
     overflow-wrap: break-word;
 }
 
+.doc-th-play {
+    width: 44px;
+}
+
+.doc-th-speaker {
+    width: 120px;
+}
+
+.doc-th-link {
+    width: 70px;
+}
+
+.doc-line {
+    text-align: justify;
+}
+
 /* stripe the content cells, but keep the Link column uncoloured (like the expanders) */
 .doc-row-striped td {
     background: var(--c-row-stripe);
@@ -262,4 +278,49 @@ mark.textHighlight {
 mark.textHighlightAlternate {
     background-color: var(--c-audio-active-row);
     border-radius: 3px;
+}
+
+/* ============ Mobile ============ */
+@media (max-width: 600px) {
+    .doc-header {
+        margin-top: 20px;
+    }
+
+    /* keep the transcript no wider than the centered player above it
+       (500px: .youtube-container's max-width) */
+    .doc-table-video {
+        max-width: 500px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    /* justified text in a phone-width column leaves rivers of whitespace */
+    .doc-line {
+        text-align: left;
+    }
+
+    .doc-table th,
+    .doc-table td {
+        padding: 8px 6px;
+        font-size: 14.5px;
+    }
+
+    .doc-th-play {
+        width: 32px;
+    }
+
+    .doc-th-speaker {
+        width: 64px;
+    }
+
+    /* an easier tap target */
+    .doc-play-btn {
+        font-size: 15px;
+        padding: 4px 2px;
+    }
+
+    .doc-speaker-time {
+        display: block;
+    }
+
 }

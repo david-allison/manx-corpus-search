@@ -189,7 +189,7 @@ describe("ComparisonTable video (#200)", () => {
         const { container } = renderVideoTable()
         // let the playback-position polling fire while getCurrentTime() is null
         await act(async () => {
-            await vi.advanceTimersByTimeAsync(50)
+            await vi.advanceTimersByTimeAsync(300)
         })
         expect(container.querySelector(".doc-row-playing")).toBeNull()
     })
@@ -198,7 +198,7 @@ describe("ComparisonTable video (#200)", () => {
         mockPlayer.getCurrentTime.mockReturnValue(0)
         const { container } = renderVideoTable()
         await act(async () => {
-            await vi.advanceTimersByTimeAsync(50)
+            await vi.advanceTimersByTimeAsync(300)
         })
         expect(container.querySelector(".doc-row-playing")).not.toBeNull()
     })

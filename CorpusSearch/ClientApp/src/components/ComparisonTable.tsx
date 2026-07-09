@@ -1,18 +1,11 @@
 import { SearchWorkResponse, SearchWorkResult } from "../api/SearchWorkApi"
 import { HighlightRange, Translations } from "../api/SearchApi"
 import { getSelectedWordOrPhrase } from "../utils/Selection"
-import {
-    CSSProperties,
-    Fragment,
-    useEffect,
-    useRef,
-    useState,
-    ReactNode,
-} from "react"
+import { Fragment, useEffect, useRef, useState, ReactNode } from "react"
 import { DictionaryResponse, manxDictionaryLookup } from "../api/DictionaryApi"
 import { getMultidictLookupWord, MultidictLink } from "./MultidictLink"
 import Highlighter from "react-highlight-words"
-import { Box, CircularProgress, Modal } from "@mui/material"
+import { Box, CircularProgress, Modal, useMediaQuery } from "@mui/material"
 import Typography from "@mui/material/Typography"
 import { diffChars } from "diff"
 import YouTuber, { Player } from "./YouTuber"
@@ -263,7 +256,7 @@ export const ComparisonTable = (props: {
                             onClickWordForDictionaryLookup(lineValue)
                         }
                     }}
-                    style={{ textAlign: "justify" }}
+                    className="doc-line"
                     key={key}
                 >
                     <Highlighter
@@ -303,7 +296,7 @@ export const ComparisonTable = (props: {
                 onClick={() => {
                     onClickWordForDictionaryLookup(currentText)
                 }}
-                style={{ textAlign: "justify" }}
+                className="doc-line"
             >
                 {value != "*" && value != "" && (
                     <div
@@ -348,9 +341,10 @@ export const ComparisonTable = (props: {
     // null until the video loads: lines with subStart 0 must not highlight before then
     const [videoTime, setVideoTime] = useState<number | null>(null)
 
+    // while paused the time doesn't change, so setState skips the re-render
     useInterval(
         () => setVideoTime(player.current?.getCurrentTime() ?? null),
-        10,
+        250,
     )
 
     const getVideoId = (source: string) => {
@@ -376,6 +370,42 @@ export const ComparisonTable = (props: {
         if (line.subStart == null || line.subEnd == null) return false
         return videoTime >= line.subStart && videoTime <= line.subEnd
     }
+
+    const playingIndex = response.results.findIndex(isPlaying)
+    const videoDock = useRef<HTMLDivElement>(null)
+    const rowElements = useRef(new Map<number, HTMLTableRowElement>())
+    const lastPlayingIndex = useRef(-1)
+
+    // Follow the playback through the transcript, but only while the user is
+    // reading around the playhead: once they scroll elsewhere, leave them be.
+    useEffect(() => {
+        if (playingIndex === -1 || playingIndex === lastPlayingIndex.current) {
+            return
+        }
+        const previousRow = rowElements.current.get(lastPlayingIndex.current)
+        lastPlayingIndex.current = playingIndex
+        const row = rowElements.current.get(playingIndex)
+        if (row == null) {
+            return
+        }
+        const onScreen = (element: HTMLElement | undefined) => {
+            if (element == null) return false
+            const dockBottom =
+                videoDock.current?.getBoundingClientRect().bottom ?? 0
+            const rect = element.getBoundingClientRect()
+            return rect.bottom > dockBottom && rect.top < window.innerHeight
+        }
+        if (!onScreen(previousRow) && !onScreen(row)) {
+            return
+        }
+        row.scrollIntoView({
+            block: "center",
+            behavior: window.matchMedia("(prefers-reduced-motion: reduce)")
+                .matches
+                ? "auto"
+                : "smooth",
+        })
+    }, [playingIndex])
 
     const getRowClassName = (
         line: SearchWorkResult,
@@ -404,26 +434,23 @@ export const ComparisonTable = (props: {
         displayedLines.filter((x) => x.speaker != null && x.speaker != "")
             .length > 0
 
-    const tableStyle = (): CSSProperties => {
-        if (!isVideo) return {}
-        return {
-            display: "block",
-            overflowY: "scroll",
-            maxHeight: "400px",
-        }
-    }
-
     const leftVisible =
         (manxVisible && originalManx) || (englishVisible && !originalManx)
     const rightVisible =
         (englishVisible && originalManx) || (manxVisible && !originalManx)
+    // per-line edit links don't earn a whole column on a phone; "Edit on GitHub"
+    // above the transcript still covers it. Rendered conditionally (not hidden in
+    // CSS) so the note rows' colSpan stays in step with the column count.
+    const isMobile = useMediaQuery("(max-width: 600px)")
     // TODO: optimise this - no need to iterate each render
     const linkVisible =
-        response.gitHubLink ||
-        displayedLines.filter(
-            (x) =>
-                x.page != null && (response.pdfLink || response.googleBooksId),
-        ).length > 0
+        !(isVideo && isMobile) &&
+        (response.gitHubLink ||
+            displayedLines.filter(
+                (x) =>
+                    x.page != null &&
+                    (response.pdfLink || response.googleBooksId),
+            ).length > 0)
     const leftLang = originalManx ? "gv" : "en"
     const rightLang = originalManx ? "en" : "gv"
     const visibleColumnCount = [
@@ -438,21 +465,25 @@ export const ComparisonTable = (props: {
             <div>
                 {/*TODO: Lazy Load Youtube player*/}
                 {isVideo && videoId != null && (
-                    <div className={"youtube-container center"}>
-                        <YouTuber ref={player} videoId={videoId} />
+                    <div className="video-dock" ref={videoDock}>
+                        <div className={"youtube-container center"}>
+                            <YouTuber ref={player} videoId={videoId} />
+                        </div>
                     </div>
                 )}
                 <div>
                     <table
-                        className="doc-table"
-                        style={{ tableLayout: "fixed", ...tableStyle() }}
+                        className={
+                            "doc-table" + (isVideo ? " doc-table-video" : "")
+                        }
+                        style={{ tableLayout: "fixed" }}
                         aria-labelledby="tabelLabel"
                     >
                         <thead>
                             <tr>
-                                {isVideo && <th style={{ width: 44 }}>{""}</th>}
+                                {isVideo && <th className="doc-th-play" />}
                                 {hasSpeakerColumn && (
-                                    <th style={{ width: 120 }}>Speaker</th>
+                                    <th className="doc-th-speaker">Speaker</th>
                                 )}
                                 {leftVisible && (
                                     <th className="doc-lang-head">
@@ -465,7 +496,7 @@ export const ComparisonTable = (props: {
                                     </th>
                                 )}
                                 {linkVisible && (
-                                    <th style={{ width: 70 }}>Link</th>
+                                    <th className="doc-th-link">Link</th>
                                 )}
                             </tr>
                         </thead>
@@ -525,6 +556,18 @@ export const ComparisonTable = (props: {
                                     >
                                         <tr
                                             key={line.date}
+                                            ref={(element) => {
+                                                if (element == null) {
+                                                    rowElements.current.delete(
+                                                        index,
+                                                    )
+                                                } else {
+                                                    rowElements.current.set(
+                                                        index,
+                                                        element,
+                                                    )
+                                                }
+                                            }}
                                             className={getRowClassName(
                                                 line,
                                                 index,
