@@ -6,6 +6,11 @@
     <IsPublishable>false</IsPublishable>
 
     <TargetFramework>net10.0</TargetFramework>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <!-- Required for IDE0005 (unused usings) to be reported at build time (dotnet/roslyn#41640) -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <!-- Don't require XML doc comments on public members (1591) or on every parameter (1573) -->
+    <NoWarn>$(NoWarn);CS1591;CS1573</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
