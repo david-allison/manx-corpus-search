@@ -360,6 +360,10 @@ export const DocumentView = () => {
                         caseSensitive={caseSensitive}
                         onCaseSensitiveChange={setCaseSensitive}
                     />
+                    <AccentSensitive
+                        accentSensitive={accentSensitive}
+                        onAccentSensitiveChange={setAccentSensitive}
+                    />
                     <label
                         className="advanced-options-match"
                         title="The “Show next/previous lines” rows between matches"
@@ -500,10 +504,6 @@ export const DocumentView = () => {
                         manxVisible={languageVisibility.manxVisible}
                         englishVisible={languageVisibility.englishVisible}
                         translations={searchWorkResponse.translations}
-                    />
-                    <AccentSensitive
-                        accentSensitive={accentSensitive}
-                        onAccentSensitiveChange={setAccentSensitive}
                     />
                 </div>
             )}
