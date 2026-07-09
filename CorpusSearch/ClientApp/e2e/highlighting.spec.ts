@@ -91,6 +91,41 @@ test.describe("case-sensitive search", () => {
     })
 })
 
+test.describe("accent-sensitive search", () => {
+    test("an accent-matching query still matches with 'Match accents' on", async ({
+        page,
+    }) => {
+        await page.goto(`${DOC}?q=çhengey&accentSensitive=true`)
+        await expect(page.locator(mark)).toHaveText("çhengey")
+    })
+
+    test("toggling 'Match accents' on the document page filters by accent", async ({
+        page,
+    }) => {
+        await page.goto(`${DOC}?q=chengey`)
+        await expect(page.locator(mark)).toHaveText("çhengey")
+
+        await page.locator("summary", { hasText: "Advanced options" }).click()
+        await page.getByLabel("Match accents").check()
+
+        // the raw text is "çhengey": the unaccented query no longer matches
+        await expect(page.locator(mark)).toHaveCount(0)
+        await expect(page.getByText(/0 matches/)).toBeVisible()
+    })
+
+    test("toggling 'Match accents' on the home page filters results", async ({
+        page,
+    }) => {
+        await page.goto("/?q=chengey")
+        await expect(page.locator("strong.kwic-match")).toHaveText("çhengey")
+
+        await page.locator("summary", { hasText: "Advanced options" }).click()
+        await page.getByLabel("Match accents").check()
+
+        await expect(page.getByText(/No matches/)).toBeVisible()
+    })
+})
+
 test.describe("home page", () => {
     test("diacritic-folded query highlights the KWIC sample", async ({
         page,

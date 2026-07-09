@@ -16,7 +16,7 @@ import { metadataLookup } from "../api/MetadataApi"
 import { ComparisonTable } from "../components/ComparisonTable"
 import { SearchBar } from "../components/SearchBar"
 import { BackChevron } from "../components/BackChevron"
-import { CaseSensitive } from "../components/AdvancedOptions"
+import { AccentSensitive, CaseSensitive } from "../components/AdvancedOptions"
 import { useLanguageVisibility } from "../hooks/useLanguageVisibility"
 import { usePersistedState } from "../hooks/usePersistedState"
 import { iMuseumUrl } from "../utils/IMuseum"
@@ -180,6 +180,10 @@ export const DocumentView = () => {
     const [caseSensitive, setCaseSensitive] = useState(
         new URLSearchParams(location.search).get("caseSensitive") === "true",
     )
+    // initially set when following a result of an accent-sensitive corpus search
+    const [accentSensitive, setAccentSensitive] = useState(
+        new URLSearchParams(location.search).get("accentSensitive") === "true",
+    )
 
     const getInitialSearchLanguage = (): SearchLanguage => {
         // eslint-disable-next-line
@@ -226,6 +230,7 @@ export const DocumentView = () => {
                     searchManx,
                     ignoreHyphens,
                     caseSensitive,
+                    accentSensitive,
                 })
                 setSearchWorkResponse(data)
                 setTitle(data.title)
@@ -240,6 +245,7 @@ export const DocumentView = () => {
         docIdent,
         ignoreHyphens,
         caseSensitive,
+        accentSensitive,
     ])
 
     const [metadata, setMetadata] = useState<Metadata | null>(null)
@@ -494,6 +500,10 @@ export const DocumentView = () => {
                         manxVisible={languageVisibility.manxVisible}
                         englishVisible={languageVisibility.englishVisible}
                         translations={searchWorkResponse.translations}
+                    />
+                    <AccentSensitive
+                        accentSensitive={accentSensitive}
+                        onAccentSensitiveChange={setAccentSensitive}
                     />
                 </div>
             )}

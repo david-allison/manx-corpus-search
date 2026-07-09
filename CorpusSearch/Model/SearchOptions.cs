@@ -8,4 +8,6 @@ public class SearchOptions
     public bool IgnoreHyphens { get; set; }
     /// <inheritdoc cref="ScanOptions.CaseSensitive"/>
     public bool CaseSensitive { get; set; }
+    /// <inheritdoc cref="ScanOptions.NormalizeDiacritics"/>
+    public bool NormalizeDiacritics { get; set; } = true;
 }

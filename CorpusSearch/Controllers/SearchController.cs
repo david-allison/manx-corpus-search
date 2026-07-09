@@ -113,7 +113,7 @@ public partial class SearchController(
     }
 
     [HttpGet("SearchWork/{workIdent}/{query}")]
-    public async Task<ActionResult<SearchWorkResult>> SearchWork(string workIdent, string query = null, bool manx = true, bool english = true, bool ignoreHyphens = false, bool caseSensitive = false)
+    public async Task<ActionResult<SearchWorkResult>> SearchWork(string workIdent, string query = null, bool manx = true, bool english = true, bool ignoreHyphens = false, bool caseSensitive = false, bool accentSensitive = false)
     {
         if (QueryTooLong(query))
         {
@@ -128,6 +128,7 @@ public partial class SearchController(
             English = english,
             IgnoreHyphens = ignoreHyphens,
             CaseSensitive = caseSensitive,
+            NormalizeDiacritics = !accentSensitive,
         };
         SearchWorkResult ret = await documentSearchService.SearchWork(workQuery);
 
@@ -185,11 +186,11 @@ public partial class SearchController(
     }
 
     [HttpGet("Match/{workIdent}")]
-    public async Task<MatchReference> GetMatch(string workIdent, [FromQuery] string query, [FromQuery(Name = "match")] int matchNumber, bool ignoreHyphens = false, bool caseSensitive = false)
+    public async Task<MatchReference> GetMatch(string workIdent, [FromQuery] string query, [FromQuery(Name = "match")] int matchNumber, bool ignoreHyphens = false, bool caseSensitive = false, bool accentSensitive = false)
     {
         // PREF: Much slower than necessary
         if (matchNumber < 1 || query == null || workIdent == null) return null;
-        var workResult = (await SearchWork(workIdent, query: query, manx: true, english: false, ignoreHyphens: ignoreHyphens, caseSensitive: caseSensitive)).Value;
+        var workResult = (await SearchWork(workIdent, query: query, manx: true, english: false, ignoreHyphens: ignoreHyphens, caseSensitive: caseSensitive, accentSensitive: accentSensitive)).Value;
         if (workResult == null) return null;
         var selectedIndex = QueryMatchIndex(workResult.Results, matchNumber);
         if (selectedIndex == null) return null;
@@ -222,7 +223,7 @@ public partial class SearchController(
     }
 
     [HttpGet("Search/{query}")]
-    public async Task<ActionResult<QueryDocumentSearchResult>> SearchCorpus(string query, bool manx = true, bool english = true, int minDate = 1600, int maxDate = 2100, bool ignoreHyphens = false, bool caseSensitive = false)
+    public async Task<ActionResult<QueryDocumentSearchResult>> SearchCorpus(string query, bool manx = true, bool english = true, int minDate = 1600, int maxDate = 2100, bool ignoreHyphens = false, bool caseSensitive = false, bool accentSensitive = false)
     {
         if (QueryTooLong(query))
         {
@@ -243,6 +244,7 @@ public partial class SearchController(
             MaxDate = DateTimeUtil.FromYearMax(maxDate),
             IgnoreHyphens = ignoreHyphens,
             CaseSensitive = caseSensitive,
+            NormalizeDiacritics = !accentSensitive,
         };
         if (!searchQuery.IsValid())
         {

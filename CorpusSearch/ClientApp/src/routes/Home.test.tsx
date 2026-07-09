@@ -82,6 +82,20 @@ describe("match case option", () => {
     })
 })
 
+describe("match accents option", () => {
+    it("is sent to the server when toggled", async () => {
+        renderWithQuery("chengey")
+
+        await screen.findByText(/Something went wrong/)
+        expect(searchRequests().at(-1)?.[0]).toContain("accentSensitive=false")
+
+        fireEvent.click(screen.getByLabelText("Match accents"))
+
+        await waitFor(() => expect(searchRequests()).toHaveLength(2))
+        expect(searchRequests().at(-1)?.[0]).toContain("accentSensitive=true")
+    })
+})
+
 const emptySearchResponse = (query: string): SearchResponse => ({
     results: [],
     query,

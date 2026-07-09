@@ -89,6 +89,7 @@ public class DocumentSearchService(
             Type = workQuery.Manx ? SearchType.Manx : SearchType.English,
             IgnoreHyphens = workQuery.IgnoreHyphens,
             CaseSensitive = workQuery.CaseSensitive,
+            NormalizeDiacritics = workQuery.NormalizeDiacritics,
         };
     }
 }
