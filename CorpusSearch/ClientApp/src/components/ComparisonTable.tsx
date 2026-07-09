@@ -9,7 +9,7 @@ import {
     useState,
     ReactNode,
 } from "react"
-import { manxDictionaryLookup } from "../api/DictionaryApi"
+import { DictionaryResponse, manxDictionaryLookup } from "../api/DictionaryApi"
 import { getMultidictLookupWord, MultidictLink } from "./MultidictLink"
 import Highlighter from "react-highlight-words"
 import { Box, CircularProgress, Modal } from "@mui/material"
@@ -148,6 +148,22 @@ const ExpanderRow = (props: {
     )
 }
 
+/** Groups the popup's entries under the dictionary defining them (#51) */
+export const groupByDictionary = (
+    summaries: DictionaryResponse,
+): [string, DictionaryResponse][] => {
+    const groups = new Map<string, DictionaryResponse>()
+    for (const summary of summaries) {
+        const group = groups.get(summary.dictionaryName)
+        if (group == null) {
+            groups.set(summary.dictionaryName, [summary])
+        } else {
+            group.push(summary)
+        }
+    }
+    return [...groups.entries()]
+}
+
 export const ComparisonTable = (props: {
     response: SearchWorkResponse
     value: string
@@ -197,23 +213,14 @@ export const ComparisonTable = (props: {
     const handleModalClose = () => setModalOpen(false)
     const modalMultidictWord = getMultidictLookupWord(modalText)
 
-    const [modalValue, setModalValue] = useState<string | null>(null)
+    const [modalSummaries, setModalSummaries] =
+        useState<DictionaryResponse | null>(null)
 
     useEffect(() => {
-        setModalValue(null)
+        setModalSummaries(null)
         if (!modalText) return
         manxDictionaryLookup(modalText, modalContext)
-            .then((summaries) => {
-                // we need a primaryWord as we something match 'dy hroggal' -> 'hroggal'
-                // This also matches 'cha greck' -> 'greck' and we need to differentiate this.
-                const finalString = summaries
-                    .map(
-                        (x) =>
-                            `<strong>${x.primaryWord}</strong>: ${x.summary}`,
-                    )
-                    .join("<br><br>")
-                setModalValue(finalString)
-            })
+            .then(setModalSummaries)
             .catch((e) => {
                 console.warn(e)
             })
@@ -656,9 +663,10 @@ export const ComparisonTable = (props: {
                     </Typography>
                     <Typography
                         id="modal-modal-description"
+                        component="div"
                         sx={{ mt: 2, color: "#2E3F46", overflowY: "auto" }}
                     >
-                        {modalValue == null && (
+                        {modalSummaries == null && (
                             <div
                                 style={{
                                     marginTop: 40,
@@ -673,12 +681,35 @@ export const ComparisonTable = (props: {
                             </div>
                         )}
 
-                        {modalValue && (
-                            <span
-                                dangerouslySetInnerHTML={{ __html: modalValue }}
-                            />
-                        )}
-                        {modalValue == "" && (
+                        {modalSummaries != null &&
+                            groupByDictionary(modalSummaries).map(
+                                ([dictionaryName, summaries]) => (
+                                    <div
+                                        className="dict-popup-group"
+                                        key={dictionaryName}
+                                    >
+                                        <h3 className="dict-popup-dictionary">
+                                            {dictionaryName}
+                                        </h3>
+                                        {summaries.map((summary, index) => (
+                                            // primaryWord differentiates fuzzy matches:
+                                            // 'dy hroggal' and 'cha greck' both resolve
+                                            // via 'hroggal'/'greck'
+                                            <div
+                                                className="dict-popup-entry"
+                                                key={index}
+                                            >
+                                                <strong>
+                                                    {summary.primaryWord}
+                                                </strong>
+                                                {": "}
+                                                {summary.summary}
+                                            </div>
+                                        ))}
+                                    </div>
+                                ),
+                            )}
+                        {modalSummaries?.length == 0 && (
                             <span>
                                 Could not find definition
                                 {modalMultidictWord != null && (

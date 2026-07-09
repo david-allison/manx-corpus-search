@@ -29,7 +29,13 @@ public class DictionaryLookupService(IEnumerable<ISearchDictionary> dictionarySe
 
         List<DictionarySummary> GetSummaries(IEnumerable<string> queries) =>
             queries.SelectMany(query =>
-                dictionaries.SelectMany(d => d.GetSummaries(query, basic: true))
+                dictionaries.SelectMany(d => d.GetSummaries(query, basic: true)
+                        .Select(summary =>
+                        {
+                            // let the client attribute each entry to its dictionary (#51)
+                            summary.DictionaryName = d.Identifier;
+                            return summary;
+                        }))
                     // an entry can list the query as a mere variant ('EEN, YN'): those headed by it come first
                     .OrderBy(x => string.Equals(x.PrimaryWord, query, StringComparison.InvariantCultureIgnoreCase) ? 0 : 1))
                 .ToList();

@@ -25,4 +25,6 @@ public class DictionarySummary
 {
     public string Summary { get; set; }
     public string PrimaryWord { get; set; }
+    /// <summary>The <see cref="ISearchDictionary.Identifier"/> of the dictionary defining the entry (#51)</summary>
+    public string DictionaryName { get; set; }
 }

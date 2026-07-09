@@ -1,4 +1,9 @@
-type Summary = { summary: string; primaryWord: string }
+type Summary = {
+    summary: string
+    primaryWord: string
+    /** the dictionary defining the entry, e.g. 'Cregeen' (#51) */
+    dictionaryName: string
+}
 export type DictionaryResponse = Summary[]
 
 /**

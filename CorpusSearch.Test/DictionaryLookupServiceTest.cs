@@ -153,6 +153,15 @@ public class DictionaryLookupServiceTest
         Assert.That(Lookup(service, " ", context: "goll mygeayrt"), Is.Empty);
     }
 
+    /// <summary>The popup labels each entry with the dictionary it came from (#51)</summary>
+    [Test]
+    public void SummariesNameTheirDictionary()
+    {
+        var service = Service("goll");
+        var result = service.Lookup("gv", "goll").Single();
+        Assert.That(result.DictionaryName, Is.EqualTo("Fake"));
+    }
+
     [Test]
     public void CitationMarkersInContextAreIgnored()
     {

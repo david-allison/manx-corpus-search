@@ -4,6 +4,7 @@ import {
     cleanup,
     fireEvent,
     render,
+    screen,
     waitFor,
 } from "@testing-library/react"
 import { ComparisonTable, segmentChunks } from "./ComparisonTable"
@@ -30,6 +31,18 @@ const mockFetchLines = vi.hoisted(() => vi.fn())
 vi.mock("../api/SearchWorkApi", async (importOriginal) => ({
     ...(await importOriginal<typeof import("../api/SearchWorkApi")>()),
     fetchLines: mockFetchLines,
+}))
+
+const mockDictionaryLookup = vi.hoisted(() => vi.fn())
+
+vi.mock("../api/DictionaryApi", () => ({
+    manxDictionaryLookup: mockDictionaryLookup,
+}))
+
+const mockGetSelectedWordOrPhrase = vi.hoisted(() => vi.fn())
+
+vi.mock("../utils/Selection", () => ({
+    getSelectedWordOrPhrase: mockGetSelectedWordOrPhrase,
 }))
 
 // vitest globals are off, so testing-library does not clean up by itself; without this,
@@ -368,6 +381,67 @@ describe("context expansion (#286)", () => {
         expect(getByText("Show previous 5 lines")).toBeTruthy()
         expect(getByText("Show next 5 lines")).toBeTruthy()
         expect(queryByText("Show context")).toBeNull()
+    })
+})
+
+describe("dictionary popup (#51)", () => {
+    beforeEach(() => {
+        mockDictionaryLookup.mockReset()
+        // clicking a word 'selects' it: bypass the browser selection plumbing
+        mockGetSelectedWordOrPhrase.mockReturnValue("lhiam")
+    })
+
+    const openPopup = () => {
+        const { getByText } = renderTable([line({ manx: "she lhiam eh" })])
+        fireEvent.click(getByText("she lhiam eh"))
+    }
+
+    it("labels each entry with the dictionary defining it", async () => {
+        mockDictionaryLookup.mockResolvedValue([
+            {
+                primaryWord: "lhiam",
+                summary: "with me",
+                dictionaryName: "Cregeen",
+            },
+            {
+                primaryWord: "lhiam",
+                summary: "to me, with me",
+                dictionaryName: "J Kelly Manx to English",
+            },
+        ])
+        openPopup()
+
+        await screen.findByText("Cregeen")
+        screen.getByText("J Kelly Manx to English")
+        expect(document.querySelectorAll(".dict-popup-group")).toHaveLength(2)
+        expect(screen.getAllByText("lhiam")).not.toHaveLength(0)
+    })
+
+    it("groups entries of one dictionary under a single header", async () => {
+        mockDictionaryLookup.mockResolvedValue([
+            {
+                primaryWord: "goll",
+                summary: "to go",
+                dictionaryName: "Cregeen",
+            },
+            {
+                primaryWord: "mygeayrt",
+                summary: "about",
+                dictionaryName: "Cregeen",
+            },
+        ])
+        openPopup()
+
+        await screen.findByText(/to go/)
+        expect(screen.getAllByText("Cregeen")).toHaveLength(1)
+        expect(document.querySelectorAll(".dict-popup-entry")).toHaveLength(2)
+    })
+
+    it("reports when no dictionary defines the word", async () => {
+        mockDictionaryLookup.mockResolvedValue([])
+        openPopup()
+
+        await screen.findByText(/Could not find definition/)
     })
 })
 
