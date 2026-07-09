@@ -5,8 +5,9 @@ import { fileURLToPath } from "node:url"
 // fixture corpus (e2e/fixtures/corpus - not named 'OpenData': due to .gitignore) and
 // assert on highlighting in the real UI.
 //
-// `dotnet run` in Development auto-spawns the Vite dev server (or reuses a running one)
-// and proxies to it (see Startup.cs), so one command serves both the API and the SPA.
+// `dotnet run` in Development auto-spawns the Vite dev server (or reuses one already
+// serving this checkout) and proxies to it (see Startup.cs), so one command serves
+// both the API and the SPA.
 //
 // Set E2E_PORT to run alongside a dev server already occupying port 5000.
 const port = process.env.E2E_PORT ?? "5000"

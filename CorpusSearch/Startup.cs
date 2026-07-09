@@ -97,6 +97,12 @@ public class Startup(IConfiguration configuration)
         if (env.IsDevelopment())
         {
             app.UseDeveloperExceptionPage();
+
+            // Fail before the slow corpus load if a stale server from another
+            // branch/worktree holds our ports - it would answer on our URLs and
+            // the wrong code would get tested.
+            DevPortGuard.EnsureListenPortsFree(Configuration["urls"] ?? "https://localhost:5001;http://localhost:5000");
+            ViteDevServer.EnsureFreeOrOurs(ViteDevServerUrl);
         }
         else
         {

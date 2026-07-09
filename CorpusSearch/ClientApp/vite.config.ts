@@ -3,7 +3,17 @@ import react from "@vitejs/plugin-react"
 
 // https://vite.dev/config/
 export default defineConfig({
-    plugins: [react()],
+    plugins: [react(), {
+        name: "serve-root-path",
+        // lets .NET verify a server on :3000 serves THIS checkout, not a stale
+        // one from another branch/worktree (see ViteDevServer.cs)
+        configureServer(server) {
+            server.middlewares.use("/__root", (_req, res) => {
+                res.setHeader("Content-Type", "text/plain")
+                res.end(server.config.root)
+            })
+        }
+    }],
     base: "/",
     build: {
         // Keep CRA's output dir so the ASP.NET RootPath / .csproj glob are unchanged
