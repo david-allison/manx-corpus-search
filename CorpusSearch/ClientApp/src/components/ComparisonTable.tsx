@@ -167,6 +167,8 @@ export const ComparisonTable = (props: {
     translations?: Translations
     /** enables 'expand context' between the results (#286) */
     docIdent?: string
+    /** the "Show context" option: hides the expanders without dropping the docIdent */
+    expandContext?: boolean
 }) => {
     const {
         response,
@@ -177,6 +179,7 @@ export const ComparisonTable = (props: {
         englishVisible,
         translations,
         docIdent,
+        expandContext,
     } = props
 
     const onClickWordForDictionaryLookup = (context: string) => {
@@ -414,7 +417,11 @@ export const ComparisonTable = (props: {
         return classes.length > 0 ? classes.join(" ") : undefined
     }
 
-    const { entries, expand } = useContextExpansion(response, docIdent)
+    const { entries, expand } = useContextExpansion(
+        response,
+        docIdent,
+        expandContext,
+    )
     const displayedLines = entries.flatMap((x) =>
         x.type == "line" ? [x.line] : [],
     )

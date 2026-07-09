@@ -153,6 +153,14 @@ const buildMetaRows = (
 const META_SHORT_VALUE = 90
 const META_COLLAPSED_ROWS = 4
 
+const loadContextEnabled = (): boolean => {
+    try {
+        return localStorage.getItem("showContext") !== "false"
+    } catch {
+        return true
+    }
+}
+
 const collapseMetaRows = (rows: MetaRow[]): MetaRow[] =>
     rows
         .filter((row) => row.length <= META_SHORT_VALUE)
@@ -202,6 +210,18 @@ export const DocumentView = () => {
 
     // which language column is displayed (the "Show" toggle)
     const languageVisibility = useLanguageVisibility()
+
+    // the expander rows between the matches can feel busy: let readers hide them
+    const [contextEnabled, setContextEnabledState] =
+        useState(loadContextEnabled)
+    const setContextEnabled = (next: boolean) => {
+        setContextEnabledState(next)
+        try {
+            localStorage.setItem("showContext", String(next))
+        } catch {
+            /* preference only - ignore storage failures */
+        }
+    }
 
     // load the data
     useEffect(() => {
@@ -346,6 +366,20 @@ export const DocumentView = () => {
                         caseSensitive={caseSensitive}
                         onCaseSensitiveChange={setCaseSensitive}
                     />
+                    <label
+                        className="advanced-options-match"
+                        title="The “Show next/previous lines” rows between matches"
+                    >
+                        <input
+                            id="showContext"
+                            type="checkbox"
+                            checked={contextEnabled}
+                            onChange={(e) =>
+                                setContextEnabled(e.target.checked)
+                            }
+                        />
+                        Show context
+                    </label>
                 </div>
             </details>
 
@@ -465,6 +499,7 @@ export const DocumentView = () => {
                     <ComparisonTable
                         response={searchWorkResponse}
                         docIdent={docIdent}
+                        expandContext={contextEnabled}
                         value={value}
                         highlightManx={searchManx}
                         highlightEnglish={searchEnglish}

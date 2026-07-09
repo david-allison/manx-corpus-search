@@ -101,15 +101,18 @@ type ExpansionState = {
  * lines, fetches hidden lines on demand and merges them into the displayed rows.
  *
  * Returns the rows to display (lines interleaved with gap markers, in document order) and
- * the expand action. Expansion is disabled without a `docIdent`.
+ * the expand action. Expansion is disabled without a `docIdent`, or when `enabled` is
+ * false (the "Show context" option); disabling discards any revealed lines.
  */
 export const useContextExpansion = (
     response: SearchWorkResponse,
     docIdent?: string,
+    enabled = true,
 ) => {
+    const active = enabled && docIdent != null
     const initialState = (): ExpansionState => ({
         contextLines: [],
-        gaps: docIdent ? deriveGaps(response) : [],
+        gaps: active ? deriveGaps(response) : [],
     })
     const [state, setState] = useState<ExpansionState>(initialState)
 
@@ -117,9 +120,9 @@ export const useContextExpansion = (
     useEffect(() => {
         setState({
             contextLines: [],
-            gaps: docIdent ? deriveGaps(response) : [],
+            gaps: active ? deriveGaps(response) : [],
         })
-    }, [response, docIdent])
+    }, [response, docIdent, active])
 
     const expand = (gap: ContextGap, direction: ExpandDirection) => {
         if (gap.loading || docIdent == null) {
