@@ -49,6 +49,40 @@ export function segmentChunks(
         }))
 }
 
+/**
+ * Wraps the chunks (segment-local offsets) of `text` in the match highlight `<mark>`
+ *
+ * @example
+ * // {start: 3, end: 10} covers "çhengey":
+ * markChunks("Ta çhengey aym", [{ start: 3, end: 10 }])
+ * // => ["Ta ", <mark className="textHighlight">çhengey</mark>, " aym"]
+ */
+function markChunks(
+    text: string,
+    chunks: { start: number; end: number }[],
+): ReactNode {
+    if (chunks.length == 0) {
+        return text
+    }
+    const nodes: ReactNode[] = []
+    let pos = 0
+    for (const chunk of chunks) {
+        if (chunk.start > pos) {
+            nodes.push(text.slice(pos, chunk.start))
+        }
+        nodes.push(
+            <mark className="textHighlight" key={chunk.start}>
+                {text.slice(chunk.start, chunk.end)}
+            </mark>,
+        )
+        pos = chunk.end
+    }
+    if (pos < text.length) {
+        nodes.push(text.slice(pos))
+    }
+    return nodes
+}
+
 const formatTime = (seconds: number): string => {
     const m = Math.floor(seconds / 60)
     const s = Math.floor(seconds % 60)
@@ -282,16 +316,22 @@ export const ComparisonTable = (props: {
     /**
      * If originalText exists, perform a diff and display this to the user
      * This displays changes we made to the document
+     *
+     * The server's highlight ranges are offsets into currentText, so they mark
+     * the unchanged/added parts; removed parts only exist in originalText and
+     * cannot hold a match.
      */
     const diffCorrectedText = (
         originalText: string | undefined,
         currentText: string,
+        highlights?: HighlightRange[],
     ): ReactNode | null => {
         if (!originalText) {
             return null
         }
         const result = diffChars(originalText, currentText)
 
+        let partStart = 0
         // TODO: This only handles the correction, not the original
         // TODO: Also apply justify to 'browse' screen
         return (
@@ -301,8 +341,17 @@ export const ComparisonTable = (props: {
                 }}
                 className="doc-line"
             >
-                {/* TODO: improve highlighting: search matches aren't highlighted in the diff view */}
-                {result.map((part) => {
+                {result.map((part, index) => {
+                    const chunks = part.removed
+                        ? []
+                        : segmentChunks(
+                              highlights ?? [],
+                              partStart,
+                              part.value.length,
+                          )
+                    if (!part.removed) {
+                        partStart += part.value.length
+                    }
                     const color = part.added
                         ? "rgba(0, 128, 0, 0.3)"
                         : part.removed
@@ -315,10 +364,11 @@ export const ComparisonTable = (props: {
                           : ""
                     return (
                         <span
+                            key={index}
                             className={className}
                             style={{ backgroundColor: color }}
                         >
-                            {part.value}
+                            {markChunks(part.value, chunks)}
                         </span>
                     )
                 })}
@@ -519,12 +569,13 @@ export const ComparisonTable = (props: {
                                     )
                                 }
                                 const { line, index, isContext } = entry
-                                // TODO: Only due to technical reasons, we can't mix highlights and diffs.
-                                // This should be fixed via vendoring react-highlight-words's `Highlighter` class
                                 const manxText =
                                     diffCorrectedText(
                                         line.manxOriginal,
                                         line.manx,
+                                        highlightManx
+                                            ? line.manxHighlights
+                                            : undefined,
                                     ) ??
                                     highlightText(
                                         highlightManx,
@@ -536,6 +587,9 @@ export const ComparisonTable = (props: {
                                     diffCorrectedText(
                                         line.englishOriginal,
                                         line.english,
+                                        highlightEnglish
+                                            ? line.englishHighlights
+                                            : undefined,
                                     ) ??
                                     highlightText(
                                         highlightEnglish,
