@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading.Tasks;
 using CorpusSearch.Extensions;
@@ -185,43 +184,6 @@ public partial class SearchController(
         return new WorkLinesResult { Lines = lines, TotalInRange = totalInRange };
     }
 
-    [HttpGet("Match/{workIdent}")]
-    public async Task<MatchReference> GetMatch(string workIdent, [FromQuery] string query, [FromQuery(Name = "match")] int matchNumber, bool ignoreHyphens = false, bool caseSensitive = false, bool accentSensitive = false)
-    {
-        // PREF: Much slower than necessary
-        if (matchNumber < 1 || query == null || workIdent == null) return null;
-        var workResult = (await SearchWork(workIdent, query: query, manx: true, english: false, ignoreHyphens: ignoreHyphens, caseSensitive: caseSensitive, accentSensitive: accentSensitive)).Value;
-        if (workResult == null) return null;
-        var selectedIndex = QueryMatchIndex(workResult.Results, matchNumber);
-        if (selectedIndex == null) return null;
-        var line = workResult.Results[selectedIndex.Value.LineIndex];
-        return new MatchReference(workIdent, matchNumber, line.Manx,
-            selectedIndex.Value.IndexInLine,
-            LineNumber: selectedIndex.Value.LineIndex + 1,
-            Highlights: line.ManxHighlights);
-    }
-
-    private (int LineIndex, int IndexInLine)? QueryMatchIndex(List<DocumentLine> workResultResults, int line)
-    {
-        // PERF: Skip
-        int currentMatch = 1;
-        int lineIndex = 0;
-        foreach (var documentLine in workResultResults)
-        {
-            for (int i = 0; i < documentLine.MatchesInLine; i++)
-            {
-                if (currentMatch == line)
-                {
-                    return (lineIndex, i);
-                }
-                currentMatch++;
-            }
-            lineIndex++;
-        }
-
-        return null;
-    }
-
     [HttpGet("Search/{query}")]
     public async Task<ActionResult<QueryDocumentSearchResult>> SearchCorpus(string query, bool manx = true, bool english = true, int minDate = 1600, int maxDate = 2100, bool ignoreHyphens = false, bool caseSensitive = false, bool accentSensitive = false)
     {
@@ -324,11 +286,3 @@ public record QueryLanguages(bool Manx, bool English)
         return requestedLanguages;
     }
 }
-
-/// <param name="Highlights">
-/// Ranges of <paramref name="Manx"/> which matched the query (all matches in the line;
-/// <paramref name="MatchIndexInLine"/> selects the current one)
-/// </param>
-[SuppressMessage("ReSharper", "NotAccessedPositionalProperty.Global")]
-public record MatchReference(string WorkIdent, int MatchNumber, string Manx, long MatchIndexInLine, long LineNumber,
-    IReadOnlyList<HighlightRange> Highlights);

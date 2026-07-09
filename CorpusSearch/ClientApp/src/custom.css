@@ -31,7 +31,6 @@
     --c-dict-strip-border: #E4D5B4;
     --c-audio-active-row: #EAF0F2;
     --c-selection: #E9D9BC;
-    --c-stepper-disabled: #D5CBB4;
 
     --font-ui: Helvetica, Arial, sans-serif;
     --font-display: Georgia, serif;
@@ -338,27 +337,6 @@ input, button, select {
     color: var(--c-heading);
     margin: 0;
     font-weight: normal;
-}
-
-/* KWIC counter + match steppers */
-.kwic-counter {
-    font-family: monospace;
-    font-size: 12px;
-    color: var(--c-muted-2);
-}
-
-.kwic-step {
-    border: none;
-    background: none;
-    cursor: pointer;
-    color: var(--c-link);
-    font-size: 15px;
-    padding: 0 3px;
-}
-
-.kwic-step:disabled {
-    color: var(--c-stepper-disabled);
-    cursor: default;
 }
 
 .kwic-match {
