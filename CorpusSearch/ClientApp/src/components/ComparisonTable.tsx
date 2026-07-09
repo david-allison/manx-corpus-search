@@ -23,6 +23,12 @@ function escapeRegex(s: string) {
     return s.replace(/[/\-\\^$*+?.()|[\]{}]/g, "\\$&")
 }
 
+/** A note/citation marker such as "[1]", linking a line to its note row (#132) */
+const NOTE_MARKER = /\[\d+\]/
+// split() with the marker captured, so the markers survive as parts
+const NOTE_MARKER_SPLIT = /(\[\d+\])/
+const isNoteMarker = (part: string) => /^\[\d+\]$/.test(part)
+
 /**
  * Shifts server highlight ranges (offsets into the full line) into offsets local to one
  * newline-separated segment of it, clipping ranges which cross the boundary.
@@ -82,6 +88,102 @@ function markChunks(
     }
     return nodes
 }
+
+type NoteToggle = {
+    /** the linked note row is currently displayed */
+    noteVisible: boolean
+    toggle: () => void
+}
+
+/** A clickable "[1]" marker: shows/hides the note row it references (#132) */
+const NoteMarkerButton = (props: {
+    marker: string
+    noteToggle: NoteToggle
+}) => {
+    const { marker, noteToggle } = props
+    return (
+        <button
+            type="button"
+            className="doc-note-marker"
+            aria-expanded={noteToggle.noteVisible}
+            title={noteToggle.noteVisible ? "Hide note" : "Show note"}
+            onClick={(e) => {
+                e.stopPropagation() // not a dictionary lookup
+                noteToggle.toggle()
+            }}
+        >
+            {/* the chip already delimits the number: drop the brackets of "[1]" */}
+            {marker.slice(1, -1)}
+        </button>
+    )
+}
+
+/** One newline-separated segment of a cell: its highlighted text, with any
+ * "[1]" markers rendered as toggles for the note row (#132) */
+const SegmentText = (props: {
+    text: string
+    /** the segment's offset into the full cell: highlight ranges are cell-wide */
+    segmentStart: number
+    /** the server-matched ranges; null fuzzy-matches `searchWords` instead */
+    highlights: HighlightRange[] | null
+    searchWords: string[]
+    noteToggle?: NoteToggle
+}) => {
+    const { text, segmentStart, highlights, searchWords, noteToggle } = props
+    // note markers split the segment and become the note row's toggle
+    const parts = noteToggle ? text.split(NOTE_MARKER_SPLIT) : [text]
+    let partStart = segmentStart
+    return (
+        <>
+            {parts.map((part, key) => {
+                const start = partStart
+                partStart += part.length
+                if (noteToggle && isNoteMarker(part)) {
+                    return (
+                        <NoteMarkerButton
+                            key={key}
+                            marker={part}
+                            noteToggle={noteToggle}
+                        />
+                    )
+                }
+                if (part == "") {
+                    return null
+                }
+                const chunks = highlights
+                    ? segmentChunks(highlights, start, part.length)
+                    : null
+                return (
+                    <Highlighter
+                        key={key}
+                        highlightClassName={
+                            highlights
+                                ? "textHighlight"
+                                : "textHighlightAlternate"
+                        }
+                        searchWords={searchWords}
+                        autoEscape={false}
+                        findChunks={chunks ? () => chunks : undefined}
+                        textToHighlight={part}
+                    />
+                )
+            })}
+        </>
+    )
+}
+
+/** A "[1]" marker in a visible, undiffed cell links the line to its note row
+ * (#132). An unlinked note has no toggle, so it is always shown as-is. */
+const isNoteLinked = (
+    line: SearchWorkResult,
+    manxVisible: boolean,
+    englishVisible: boolean,
+): boolean =>
+    Boolean(line.notes) &&
+    ((manxVisible && !line.manxOriginal && NOTE_MARKER.test(line.manx)) ||
+        (englishVisible &&
+            !line.englishOriginal &&
+            NOTE_MARKER.test(line.english)))
 
 const formatTime = (seconds: number): string => {
     const m = Math.floor(seconds / 60)
@@ -203,6 +305,9 @@ export const ComparisonTable = (props: {
     docIdent?: string
     /** the "Show context" option: hides the expanders without dropping the docIdent */
     expandContext?: boolean
+    /** the "Show notes" option. When off, a note row linked to a "[1]"
+     * marker collapses behind it, and the marker reveals it */
+    showNotes?: boolean
 }) => {
     const {
         response,
@@ -214,6 +319,7 @@ export const ComparisonTable = (props: {
         translations,
         docIdent,
         expandContext,
+        showNotes,
     } = props
 
     const onClickWordForDictionaryLookup = (context: string) => {
@@ -261,11 +367,31 @@ export const ComparisonTable = (props: {
     // The original text (whether Manx -> English or English -> Manx)
     const originalManx = response.original != "English" // anything other than English is Manx
 
+    const notesShown = showNotes !== false
+    // notes the reader toggled via a "[1]" marker: these rows flip against the
+    // "Show notes" baseline, keyed by csvLineNumber (#132)
+    const [toggledNotes, setToggledNotes] = useState<Set<number>>(new Set())
+    useEffect(() => {
+        setToggledNotes((previous) =>
+            previous.size == 0 ? previous : new Set(),
+        )
+    }, [docIdent, notesShown])
+    const toggleNote = (lineNumber: number) => {
+        setToggledNotes((previous) => {
+            const next = new Set(previous)
+            if (!next.delete(lineNumber)) {
+                next.add(lineNumber)
+            }
+            return next
+        })
+    }
+
     const highlightText = (
         shouldHighlight: boolean,
         languageCode: "gv" | "en",
         lineValue: string,
         highlights?: HighlightRange[],
+        noteToggle?: NoteToggle,
     ) => {
         // The searched language: highlight the ranges the server matched (#40).
         // The other language: fuzzy-match the dictionary translations of the query.
@@ -282,9 +408,7 @@ export const ComparisonTable = (props: {
                 : []
         let segmentStart = 0
         return lineValue.split("\n").map((item, key) => {
-            const chunks = shouldHighlight
-                ? segmentChunks(highlights ?? [], segmentStart, item.length)
-                : null
+            const start = segmentStart
             segmentStart += item.length + 1 // + the removed "\n"
             return (
                 <div
@@ -296,16 +420,12 @@ export const ComparisonTable = (props: {
                     className="doc-line"
                     key={key}
                 >
-                    <Highlighter
-                        highlightClassName={
-                            shouldHighlight
-                                ? "textHighlight"
-                                : "textHighlightAlternate"
-                        }
+                    <SegmentText
+                        text={item}
+                        segmentStart={start}
+                        highlights={shouldHighlight ? (highlights ?? []) : null}
                         searchWords={searchWords}
-                        autoEscape={false}
-                        findChunks={chunks ? () => chunks : undefined}
-                        textToHighlight={item}
+                        noteToggle={noteToggle}
                     />
                     <br />
                 </div>
@@ -504,13 +624,13 @@ export const ComparisonTable = (props: {
             ).length > 0)
     const leftLang = originalManx ? "gv" : "en"
     const rightLang = originalManx ? "en" : "gv"
-    const visibleColumnCount = [
-        isVideo,
-        hasSpeakerColumn,
-        leftVisible,
-        rightVisible,
-        linkVisible,
-    ].filter(Boolean).length
+    // the expander and note bands cover the language columns only, leaving the
+    // video/speaker/Link cells uncoloured
+    const leadingCells = (isVideo ? 1 : 0) + (hasSpeakerColumn ? 1 : 0)
+    const languageColSpan = Math.max(
+        1,
+        (leftVisible ? 1 : 0) + (rightVisible ? 1 : 0),
+    )
     return (
         <>
             <div>
@@ -558,21 +678,33 @@ export const ComparisonTable = (props: {
                                         <ExpanderRow
                                             key={`gap-${entry.gap.start}`}
                                             gap={entry.gap}
-                                            leadingCells={
-                                                (isVideo ? 1 : 0) +
-                                                (hasSpeakerColumn ? 1 : 0)
-                                            }
-                                            languageColSpan={Math.max(
-                                                1,
-                                                (leftVisible ? 1 : 0) +
-                                                    (rightVisible ? 1 : 0),
-                                            )}
+                                            leadingCells={leadingCells}
+                                            languageColSpan={languageColSpan}
                                             hasLinkCell={Boolean(linkVisible)}
                                             onExpand={expand}
                                         />
                                     )
                                 }
                                 const { line, index, isContext } = entry
+                                const noteLinked = isNoteLinked(
+                                    line,
+                                    manxVisible,
+                                    englishVisible,
+                                )
+                                const noteVisible =
+                                    Boolean(line.notes) &&
+                                    (!noteLinked ||
+                                        notesShown !==
+                                            toggledNotes.has(
+                                                line.csvLineNumber,
+                                            ))
+                                const noteToggle = noteLinked
+                                    ? {
+                                          noteVisible,
+                                          toggle: () =>
+                                              toggleNote(line.csvLineNumber),
+                                      }
+                                    : undefined
                                 const manxText =
                                     diffCorrectedText(
                                         line.manxOriginal,
@@ -586,6 +718,7 @@ export const ComparisonTable = (props: {
                                         "gv",
                                         line.manx,
                                         line.manxHighlights,
+                                        noteToggle,
                                     )
                                 const englishText =
                                     diffCorrectedText(
@@ -600,6 +733,7 @@ export const ComparisonTable = (props: {
                                         "en",
                                         line.english,
                                         line.englishHighlights,
+                                        noteToggle,
                                     )
 
                                 return (
@@ -727,13 +861,21 @@ export const ComparisonTable = (props: {
                                                 </td>
                                             )}
                                         </tr>
-                                        {line.notes ? (
+                                        {noteVisible ? (
                                             <tr className="noteRow">
+                                                {Array.from(
+                                                    { length: leadingCells },
+                                                    (_, i) => (
+                                                        <td key={i} />
+                                                    ),
+                                                )}
                                                 <td
-                                                    colSpan={visibleColumnCount}
+                                                    className="doc-note-band"
+                                                    colSpan={languageColSpan}
                                                 >
                                                     {line.notes}
                                                 </td>
+                                                {linkVisible && <td />}
                                             </tr>
                                         ) : null}
                                     </Fragment>
