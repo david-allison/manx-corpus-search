@@ -25,7 +25,7 @@
     "@types/react-dom": "^19.2.3",
     "@types/react-highlight-words": "^0.20.1",
     "@vitejs/plugin-react": "^5.2.0",
-    "eslint": "^9.39.4",
+    "eslint": "^10.6.0",
     "eslint-plugin-react-hooks": "^7.1.1",
     "globals": "^17.7.0",
     "happy-dom": "^20.10.6",
