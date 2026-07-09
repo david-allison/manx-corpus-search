@@ -49,8 +49,21 @@ public class KellyManxToEnglishDictionaryService(ISet<string> allWords, IList<Ke
 
         var entries = JsonConvert.DeserializeObject<List<KellyManxToEnglishEntry>>(text) ?? [];
 
+        entries.ForEach(RemoveArticleFromSpain);
         entries.ForEach(EnrichCedillaEntries);
         return entries;
+    }
+
+    /// <summary>The heading for Spain is 'SPAINEY, YN': the 'yn' records that the noun takes the
+    /// article ('yn Spainey', as Irish 'An Spáin'). It is not a form of the word, so looking up
+    /// the article 'yn' should not return Spain.</summary>
+    internal static void RemoveArticleFromSpain(KellyManxToEnglishEntry entry)
+    {
+        if (entry.Words is ["SPAINEY", "YN"])
+        {
+            entry.Words = ["SPAINEY"];
+        }
+        entry.SafeChildren.ForEach(RemoveArticleFromSpain);
     }
 
     /// <summary>If an entry has 'ç', allow 'c'</summary>
