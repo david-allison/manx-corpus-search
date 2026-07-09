@@ -27,6 +27,9 @@
     --font-ui: Helvetica, Arial, sans-serif;
     --font-display: Georgia, serif;
 
+    /* side padding of the header and main column */
+    --page-gutter: 24px;
+
     --shadow-header: 0 2px 12px rgba(62, 80, 88, 0.06);
     --shadow-card: 0 1px 3px rgba(62, 80, 88, 0.05);
     --focus-ring: 0 0 0 3px rgba(51, 69, 77, 0.10);
@@ -66,7 +69,7 @@ input, button, select {
 .site-header-inner {
     max-width: 1020px;
     margin: 0 auto;
-    padding: 12px 24px;
+    padding: 12px var(--page-gutter);
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -134,7 +137,7 @@ input, button, select {
 .page-main {
     max-width: 1020px;
     margin: 0 auto;
-    padding: 34px 24px 16px 24px;
+    padding: 34px var(--page-gutter) 16px;
 }
 
 .site-footer {
@@ -151,6 +154,56 @@ input, button, select {
 
 .site-footer a {
     color: var(--c-muted);
+}
+
+/* ============ Mobile: chrome earns less of the screen ============ */
+@media (max-width: 600px) {
+    :root {
+        --page-gutter: 14px;
+    }
+
+    .site-header-inner {
+        padding: 8px var(--page-gutter);
+        gap: 2px 14px;
+    }
+
+    .brand {
+        gap: 10px;
+    }
+
+    .brand img {
+        height: 30px;
+    }
+
+    .brand-name {
+        font-size: 20px;
+    }
+
+    .brand-sub {
+        font-size: 8.5px;
+        letter-spacing: 2.5px;
+        margin-top: 3px;
+    }
+
+    .site-nav {
+        gap: 16px;
+        font-size: 13.5px;
+    }
+
+    .page-main {
+        padding-top: 16px;
+    }
+
+    .page-title {
+        font-size: 22px;
+    }
+
+    .site-footer {
+        margin-top: 20px;
+        padding-top: 12px;
+        gap: 8px;
+        font-size: 12px;
+    }
 }
 
 /* ============ Shared pieces ============ */
