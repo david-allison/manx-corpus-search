@@ -484,12 +484,12 @@ export const ComparisonTable = (props: {
                                 )}
                                 {leftVisible && (
                                     <th className="doc-lang-head">
-                                        {originalManx ? "Manx" : "English"}
+                                        {originalManx ? "Gaelg" : "English"}
                                     </th>
                                 )}
                                 {rightVisible && (
                                     <th className="doc-lang-head">
-                                        {originalManx ? "English" : "Manx"}
+                                        {originalManx ? "English" : "Gaelg"}
                                     </th>
                                 )}
                                 {linkVisible && (
