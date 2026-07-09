@@ -37,6 +37,7 @@
   },
   "scripts": {
     "dev": "vite",
+    "dev:live": "BACKEND=prod vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "lint": "eslint ./src/",

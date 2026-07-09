@@ -1,6 +1,24 @@
 import { defineConfig } from "vitest/config"
 import react from "@vitejs/plugin-react"
 
+// BACKEND=prod (= npm run dev:live): UI-only development against the live
+// site's API - no local backend, so no waiting for corpus indexing.
+const useProdBackend = process.env.BACKEND === "prod"
+const liveSite = "https://corpus.gaelg.im"
+// Everything the backend serves: fetch() targets (SearchController, api/*,
+// statistics) plus the non-SPA pages linked from the UI (Browse, Dictionary, ...)
+// TODO: Move all JSON endpoints under /api - this becomes /api + Razor Views
+const backendPaths = [
+    "/api",
+    "/search",
+    "/statistics",
+    "/Browse",
+    "/Dictionary",
+    "/MailingList",
+    "/Tags",
+    "/IMuseumNewspaper"
+]
+
 // https://vite.dev/config/
 export default defineConfig({
     plugins: [react(), {
@@ -22,7 +40,15 @@ export default defineConfig({
     server: {
         // .NET proxies the dev server here (see Startup.cs)
         port: 3000,
-        strictPort: true
+        strictPort: true,
+        proxy: useProdBackend
+            ? Object.fromEntries(
+                backendPaths.map((path) => [
+                    path,
+                    { target: liveSite, changeOrigin: true }
+                ])
+            )
+            : undefined
     },
     test: {
         environment: "happy-dom",

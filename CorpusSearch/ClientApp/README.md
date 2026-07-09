@@ -15,6 +15,14 @@ communicating via `fetch`.
 
 Run the parent `CorpusSearch` app in Development mode.
 
+### UI-only development (production backend)
+
+For UI-only changes, connect to https://corpus.gaelg.im
+
+```sh
+npm run dev:live
+```
+
 ## Pre-commit
 
 Run `pre-commit install` to install pre-commit hooks.
