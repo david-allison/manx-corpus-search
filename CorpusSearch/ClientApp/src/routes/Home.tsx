@@ -34,6 +34,7 @@ import {
     SearchParams,
     MAX_QUERY_LENGTH,
 } from "../api/SearchApi"
+import { defaultSearchOptions } from "../api/SearchOptions"
 import { CircularProgress } from "@mui/material"
 import { ManxEnglishSelector } from "../components/ManxEnglishSelector"
 import { getCorpusStatistics, Statistics } from "../api/CorpusStatistics"
@@ -95,9 +96,7 @@ export const Home = () => {
         end: HomeData.currentYear,
     })
     const [matchPhrase, setMatchPhrase] = useState(false)
-    const [ignoreHyphens, setIgnoreHyphens] = useState(false)
-    const [caseSensitive, setCaseSensitive] = useState(false)
-    const [accentSensitive, setAccentSensitive] = useState(false)
+    const [options, setOptions] = useState(defaultSearchOptions)
 
     const [sortKey, setSortKey] = useState<ResultsSortKey>("year")
     const [density, setDensity] = usePersistedState<ResultsDensity>(
@@ -113,19 +112,9 @@ export const Home = () => {
             maxDate: dateRange.end,
             manx: searchLanguage === "Manx",
             english: searchLanguage === "English",
-            ignoreHyphens,
-            caseSensitive,
-            accentSensitive,
+            ...options,
         }),
-        [
-            query,
-            searchLanguage,
-            dateRange,
-            matchPhrase,
-            ignoreHyphens,
-            caseSensitive,
-            accentSensitive,
-        ],
+        [query, searchLanguage, dateRange, matchPhrase, options],
     )
 
     const hasNoSearch = query.trim() == ""
@@ -241,9 +230,7 @@ export const Home = () => {
                         results={result.data.results}
                         manx={searchLanguage == "Manx"}
                         english={searchLanguage == "English"}
-                        ignoreHyphens={ignoreHyphens}
-                        caseSensitive={caseSensitive}
-                        accentSensitive={accentSensitive}
+                        options={options}
                         sortKey={sortKey}
                         density={density}
                     />
@@ -272,12 +259,8 @@ export const Home = () => {
             <AdvancedOptions
                 onDateRangeChange={setDateRange}
                 onMatchChange={setMatchPhrase}
-                ignoreHyphens={ignoreHyphens}
-                onIgnoreHyphensChange={setIgnoreHyphens}
-                caseSensitive={caseSensitive}
-                onCaseSensitiveChange={setCaseSensitive}
-                accentSensitive={accentSensitive}
-                onAccentSensitiveChange={setAccentSensitive}
+                options={options}
+                onOptionsChange={setOptions}
             >
                 {/*on mobile the View control lives here rather than in the results header*/}
                 {!hasNoSearch && (
