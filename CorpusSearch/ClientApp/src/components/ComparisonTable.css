@@ -1,3 +1,22 @@
+/* Keeps the video on screen while the transcript scrolls beneath it */
+.video-dock {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    background: var(--c-page-bg);
+    padding: 8px 0 10px;
+    border-bottom: 1px solid var(--c-border-meta);
+    margin-bottom: 2px;
+}
+
+@media (max-width: 600px) {
+    /* full-bleed video: cancel .page-main's side padding */
+    .video-dock {
+        margin: 0 calc(-1 * var(--page-gutter)) 2px;
+        padding: 0 0 6px;
+    }
+}
+
 .youtube-container {
     position: relative;
     display: block;
