@@ -5,18 +5,13 @@ import react from "@vitejs/plugin-react"
 // site's API - no local backend, so no waiting for corpus indexing.
 const useProdBackend = process.env.BACKEND === "prod"
 const liveSite = "https://corpus.gaelg.im"
-// Everything the backend serves: fetch() targets (SearchController, api/*,
-// statistics) plus the non-SPA pages linked from the UI (Browse, Dictionary, ...)
-// TODO: Move all JSON endpoints under /api - this becomes /api + Razor Views
+// Everything the backend serves: /api and Razor View Pages
 const backendPaths = [
     "/api",
-    "/search",
-    "/statistics",
     "/Browse",
     "/Dictionary",
     "/MailingList",
-    "/Tags",
-    "/IMuseumNewspaper"
+    "/Tags"
 ]
 
 // https://vite.dev/config/

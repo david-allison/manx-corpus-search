@@ -74,7 +74,7 @@ export const searchWork = async (
 ): Promise<SearchWorkResponse> => {
     const searchValue = !params.value ? "*" : params.value
     const response = await fetch(
-        `search/searchWork/${params.docIdent}/${encodeURIComponent(searchValue)}?english=${params.searchEnglish.toString()}&manx=${params.searchManx.toString()}&ignoreHyphens=${params.ignoreHyphens.toString()}&caseSensitive=${params.caseSensitive.toString()}&accentSensitive=${params.accentSensitive.toString()}`,
+        `api/search/searchWork/${params.docIdent}/${encodeURIComponent(searchValue)}?english=${params.searchEnglish.toString()}&manx=${params.searchManx.toString()}&ignoreHyphens=${params.ignoreHyphens.toString()}&caseSensitive=${params.caseSensitive.toString()}&accentSensitive=${params.accentSensitive.toString()}`,
         { signal },
     )
     if (!response.ok) {
@@ -97,7 +97,7 @@ export const fetchLines = async (params: {
     fromEnd: boolean
 }): Promise<WorkLinesResponse> => {
     const response = await fetch(
-        `search/lines/${params.docIdent}?start=${params.start.toString()}&end=${params.end.toString()}&limit=${params.limit.toString()}&fromEnd=${params.fromEnd.toString()}`,
+        `api/search/lines/${params.docIdent}?start=${params.start.toString()}&end=${params.end.toString()}&limit=${params.limit.toString()}&fromEnd=${params.fromEnd.toString()}`,
     )
     if (!response.ok) {
         throw new Error(`line fetch failed: ${response.status}`)

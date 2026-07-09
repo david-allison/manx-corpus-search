@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging;
 
 namespace CorpusSearch.Controllers;
 
-[Route("[controller]")]
+[Route("api/[controller]")]
 public class StatisticsController : Controller
 {
     private static long _documentCount;

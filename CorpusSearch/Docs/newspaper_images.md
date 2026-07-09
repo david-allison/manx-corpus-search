@@ -1,6 +1,6 @@
 # Obtaining a good link to iMuseum newspaper images
 
-Example of the output: http://corpus.gaelg.im/IMuseumNewspaper/Component/V1?newspaper=IMT&date=1913-05-03&id=Ar00905
+Example of the output: http://corpus.gaelg.im/api/IMuseumNewspaper/Component/V1?newspaper=IMT&date=1913-05-03&id=Ar00905
 
 ## iMuseum steps
 
@@ -52,4 +52,4 @@ The link to the newspaper images appear in the corpus article under 'Additional 
 Example page: https://corpus.gaelg.im/docs/Manx-Gaelic-Gathering-first-chaglym
 
 * Example URL: 
-  * http://manxcorpus.com/IMuseumNewspaper/Component/V1?newspaper=IMT&date=1913-05-03&id=Ar00905 
+  * http://manxcorpus.com/api/IMuseumNewspaper/Component/V1?newspaper=IMT&date=1913-05-03&id=Ar00905 

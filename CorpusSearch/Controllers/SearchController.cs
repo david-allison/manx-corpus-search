@@ -13,7 +13,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace CorpusSearch.Controllers;
 
 [ApiController]
-[Route("[controller]")]
+[Route("api/[controller]")]
 public partial class SearchController(
     DocumentSearchService documentSearchService,
     OverviewSearchService2 overviewSearchService,

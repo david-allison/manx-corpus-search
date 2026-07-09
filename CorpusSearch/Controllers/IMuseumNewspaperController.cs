@@ -4,7 +4,8 @@ using static CorpusSearch.Service.IMuseumNewspaperService;
 
 namespace CorpusSearch.Controllers;
 
-[Route("[controller]")]
+[Route("api/[controller]")]
+[Route("[controller]")] // (legacy) old /IMuseumNewspaper links were shared externally
 public class IMuseumNewspaperController : Controller
 {
     [HttpGet("Image/V1")]
@@ -26,7 +27,7 @@ public class IMuseumNewspaperController : Controller
 
     /// <summary>Redirects to a page where a user can view a full component (one or more pieces of Manx)</summary>
     /// <remarks>A Component and a chunk id are typically the same, but some chunks aren't components</remarks>
-    /// <remarks>sample call: /IMuseumNewspaper/Component/V1?newspaper=MNH&date=1845-01-08&id=Ar00318</remarks>
+    /// <remarks>sample call: /api/IMuseumNewspaper/Component/V1?newspaper=MNH&date=1845-01-08&id=Ar00318</remarks>
     [HttpGet("Component/V1")]
     public IActionResult Component([FromQuery] string newspaper, [FromQuery] string date, [FromQuery] string id)
     {
