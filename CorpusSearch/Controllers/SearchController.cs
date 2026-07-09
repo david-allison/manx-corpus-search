@@ -250,7 +250,10 @@ public partial class SearchController(
 
         var results = await overviewSearchService.CorpusSearch(searchQuery);
 
-        results = results.OrderBy(x => x.StartDate);
+        // explicit tie-breakers: document insertion order is not guaranteed (#303)
+        results = results.OrderBy(x => x.StartDate)
+            .ThenBy(x => x.DocumentName, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(x => x.Ident, StringComparer.Ordinal);
             
         if (manx)
         {

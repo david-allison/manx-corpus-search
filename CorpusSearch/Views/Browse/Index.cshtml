@@ -34,7 +34,9 @@
     </div>
 
     <div class="browse-list" id="browse-list">
-        @foreach (var document in documents.OrderBy(x => x.CreatedCircaStart))
+        @foreach (var document in documents.OrderBy(x => x.CreatedCircaStart)
+                      .ThenBy(x => x.Name, StringComparer.OrdinalIgnoreCase)
+                      .ThenBy(x => x.Ident, StringComparer.Ordinal))
         {
             var year = document.GetFullYear();
             <div class="browse-row" data-title="@document.Name">

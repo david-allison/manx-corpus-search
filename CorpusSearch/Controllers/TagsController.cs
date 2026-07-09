@@ -91,7 +91,11 @@ public class TagsController(WorkService workService) : Controller
 
         // Bug: Documents will want reordering by 'SourceDate' in the Newspapers: 
         // God Save The King (Stowell) Mon, 01 Jan 1827 should be 1899
-        var documents = (await workService.GetAll()).OrderBy(x => x.CreatedCircaStart).ToList();
+        // explicit tie-breakers: document insertion order is not guaranteed (#303)
+        var documents = (await workService.GetAll()).OrderBy(x => x.CreatedCircaStart)
+            .ThenBy(x => x.Name, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(x => x.Ident, StringComparer.Ordinal)
+            .ToList();
 
         var result = DocumentTree.FromDocuments(t, documents);
         if (result == null)
