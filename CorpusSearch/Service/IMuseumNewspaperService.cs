@@ -7,7 +7,7 @@ namespace CorpusSearch.Service;
 public class IMuseumNewspaperService
 {
     /// <summary>A reference to a specific clipping of a newspaper</summary>
-    /// <remarks>Example: https://www.imuseum.im/Olive/APA/IsleofMan/get/image.ashx?kind=block&href=MNH%2F1833%2F10%2F25&id=Ar0080001&ext=.png</remarks>
+    /// <remarks>Example: https://www.imuseum.im/Olive/APA/IsleofMan/get/image.ashx?kind=block&amp;href=MNH%2F1833%2F10%2F25&amp;id=Ar0080001&amp;ext=.png</remarks>
     public class NewspaperClippingReference
     {
         /// <summary>The ID of the clipping in the newspaper database</summary>
