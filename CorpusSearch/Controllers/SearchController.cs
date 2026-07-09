@@ -125,9 +125,12 @@ public partial class SearchController(
             Ident = workIdent,
             Manx = manx,
             English = english,
-            IgnoreHyphens = ignoreHyphens,
-            CaseSensitive = caseSensitive,
-            NormalizeDiacritics = !accentSensitive,
+            Options = new SearchOptions
+            {
+                IgnoreHyphens = ignoreHyphens,
+                CaseSensitive = caseSensitive,
+                NormalizeDiacritics = !accentSensitive,
+            },
         };
         SearchWorkResult ret = await documentSearchService.SearchWork(workQuery);
 
@@ -204,9 +207,12 @@ public partial class SearchController(
             English = english,
             MinDate = DateTimeUtil.FromYear(Math.Max(1, minDate)),
             MaxDate = DateTimeUtil.FromYearMax(maxDate),
-            IgnoreHyphens = ignoreHyphens,
-            CaseSensitive = caseSensitive,
-            NormalizeDiacritics = !accentSensitive,
+            Options = new SearchOptions
+            {
+                IgnoreHyphens = ignoreHyphens,
+                CaseSensitive = caseSensitive,
+                NormalizeDiacritics = !accentSensitive,
+            },
         };
         if (!searchQuery.IsValid())
         {

@@ -1,23 +1,21 @@
-﻿using System;
+using System;
 
 namespace CorpusSearch.Model;
 
-public class CorpusSearchQuery(string query)
+public record CorpusSearchQuery(string Query)
 {
     /// <summary>Keep this in sync with `MAX_QUERY_LENGTH`</summary>
     public const int MAX_LENGTH = 100;
-
-    public string Query { get; } = query;
 
     public bool Manx { get; internal set; }
     public bool English { get; internal set; }
     public DateTime MinDate { get; internal set; }
     public DateTime MaxDate { get; internal set; }
-    public bool CaseSensitive { get; internal set; }
-    /// <inheritdoc cref="SearchOptions.IgnoreHyphens"/>
-    public bool IgnoreHyphens { get; internal set; }
-    /// <inheritdoc cref="SearchOptions.NormalizeDiacritics"/>
-    public bool NormalizeDiacritics { get; internal set; } = true;
+    public SearchOptions Options { get; internal set; } = SearchOptions.Default;
+
+    /// <summary>The options for the index query: a scan searches a single language (Manx preferred)</summary>
+    public SearchOptions ToSearchOptions() =>
+        Options with { SearchType = Manx ? SearchType.Manx : SearchType.English };
 
     internal bool IsValid()
     {

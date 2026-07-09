@@ -30,7 +30,7 @@ public class DocumentSearchService(
         ret.Original = document.Original;
         ret.Source = document.Source;
 
-        var results = searcher.SearchWork(workQuery.Ident, workQuery.Query, ToSearchOptions(workQuery),
+        var results = searcher.SearchWork(workQuery.Ident, workQuery.Query, workQuery.ToSearchOptions(),
             returnTranscriptData: HasTranscript(document));
 
         newspaperSourceEnricher.Enrich(ret, document);
@@ -78,16 +78,5 @@ public class DocumentSearchService(
         return document.Source != null &&
                (document.Source.Trim().StartsWith("https://youtube.com") ||
                 document.Source.Trim().StartsWith("https://www.youtube.com"));
-    }
-
-    private static SearchOptions ToSearchOptions(CorpusSearchWorkQuery workQuery)
-    {
-        return new SearchOptions
-        {
-            SearchType = workQuery.Manx ? SearchType.Manx : SearchType.English,
-            IgnoreHyphens = workQuery.IgnoreHyphens,
-            CaseSensitive = workQuery.CaseSensitive,
-            NormalizeDiacritics = workQuery.NormalizeDiacritics,
-        };
     }
 }
