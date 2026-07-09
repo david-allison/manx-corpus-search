@@ -298,17 +298,7 @@ export const ComparisonTable = (props: {
                 }}
                 className="doc-line"
             >
-                {value != "*" && value != "" && (
-                    <div
-                        style={{
-                            textAlign: "center",
-                            backgroundColor: "rgba(255,255,0,0.3)",
-                        }}
-                    >
-                        {" "}
-                        highlighting disabled{" "}
-                    </div>
-                )}
+                {/* TODO: improve highlighting: search matches aren't highlighted in the diff view */}
                 {result.map((part) => {
                     const color = part.added
                         ? "rgba(0, 128, 0, 0.3)"
