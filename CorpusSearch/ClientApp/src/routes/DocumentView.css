@@ -1,6 +1,8 @@
 /* ============ Document header ============ */
 .doc-header {
     margin-top: 28px;
+    /* scrollIntoView ignores the margin: keep a little air above the title */
+    scroll-margin-top: 12px;
 }
 
 .doc-back {
