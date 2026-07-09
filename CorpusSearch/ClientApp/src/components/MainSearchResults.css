@@ -41,10 +41,64 @@
     color: var(--c-link);
 }
 
-.result-card-browse {
-    margin-left: auto;
-    font-size: 14px;
+/* the match count, tinted like the KWIC match highlight; a link like the title.
+   Uniform width, sized for the largest possible count - "1,000,000" (the Bible,
+   the largest document, has ~700k matches for '*') - so the numbers align. */
+.match-count-pill {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center; /* the text centers; the chevron is pinned right */
+    min-height: 24px;
+    margin-left: auto; /* card: sits at the right edge */
+    font-size: 13px;
     white-space: nowrap;
+    background: var(--c-match-bg);
+    color: var(--c-link);
+    border-radius: 4px; /* squarish, like the year badge */
+    padding: 0 20px; /* symmetric, and wide enough to keep the chevron clear */
+    text-decoration: none;
+    font-variant-numeric: tabular-nums;
+    box-sizing: border-box;
+    min-width: 76px; /* "9,999" - five-plus-figure counts widen the pill */
+}
+
+/* the card pill also carries the "match(es)" noun */
+.result-card-top .match-count-pill {
+    min-width: 124px; /* "9,999 matches" */
+}
+
+/* invisible expansion of the hit area to 44px (touch-target guidelines) -
+   the neighbouring content is not interactive, so nothing is occluded */
+.match-count-pill::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: max(100%, 44px);
+    height: 44px;
+    transform: translate(-50%, -50%);
+}
+
+.match-count-pill:hover {
+    color: var(--c-link-hover);
+}
+
+.match-count-pill-chevron {
+    position: absolute; /* excluded from the centering */
+    right: 8px;
+    font-size: 14px;
+    line-height: 1;
+}
+
+/* the column header and the pills sit against the right edge; the header
+   shifts inward so it sits over the centered numbers, not the pill edge */
+.results-compact-matches {
+    text-align: right;
+}
+
+.results-compact-head .results-compact-matches {
+    padding-right: 18px;
 }
 
 /* ============ KWIC line (shared) ============ */
@@ -115,7 +169,3 @@
     color: var(--c-link);
 }
 
-/* only the Browse link stays on one line - titles must be free to wrap */
-.results-compact-browse a {
-    white-space: nowrap;
-}
