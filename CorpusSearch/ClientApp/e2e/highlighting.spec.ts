@@ -139,15 +139,4 @@ test.describe("home page", () => {
         await page.fill("#corpus-search-box", "chengey")
         await expect(page.locator("strong.kwic-match")).toHaveText("çhengey")
     })
-
-    test("stepping to the next match updates the highlight", async ({
-        page,
-    }) => {
-        // 'cre' matches 'cre-erbee' (line 3) and 'cre' (line 4) of the fixture
-        await page.goto("/?q=cre")
-        await expect(page.locator("strong.kwic-match")).toHaveText("cre-erbee")
-
-        await page.getByRole("button", { name: "›" }).click()
-        await expect(page.locator("strong.kwic-match")).toHaveText("cre")
-    })
 })

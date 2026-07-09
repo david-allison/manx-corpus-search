@@ -1,9 +1,7 @@
-import { useState, useMemo, MouseEvent, ReactNode } from "react"
+import { useMemo, ReactNode } from "react"
 import { Link } from "react-router-dom"
 import "./MainSearchResults.css"
 import { HighlightRange, SearchResultEntry } from "../api/SearchApi"
-import { GetMatch } from "../api/Matches"
-import { floatingPromiseReturn } from "../utils/Promise"
 import { useLazyLoader } from "../hooks/useLazyLoader"
 
 export type ResultsSortKey = "year" | "title" | "count"
@@ -59,22 +57,20 @@ function getFullYear(date: string, edate: string) {
 }
 
 /**
- * Splits a sample line around the highlighted match (server-computed offsets, see #40),
+ * Splits a sample line around the first highlighted match (server-computed offsets, see #40),
  * keeping up to 5 words of context on each side.
  *
- * @param indexInLine which match of the line to focus (clamped)
  * @returns null when the server provided no highlights (e.g. English searches):
  * the caller shows the sample unhighlighted
  */
 export function buildKwic(
     sample: string,
     highlights: HighlightRange[],
-    indexInLine: number,
 ): { pre: string; match: string; post: string } | null {
     if (highlights.length === 0) {
         return null
     }
-    const match = highlights[Math.min(indexInLine, highlights.length - 1)]
+    const match = highlights[0]
 
     let startIndex = match.start
     let count = 0
@@ -171,72 +167,14 @@ export default function MainSearchResults(props: {
     )
 }
 
-/** Stepping through the matches of a document via the GetMatch API (KWIC) */
-const useMatchStepper = (
-    result: SearchResultEntry,
-    query: string,
-    ignoreHyphens: boolean,
-    caseSensitive: boolean,
-    accentSensitive: boolean,
-) => {
-    const [matchNumber, setMatchNumber] = useState(1) // 1-based
-    const [sample, setSample] = useState(result.sample)
-    const [highlights, setHighlights] = useState(result.sampleHighlights ?? [])
-    const [indexInLine, setIndexInLine] = useState(0) // 0-based
-
-    const changeLine = async (line: number) => {
-        const lineResult = await GetMatch({
-            query: query,
-            match: line,
-            docIdent: result.ident,
-            ignoreHyphens,
-            caseSensitive,
-            accentSensitive,
-        })
-        setSample(lineResult.manx)
-        setHighlights(lineResult.highlights ?? [])
-        setMatchNumber(lineResult.matchNumber)
-        setIndexInLine(lineResult.matchIndexInLine)
-    }
-
-    const canNext = matchNumber < result.count
-    const canPrev = matchNumber > 1
-
-    const next = async (e: MouseEvent) => {
-        e.preventDefault()
-        if (!canNext) {
-            return
-        }
-        await changeLine(matchNumber + 1)
-    }
-    const prev = async (e: MouseEvent) => {
-        e.preventDefault()
-        if (!canPrev) {
-            return
-        }
-        await changeLine(matchNumber - 1)
-    }
+/** The first matched line of the document, with the match highlighted (KWIC) */
+const KwicLine = (props: { result: SearchResultEntry; small?: boolean }) => {
+    const { result, small } = props
 
     const kwicSample = useLazyLoader(
-        () => buildKwic(sample, highlights, indexInLine),
-        [sample, highlights, indexInLine],
+        () => buildKwic(result.sample, result.sampleHighlights ?? []),
+        [result],
     )
-
-    return { matchNumber, sample, canNext, canPrev, next, prev, kwicSample }
-}
-
-/** The `01/07 ‹ ›` counter/steppers + the matched line with the match highlighted */
-const KwicLine = (props: {
-    stepper: ReturnType<typeof useMatchStepper>
-    count: number
-    small?: boolean
-}) => {
-    const { stepper, count, small } = props
-    const { matchNumber, sample, canNext, canPrev, next, prev, kwicSample } =
-        stepper
-
-    const padWidth = Math.max(2, String(count).length)
-    const pad = (n: number) => String(n).padStart(padWidth, "0")
 
     let text: ReactNode = null
     if (kwicSample) {
@@ -248,29 +186,12 @@ const KwicLine = (props: {
             </>
         )
     } else if (kwicSample == null) {
-        text = sample // could not locate the match within the line - show it unhighlighted
+        text = result.sample // could not locate the match within the line - show it unhighlighted
     }
 
     return (
         <div className={"result-kwic" + (small ? " result-kwic-small" : "")}>
-            <span className="kwic-counter">
-                {pad(matchNumber)}/{pad(count)}
-            </span>
-            <button
-                className="kwic-step"
-                disabled={!canPrev}
-                onClick={floatingPromiseReturn(prev)}
-            >
-                ‹
-            </button>
-            <button
-                className="kwic-step"
-                disabled={!canNext}
-                onClick={floatingPromiseReturn(next)}
-            >
-                ›
-            </button>
-            <span className="result-kwic-text">{text}</span>
+            {text}
         </div>
     )
 }
@@ -311,13 +232,6 @@ const ResultCard = (props: {
         caseSensitive,
         accentSensitive,
     } = props
-    const stepper = useMatchStepper(
-        result,
-        query,
-        ignoreHyphens,
-        caseSensitive,
-        accentSensitive,
-    )
     const link = documentLink(
         result,
         query,
@@ -348,7 +262,7 @@ const ResultCard = (props: {
                     Browse&nbsp;({result.count})&nbsp;→
                 </Link>
             </div>
-            <KwicLine stepper={stepper} count={result.count} />
+            <KwicLine result={result} />
         </div>
     )
 }
@@ -372,13 +286,6 @@ const ResultRow = (props: {
         accentSensitive,
         striped,
     } = props
-    const stepper = useMatchStepper(
-        result,
-        query,
-        ignoreHyphens,
-        caseSensitive,
-        accentSensitive,
-    )
     const link = documentLink(
         result,
         query,
@@ -405,7 +312,7 @@ const ResultRow = (props: {
                     </Link>
                 </div>
             </div>
-            <KwicLine stepper={stepper} count={result.count} small />
+            <KwicLine result={result} small />
         </div>
     )
 }
