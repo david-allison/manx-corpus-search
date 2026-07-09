@@ -10,6 +10,7 @@ using System.IO;
 using System.Linq;
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
+using System.Threading.Tasks;
 using CorpusSearch.Controllers;
 using CorpusSearch.Infrastructure;
 using CorpusSearch.Model;
@@ -198,15 +199,15 @@ public class Startup(IConfiguration configuration)
 
     internal (long totalDocuments, long totalManxTerms) SetupDatabase(WorkService workService, Searcher searcher, LoadConfig lConfig)
     {
-        var totalDocuments = 0L;
+        // load all the document manifests first, so the (parallel) indexing is one batch
+        var allDocuments = new List<Document>();
 
         bool ignoreClosedData = lConfig?.OpenDataOnly ?? false;
         if (!ignoreClosedData) try
             {
                 List<Document> closedSourceDocument = ClosedDataLoader.LoadDocumentsFromFile().Cast<Document>().ToList();
                 log.LogInformation("Loaded {Count} documents", closedSourceDocument.Count);
-                AddDocuments(closedSourceDocument, workService, searcher);
-                totalDocuments += closedSourceDocument.Count;
+                allDocuments.AddRange(closedSourceDocument);
             }
             catch (Exception e)
             {
@@ -217,13 +218,15 @@ public class Startup(IConfiguration configuration)
         {
             List<Document> ossDocuments = OpenDataLoader.LoadDocumentsFromFile(lConfig).Cast<Document>().ToList();
             log.LogInformation("Loaded {OssDocumentsCount} documents", ossDocuments.Count);
-            AddDocuments(ossDocuments, workService, searcher);
-            totalDocuments += ossDocuments.Count;
+            allDocuments.AddRange(ossDocuments);
         }
         catch (Exception e)
         {
             log.LogError(e, "Failed loading documents");
         }
+
+        AddDocuments(allDocuments, workService, searcher);
+        var totalDocuments = (long)allDocuments.Count;
 
         var stopWatch = System.Diagnostics.Stopwatch.StartNew();
         searcher.OnAllDocumentsAdded();
@@ -233,12 +236,27 @@ public class Startup(IConfiguration configuration)
         return (totalDocuments, totalTerms);
     }
 
-    private static void AddDocuments(List<Document> documents, WorkService workService, Searcher searcher)
+    private void AddDocuments(List<Document> documents, WorkService workService, Searcher searcher)
     {
-        foreach (var document in documents)
+        // Parallel: reading + normalizing + tokenizing the documents is CPU-bound and
+        // IndexWriter.AddDocument is designed for concurrent use (#303).
+        // Large documents are indexed in chunks so one document can't hold back the batch:
+        // line order in the index doesn't matter, every consumer orders by CsvLineNumber.
+        // Note: a document which fails to load no longer aborts the rest of its batch.
+        const int linesPerChunk = 500;
+        Parallel.ForEach(documents, document =>
         {
-            AddDocument(document, workService, searcher);
-        }
+            try
+            {
+                List<DocumentLine> data = document.LoadLocalFile();
+                Parallel.ForEach(data.Chunk(linesPerChunk), chunk => searcher.AddDocument(document, chunk));
+                workService.AddWork(document);
+            }
+            catch (Exception e)
+            {
+                log.LogError(e, "Failed loading document {Ident}", document.Ident);
+            }
+        });
     }
 
     public static string GetLocalFile(params string[] inputPath)
@@ -253,12 +271,4 @@ public class Startup(IConfiguration configuration)
         return Path.Combine(path);
     }
 
-    private static void AddDocument(Document document, WorkService workService, Searcher searcher)
-    {
-        List<DocumentLine> data = document.LoadLocalFile();
-
-        searcher.AddDocument(document, data);
-
-        workService.AddWork(document);
-    }
 }

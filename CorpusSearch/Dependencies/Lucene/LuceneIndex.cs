@@ -48,7 +48,14 @@ public class LuceneIndex(IndexWriter indexWriter)
         var analyzer = new ManxAnalyzer();
 
         // Create an index writer
-        var indexConfig = new IndexWriterConfig(appLuceneVersion, analyzer);
+        var indexConfig = new IndexWriterConfig(appLuceneVersion, analyzer)
+        {
+            // startup indexes in parallel (#303): one indexing thread per core (default: 8),
+            // and a RAM buffer large enough that concurrent writers don't constantly flush
+            // (16MB default, shared across all threads) - the index lives in RAM regardless
+            MaxThreadStates = Environment.ProcessorCount,
+            RAMBufferSizeMB = 64,
+        };
         var writer = new IndexWriter(dir, indexConfig);
         return new LuceneIndex(writer);
     }
