@@ -72,7 +72,14 @@ public class CregeenDictionaryService(ISet<string> allWords, IList<CregeenEntry>
         // TODO: This shouldn't be static
 
         var path = Startup.GetLocalFile("Resources", "cregeen.json");
-            
+
+        // the file is downloaded on deployment (tools/init.sh); without it
+        // (dev checkouts, CI) the dictionary is empty, not a failing page
+        if (!File.Exists(path))
+        {
+            return [];
+        }
+
         var text = File.ReadAllText(path);
 
         var entries = JsonConvert.DeserializeObject<List<CregeenEntry>>(text) ?? [];
