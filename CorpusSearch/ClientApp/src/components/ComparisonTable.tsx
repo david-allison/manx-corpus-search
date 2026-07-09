@@ -390,22 +390,26 @@ export const ComparisonTable = (props: {
         250,
     )
 
-    const getVideoId = (source: string) => {
+    /** The video id, when the source is a YouTube watch URL */
+    const getVideoId = (source: string): string | null => {
+        let url: URL
         try {
-            return new URL(source).searchParams.get("v")
-        } catch (e) {
-            console.warn(e)
-            return ""
+            url = new URL(source)
+        } catch {
+            return null // most sources are not URLs at all
         }
+        // [security] block 'www.youtube.evil.com'
+        if (
+            url.protocol != "https:" ||
+            (url.hostname != "www.youtube.com" && url.hostname != "youtube.com")
+        ) {
+            return null
+        }
+        return url.searchParams.get("v")
     }
 
-    let isVideo =
-        response?.source?.startsWith("https://www.youtube") ||
-        response?.source?.startsWith("https://youtube.com")
-    const videoId = !isVideo ? "" : getVideoId(response.source)
-    if (!videoId) {
-        isVideo = false
-    }
+    const videoId = response?.source ? getVideoId(response.source) : null
+    const isVideo = Boolean(videoId)
     const player = useRef<Player>(null)
 
     const isPlaying = (line: SearchWorkResult): boolean => {
