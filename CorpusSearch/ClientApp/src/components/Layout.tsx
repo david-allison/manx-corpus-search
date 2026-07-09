@@ -19,7 +19,15 @@ export const Layout = (props: {
 const SiteFooter = () => (
     <footer className="site-footer">
         <span>
-            Maintained by David Allison · A Manx Language Research Group project
+            Maintained by{" "}
+            <a
+                href="https://github.com/david-allison"
+                target="_blank"
+                rel="noreferrer"
+            >
+                David Allison
+            </a>{" "}
+            · A Manx Language Research Group project
             <br />
             With thanks to all the volunteers who transcribe, translate &amp;
             contribute texts.
