@@ -144,6 +144,10 @@
     border-bottom: 1px solid var(--c-border-table-head);
 }
 
+.doc-table th.doc-lang-head {
+    text-align: center;
+}
+
 .doc-table td {
     padding: 8px 10px;
     font-size: 15px;
@@ -153,8 +157,13 @@
     overflow-wrap: break-word;
 }
 
-.doc-row-striped {
+/* stripe the content cells, but keep the Link column uncoloured (like the expanders) */
+.doc-row-striped td {
     background: var(--c-row-stripe);
+}
+
+.doc-row-striped td.doc-link-cell {
+    background: none;
 }
 
 .doc-row-playing {
@@ -167,6 +176,57 @@
     font-size: 13px;
     color: var(--c-secondary);
     text-align: center;
+}
+
+/* context lines revealed by an expander (#286): visibly not matches */
+.doc-row-context {
+    opacity: 0.75;
+}
+
+.doc-table .doc-expand-row td {
+    padding: 0;
+}
+
+.doc-expand-buttons {
+    display: flex;
+    /* too narrow for both halves: stack them instead of spilling over the Link column */
+    flex-wrap: wrap;
+}
+
+/* each direction is a half-width (full-width when alone) coloured band */
+.doc-expand-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    border: none;
+    cursor: pointer;
+    padding: 8px 10px;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--c-link);
+    white-space: nowrap;
+}
+
+.doc-expand-btn-down,
+.doc-expand-btn-all {
+    background: var(--c-expand-row);
+}
+
+.doc-expand-btn-up {
+    background: var(--c-expand-row-alt);
+}
+
+.doc-expand-btn:hover {
+    color: var(--c-link-hover);
+    text-decoration: underline;
+}
+
+.doc-expand-btn:disabled {
+    color: var(--c-muted);
+    cursor: default;
+    text-decoration: none;
 }
 
 .doc-play-btn {

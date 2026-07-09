@@ -90,7 +90,15 @@ public partial class SearchController(
         public object Notes { get; internal set; }
         public string Source { get; set; }
         public List<SourceLink> SourceLinks { get; internal set; } = [];
-            
+
+        /// <summary>
+        /// The document's first CsvLineNumber: lets the client offer 'expand context' above the
+        /// first result. Null when searching for '*' or when there are no results.
+        /// </summary>
+        public int? FirstLineNumber { get; set; }
+
+        /// <summary>The document's last CsvLineNumber (see <see cref="FirstLineNumber"/>)</summary>
+        public int? LastLineNumber { get; set; }
 
         internal static SearchWorkResult Empty(string title)
         {
@@ -136,6 +144,43 @@ public partial class SearchController(
 
         ret.EnrichWithTime(sw);
         return ret;
+    }
+
+    /// <summary>The most lines an 'expand context' request may return</summary>
+    public const int MAX_CONTEXT_LINES = 100;
+
+    public class WorkLinesResult
+    {
+        /// <summary>The requested lines, in document order</summary>
+        public List<DocumentLine> Lines { get; set; } = [];
+
+        /// <summary>
+        /// The number of lines in [start, end] before the limit was applied: if this is no more
+        /// than the limit, the range is exhausted
+        /// </summary>
+        public int TotalInRange { get; set; }
+    }
+
+    /// <summary>
+    /// Lines of a document by CsvLineNumber range: 'expand context' around a search result (#286).
+    /// Returns the first <paramref name="limit"/> lines of the range, or the last if
+    /// <paramref name="fromEnd"/>.
+    /// </summary>
+    [HttpGet("Lines/{workIdent}")]
+    public async Task<ActionResult<WorkLinesResult>> GetLines(string workIdent, [FromQuery] int start,
+        [FromQuery] int end, [FromQuery] int limit = 5, [FromQuery] bool fromEnd = false)
+    {
+        if (start < 1 || end < start)
+        {
+            return BadRequest("invalid line range");
+        }
+        if (limit is < 1 or > MAX_CONTEXT_LINES)
+        {
+            return BadRequest($"limit must be between 1 and {MAX_CONTEXT_LINES}");
+        }
+        AnonymousAnalytics.Track("Expand Context");
+        var (lines, totalInRange) = await documentSearchService.GetLines(workIdent, start, end, limit, fromEnd);
+        return new WorkLinesResult { Lines = lines, TotalInRange = totalInRange };
     }
 
     [HttpGet("Match/{workIdent}")]

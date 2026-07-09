@@ -31,10 +31,8 @@ public class DocumentSearchService(
         ret.Source = document.Source;
 
         var searchOptions = ToSearchOptions(workQuery);
-        searchOptions.ReturnTranscriptData = document.Source != null &&
-                                             (document.Source.Trim().StartsWith("https://youtube.com") || 
-                                              document.Source.Trim().StartsWith("https://www.youtube.com")); 
-            
+        searchOptions.ReturnTranscriptData = HasTranscript(document);
+
         var results = searcher.SearchWork(workQuery.Ident, workQuery.Query, searchOptions);
 
         newspaperSourceEnricher.Enrich(ret, document);
@@ -43,9 +41,18 @@ public class DocumentSearchService(
         // Handles more than one result per document line
         ret.TotalMatches = results.TotalMatches;
 
+        // Bounds for 'expand context' (#286): a '*' search (TotalMatches == null) already
+        // returns every line, so has nothing to expand
+        if (results.TotalMatches != null && results.Lines.Count > 0)
+        {
+            var lineNumberRange = searcher.GetLineNumberRange(workQuery.Ident);
+            ret.FirstLineNumber = lineNumberRange?.First;
+            ret.LastLineNumber = lineNumberRange?.Last;
+        }
+
         return ret;
     }
-        
+
     /// <summary>
     /// Returns all lines for a provided document
     /// </summary>
@@ -53,6 +60,26 @@ public class DocumentSearchService(
     internal List<DocumentLine> GetAllLines(string ident)
     {
         return searcher.GetAllLines(ident);
+    }
+
+    /// <summary>
+    /// The lines of a document with a CsvLineNumber in [start, end]: the first
+    /// <paramref name="limit"/> of them, or the last if <paramref name="fromEnd"/>.
+    /// Expands the context around a search result (#286).
+    /// </summary>
+    public async Task<(List<DocumentLine> Lines, int TotalInRange)> GetLines(string ident, int start, int end,
+        int limit, bool fromEnd)
+    {
+        IDocument document = await workService.ByIdent(ident);
+        return searcher.GetLines(ident, start, end, limit, fromEnd, HasTranscript(document));
+    }
+
+    /// <summary>Whether lines carry subtitle timings/speakers: the document is a YouTube transcription</summary>
+    private static bool HasTranscript(IDocument document)
+    {
+        return document.Source != null &&
+               (document.Source.Trim().StartsWith("https://youtube.com") ||
+                document.Source.Trim().StartsWith("https://www.youtube.com"));
     }
 
     private static SearchOptions ToSearchOptions(CorpusSearchWorkQuery workQuery)
