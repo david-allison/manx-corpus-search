@@ -159,7 +159,8 @@ public class LuceneIndex(IndexWriter indexWriter)
                 Speaker = getTranscriptData ? document.GetField(DOCUMENT_SPEAKER)?.GetStringValue() : null,
                 MatchesInLine = countInDoc
             };
-        }).ToList();
+        // document order: docID order is merge-dependent, so it cannot be relied on (#303)
+        }).OrderBy(x => x.CsvLineNumber).ToList();
 
         return new SearchResult
         {
@@ -319,8 +320,12 @@ public class LuceneIndex(IndexWriter indexWriter)
 
         var documentMapping = distinctDocuments.ToDictionary(x => x, reader.Document);
 
-        // A collection of Lucene documents, each refers to the first sample in a distinct Corpus Document
-        var corpusDocuments = documentMapping.DistinctBy(x => x.Value.GetField(DOCUMENT_IDENT)?.GetStringValue()).ToList();
+        // A collection of Lucene documents, each refers to the first sample in a distinct Corpus Document.
+        // 'first' by line number: docID order is merge-dependent, so it cannot be relied on (#303)
+        var corpusDocuments = documentMapping
+            .GroupBy(x => x.Value.GetField(DOCUMENT_IDENT)?.GetStringValue())
+            .Select(g => g.OrderBy(x => x.Value.GetField(DOCUMENT_LINE_NUMBER)?.GetInt32Value() ?? -1).First())
+            .ToList();
 
         // key: ident of corpus document, value: docIds of each segment
         var corpusDocumentMapping = documentMapping.ToLookup(x => x.Value.GetField(DOCUMENT_IDENT).GetStringValue(), x => x.Key);
@@ -377,7 +382,10 @@ public class LuceneIndex(IndexWriter indexWriter)
 
         return docs.ScoreDocs
             .Select(x => searcher.Doc(x.Doc, fieldsToLoad))
-            .Select(x => ToDocumentLine(x, getTranscript)).ToList();
+            .Select(x => ToDocumentLine(x, getTranscript))
+            // document order: docID order is merge-dependent, so it cannot be relied on (#303)
+            .OrderBy(x => x.CsvLineNumber)
+            .ToList();
     }
 
     /// <summary>
