@@ -225,6 +225,8 @@ public class Startup(IConfiguration configuration)
             log.LogError(e, "Failed loading documents");
         }
 
+        allDocuments = WithoutDuplicates(allDocuments, log);
+
         AddDocuments(allDocuments, workService, searcher);
         var totalDocuments = (long)allDocuments.Count;
 
@@ -234,6 +236,31 @@ public class Startup(IConfiguration configuration)
 
         var totalTerms = searcher.CountManxTerms();
         return (totalDocuments, totalTerms);
+    }
+
+    /// <summary>
+    /// Drops documents whose ident was already seen, e.g. an accidentally duplicated
+    /// folder under OpenData: each copy would otherwise be indexed, duplicating every
+    /// line of the document in search results. The data repo's lint should catch this;
+    /// the server merely warns and carries on with the first copy.
+    /// </summary>
+    internal static List<Document> WithoutDuplicates(List<Document> documents, ILogger log)
+    {
+        // not firstByIdent.Values: preserve order, and allow nulls
+        var ret = new List<Document>();
+        var firstByIdent = new Dictionary<string, Document>();
+        foreach (var document in documents)
+        {
+            if (document.Ident == null || firstByIdent.TryAdd(document.Ident, document))
+            {
+                ret.Add(document);
+                continue;
+            }
+            log?.LogWarning(
+                "Ignoring duplicate document '{Ident}' from '{Path}': already loaded from '{OriginalPath}'",
+                document.Ident, document.RelativeCsvPath, firstByIdent[document.Ident].RelativeCsvPath);
+        }
+        return ret;
     }
 
     private void AddDocuments(List<Document> documents, WorkService workService, Searcher searcher)
