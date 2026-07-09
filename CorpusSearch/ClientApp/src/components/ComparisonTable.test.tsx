@@ -529,6 +529,116 @@ describe("dictionary popup (#51)", () => {
     })
 })
 
+describe("note rows", () => {
+    const notedLine = () =>
+        line({
+            manx: "Geaylin yn Cholloo. [1]",
+            english: "The headland on the Calf.",
+            notes: "[1] Geaylin yn Cholloo - ‘headland on the Calf of Man’",
+        })
+
+    beforeEach(() => {
+        mockGetSelectedWordOrPhrase.mockClear()
+    })
+
+    it("shows a linked note by default", () => {
+        const { container } = renderTable([notedLine()])
+        expect(container.querySelector(".noteRow")).not.toBeNull()
+    })
+
+    it("hides a linked note when 'Show notes' is off", () => {
+        const { container } = renderTable([notedLine()], { showNotes: false })
+        expect(container.querySelector(".noteRow")).toBeNull()
+    })
+
+    it("reveals a hidden note via its marker, and hides it again", () => {
+        const { container, getByTitle } = renderTable([notedLine()], {
+            showNotes: false,
+        })
+        fireEvent.click(getByTitle("Show note"))
+        expect(container.querySelector(".noteRow")).not.toBeNull()
+        fireEvent.click(getByTitle("Hide note"))
+        expect(container.querySelector(".noteRow")).toBeNull()
+    })
+
+    it("hides a shown note via its marker", () => {
+        const { container } = renderTable([notedLine()])
+        fireEvent.click(container.querySelector(".doc-note-marker")!)
+        expect(container.querySelector(".noteRow")).toBeNull()
+    })
+
+    it("always shows a note without a marker in the text", () => {
+        const unlinked = line({
+            manx: "gyn cowrey",
+            notes: "an editorial note",
+        })
+        const { container } = renderTable([unlinked], { showNotes: false })
+        expect(container.querySelector(".noteRow")).not.toBeNull()
+        expect(container.querySelector(".doc-note-marker")).toBeNull()
+    })
+
+    it("shows a note as-is when its marker is in a hidden column", () => {
+        // the marker sits in the Manx text, but only English is displayed
+        const { container } = renderTable([notedLine()], {
+            showNotes: false,
+            manxVisible: false,
+        })
+        expect(container.querySelector(".noteRow")).not.toBeNull()
+    })
+
+    it("shows a corrected (diffed) line's note as-is", () => {
+        // the diff view renders plain text: there is no marker to click
+        const diffed = line({
+            manx: "kiartit [1]",
+            manxOriginal: "kiartit[1]",
+            notes: "[1] a note",
+        })
+        const { container } = renderTable([diffed], { showNotes: false })
+        expect(container.querySelector(".noteRow")).not.toBeNull()
+    })
+
+    it("leaves markers as plain text on lines without notes", () => {
+        const { container } = renderTable([line({ manx: "cowrey [1] elley" })])
+        expect(container.querySelector(".doc-note-marker")).toBeNull()
+        expect(container.textContent).toContain("[1]")
+    })
+
+    it("does not open the dictionary popup when clicking a marker", () => {
+        const { container } = renderTable([notedLine()])
+        fireEvent.click(container.querySelector(".doc-note-marker")!)
+        expect(mockGetSelectedWordOrPhrase).not.toHaveBeenCalled()
+    })
+
+    it("keeps the note row off the Link column", () => {
+        const noted = notedLine()
+        const { container } = renderTable([noted], {
+            response: {
+                ...response([noted]),
+                gitHubLink: "https://github.com/x/y",
+            },
+        })
+        const cells = container.querySelectorAll(".noteRow td")
+        // the note band spans the two language columns; the Link cell stays empty
+        expect(cells).toHaveLength(2)
+        expect(cells[0].getAttribute("colspan")).toBe("2")
+        expect(cells[0].classList.contains("doc-note-band")).toBe(true)
+        expect(cells[1].textContent).toBe("")
+    })
+
+    it("keeps highlight offsets correct around a marker", () => {
+        // server offsets are into the full cell, including the marker
+        const { container } = renderTable([
+            line({
+                manx: "abc [1] cre def",
+                notes: "[1] a note",
+                manxHighlights: [{ start: 8, end: 11 }],
+            }),
+        ])
+        const marks = container.querySelectorAll("mark.textHighlight")
+        expect(Array.from(marks).map((x) => x.textContent)).toEqual(["cre"])
+    })
+})
+
 describe("segmentChunks", () => {
     it("shifts ranges into segment-local offsets", () => {
         // "abc\ncre def": segment 2 starts at offset 4

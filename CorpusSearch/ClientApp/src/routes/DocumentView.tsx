@@ -215,6 +215,14 @@ export const DocumentView = () => {
         String,
     )
 
+    // notes distract while reading (#132): hidden by default, each collapsed
+    // behind its "[1]" marker; this option shows them all
+    const [notesEnabled, setNotesEnabled] = usePersistedState(
+        "showNotes",
+        (stored) => stored === "true",
+        String,
+    )
+
     // load the data
     useEffect(() => {
         if (!docIdent) {
@@ -378,6 +386,18 @@ export const DocumentView = () => {
                         />
                         Show context
                     </label>
+                    <label
+                        className="advanced-options-match"
+                        title="Shows all annotations. If disabled, tap the [1] marker to show a note."
+                    >
+                        <input
+                            id="showNotes"
+                            type="checkbox"
+                            checked={notesEnabled}
+                            onChange={(e) => setNotesEnabled(e.target.checked)}
+                        />
+                        Show notes
+                    </label>
                 </div>
             </details>
 
@@ -498,6 +518,7 @@ export const DocumentView = () => {
                         response={searchWorkResponse}
                         docIdent={docIdent}
                         expandContext={contextEnabled}
+                        showNotes={notesEnabled}
                         value={value}
                         highlightManx={searchManx}
                         highlightEnglish={searchEnglish}

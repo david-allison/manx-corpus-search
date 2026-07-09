@@ -1,0 +1,8 @@
+{
+  "created": "1900-01-01",
+  "ident": "e2e-notes-fixture",
+  "name": "Notes Fixture",
+  "original": "Manx",
+  "notes": "Synthetic document exercising the note rows of #132: one note linked to a [1] marker, one without a marker. Used by the Playwright end-to-end tests.",
+  "source": "e2e test fixture"
+}

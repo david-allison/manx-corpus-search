@@ -187,11 +187,44 @@
 }
 
 .doc-table .noteRow td {
-    background: var(--c-note-row);
     padding: 3px 10px;
+}
+
+/* the band covers the language columns only; the play/speaker/Link cells
+   around it stay uncoloured (like the expanders) */
+.doc-table .noteRow .doc-note-band {
+    background: var(--c-note-row);
     font-size: 13px;
     color: var(--c-secondary);
     text-align: center;
+}
+
+/* a "[1]" marker linking a line to its note (#132): clicking toggles the note row.
+   An outlined chip in a warm parchment tone - visible while reading, but lighter
+   than the text and distinct from the search-match marks */
+.doc-note-marker {
+    border: none;
+    cursor: pointer;
+    margin-left: 2px;
+    padding: 1px 6px;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    vertical-align: super;
+    background: transparent;
+    color: var(--c-secondary);
+    box-shadow: inset 0 0 0 1px var(--c-border-table-head);
+}
+
+.doc-note-marker:hover {
+    background: var(--c-border-input);
+}
+
+/* the note row is open: the chip fills with the note row's own colour,
+   keeping the outline of the closed state */
+.doc-note-marker[aria-expanded="true"] {
+    background: var(--c-note-row);
 }
 
 /* context lines revealed by an expander (#286): visibly not matches */
@@ -332,5 +365,4 @@ mark.textHighlightAlternate {
     .doc-speaker-time {
         display: block;
     }
-
 }
