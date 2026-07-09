@@ -15,10 +15,11 @@ namespace CorpusSearch.Controllers;
 /// </summary>
 /// <remarks>Currently only single tags. No Binary operations</remarks>
 /// <remarks>Only 1 level, not properly recursive</remarks>
+/// <remarks>Serves both the JSON API (absolute /api/Tags routes) and the HTML pages (/Tags)</remarks>
 [Route("[controller]")]
 public class TagsController(WorkService workService) : Controller
 {
-    [HttpGet("All")]
+    [HttpGet("/api/Tags/All")]
     public async Task<List<Tag>> GetTags()
     {
         var allDocuments = await workService.GetAll();
@@ -80,7 +81,7 @@ public class TagsController(WorkService workService) : Controller
         Predicate<IDocument> HasSource(string toFind) => doc => doc.Source?.Contains(toFind, StringComparison.OrdinalIgnoreCase) ?? false;
     }
 
-    [HttpGet("List/{tagName}")]
+    [HttpGet("/api/Tags/List/{tagName}")]
     public async Task<DocumentTree?> GetDocumentsWithTag(string tagName)
     {
         Tag? t = await LookupTag(tagName);

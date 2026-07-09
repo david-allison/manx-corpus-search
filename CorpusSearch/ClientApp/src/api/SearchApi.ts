@@ -72,7 +72,7 @@ export const search = async (
 ): Promise<SearchResponse> => {
     const query = encodeURIComponent(params.query)
     const response = await fetch(
-        `search/search/${query}?minDate=${params.minDate}&maxDate=${params.maxDate}&manx=${params.manx.toString()}&english=${params.english.toString()}&ignoreHyphens=${params.ignoreHyphens.toString()}&caseSensitive=${params.caseSensitive.toString()}&accentSensitive=${params.accentSensitive.toString()}`,
+        `api/search/search/${query}?minDate=${params.minDate}&maxDate=${params.maxDate}&manx=${params.manx.toString()}&english=${params.english.toString()}&ignoreHyphens=${params.ignoreHyphens.toString()}&caseSensitive=${params.caseSensitive.toString()}&accentSensitive=${params.accentSensitive.toString()}`,
         { signal },
     )
     if (!response.ok) {

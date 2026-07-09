@@ -74,7 +74,7 @@ public class IMuseumNewspaperService
 
         internal string ToLocalUrl()
         {
-            return $"/IMuseumNewspaper/Component/V1?newspaper={Reference.NewspaperIdentifier}&date={Reference.Date:yyyy-MM-dd}&id={ComponentId}";
+            return $"/api/IMuseumNewspaper/Component/V1?newspaper={Reference.NewspaperIdentifier}&date={Reference.Date:yyyy-MM-dd}&id={ComponentId}";
         }
     }
 

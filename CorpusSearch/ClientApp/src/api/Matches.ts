@@ -37,7 +37,7 @@ export const GetMatch = async (
     signal?: AbortSignal,
 ): Promise<MatchReference> => {
     const response = await fetch(
-        `search/Match/${params.docIdent}/?query=${params.query}&match=${params.match}&ignoreHyphens=${params.ignoreHyphens.toString()}&caseSensitive=${params.caseSensitive.toString()}&accentSensitive=${params.accentSensitive.toString()}`,
+        `api/search/Match/${params.docIdent}/?query=${params.query}&match=${params.match}&ignoreHyphens=${params.ignoreHyphens.toString()}&caseSensitive=${params.caseSensitive.toString()}&accentSensitive=${params.accentSensitive.toString()}`,
         { signal },
     )
     return (await response.json()) as MatchReference
