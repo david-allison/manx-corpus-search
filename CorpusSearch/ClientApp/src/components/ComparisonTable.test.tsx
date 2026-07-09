@@ -252,6 +252,34 @@ describe("ComparisonTable video (#200)", () => {
     })
 })
 
+describe("YouTube source validation (code scanning #5, #6)", () => {
+    const renderWithSource = (source: string) => {
+        const videoLine = line({ manx: "moghrey mie", subStart: 0, subEnd: 5 })
+        return renderTable([videoLine], {
+            response: { ...response([videoLine]), source },
+        })
+    }
+
+    it("embeds a youtube.com watch URL", () => {
+        const { container } = renderWithSource(
+            "https://youtube.com/watch?v=abc123",
+        )
+        expect(container.querySelector(".video-dock")).not.toBeNull()
+    })
+
+    it.each([
+        "https://www.youtube.evil.com/watch?v=abc123",
+        "https://youtube.com.evil.com/watch?v=abc123",
+        "http://www.youtube.com/watch?v=abc123",
+        "https://www.youtube.com/watch",
+        "not a url",
+    ])("does not embed %s", (source) => {
+        const { container } = renderWithSource(source)
+        expect(container.querySelector(".video-dock")).toBeNull()
+        expect(container.querySelector(".doc-play-btn")).toBeNull()
+    })
+})
+
 describe("context expansion (#286)", () => {
     const gapResults = () => [
         line({ manx: "top match", csvLineNumber: 10 }),
