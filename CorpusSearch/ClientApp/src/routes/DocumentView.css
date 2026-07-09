@@ -197,6 +197,21 @@
 /* context lines revealed by an expander (#286): visibly not matches */
 .doc-row-context {
     opacity: 0.75;
+    /* fade the revealed lines in so the reader sees where they appeared */
+    animation: doc-context-reveal 400ms ease-out;
+}
+
+/* ends at the rows' specified opacity (0.75) */
+@keyframes doc-context-reveal {
+    from {
+        opacity: 0;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .doc-row-context {
+        animation: none;
+    }
 }
 
 .doc-table .doc-expand-row td {
