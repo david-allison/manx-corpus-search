@@ -55,6 +55,42 @@ test.describe("document view", () => {
     })
 })
 
+// #19
+test.describe("case-sensitive search", () => {
+    test("a case-matching query still matches with 'Match case' on", async ({
+        page,
+    }) => {
+        await page.goto(`${DOC}?q=Va'n&caseSensitive=true`)
+        await expect(page.locator(mark)).toHaveText("Va’n")
+    })
+
+    test("toggling 'Match case' on the document page filters by case", async ({
+        page,
+    }) => {
+        await page.goto(`${DOC}?q=va'n`)
+        await expect(page.locator(mark)).toHaveText("Va’n")
+
+        await page.locator("summary", { hasText: "Advanced options" }).click()
+        await page.getByLabel("Match case").check()
+
+        // the raw text is "Va’n": the lowercase query no longer matches
+        await expect(page.locator(mark)).toHaveCount(0)
+        await expect(page.getByText(/0 matches/)).toBeVisible()
+    })
+
+    test("toggling 'Match case' on the home page filters results", async ({
+        page,
+    }) => {
+        await page.goto("/?q=va'n")
+        await expect(page.locator("strong.kwic-match")).toHaveText("Va’n")
+
+        await page.locator("summary", { hasText: "Advanced options" }).click()
+        await page.getByLabel("Match case").check()
+
+        await expect(page.getByText(/No matches/)).toBeVisible()
+    })
+})
+
 test.describe("home page", () => {
     test("diacritic-folded query highlights the KWIC sample", async ({
         page,

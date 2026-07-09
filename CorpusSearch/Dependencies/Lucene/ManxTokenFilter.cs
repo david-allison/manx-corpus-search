@@ -8,10 +8,12 @@ namespace CorpusSearch.Dependencies.Lucene;
 public sealed class ManxTokenFilter : TokenFilter
 {
     private readonly ICharTermAttribute termAtt;
+    private readonly bool preserveCase;
 
-    public ManxTokenFilter(TokenStream input) : base(input)
+    public ManxTokenFilter(TokenStream input, bool preserveCase = false) : base(input)
     {
         this.termAtt = AddAttribute<ICharTermAttribute>();
+        this.preserveCase = preserveCase;
     }
 
     public override bool IncrementToken()
@@ -24,11 +26,11 @@ public sealed class ManxTokenFilter : TokenFilter
             // trailing ? as a question mark
             if (term.EndsWith("?") && !term.EndsWith("??"))
             {
-                newContent = DocumentLine.NormalizeManx(term.TrimEnd('?'), allowQuestionMark: true);
+                newContent = DocumentLine.NormalizeManx(term.TrimEnd('?'), allowQuestionMark: true, preserveCase: preserveCase);
             }
             else
             {
-                newContent = DocumentLine.NormalizeManx(term, allowQuestionMark: true);
+                newContent = DocumentLine.NormalizeManx(term, allowQuestionMark: true, preserveCase: preserveCase);
             }
 
             HandleContentChange(newContent, termAtt);

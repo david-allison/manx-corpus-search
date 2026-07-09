@@ -43,19 +43,21 @@ public static class NormalizationMapper
         ['…'] = "...",
     };
 
-    public static MappedText NormalizeManxMapped(string manx, bool allowQuestionMark = true) =>
-        Normalize(manx, allowQuestionMark, removeColon: true);
+    public static MappedText NormalizeManxMapped(string manx, bool allowQuestionMark = true, bool preserveCase = false) =>
+        Normalize(manx, allowQuestionMark, removeColon: true, preserveCase);
 
-    public static MappedText NormalizeEnglishMapped(string english, bool allowQuestionMark = false) =>
-        Normalize(english, allowQuestionMark, removeColon: false);
+    public static MappedText NormalizeEnglishMapped(string english, bool allowQuestionMark = false, bool preserveCase = false) =>
+        Normalize(english, allowQuestionMark, removeColon: false, preserveCase);
 
     /// <summary>Equivalent of <see cref="DocumentLine.NormalizedManx"/>: the indexed field text</summary>
-    public static MappedText PaddedManx(string manx) => NormalizeManxMapped(manx).Pad(" ", " ");
+    public static MappedText PaddedManx(string manx, bool preserveCase = false) =>
+        NormalizeManxMapped(manx, preserveCase: preserveCase).Pad(" ", " ");
 
     /// <summary>Equivalent of <see cref="DocumentLine.NormalizedEnglish"/>: the indexed field text</summary>
-    public static MappedText PaddedEnglish(string english) => NormalizeEnglishMapped(english).Pad(" ", " ");
+    public static MappedText PaddedEnglish(string english, bool preserveCase = false) =>
+        NormalizeEnglishMapped(english, preserveCase: preserveCase).Pad(" ", " ");
 
-    private static MappedText Normalize(string text, bool allowQuestionMark, bool removeColon)
+    private static MappedText Normalize(string text, bool allowQuestionMark, bool removeColon, bool preserveCase = false)
     {
         var mapped = MappedText.Identity(text)
             // RemovePunctuation
@@ -66,7 +68,7 @@ public static class NormalizationMapper
             .MapChars(c => MicrosoftWordQuotes.GetValueOrDefault(c) ?? c.ToString())
             // RemoveBrackets, RemoveColon (Manx only), RemoveDoubleQuotes
             .MapChars(c => c == '(' || c == ')' || c == '"' || (removeColon && c == ':') ? "" : c.ToString());
-        return ToLower(mapped).Trim();
+        return (preserveCase ? mapped : ToLower(mapped)).Trim();
     }
 
     private static bool IsPunctuation(char c, bool allowQuestionMark)

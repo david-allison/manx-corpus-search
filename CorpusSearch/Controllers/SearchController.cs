@@ -113,7 +113,7 @@ public partial class SearchController(
     }
 
     [HttpGet("SearchWork/{workIdent}/{query}")]
-    public async Task<ActionResult<SearchWorkResult>> SearchWork(string workIdent, string query = null, bool manx = true, bool english = true, bool ignoreHyphens = false)
+    public async Task<ActionResult<SearchWorkResult>> SearchWork(string workIdent, string query = null, bool manx = true, bool english = true, bool ignoreHyphens = false, bool caseSensitive = false)
     {
         if (QueryTooLong(query))
         {
@@ -127,6 +127,7 @@ public partial class SearchController(
             Manx = manx,
             English = english,
             IgnoreHyphens = ignoreHyphens,
+            CaseSensitive = caseSensitive,
         };
         SearchWorkResult ret = await documentSearchService.SearchWork(workQuery);
 
@@ -184,11 +185,11 @@ public partial class SearchController(
     }
 
     [HttpGet("Match/{workIdent}")]
-    public async Task<MatchReference> GetMatch(string workIdent, [FromQuery] string query, [FromQuery(Name = "match")] int matchNumber, bool ignoreHyphens = false)
+    public async Task<MatchReference> GetMatch(string workIdent, [FromQuery] string query, [FromQuery(Name = "match")] int matchNumber, bool ignoreHyphens = false, bool caseSensitive = false)
     {
         // PREF: Much slower than necessary
         if (matchNumber < 1 || query == null || workIdent == null) return null;
-        var workResult = (await SearchWork(workIdent, query: query, manx: true, english: false, ignoreHyphens: ignoreHyphens)).Value;
+        var workResult = (await SearchWork(workIdent, query: query, manx: true, english: false, ignoreHyphens: ignoreHyphens, caseSensitive: caseSensitive)).Value;
         if (workResult == null) return null;
         var selectedIndex = QueryMatchIndex(workResult.Results, matchNumber);
         if (selectedIndex == null) return null;
@@ -221,7 +222,7 @@ public partial class SearchController(
     }
 
     [HttpGet("Search/{query}")]
-    public async Task<ActionResult<QueryDocumentSearchResult>> SearchCorpus(string query, bool manx = true, bool english = true, int minDate = 1600, int maxDate = 2100, bool ignoreHyphens = false)
+    public async Task<ActionResult<QueryDocumentSearchResult>> SearchCorpus(string query, bool manx = true, bool english = true, int minDate = 1600, int maxDate = 2100, bool ignoreHyphens = false, bool caseSensitive = false)
     {
         if (QueryTooLong(query))
         {
@@ -241,6 +242,7 @@ public partial class SearchController(
             MinDate = DateTimeUtil.FromYear(Math.Max(1, minDate)),
             MaxDate = DateTimeUtil.FromYearMax(maxDate),
             IgnoreHyphens = ignoreHyphens,
+            CaseSensitive = caseSensitive,
         };
         if (!searchQuery.IsValid())
         {

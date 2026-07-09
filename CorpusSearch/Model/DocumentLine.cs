@@ -48,19 +48,27 @@ public class DocumentLine
         }
     }
 
+    /// <summary>Case-preserving <see cref="NormalizedEnglish"/>: the case-sensitive indexed field text</summary>
+    [JsonIgnore]
+    public string NormalizedEnglishCased => " " + NormalizeEnglish(English, preserveCase: true) + " ";
+
+    /// <summary>Case-preserving <see cref="NormalizedManx"/>: the case-sensitive indexed field text</summary>
+    [JsonIgnore]
+    public string NormalizedManxCased => " " + NormalizeManx(Manx, preserveCase: true) + " ";
+
     /// <summary>The Line Number in the CSV</summary>
     public int CsvLineNumber { get; set; }
 
     // Trim: punctuation is replaced with spaces, so "jee." would otherwise become "jee " and never
     // match an indexed term (#237)
-    public static string NormalizeEnglish(string english, bool allowQuestionMark = false)
+    public static string NormalizeEnglish(string english, bool allowQuestionMark = false, bool preserveCase = false)
     {
-        return NormalizationMapper.NormalizeEnglishMapped(english, allowQuestionMark).Text;
+        return NormalizationMapper.NormalizeEnglishMapped(english, allowQuestionMark, preserveCase).Text;
     }
 
-    public static string NormalizeManx(string manx, bool allowQuestionMark = true)
+    public static string NormalizeManx(string manx, bool allowQuestionMark = true, bool preserveCase = false)
     {
-        return NormalizationMapper.NormalizeManxMapped(manx, allowQuestionMark).Text;
+        return NormalizationMapper.NormalizeManxMapped(manx, allowQuestionMark, preserveCase).Text;
     }
 
 }

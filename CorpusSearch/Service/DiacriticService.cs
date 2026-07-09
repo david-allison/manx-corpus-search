@@ -70,8 +70,15 @@ public class DiacriticService
             return new[] { ret };
         }
 
-        return reverseMap[input.ToString()].Select(x => x.ToString()).ToList();
+        var reversed = reverseMap[input.ToString()].Select(x => x.ToString()).ToList();
+        if (reversed.Count != 0 || !char.IsUpper(input))
+        {
+            return reversed;
+        }
 
+        // the map only lists lowercase: uppercase letters (which only reach here from
+        // case-sensitive queries, #19) fold like their lowercase forms - 'Ç' <-> 'C'
+        return Replace(char.ToLowerInvariant(input)).Select(x => x.ToUpperInvariant()).ToList();
     }
 
     public static string Replace(string input)

@@ -60,6 +60,8 @@ export type SearchParams = {
     english: boolean
     /** Hyphens, spaces and joined words are interchangeable: "lhiam-lhiat" matches "lhiam lhiat" and "lhiamlhiat" */
     ignoreHyphens: boolean
+    /** Case must match: "Moir" does not match "moir" */
+    caseSensitive: boolean
 }
 
 export const search = async (
@@ -68,7 +70,7 @@ export const search = async (
 ): Promise<SearchResponse> => {
     const query = encodeURIComponent(params.query)
     const response = await fetch(
-        `search/search/${query}?minDate=${params.minDate}&maxDate=${params.maxDate}&manx=${params.manx.toString()}&english=${params.english.toString()}&ignoreHyphens=${params.ignoreHyphens.toString()}`,
+        `search/search/${query}?minDate=${params.minDate}&maxDate=${params.maxDate}&manx=${params.manx.toString()}&english=${params.english.toString()}&ignoreHyphens=${params.ignoreHyphens.toString()}&caseSensitive=${params.caseSensitive.toString()}`,
         { signal },
     )
     if (!response.ok) {

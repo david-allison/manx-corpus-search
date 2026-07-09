@@ -9,6 +9,8 @@ public class CorpusSearchWorkQuery(string query)
     public bool English { get; set; }
     /// <inheritdoc cref="ScanOptions.IgnoreHyphens"/>
     public bool IgnoreHyphens { get; set; }
+    /// <inheritdoc cref="ScanOptions.CaseSensitive"/>
+    public bool CaseSensitive { get; set; }
 
     internal bool IsValid()
     {

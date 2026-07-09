@@ -15,10 +15,11 @@ public class HighlightingTest : QueryBase
 {
     private const string DOC = "doc";
 
-    private SearchResult SearchWork(string query, SearchType type = SearchType.Manx, bool ignoreHyphens = false)
+    private SearchResult SearchWork(string query, SearchType type = SearchType.Manx, bool ignoreHyphens = false,
+        bool caseSensitive = false)
     {
         return new Searcher(luceneIndex, parser)
-            .SearchWork(DOC, query, new SearchOptions { Type = type, IgnoreHyphens = ignoreHyphens });
+            .SearchWork(DOC, query, new SearchOptions { Type = type, IgnoreHyphens = ignoreHyphens, CaseSensitive = caseSensitive });
     }
 
     /// <summary>The substrings of the raw text selected by the returned highlight ranges</summary>
@@ -47,6 +48,33 @@ public class HighlightingTest : QueryBase
     {
         this.AddManxDoc(DOC, "Çhengey ny mayrey");
         AssertSingleLineHighlights("chengey", "Çhengey");
+    }
+
+    [Test]
+    public void CaseSensitiveQueryHighlightsOnlyTheMatchingCase()
+    {
+        // #19 - the cased field has its own term vectors: offsets still map back to the raw text
+        this.AddManxDoc(DOC, "Ta çhengey aym as Çhengey elley");
+        var line = SearchWork("Chengey", caseSensitive: true).Lines.Single();
+        Assert.That(Highlighted(line.Manx, line.ManxHighlights), Is.EqualTo(new[] { "Çhengey" }));
+        Assert.That(line.MatchesInLine, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void CaseSensitiveQueryFindsNothingWhenTheCaseDiffers()
+    {
+        this.AddManxDoc(DOC, "Çhengey ny mayrey");
+        var result = SearchWork("çhengey", caseSensitive: true);
+        Assert.That(result.Lines, Is.Empty);
+    }
+
+    [Test]
+    public void CaseSensitiveEnglishSearchHighlightsTheEnglishText()
+    {
+        AddDocument(DOC, new Line { Manx = "yn çhengey", English = "The Tongue and the tongue" });
+        var line = SearchWork("Tongue", SearchType.English, caseSensitive: true).Lines.Single();
+        Assert.That(Highlighted(line.English, line.EnglishHighlights), Is.EqualTo(new[] { "Tongue" }));
+        Assert.That(line.ManxHighlights, Is.Null);
     }
 
     [Test]
@@ -259,6 +287,14 @@ public class HighlightingTest : QueryBase
         this.AddManxDoc(DOC, "Ta çhengey aym");
         var result = Scan("chengey").DocumentResults.Single();
         Assert.That(Highlighted(result.Sample, result.SampleHighlights), Is.EqualTo(new[] { "çhengey" }));
+    }
+
+    [Test]
+    public void CaseSensitiveScanHighlightsTheSample()
+    {
+        this.AddManxDoc(DOC, "Çhengey ny mayrey as çhengey");
+        var result = Scan("Chengey", new ScanOptions { CaseSensitive = true }).DocumentResults.Single();
+        Assert.That(Highlighted(result.Sample, result.SampleHighlights), Is.EqualTo(new[] { "Çhengey" }));
     }
 
     [Test]

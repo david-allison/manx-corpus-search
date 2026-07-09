@@ -12,6 +12,8 @@ const AdvancedOptions = (props: {
     onMatchChange: (match: boolean) => void
     ignoreHyphens: boolean
     onIgnoreHyphensChange: (ignoreHyphens: boolean) => void
+    caseSensitive: boolean
+    onCaseSensitiveChange: (caseSensitive: boolean) => void
     children?: ReactNode
 }) => {
     // keep the raw text so clearing a field while typing doesn't snap the value back
@@ -70,6 +72,10 @@ const AdvancedOptions = (props: {
                     ignoreHyphens={props.ignoreHyphens}
                     onIgnoreHyphensChange={props.onIgnoreHyphensChange}
                 />
+                <CaseSensitive
+                    caseSensitive={props.caseSensitive}
+                    onCaseSensitiveChange={props.onCaseSensitiveChange}
+                />
                 {props.children}
             </div>
         </details>
@@ -93,6 +99,27 @@ const IgnoreHyphens = (props: {
                 onChange={(e) => props.onIgnoreHyphensChange(e.target.checked)}
             />
             Ignore hyphens
+        </label>
+    )
+}
+
+// controlled from the page so the option can follow a result onto the document page (#19)
+export const CaseSensitive = (props: {
+    caseSensitive: boolean
+    onCaseSensitiveChange: (caseSensitive: boolean) => void
+}) => {
+    return (
+        <label
+            className="advanced-options-match"
+            title="“Moir” does not match “moir”"
+        >
+            <input
+                id="caseSensitive"
+                type="checkbox"
+                checked={props.caseSensitive}
+                onChange={(e) => props.onCaseSensitiveChange(e.target.checked)}
+            />
+            Match case
         </label>
     )
 }

@@ -33,7 +33,7 @@ public class QueryParserTest : QueryBase
     [Test]
     public void SearchIsNotCaseSensitive()
     {
-        // TODO: We will fix this later once I write an optional case sensitive span query, but for now, this works.
+        // the default; see TestCaseSensitiveSearch for the opt-in (#19)
         this.AddManxDoc("1", "Hello");
 
         var result = Query("hello");
@@ -45,7 +45,7 @@ public class QueryParserTest : QueryBase
     [Test]
     public void TestSearchForCaps()
     {
-        // TODO: We will fix this later once I write an optional case sensitive span query, but for now, this works.
+        // the default; see TestCaseSensitiveSearch for the opt-in (#19)
         this.AddManxDoc("1", "	dy ve beaghey ayns aggle Yee, as jeaghyn son");
 
         var result = Query("Aggle");
@@ -181,6 +181,87 @@ public class QueryParserTest : QueryBase
 
         Assert.That(withoutDiacritics1.NumberOfMatches, Is.EqualTo(1), "façade should be only match");
         Assert.That(withoutDiacritics2.NumberOfMatches, Is.EqualTo(1), "facade should be only match");
+    }
+
+    [Test]
+    public void TestCaseSensitiveSearch()
+    {
+        // #19 - opt-in case-sensitive matching
+        this.AddManxDoc("1", "hello", "Hello");
+
+        var lower = Query("hello", new ScanOptions { CaseSensitive = true });
+        var caps = Query("Hello", new ScanOptions { CaseSensitive = true });
+
+        Assert.That(lower.NumberOfMatches, Is.EqualTo(1), "'hello' should be the only match");
+        Assert.That(caps.NumberOfMatches, Is.EqualTo(1), "'Hello' should be the only match");
+    }
+
+    [Test]
+    public void TestCaseSensitiveWithDiacritics()
+    {
+        // case and diacritics are independent axes: 'Chengey' still matches 'Çhengey'
+        this.AddManxDoc("1", "Çhengey", "çhengey");
+
+        var caps = Query("Chengey", new ScanOptions { CaseSensitive = true });
+        var lower = Query("chengey", new ScanOptions { CaseSensitive = true });
+
+        Assert.That(caps.NumberOfMatches, Is.EqualTo(1), "'Çhengey' should be the only match");
+        Assert.That(lower.NumberOfMatches, Is.EqualTo(1), "'çhengey' should be the only match");
+    }
+
+    [Test]
+    public void TestCaseSensitiveWithExactDiacritics()
+    {
+        // both options at once: only the identical form matches
+        this.AddManxDoc("1", "Çhengey", "Chengey", "çhengey");
+
+        var result = Query("Çhengey", new ScanOptions { CaseSensitive = true, NormalizeDiacritics = false });
+
+        Assert.That(result.NumberOfMatches, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void TestCaseSensitiveWildcard()
+    {
+        this.AddManxDoc("1", "Hello", "hello");
+
+        var caps = Query("H*", new ScanOptions { CaseSensitive = true });
+        var lower = Query("h*", new ScanOptions { CaseSensitive = true });
+
+        Assert.That(caps.NumberOfMatches, Is.EqualTo(1), "'Hello' should be the only match");
+        Assert.That(lower.NumberOfMatches, Is.EqualTo(1), "'hello' should be the only match");
+    }
+
+    [Test]
+    public void TestCaseSensitivePhrase()
+    {
+        this.AddManxDoc("1", "Yn Baase Mooar", "yn baase mooar");
+
+        var result = Query("Baase Mooar", new ScanOptions { CaseSensitive = true });
+
+        Assert.That(result.NumberOfMatches, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void TestCaseSensitiveWithIgnoreHyphens()
+    {
+        this.AddManxDoc("1", "Lhiam-Lhiat", "lhiam-lhiat");
+
+        var result = Query("Lhiam Lhiat", new ScanOptions { CaseSensitive = true, IgnoreHyphens = true });
+
+        Assert.That(result.NumberOfMatches, Is.EqualTo(1), "'Lhiam-Lhiat' should be the only match");
+    }
+
+    [Test]
+    public void TestCaseSensitiveEnglish()
+    {
+        AddDocument("1",
+            new Line { Manx = "", English = "The Tongue" },
+            new Line { Manx = "", English = "the tongue" });
+
+        var result = Query("Tongue", new ScanOptions { CaseSensitive = true, SearchType = SearchType.English });
+
+        Assert.That(result.NumberOfMatches, Is.EqualTo(1), "'The Tongue' should be the only match");
     }
 
     [Test]
