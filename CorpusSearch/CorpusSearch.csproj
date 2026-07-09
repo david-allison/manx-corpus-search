@@ -13,9 +13,6 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <!-- Don't require XML doc comments on public members (1591) or on every parameter (1573) -->
     <NoWarn>$(NoWarn);CS1591;CS1573</NoWarn>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <!-- Keep NuGet audit findings as warnings (#227). They introduce temporal coupling.
     The 'Dependency Audit' workflow and Dependabot are better for this use case. -->
