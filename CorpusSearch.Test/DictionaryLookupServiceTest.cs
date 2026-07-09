@@ -46,6 +46,48 @@ public class DictionaryLookupServiceTest
         Assert.That(Lookup(service, "mygeayrt y mo'ee"), Is.EqualTo(new[] { "mygeayrt y mo'ee" }));
     }
 
+    /// <summary>The test case from #337</summary>
+    [Test]
+    public void PossessiveWithoutAnEntryFallsBackToTheWord()
+    {
+        var service = Service("mooad");
+        Assert.That(Lookup(service, "mooad's"), Is.EqualTo(new[] { "mooad" }));
+        Assert.That(Lookup(service, "MOOAD'S"), Is.EqualTo(new[] { "mooad" }));
+        Assert.That(Lookup(service, "mooad’s"), Is.EqualTo(new[] { "mooad" }));
+    }
+
+    [Test]
+    public void ContractionWithoutAnEntryFallsBackToItsParts()
+    {
+        // the lone 't' (of 'ta') is not returned: a single letter is a contraction stub, not a word
+        var service = Service("eh", "goll");
+        Assert.That(Lookup(service, "t'eh goll"), Is.EqualTo(new[] { "eh", "goll" }));
+    }
+
+    [Test]
+    public void WordWithItsOwnEntryDoesNotFallBackToItsParts()
+    {
+        // the emphatic -'s is a real suffix ('my chree's'): the exact entry is sufficient
+        var service = Service("chree's", "chree");
+        Assert.That(Lookup(service, "chree's"), Is.EqualTo(new[] { "chree's" }));
+    }
+
+    [Test]
+    public void ApostropheStylesAreInterchangeable()
+    {
+        // Kelly writes typographic apostrophes ('B’ODDEY'), Cregeen typewriter ones ('mo'ee')
+        var service = Service("b’oddey", "mo'ee");
+        Assert.That(Lookup(service, "b'oddey"), Is.EqualTo(new[] { "b’oddey" }));
+        Assert.That(Lookup(service, "mo’ee"), Is.EqualTo(new[] { "mo'ee" }));
+    }
+
+    [Test]
+    public void CompoundWithPossessiveFallsBackToItsWords()
+    {
+        var service = Service("goll", "mygeayrt");
+        Assert.That(Lookup(service, "goll-mygeayrt's"), Is.EqualTo(new[] { "goll", "mygeayrt" }));
+    }
+
     [Test]
     public void UnknownWordReturnsNothing()
     {
