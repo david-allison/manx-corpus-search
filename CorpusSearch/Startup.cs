@@ -1,7 +1,6 @@
 using CorpusSearch.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.SpaServices;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -21,9 +20,7 @@ using CorpusSearch.Service;
 using CorpusSearch.Service.Dictionaries;
 using CorpusSearch.Utils;
 using Microsoft.Extensions.Logging;
-using Serilog;
 using static System.Text.Json.JsonSerializer;
-using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace CorpusSearch;
 
