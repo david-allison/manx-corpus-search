@@ -18,6 +18,9 @@ public class DictionaryLookupService(IEnumerable<ISearchDictionary> dictionarySe
     /// <summary>Trimmed from the edges of each word; apostrophes/hyphens are word-internal in Manx</summary>
     private static readonly char[] Punctuation = ['.', ',', '?', ';', ':', '!', '(', ')', '[', ']', '{', '}', '"', '“', '”', '…'];
 
+    /// <summary>Each marks a compound/contraction whose parts may have their own entries</summary>
+    private static readonly char[] WordSeparators = ['-', '\'', '’'];
+
     private readonly ISearchDictionary[] dictionaryServices = dictionaryServices.ToArray();
 
     /// <param name="lang">the query language, for example 'gv'</param>
@@ -55,7 +58,7 @@ public class DictionaryLookupService(IEnumerable<ISearchDictionary> dictionarySe
     /// The queries to attempt, most specific first: phrases from the context containing the
     /// selection (longest first), then the selection itself. Compounds are written both
     /// hyphenated and as separate words, so each candidate is also tried with hyphens
-    /// exchanged for spaces (and vice versa).
+    /// exchanged for spaces (and vice versa), and with each apostrophe style.
     /// </summary>
     private static List<string> GetCandidates(string selection, string context)
     {
@@ -86,7 +89,8 @@ public class DictionaryLookupService(IEnumerable<ISearchDictionary> dictionarySe
             .OrderByDescending(x => x.Count)
             .Append(selectionWords)
             .Select(words => string.Join(" ", words))
-            .SelectMany(HyphenVariants);
+            .SelectMany(HyphenVariants)
+            .SelectMany(ApostropheVariants);
 
         return candidates.Distinct(StringComparer.InvariantCultureIgnoreCase).ToList();
     }
@@ -97,6 +101,14 @@ public class DictionaryLookupService(IEnumerable<ISearchDictionary> dictionarySe
         yield return candidate;
         yield return candidate.Replace('-', ' ');
         yield return candidate.Replace(' ', '-');
+    }
+
+    /// <summary>The texts and dictionaries mix typewriter (') and typographic (’) apostrophes</summary>
+    private static IEnumerable<string> ApostropheVariants(string candidate)
+    {
+        yield return candidate;
+        yield return candidate.Replace('’', '\'');
+        yield return candidate.Replace('\'', '’');
     }
 
     /// <summary>The starting indexes at which the selection occurs within the context</summary>
@@ -112,17 +124,23 @@ public class DictionaryLookupService(IEnumerable<ISearchDictionary> dictionarySe
         }
     }
 
-    /// <summary>The component words of a compound/phrase: 'goll-mygeayrt' -> ['goll', 'mygeayrt']</summary>
+    /// <summary>
+    /// The component words of a compound/contraction: 'goll-mygeayrt' -> ['goll', 'mygeayrt'],
+    /// "mooad's" (#337) -> ['mooad'].
+    /// </summary>
     private static List<string> GetParts(string selection)
     {
-        var parts = Tokenize(selection)
-            .SelectMany(x => x.Split('-', StringSplitOptions.RemoveEmptyEntries))
+        var queried = string.Join(" ", Tokenize(selection));
+
+        return Tokenize(selection)
+            .SelectMany(x => x.Split(WordSeparators, StringSplitOptions.RemoveEmptyEntries))
             .Where(x => x.Any(char.IsLetter))
+            // a lone letter is the stub of a contraction ('t' from t'eh, the possessive 's'), not a word
+            .Where(x => x.Length > 1)
+            // the selection itself was already queried
+            .Where(x => !x.Equals(queried, StringComparison.InvariantCultureIgnoreCase))
             .Distinct(StringComparer.InvariantCultureIgnoreCase)
             .ToList();
-
-        // a single unhyphenated word was already queried as-is
-        return parts.Count <= 1 ? [] : parts;
     }
 
     private static List<string> Tokenize(string text) =>
