@@ -427,7 +427,10 @@ const ProgressBar = () => {
     return (
         <div
             style={{
+                // symmetric margins: without the bottom one, the footer rule
+                // sits right beneath the spinner
                 marginTop: 40,
+                marginBottom: 40,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
