@@ -521,7 +521,7 @@ export const ComparisonTable = (props: {
                     </Typography>
                     <Typography
                         id="modal-modal-description"
-                        sx={{ mt: 2, color: "#2E3F46" }}
+                        sx={{ mt: 2, color: "#2E3F46", overflowY: "auto" }}
                     >
                         {modalValue == null && (
                             <div
@@ -569,8 +569,11 @@ const style = {
     top: "50%",
     left: "50%",
     transform: "translate(-50%, -50%)",
-    width: 400,
+    width: 520,
     maxWidth: "90vw",
+    maxHeight: "85vh",
+    display: "flex",
+    flexDirection: "column" as const,
     bgcolor: "#FFFEF9",
     border: "1px solid #E8DDC4",
     borderRadius: "4px",
