@@ -152,6 +152,54 @@ describe("ComparisonTable highlighting", () => {
     })
 })
 
+describe("diffed lines (#310)", () => {
+    // "chengey" -> "çhengey": the diff removes "c" and adds "ç"
+    const correctedLine = line({
+        manx: "Ta çhengey aym",
+        manxOriginal: "Ta chengey aym",
+        manxHighlights: [{ start: 3, end: 10 }],
+    })
+
+    it("still renders the diff parts", () => {
+        const { container } = renderTable([correctedLine])
+        expect(container.querySelector(".part-added")?.textContent).toBe("ç")
+        expect(container.querySelector(".part-removed")?.textContent).toBe("c")
+    })
+
+    it("highlights the server-provided ranges within the diff", () => {
+        // the range spans the added "ç" and the unchanged "hengey"
+        const { container } = renderTable([correctedLine])
+        const marks = container.querySelectorAll("mark.textHighlight")
+        expect(
+            Array.from(marks)
+                .map((x) => x.textContent)
+                .join(""),
+        ).toBe("çhengey")
+    })
+
+    it("does not highlight removed text", () => {
+        // "cre va shen" -> "cre shen": the match "cre" stops before the removal
+        const { container } = renderTable([
+            line({
+                manx: "cre shen",
+                manxOriginal: "cre va shen",
+                manxHighlights: [{ start: 0, end: 3 }],
+            }),
+        ])
+        const marks = container.querySelectorAll("mark.textHighlight")
+        expect(Array.from(marks).map((x) => x.textContent)).toEqual(["cre"])
+        expect(container.querySelector(".part-removed mark")).toBeNull()
+    })
+
+    it("renders no highlight when highlighting is toggled off", () => {
+        const { container } = renderTable([correctedLine], {
+            highlightManx: false,
+        })
+        expect(container.querySelector("mark.textHighlight")).toBeNull()
+        expect(container.querySelector(".part-added")).not.toBeNull()
+    })
+})
+
 describe("ComparisonTable video (#200)", () => {
     // a 'subStart' of 0 is valid: the first subtitle of a video starts at 0s
     const videoLine = line({ manx: "moghrey mie", subStart: 0, subEnd: 5 })
