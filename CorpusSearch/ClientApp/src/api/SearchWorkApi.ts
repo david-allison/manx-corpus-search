@@ -1,4 +1,5 @@
 import { HighlightRange, Translations } from "./SearchApi"
+import { SearchOptions, searchOptionsQuery } from "./SearchOptions"
 
 export type SourceLink = {
     url: string
@@ -57,13 +58,7 @@ type WorkSearch = {
     value: string
     searchEnglish: boolean
     searchManx: boolean
-    /** Hyphens, spaces and joined words are interchangeable: "lhiam-lhiat" matches "lhiam lhiat" and "lhiamlhiat" */
-    ignoreHyphens: boolean
-    /** Case must match: "Moir" does not match "moir" */
-    caseSensitive: boolean
-    /** Accents must match: "chengey" does not match "çhengey" */
-    accentSensitive: boolean
-}
+} & SearchOptions
 
 /**
  * @throws Error if the search fails (e.g. query is too long)
@@ -74,7 +69,7 @@ export const searchWork = async (
 ): Promise<SearchWorkResponse> => {
     const searchValue = !params.value ? "*" : params.value
     const response = await fetch(
-        `api/search/searchWork/${params.docIdent}/${encodeURIComponent(searchValue)}?english=${params.searchEnglish.toString()}&manx=${params.searchManx.toString()}&ignoreHyphens=${params.ignoreHyphens.toString()}&caseSensitive=${params.caseSensitive.toString()}&accentSensitive=${params.accentSensitive.toString()}`,
+        `api/search/searchWork/${params.docIdent}/${encodeURIComponent(searchValue)}?english=${params.searchEnglish.toString()}&manx=${params.searchManx.toString()}${searchOptionsQuery(params)}`,
         { signal },
     )
     if (!response.ok) {
