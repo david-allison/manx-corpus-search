@@ -14,6 +14,12 @@ To add/modify documents, see: [manx-search-data](https://github.com/david-alliso
 2. Copy the `OpenData` folder from [manx-search-data](https://github.com/david-allison/manx-search-data/) into `CorpusSearch/OpenData` folder
 3. `dotnet run`
 
+For UI-only changes, run the React app against the live site:
+
+```sh
+cd CorpusSearch/ClientApp && npm run dev:live
+```
+
 ### Pre-commit hooks (contributors)
 
 TypeScript files are auto-formatted with [Prettier](https://prettier.io/) via [pre-commit](https://pre-commit.com/). Install the hook once per clone:
