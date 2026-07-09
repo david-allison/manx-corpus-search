@@ -28,7 +28,11 @@ public class DictionaryLookupService(IEnumerable<ISearchDictionary> dictionarySe
         var dictionaries = dictionaryServices.Where(x => x.QueryLanguages.Contains(lang)).ToList();
 
         List<DictionarySummary> GetSummaries(IEnumerable<string> queries) =>
-            queries.SelectMany(query => dictionaries.SelectMany(d => d.GetSummaries(query, basic: true))).ToList();
+            queries.SelectMany(query =>
+                dictionaries.SelectMany(d => d.GetSummaries(query, basic: true))
+                    // an entry can list the query as a mere variant ('EEN, YN'): those headed by it come first
+                    .OrderBy(x => string.Equals(x.PrimaryWord, query, StringComparison.InvariantCultureIgnoreCase) ? 0 : 1))
+                .ToList();
 
         var results = GetSummaries(GetCandidates(selection, context));
 

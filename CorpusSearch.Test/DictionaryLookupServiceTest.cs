@@ -114,6 +114,26 @@ public class DictionaryLookupServiceTest
         Assert.That(Lookup(service, "dy hroggal"), Is.EqualTo(new[] { "dy", "hroggal" }));
     }
 
+    /// <summary>
+    /// Kelly heads some entries with variant forms ('EEN, YN'), so looking up 'yn' also matches
+    /// them. Entries headed by the query itself must come first.
+    /// </summary>
+    [Test]
+    public void EntriesHeadedByTheQueryAreReturnedFirst()
+    {
+        var service = new DictionaryLookupService([new FakeDictionary(["EEN", "YN"], ["YN"])]);
+        Assert.That(Lookup(service, "yn"), Is.EqualTo(new[] { "YN", "EEN" }));
+    }
+
+    [Test]
+    public void PhrasesFromTheContextStillOutrankTheHeadedEntry()
+    {
+        // specificity wins over the headword: the phrase match is more useful than the exact entry
+        var service = new DictionaryLookupService([new FakeDictionary(["goll mygeayrt"], ["goll", "gholl"])]);
+        var result = Lookup(service, "goll", context: "v'eh goll mygeayrt y valley");
+        Assert.That(result, Is.EqualTo(new[] { "goll mygeayrt", "goll" }));
+    }
+
     [Test]
     public void DuplicateMatchesAreRemoved()
     {
@@ -142,13 +162,19 @@ public class DictionaryLookupServiceTest
 
     private class FakeDictionary : ISearchDictionary
     {
-        private readonly Dictionary<string, string> wordToPrimaryWord;
+        private readonly List<(List<string> Words, string PrimaryWord)> entries;
 
-        public FakeDictionary(params string[] words) : this(words.ToDictionary(x => x, x => x)) { }
+        public FakeDictionary(params string[] words) : this(words.Select(x => new[] { x }).ToArray()) { }
+
+        /// <summary>Each entry is its word list, headed by the primary word: ["EEN", "YN"] is the entry 'EEN, YN'</summary>
+        public FakeDictionary(params string[][] entryWords)
+        {
+            entries = entryWords.Select(words => (words.ToList(), words[0])).ToList();
+        }
 
         public FakeDictionary(Dictionary<string, string> wordToPrimaryWord)
         {
-            this.wordToPrimaryWord = new Dictionary<string, string>(wordToPrimaryWord, StringComparer.InvariantCultureIgnoreCase);
+            entries = wordToPrimaryWord.Select(x => (new List<string> { x.Key }, x.Value)).ToList();
         }
 
         public string Identifier => "Fake";
@@ -157,11 +183,10 @@ public class DictionaryLookupServiceTest
 
         public IEnumerable<DictionarySummary> GetSummaries(string query, bool basic = false)
         {
-            if (!wordToPrimaryWord.TryGetValue(query, out var primaryWord))
+            foreach (var (_, primaryWord) in entries.Where(e => e.Words.Contains(query, StringComparer.InvariantCultureIgnoreCase)))
             {
-                yield break;
+                yield return new DictionarySummary { PrimaryWord = primaryWord, Summary = $"definition of {primaryWord}" };
             }
-            yield return new DictionarySummary { PrimaryWord = primaryWord, Summary = $"definition of {primaryWord}" };
         }
     }
 }
