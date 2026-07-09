@@ -1,5 +1,6 @@
 ﻿using CorpusSearch.Model;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -8,7 +9,8 @@ namespace CorpusSearch.Service;
 
 public class WorkService
 {
-    private Dictionary<string, IDocument> documentByIdent = new();
+    // concurrent: documents are added in parallel on startup (#303)
+    private readonly ConcurrentDictionary<string, IDocument> documentByIdent = new();
 
     /// <summary>Given an ident, get the document or throw</summary>
     public Task<IDocument> ByIdent(string ident)
@@ -18,7 +20,10 @@ public class WorkService
 
     internal void AddWork(IDocument document)
     {
-        documentByIdent.Add(document.Ident, document);
+        if (!documentByIdent.TryAdd(document.Ident, document))
+        {
+            throw new ArgumentException($"A document with ident '{document.Ident}' was already added");
+        }
     }
 
     internal Task<List<IDocument>> GetAll()
