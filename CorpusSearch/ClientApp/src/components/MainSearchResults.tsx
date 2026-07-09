@@ -2,6 +2,7 @@ import { useMemo, ReactNode } from "react"
 import { Link } from "react-router-dom"
 import "./MainSearchResults.css"
 import { HighlightRange, SearchResultEntry } from "../api/SearchApi"
+import { SearchOptions, searchOptionsLinkQuery } from "../api/SearchOptions"
 import { useLazyLoader } from "../hooks/useLazyLoader"
 
 export type ResultsSortKey = "year" | "title" | "count"
@@ -114,9 +115,7 @@ export default function MainSearchResults(props: {
     results: SearchResultEntry[]
     english: boolean
     manx: boolean
-    ignoreHyphens: boolean
-    caseSensitive: boolean
-    accentSensitive: boolean
+    options: SearchOptions
     sortKey: ResultsSortKey
     density: ResultsDensity
 }) {
@@ -140,9 +139,7 @@ export default function MainSearchResults(props: {
                         result={result}
                         query={query}
                         manx={props.manx}
-                        ignoreHyphens={props.ignoreHyphens}
-                        caseSensitive={props.caseSensitive}
-                        accentSensitive={props.accentSensitive}
+                        options={props.options}
                         striped={i % 2 === 1}
                     />
                 ))}
@@ -158,9 +155,7 @@ export default function MainSearchResults(props: {
                     result={result}
                     query={query}
                     manx={props.manx}
-                    ignoreHyphens={props.ignoreHyphens}
-                    caseSensitive={props.caseSensitive}
-                    accentSensitive={props.accentSensitive}
+                    options={props.options}
                 />
             ))}
         </div>
@@ -200,17 +195,12 @@ const documentLink = (
     result: SearchResultEntry,
     query: string,
     manx: boolean,
-    ignoreHyphens: boolean,
-    caseSensitive: boolean,
-    accentSensitive: boolean,
+    options: SearchOptions,
 ) => ({
     to: {
         pathname: `/docs/${result.ident}`,
-        search:
-            `?q=${query}` +
-            (ignoreHyphens ? "&ignoreHyphens=true" : "") +
-            (caseSensitive ? "&caseSensitive=true" : "") +
-            (accentSensitive ? "&accentSensitive=true" : ""),
+        // `q` is deliberately unencoded (pre-existing behavior)
+        search: `?q=${query}` + searchOptionsLinkQuery(options),
     },
     state: { searchLanguage: manx ? "Manx" : "English", previousPage: "/" },
 })
@@ -220,26 +210,10 @@ const ResultCard = (props: {
     result: SearchResultEntry
     query: string
     manx: boolean
-    ignoreHyphens: boolean
-    caseSensitive: boolean
-    accentSensitive: boolean
+    options: SearchOptions
 }) => {
-    const {
-        result,
-        query,
-        manx,
-        ignoreHyphens,
-        caseSensitive,
-        accentSensitive,
-    } = props
-    const link = documentLink(
-        result,
-        query,
-        manx,
-        ignoreHyphens,
-        caseSensitive,
-        accentSensitive,
-    )
+    const { result, query, manx, options } = props
+    const link = documentLink(result, query, manx, options)
 
     return (
         <div className="result-card">
@@ -272,28 +246,11 @@ const ResultRow = (props: {
     result: SearchResultEntry
     query: string
     manx: boolean
-    ignoreHyphens: boolean
-    caseSensitive: boolean
-    accentSensitive: boolean
+    options: SearchOptions
     striped: boolean
 }) => {
-    const {
-        result,
-        query,
-        manx,
-        ignoreHyphens,
-        caseSensitive,
-        accentSensitive,
-        striped,
-    } = props
-    const link = documentLink(
-        result,
-        query,
-        manx,
-        ignoreHyphens,
-        caseSensitive,
-        accentSensitive,
-    )
+    const { result, query, manx, options, striped } = props
+    const link = documentLink(result, query, manx, options)
 
     return (
         <div className={"results-compact-row" + (striped ? " striped" : "")}>

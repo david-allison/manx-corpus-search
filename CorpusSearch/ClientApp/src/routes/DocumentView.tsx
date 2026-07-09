@@ -16,7 +16,8 @@ import { metadataLookup } from "../api/MetadataApi"
 import { ComparisonTable } from "../components/ComparisonTable"
 import { SearchBar } from "../components/SearchBar"
 import { BackChevron } from "../components/BackChevron"
-import { AccentSensitive, CaseSensitive } from "../components/AdvancedOptions"
+import { OptionCheckbox } from "../components/AdvancedOptions"
+import { parseSearchOptions } from "../api/SearchOptions"
 import { useLanguageVisibility } from "../hooks/useLanguageVisibility"
 import { usePersistedState } from "../hooks/usePersistedState"
 import { iMuseumUrl } from "../utils/IMuseum"
@@ -171,18 +172,12 @@ export const DocumentView = () => {
 
     // the 'q' parameter from the querystring
     const q = new URLSearchParams(location.search).get("q")
-    // set when following a result of a hyphen-insensitive corpus search, so the counts match
-    const ignoreHyphens =
-        new URLSearchParams(location.search).get("ignoreHyphens") === "true"
 
     const [value, setValue] = useState(q ?? "*")
-    // initially set when following a result of a case-sensitive corpus search (#19)
-    const [caseSensitive, setCaseSensitive] = useState(
-        new URLSearchParams(location.search).get("caseSensitive") === "true",
-    )
-    // initially set when following a result of an accent-sensitive corpus search
-    const [accentSensitive, setAccentSensitive] = useState(
-        new URLSearchParams(location.search).get("accentSensitive") === "true",
+    // initially set when following a result of a corpus search with options enabled
+    // (#19, #20), so the counts match
+    const [options, setOptions] = useState(() =>
+        parseSearchOptions(location.search),
     )
 
     const getInitialSearchLanguage = (): SearchLanguage => {
@@ -236,9 +231,7 @@ export const DocumentView = () => {
                     value,
                     searchEnglish,
                     searchManx,
-                    ignoreHyphens,
-                    caseSensitive,
-                    accentSensitive,
+                    ...options,
                 })
                 setSearchWorkResponse(data)
                 setTitle(data.title)
@@ -246,15 +239,7 @@ export const DocumentView = () => {
                 console.error(e)
             }
         })
-    }, [
-        value,
-        searchEnglish,
-        searchManx,
-        docIdent,
-        ignoreHyphens,
-        caseSensitive,
-        accentSensitive,
-    ])
+    }, [value, searchEnglish, searchManx, docIdent, options])
 
     const [metadata, setMetadata] = useState<Metadata | null>(null)
     const [showAllMeta, setShowAllMeta] = useState(false)
@@ -364,13 +349,15 @@ export const DocumentView = () => {
                             Gaelg &amp; Baarle
                         </button>
                     </div>
-                    <CaseSensitive
-                        caseSensitive={caseSensitive}
-                        onCaseSensitiveChange={setCaseSensitive}
+                    <OptionCheckbox
+                        option="caseSensitive"
+                        options={options}
+                        onOptionsChange={setOptions}
                     />
-                    <AccentSensitive
-                        accentSensitive={accentSensitive}
-                        onAccentSensitiveChange={setAccentSensitive}
+                    <OptionCheckbox
+                        option="accentSensitive"
+                        options={options}
+                        onOptionsChange={setOptions}
                     />
                     <label
                         className="advanced-options-match"

@@ -1,5 +1,6 @@
 import { ChangeEvent, ReactNode, useState } from "react"
 import { HomeData } from "../routes/Home"
+import { SearchOptions, searchOptionKeys } from "../api/SearchOptions"
 import "./AdvancedOptions.css"
 
 export type DateRange = {
@@ -7,15 +8,30 @@ export type DateRange = {
     end: number
 }
 
+/** Checkbox label + tooltip per option: the Record forces an entry for every option */
+const searchOptionConfig: Record<
+    keyof SearchOptions,
+    { label: string; title: string }
+> = {
+    ignoreHyphens: {
+        label: "Ignore hyphens",
+        title: "“lhiam-lhiat” also matches “lhiam lhiat” and “lhiamlhiat” (and vice-versa)",
+    },
+    caseSensitive: {
+        label: "Match case",
+        title: "“Moir” does not match “moir”",
+    },
+    accentSensitive: {
+        label: "Match accents",
+        title: "“chengey” does not match “çhengey”",
+    },
+}
+
 const AdvancedOptions = (props: {
     onDateRangeChange: (range: DateRange) => void
     onMatchChange: (match: boolean) => void
-    ignoreHyphens: boolean
-    onIgnoreHyphensChange: (ignoreHyphens: boolean) => void
-    caseSensitive: boolean
-    onCaseSensitiveChange: (caseSensitive: boolean) => void
-    accentSensitive: boolean
-    onAccentSensitiveChange: (accentSensitive: boolean) => void
+    options: SearchOptions
+    onOptionsChange: (options: SearchOptions) => void
     children?: ReactNode
 }) => {
     // keep the raw text so clearing a field while typing doesn't snap the value back
@@ -70,85 +86,41 @@ const AdvancedOptions = (props: {
                     />
                 </span>
                 <MatchWithinWords onMatchChange={props.onMatchChange} />
-                <IgnoreHyphens
-                    ignoreHyphens={props.ignoreHyphens}
-                    onIgnoreHyphensChange={props.onIgnoreHyphensChange}
-                />
-                <CaseSensitive
-                    caseSensitive={props.caseSensitive}
-                    onCaseSensitiveChange={props.onCaseSensitiveChange}
-                />
-                <AccentSensitive
-                    accentSensitive={props.accentSensitive}
-                    onAccentSensitiveChange={props.onAccentSensitiveChange}
-                />
+                {searchOptionKeys.map((key) => (
+                    <OptionCheckbox
+                        key={key}
+                        option={key}
+                        options={props.options}
+                        onOptionsChange={props.onOptionsChange}
+                    />
+                ))}
                 {props.children}
             </div>
         </details>
     )
 }
 
-// controlled from Home: the 'no results' suggestion can also enable the option (#158)
-const IgnoreHyphens = (props: {
-    ignoreHyphens: boolean
-    onIgnoreHyphensChange: (ignoreHyphens: boolean) => void
+// controlled from the page so an option can follow a result onto the document page (#19, #20)
+export const OptionCheckbox = (props: {
+    option: keyof SearchOptions
+    options: SearchOptions
+    onOptionsChange: (options: SearchOptions) => void
 }) => {
+    const { label, title } = searchOptionConfig[props.option]
     return (
-        <label
-            className="advanced-options-match"
-            title="“lhiam-lhiat” also matches “lhiam lhiat” and “lhiamlhiat” (and vice-versa)"
-        >
+        <label className="advanced-options-match" title={title}>
             <input
-                id="ignoreHyphens"
+                id={props.option}
                 type="checkbox"
-                checked={props.ignoreHyphens}
-                onChange={(e) => props.onIgnoreHyphensChange(e.target.checked)}
-            />
-            Ignore hyphens
-        </label>
-    )
-}
-
-// controlled from the page so the option can follow a result onto the document page (#19)
-export const CaseSensitive = (props: {
-    caseSensitive: boolean
-    onCaseSensitiveChange: (caseSensitive: boolean) => void
-}) => {
-    return (
-        <label
-            className="advanced-options-match"
-            title="“Moir” does not match “moir”"
-        >
-            <input
-                id="caseSensitive"
-                type="checkbox"
-                checked={props.caseSensitive}
-                onChange={(e) => props.onCaseSensitiveChange(e.target.checked)}
-            />
-            Match case
-        </label>
-    )
-}
-
-// controlled from the page so the option can follow a result onto the document page (#20)
-export const AccentSensitive = (props: {
-    accentSensitive: boolean
-    onAccentSensitiveChange: (accentSensitive: boolean) => void
-}) => {
-    return (
-        <label
-            className="advanced-options-match"
-            title="“chengey” does not match “çhengey”"
-        >
-            <input
-                id="accentSensitive"
-                type="checkbox"
-                checked={props.accentSensitive}
+                checked={props.options[props.option]}
                 onChange={(e) =>
-                    props.onAccentSensitiveChange(e.target.checked)
+                    props.onOptionsChange({
+                        ...props.options,
+                        [props.option]: e.target.checked,
+                    })
                 }
             />
-            Match accents
+            {label}
         </label>
     )
 }
