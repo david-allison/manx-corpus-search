@@ -30,10 +30,8 @@ public class DocumentSearchService(
         ret.Original = document.Original;
         ret.Source = document.Source;
 
-        var searchOptions = ToSearchOptions(workQuery);
-        searchOptions.ReturnTranscriptData = HasTranscript(document);
-
-        var results = searcher.SearchWork(workQuery.Ident, workQuery.Query, searchOptions);
+        var results = searcher.SearchWork(workQuery.Ident, workQuery.Query, ToSearchOptions(workQuery),
+            returnTranscriptData: HasTranscript(document));
 
         newspaperSourceEnricher.Enrich(ret, document);
 
@@ -86,7 +84,7 @@ public class DocumentSearchService(
     {
         return new SearchOptions
         {
-            Type = workQuery.Manx ? SearchType.Manx : SearchType.English,
+            SearchType = workQuery.Manx ? SearchType.Manx : SearchType.English,
             IgnoreHyphens = workQuery.IgnoreHyphens,
             CaseSensitive = workQuery.CaseSensitive,
             NormalizeDiacritics = workQuery.NormalizeDiacritics,

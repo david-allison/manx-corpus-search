@@ -106,6 +106,6 @@ public class HyphenSuggestionTest : QueryBase
 
     private List<string> Alternates(string query)
     {
-        return new Searcher(luceneIndex, parser).GetHyphenAlternates(query, ScanOptions.Default);
+        return new Searcher(luceneIndex, parser).GetHyphenAlternates(query, SearchOptions.Default);
     }
 }

@@ -15,25 +15,16 @@ public class Searcher(LuceneIndex luceneIndex, SearchParser parser)
 {
     // responsible for converting from a 
 
-    internal SearchResult SearchWork(string ident, string query, SearchOptions options)
+    internal SearchResult SearchWork(string ident, string query, SearchOptions options, bool returnTranscriptData)
     {
-        // HACK: use the ScanOptions as they're the same for now
-        var scanOptionsHack = new ScanOptions
-        {
-            SearchType = options.Type,
-            IgnoreHyphens = options.IgnoreHyphens,
-            CaseSensitive = options.CaseSensitive,
-            NormalizeDiacritics = options.NormalizeDiacritics,
-        };
-
         // Detect '*' on the normalized*query to handle '.*'.
         // Intended for good faith use, not security hardening.
-        var normalizedQuery = GetTerm(query, scanOptionsHack);
+        var normalizedQuery = GetTerm(query, options);
         if (normalizedQuery.Length > 0 && normalizedQuery.All(x => x == '*'))
         {
             return new SearchResult
             {
-                Lines = luceneIndex.GetAllLines(ident, options.ReturnTranscriptData)
+                Lines = luceneIndex.GetAllLines(ident, returnTranscriptData)
                     .Where(x => !string.IsNullOrEmpty(x.Manx) || !string.IsNullOrEmpty(x.English)).ToList(),
                 TotalMatches = null,
             };
@@ -43,9 +34,9 @@ public class Searcher(LuceneIndex luceneIndex, SearchParser parser)
         var parsed = parser.Parse(query);
 
         // Convert the result to a Lucene Span Query (or throw ArgumentException)
-        SpanQuery spanQuery = ToSpanQuery(parsed, scanOptionsHack);
+        SpanQuery spanQuery = ToSpanQuery(parsed, options);
 
-        return luceneIndex.Search(ident, spanQuery, options.ReturnTranscriptData);
+        return luceneIndex.Search(ident, spanQuery, returnTranscriptData);
 
     }
 
@@ -77,10 +68,10 @@ public class Searcher(LuceneIndex luceneIndex, SearchParser parser)
 
     public ScanResult Scan(string query)
     {
-        return Scan(query, ScanOptions.Default);
+        return Scan(query, SearchOptions.Default);
     }
 
-    public ScanResult Scan(string query, ScanOptions searchOptions)
+    public ScanResult Scan(string query, SearchOptions searchOptions)
     {
         // parse the string into a Result<Expression>
         var parsed = parser.Parse(query);
@@ -93,7 +84,7 @@ public class Searcher(LuceneIndex luceneIndex, SearchParser parser)
     }
 
 
-    private SpanQuery ToSpanQuery(ParseResult<ExpressionToken, Expression> parsed, ScanOptions searchOptions)
+    private SpanQuery ToSpanQuery(ParseResult<ExpressionToken, Expression> parsed, SearchOptions searchOptions)
     {
         if (!parsed.IsOk || parsed.Result == null)
         {
@@ -105,7 +96,7 @@ public class Searcher(LuceneIndex luceneIndex, SearchParser parser)
 
 
 
-    private SpanQuery ToSpanQuery(Expression result, ScanOptions searchOptions)
+    private SpanQuery ToSpanQuery(Expression result, SearchOptions searchOptions)
     {
         SpanQuery ToSpanQueryInner(Expression res) => ToSpanQuery(res, searchOptions);
         SpanQuery ToManx(string value) => ManxTermQuery(value, searchOptions);
@@ -151,7 +142,7 @@ public class Searcher(LuceneIndex luceneIndex, SearchParser parser)
         }
     }
 
-    private static SpanQuery ManxTermQuery(string value, ScanOptions searchOptions)
+    private static SpanQuery ManxTermQuery(string value, SearchOptions searchOptions)
     {
         var normalizedTerm = GetTerm(value, searchOptions);
         if (searchOptions.IgnoreHyphens)
@@ -170,7 +161,7 @@ public class Searcher(LuceneIndex luceneIndex, SearchParser parser)
     /// 'lhiam-lhiat' (or of 'lhiam lhiat') match 'lhiam-lhiat', 'lhiam lhiat' and 'lhiamlhiat'.
     /// </summary>
     /// <param name="atoms">the hyphen/space-separated parts of the query, in order</param>
-    private static SpanQuery HyphenAgnosticQuery(IReadOnlyList<string> atoms, ScanOptions searchOptions)
+    private static SpanQuery HyphenAgnosticQuery(IReadOnlyList<string> atoms, SearchOptions searchOptions)
     {
         // one alternative per way of regrouping adjacent atoms into tokens:
         // [lhiam, lhiat] => the token 'lhiamlhiat' (which also matches 'lhiam-lhiat', see
@@ -227,7 +218,7 @@ public class Searcher(LuceneIndex luceneIndex, SearchParser parser)
     /// differ only in hyphenation ('lumlane' => 'lum-lane'), plus the space-separated form
     /// of a hyphenated query. Callers should drop candidates without matches.
     /// </summary>
-    public List<string> GetHyphenAlternates(string query, ScanOptions searchOptions)
+    public List<string> GetHyphenAlternates(string query, SearchOptions searchOptions)
     {
         var parsed = parser.Parse(query);
         if (!parsed.IsOk || parsed.Result == null)
@@ -268,7 +259,7 @@ public class Searcher(LuceneIndex luceneIndex, SearchParser parser)
         _ => null,
     };
 
-    private static SpanQuery SingleTokenQuery(string normalizedTerm, ScanOptions searchOptions, bool ignoreHyphens)
+    private static SpanQuery SingleTokenQuery(string normalizedTerm, SearchOptions searchOptions, bool ignoreHyphens)
     {
         Term term = new Term(GetTermKey(searchOptions), normalizedTerm);
         if (searchOptions.NormalizeDiacritics)
@@ -287,7 +278,7 @@ public class Searcher(LuceneIndex luceneIndex, SearchParser parser)
         }
     }
 
-    private static string GetTerm(string value, ScanOptions searchOptions)
+    private static string GetTerm(string value, SearchOptions searchOptions)
     {
         switch (searchOptions.SearchType)
         {
@@ -297,7 +288,7 @@ public class Searcher(LuceneIndex luceneIndex, SearchParser parser)
         }
     }
 
-    private static string GetTermKey(ScanOptions searchOptions)
+    private static string GetTermKey(SearchOptions searchOptions)
     {
         switch (searchOptions.SearchType)
         {
