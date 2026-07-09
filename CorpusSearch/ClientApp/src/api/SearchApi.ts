@@ -1,3 +1,5 @@
+import { SearchOptions, searchOptionsQuery } from "./SearchOptions"
+
 // Keep in sync with CorpusSearchQuery.MAX_LENGTH
 export const MAX_QUERY_LENGTH = 100
 
@@ -58,13 +60,7 @@ export type SearchParams = {
     maxDate: number
     manx: boolean
     english: boolean
-    /** Hyphens, spaces and joined words are interchangeable: "lhiam-lhiat" matches "lhiam lhiat" and "lhiamlhiat" */
-    ignoreHyphens: boolean
-    /** Case must match: "Moir" does not match "moir" */
-    caseSensitive: boolean
-    /** Accents must match: "chengey" does not match "çhengey" */
-    accentSensitive: boolean
-}
+} & SearchOptions
 
 export const search = async (
     params: SearchParams,
@@ -72,7 +68,7 @@ export const search = async (
 ): Promise<SearchResponse> => {
     const query = encodeURIComponent(params.query)
     const response = await fetch(
-        `api/search/search/${query}?minDate=${params.minDate}&maxDate=${params.maxDate}&manx=${params.manx.toString()}&english=${params.english.toString()}&ignoreHyphens=${params.ignoreHyphens.toString()}&caseSensitive=${params.caseSensitive.toString()}&accentSensitive=${params.accentSensitive.toString()}`,
+        `api/search/search/${query}?minDate=${params.minDate}&maxDate=${params.maxDate}&manx=${params.manx.toString()}&english=${params.english.toString()}${searchOptionsQuery(params)}`,
         { signal },
     )
     if (!response.ok) {
