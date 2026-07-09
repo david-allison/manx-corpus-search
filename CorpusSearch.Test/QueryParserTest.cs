@@ -148,7 +148,7 @@ public class QueryParserTest : QueryBase
             "façade"        // 1: perfect match
         );
 
-        var result = Query("facade", ScanOptions.Default);
+        var result = Query("facade", SearchOptions.Default);
             
         Assert.That(result.NumberOfMatches, Is.EqualTo(2));
     }
@@ -161,8 +161,8 @@ public class QueryParserTest : QueryBase
             "façade"        // 1: perfect match
         );
 
-        var result1 = Query("facade", new ScanOptions { NormalizeDiacritics = true });
-        var result2 = Query("façade", new ScanOptions { NormalizeDiacritics = true });
+        var result1 = Query("facade", new SearchOptions { NormalizeDiacritics = true });
+        var result2 = Query("façade", new SearchOptions { NormalizeDiacritics = true });
 
         Assert.That(result1.NumberOfMatches, Is.EqualTo(2));
         Assert.That(result2.NumberOfMatches, Is.EqualTo(2));
@@ -176,8 +176,8 @@ public class QueryParserTest : QueryBase
             "façade"
         );
 
-        var withoutDiacritics1 = Query("façade", new ScanOptions { NormalizeDiacritics = false });
-        var withoutDiacritics2 = Query("facade", new ScanOptions { NormalizeDiacritics = false });
+        var withoutDiacritics1 = Query("façade", new SearchOptions { NormalizeDiacritics = false });
+        var withoutDiacritics2 = Query("facade", new SearchOptions { NormalizeDiacritics = false });
 
         Assert.That(withoutDiacritics1.NumberOfMatches, Is.EqualTo(1), "façade should be only match");
         Assert.That(withoutDiacritics2.NumberOfMatches, Is.EqualTo(1), "facade should be only match");
@@ -189,8 +189,8 @@ public class QueryParserTest : QueryBase
         // #19 - opt-in case-sensitive matching
         this.AddManxDoc("1", "hello", "Hello");
 
-        var lower = Query("hello", new ScanOptions { CaseSensitive = true });
-        var caps = Query("Hello", new ScanOptions { CaseSensitive = true });
+        var lower = Query("hello", new SearchOptions { CaseSensitive = true });
+        var caps = Query("Hello", new SearchOptions { CaseSensitive = true });
 
         Assert.That(lower.NumberOfMatches, Is.EqualTo(1), "'hello' should be the only match");
         Assert.That(caps.NumberOfMatches, Is.EqualTo(1), "'Hello' should be the only match");
@@ -202,8 +202,8 @@ public class QueryParserTest : QueryBase
         // case and diacritics are independent axes: 'Chengey' still matches 'Çhengey'
         this.AddManxDoc("1", "Çhengey", "çhengey");
 
-        var caps = Query("Chengey", new ScanOptions { CaseSensitive = true });
-        var lower = Query("chengey", new ScanOptions { CaseSensitive = true });
+        var caps = Query("Chengey", new SearchOptions { CaseSensitive = true });
+        var lower = Query("chengey", new SearchOptions { CaseSensitive = true });
 
         Assert.That(caps.NumberOfMatches, Is.EqualTo(1), "'Çhengey' should be the only match");
         Assert.That(lower.NumberOfMatches, Is.EqualTo(1), "'çhengey' should be the only match");
@@ -215,7 +215,7 @@ public class QueryParserTest : QueryBase
         // both options at once: only the identical form matches
         this.AddManxDoc("1", "Çhengey", "Chengey", "çhengey");
 
-        var result = Query("Çhengey", new ScanOptions { CaseSensitive = true, NormalizeDiacritics = false });
+        var result = Query("Çhengey", new SearchOptions { CaseSensitive = true, NormalizeDiacritics = false });
 
         Assert.That(result.NumberOfMatches, Is.EqualTo(1));
     }
@@ -225,8 +225,8 @@ public class QueryParserTest : QueryBase
     {
         this.AddManxDoc("1", "Hello", "hello");
 
-        var caps = Query("H*", new ScanOptions { CaseSensitive = true });
-        var lower = Query("h*", new ScanOptions { CaseSensitive = true });
+        var caps = Query("H*", new SearchOptions { CaseSensitive = true });
+        var lower = Query("h*", new SearchOptions { CaseSensitive = true });
 
         Assert.That(caps.NumberOfMatches, Is.EqualTo(1), "'Hello' should be the only match");
         Assert.That(lower.NumberOfMatches, Is.EqualTo(1), "'hello' should be the only match");
@@ -237,7 +237,7 @@ public class QueryParserTest : QueryBase
     {
         this.AddManxDoc("1", "Yn Baase Mooar", "yn baase mooar");
 
-        var result = Query("Baase Mooar", new ScanOptions { CaseSensitive = true });
+        var result = Query("Baase Mooar", new SearchOptions { CaseSensitive = true });
 
         Assert.That(result.NumberOfMatches, Is.EqualTo(1));
     }
@@ -247,7 +247,7 @@ public class QueryParserTest : QueryBase
     {
         this.AddManxDoc("1", "Lhiam-Lhiat", "lhiam-lhiat");
 
-        var result = Query("Lhiam Lhiat", new ScanOptions { CaseSensitive = true, IgnoreHyphens = true });
+        var result = Query("Lhiam Lhiat", new SearchOptions { CaseSensitive = true, IgnoreHyphens = true });
 
         Assert.That(result.NumberOfMatches, Is.EqualTo(1), "'Lhiam-Lhiat' should be the only match");
     }
@@ -259,7 +259,7 @@ public class QueryParserTest : QueryBase
             new Line { Manx = "", English = "The Tongue" },
             new Line { Manx = "", English = "the tongue" });
 
-        var result = Query("Tongue", new ScanOptions { CaseSensitive = true, SearchType = SearchType.English });
+        var result = Query("Tongue", new SearchOptions { CaseSensitive = true, SearchType = SearchType.English });
 
         Assert.That(result.NumberOfMatches, Is.EqualTo(1), "'The Tongue' should be the only match");
     }
@@ -371,7 +371,7 @@ public class QueryParserTest : QueryBase
             "sa n an"          // 0: ? should not match space
         );
 
-        var result = Query("s+n", new ScanOptions { NormalizeDiacritics = false });
+        var result = Query("s+n", new SearchOptions { NormalizeDiacritics = false });
 
         Assert.That(result.NumberOfMatches, Is.EqualTo(2));
         Assert.That(result.NumberOfSegments, Is.EqualTo(2));
@@ -554,7 +554,7 @@ public class QueryParserTest : QueryBase
         // #18 - hyphens, spaces and joined words are interchangeable
         this.AddManxDoc("1", "lhiam-lhiat", "lhiam lhiat", "lhiamlhiat");
 
-        var withOption = Query("lhiam-lhiat", new ScanOptions { IgnoreHyphens = true });
+        var withOption = Query("lhiam-lhiat", new SearchOptions { IgnoreHyphens = true });
         var withoutOption = Query("lhiam-lhiat");
 
         Assert.That(withOption.NumberOfSegments, Is.EqualTo(3), "should match all three forms");
@@ -567,7 +567,7 @@ public class QueryParserTest : QueryBase
         // #18 - a space-separated query should also match the hyphenated/joined forms
         this.AddManxDoc("1", "lhiam-lhiat", "lhiam lhiat", "lhiamlhiat");
 
-        var withOption = Query("lhiam lhiat", new ScanOptions { IgnoreHyphens = true });
+        var withOption = Query("lhiam lhiat", new SearchOptions { IgnoreHyphens = true });
         var withoutOption = Query("lhiam lhiat");
 
         Assert.That(withOption.NumberOfSegments, Is.EqualTo(3), "should match all three forms");
@@ -580,7 +580,7 @@ public class QueryParserTest : QueryBase
         // a joined query cannot know where a space would fall, so 'lhiam lhiat' is not matched
         this.AddManxDoc("1", "lhiam-lhiat", "lhiam lhiat", "lhiamlhiat");
 
-        var withOption = Query("lhiamlhiat", new ScanOptions { IgnoreHyphens = true });
+        var withOption = Query("lhiamlhiat", new SearchOptions { IgnoreHyphens = true });
         var withoutOption = Query("lhiamlhiat");
 
         Assert.That(withOption.NumberOfSegments, Is.EqualTo(2), "should match the hyphenated and joined forms");
@@ -593,7 +593,7 @@ public class QueryParserTest : QueryBase
         // the hyphenated word can sit inside a longer phrase
         this.AddManxDoc("1", "yn lhiam-lhiat mooar", "yn lhiam lhiat mooar", "yn lhiamlhiat mooar");
 
-        var result = Query("yn lhiam lhiat mooar", new ScanOptions { IgnoreHyphens = true });
+        var result = Query("yn lhiam lhiat mooar", new SearchOptions { IgnoreHyphens = true });
 
         Assert.That(result.NumberOfSegments, Is.EqualTo(3));
     }
@@ -604,7 +604,7 @@ public class QueryParserTest : QueryBase
         // IgnoreHyphens composes with diacritic normalization
         this.AddManxDoc("1", "çhione-jiarg");
 
-        var result = Query("chione jiarg", new ScanOptions { IgnoreHyphens = true });
+        var result = Query("chione jiarg", new SearchOptions { IgnoreHyphens = true });
 
         Assert.That(result.NumberOfSegments, Is.EqualTo(1));
     }
@@ -615,7 +615,7 @@ public class QueryParserTest : QueryBase
         // all mixed groupings of a three-part word match
         this.AddManxDoc("1", "cur-my-ner", "cur my ner", "curmyner", "cur-my ner", "cur my-ner");
 
-        var result = Query("cur my ner", new ScanOptions { IgnoreHyphens = true });
+        var result = Query("cur my ner", new SearchOptions { IgnoreHyphens = true });
 
         Assert.That(result.NumberOfSegments, Is.EqualTo(5));
     }
@@ -626,13 +626,13 @@ public class QueryParserTest : QueryBase
         // a run of hyphens (e.g. an ASCII em-dash: 'a---b') is still 'a hyphen'
         this.AddManxDoc("1", "cur---my");
 
-        Assert.That(Query("cur---my", new ScanOptions { IgnoreHyphens = true }).NumberOfSegments,
+        Assert.That(Query("cur---my", new SearchOptions { IgnoreHyphens = true }).NumberOfSegments,
             Is.EqualTo(1), "could not find 'cur---my' with its own text");
-        Assert.That(Query("cur-my", new ScanOptions { IgnoreHyphens = true }).NumberOfSegments,
+        Assert.That(Query("cur-my", new SearchOptions { IgnoreHyphens = true }).NumberOfSegments,
             Is.EqualTo(1), "could not find 'cur---my' with 'cur-my'");
-        Assert.That(Query("cur my", new ScanOptions { IgnoreHyphens = true }).NumberOfSegments,
+        Assert.That(Query("cur my", new SearchOptions { IgnoreHyphens = true }).NumberOfSegments,
             Is.EqualTo(1), "could not find 'cur---my' with 'cur my'");
-        Assert.That(Query("curmy", new ScanOptions { IgnoreHyphens = true }).NumberOfSegments,
+        Assert.That(Query("curmy", new SearchOptions { IgnoreHyphens = true }).NumberOfSegments,
             Is.EqualTo(1), "could not find 'cur---my' with 'curmy'");
     }
 
@@ -642,7 +642,7 @@ public class QueryParserTest : QueryBase
         // dialogue dashes: '—Cre' is indexed as the single token '-cre'
         this.AddManxDoc("1", "—Cre t’ou");
 
-        var result = Query("cre", new ScanOptions { IgnoreHyphens = true });
+        var result = Query("cre", new SearchOptions { IgnoreHyphens = true });
 
         Assert.That(result.NumberOfSegments, Is.EqualTo(1));
     }
@@ -653,7 +653,7 @@ public class QueryParserTest : QueryBase
         // '–' is normalized to '-' on both the index and the query
         this.AddManxDoc("1", "lhiam–lhiat");
 
-        var result = Query("lhiam lhiat", new ScanOptions { IgnoreHyphens = true });
+        var result = Query("lhiam lhiat", new SearchOptions { IgnoreHyphens = true });
 
         Assert.That(result.NumberOfSegments, Is.EqualTo(1));
     }
@@ -670,13 +670,13 @@ public class QueryParserTest : QueryBase
         Assert.That(result.NumberOfSegments, Is.EqualTo(1));
     }
 
-    private ScanResult Query(string query, ScanOptions options)
+    private ScanResult Query(string query, SearchOptions options)
     {
         return new Searcher(luceneIndex, parser).Scan(query, options);
     }
 
     private ScanResult Query(string query)
     {
-        return Query(query, ScanOptions.Default);
+        return Query(query, SearchOptions.Default);
     }
 }

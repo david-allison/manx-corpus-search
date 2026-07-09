@@ -11,7 +11,7 @@ public class OverviewSearchService2(WorkService workService, Searcher searcher)
 {
     public async Task<IEnumerable<QueryDocumentResult>> CorpusSearch(CorpusSearchQuery searchQuery)
     {
-        var result = searcher.Scan(searchQuery.Query, ToScanOptions(searchQuery));
+        var result = searcher.Scan(searchQuery.Query, ToSearchOptions(searchQuery));
 
         var docResults = result.DocumentResults;
 
@@ -29,7 +29,7 @@ public class OverviewSearchService2(WorkService workService, Searcher searcher)
     /// </summary>
     public async Task<List<SearchSuggestion>> GetSuggestions(CorpusSearchQuery searchQuery)
     {
-        var alternates = searcher.GetHyphenAlternates(searchQuery.Query, ToScanOptions(searchQuery));
+        var alternates = searcher.GetHyphenAlternates(searchQuery.Query, ToSearchOptions(searchQuery));
 
         var suggestions = new List<SearchSuggestion>();
         foreach (var alternate in alternates)
@@ -70,17 +70,14 @@ public class OverviewSearchService2(WorkService workService, Searcher searcher)
         return new HashSet<string>(results);
     }
 
-    private static ScanOptions ToScanOptions(CorpusSearchQuery searchQuery)
+    private static SearchOptions ToSearchOptions(CorpusSearchQuery searchQuery)
     {
-        var options = ScanOptions.Default;
-
-        options.MaxDate = searchQuery.MaxDate;
-        options.MinDate = searchQuery.MinDate;
-        options.SearchType = searchQuery.Manx ? SearchType.Manx : SearchType.English;
-        options.IgnoreHyphens = searchQuery.IgnoreHyphens;
-        options.CaseSensitive = searchQuery.CaseSensitive;
-        options.NormalizeDiacritics = searchQuery.NormalizeDiacritics;
-
-        return options;
+        return new SearchOptions
+        {
+            SearchType = searchQuery.Manx ? SearchType.Manx : SearchType.English,
+            IgnoreHyphens = searchQuery.IgnoreHyphens,
+            CaseSensitive = searchQuery.CaseSensitive,
+            NormalizeDiacritics = searchQuery.NormalizeDiacritics,
+        };
     }
 }

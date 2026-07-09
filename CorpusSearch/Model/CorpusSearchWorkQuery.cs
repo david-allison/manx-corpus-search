@@ -7,11 +7,11 @@ public class CorpusSearchWorkQuery(string query)
     public string Ident { get; set; }
     public bool Manx { get; set; }
     public bool English { get; set; }
-    /// <inheritdoc cref="ScanOptions.IgnoreHyphens"/>
+    /// <inheritdoc cref="SearchOptions.IgnoreHyphens"/>
     public bool IgnoreHyphens { get; set; }
-    /// <inheritdoc cref="ScanOptions.CaseSensitive"/>
+    /// <inheritdoc cref="SearchOptions.CaseSensitive"/>
     public bool CaseSensitive { get; set; }
-    /// <inheritdoc cref="ScanOptions.NormalizeDiacritics"/>
+    /// <inheritdoc cref="SearchOptions.NormalizeDiacritics"/>
     public bool NormalizeDiacritics { get; set; } = true;
 
     internal bool IsValid()
