@@ -99,8 +99,6 @@ public class LuceneIndex(IndexWriter indexWriter)
                 value?.Let(val => doc.Add(new StringField(key, val, Field.Store.YES)));
             }
         }
-
-        indexWriter.Flush(triggerMerge: false, applyAllDeletes: false);
     }
 
     public void Compact()
