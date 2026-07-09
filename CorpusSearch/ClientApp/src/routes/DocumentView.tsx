@@ -18,6 +18,7 @@ import { SearchBar } from "../components/SearchBar"
 import { BackChevron } from "../components/BackChevron"
 import { CaseSensitive } from "../components/AdvancedOptions"
 import { useLanguageVisibility } from "../hooks/useLanguageVisibility"
+import { usePersistedState } from "../hooks/usePersistedState"
 import { iMuseumUrl } from "../utils/IMuseum"
 import { isUrl } from "../utils/Url"
 
@@ -153,14 +154,6 @@ const buildMetaRows = (
 const META_SHORT_VALUE = 90
 const META_COLLAPSED_ROWS = 4
 
-const loadContextEnabled = (): boolean => {
-    try {
-        return localStorage.getItem("showContext") !== "false"
-    } catch {
-        return true
-    }
-}
-
 const collapseMetaRows = (rows: MetaRow[]): MetaRow[] =>
     rows
         .filter((row) => row.length <= META_SHORT_VALUE)
@@ -212,16 +205,11 @@ export const DocumentView = () => {
     const languageVisibility = useLanguageVisibility()
 
     // the expander rows between the matches can feel busy: let readers hide them
-    const [contextEnabled, setContextEnabledState] =
-        useState(loadContextEnabled)
-    const setContextEnabled = (next: boolean) => {
-        setContextEnabledState(next)
-        try {
-            localStorage.setItem("showContext", String(next))
-        } catch {
-            /* preference only - ignore storage failures */
-        }
-    }
+    const [contextEnabled, setContextEnabled] = usePersistedState(
+        "showContext",
+        (stored) => stored !== "false",
+        String,
+    )
 
     // load the data
     useEffect(() => {

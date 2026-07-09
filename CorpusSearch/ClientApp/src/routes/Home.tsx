@@ -27,6 +27,7 @@ import {
 import { hasTranslations, TranslationList } from "../components/TranslationList"
 import AdvancedOptions, { DateRange } from "../components/AdvancedOptions"
 import { useSearchParams } from "react-router-dom"
+import { usePersistedState } from "../hooks/usePersistedState"
 import {
     search,
     SearchResponse,
@@ -72,16 +73,6 @@ const toLangParam = (param: SearchLanguage): string => {
     }
 }
 
-const loadDensity = (): ResultsDensity => {
-    try {
-        return localStorage.getItem("resultsDensity") === "compact"
-            ? "compact"
-            : "comfortable"
-    } catch {
-        return "comfortable"
-    }
-}
-
 export const Home = () => {
     const [searchParams, setSearchParams] = useSearchParams()
     const query = searchParams.get("q") ?? ""
@@ -108,15 +99,11 @@ export const Home = () => {
     const [caseSensitive, setCaseSensitive] = useState(false)
 
     const [sortKey, setSortKey] = useState<ResultsSortKey>("year")
-    const [density, setDensityState] = useState<ResultsDensity>(loadDensity)
-    const setDensity = (next: ResultsDensity) => {
-        setDensityState(next)
-        try {
-            localStorage.setItem("resultsDensity", next)
-        } catch {
-            /* preference only - ignore storage failures */
-        }
-    }
+    const [density, setDensity] = usePersistedState<ResultsDensity>(
+        "resultsDensity",
+        (stored) => (stored === "compact" ? "compact" : "comfortable"),
+        (x) => x,
+    )
 
     const request = useMemo<SearchParams>(
         () => ({
