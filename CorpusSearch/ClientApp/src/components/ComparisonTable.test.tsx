@@ -209,7 +209,9 @@ describe("context expansion (#286)", () => {
         line({ manx: "top match", csvLineNumber: 10 }),
         line({ manx: "bottom match", csvLineNumber: 50 }),
     ]
-    const renderWithGap = () =>
+    const renderWithGap = (
+        overrides?: Partial<Parameters<typeof ComparisonTable>[0]>,
+    ) =>
         renderTable(gapResults(), {
             docIdent: "doc",
             response: {
@@ -217,6 +219,7 @@ describe("context expansion (#286)", () => {
                 firstLineNumber: 10,
                 lastLineNumber: 50,
             },
+            ...overrides,
         })
 
     beforeEach(() => {
@@ -232,6 +235,11 @@ describe("context expansion (#286)", () => {
 
     it("shows no expander without a docIdent", () => {
         const { container } = renderTable(gapResults())
+        expect(container.querySelector(".doc-expand-row")).toBeNull()
+    })
+
+    it("shows no expander when the 'Show context' option is off", () => {
+        const { container } = renderWithGap({ expandContext: false })
         expect(container.querySelector(".doc-expand-row")).toBeNull()
     })
 
