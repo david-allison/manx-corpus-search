@@ -17,14 +17,15 @@
     }
 }
 
+/* 16:9 player, capped at 375px wide / ~211px tall */
 .youtube-container {
     position: relative;
     display: block;
     height: 0;
     padding: 0;
     overflow: hidden;
-    max-width: 500px;
-    padding-bottom: min(56.25%, calc(500px * 0.5625));
+    max-width: 375px;
+    padding-bottom: min(56.25%, calc(375px * 0.5625));
 }
 
 .center {

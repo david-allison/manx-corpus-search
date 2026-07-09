@@ -329,8 +329,8 @@ mark.textHighlightAlternate {
         margin-top: 20px;
     }
 
-    /* keep the transcript no wider than the centered player above it
-       (500px: .youtube-container's max-width) */
+    /* keep the transcript in a narrow centered column, near the width of the
+       player above it (which is capped at 375px) */
     .doc-table-video {
         max-width: 500px;
         margin-left: auto;
