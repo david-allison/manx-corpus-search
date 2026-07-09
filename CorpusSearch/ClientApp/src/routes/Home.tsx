@@ -76,15 +76,28 @@ const toLangParam = (param: SearchLanguage): string => {
 
 export const Home = () => {
     const [searchParams, setSearchParams] = useSearchParams()
-    const query = searchParams.get("q") ?? ""
+    const urlQuery = searchParams.get("q") ?? ""
     const searchLanguage = parseLanguage(searchParams.get("lang")) ?? "Manx"
+
+    // The input needs useState: router updates are wrapped in
+    // startTransition, causing he cursor position to reset.
+    const [query, setQueryState] = useState(urlQuery)
+
+    // adopt external URL changes (back/forward, in-app links);
+    // after our own navigations the values already match, so this bails out
+    useEffect(() => {
+        setQueryState(urlQuery)
+    }, [urlQuery])
 
     const updateSearch = (q: string, lang: SearchLanguage) => {
         const nextParams: Record<string, string> =
             !q && lang === "Manx" ? {} : { q, lang: toLangParam(lang) }
         setSearchParams(nextParams, { replace: true })
     }
-    const setQuery = (next: string) => updateSearch(next, searchLanguage)
+    const setQuery = (next: string) => {
+        setQueryState(next)
+        updateSearch(next, searchLanguage)
+    }
     const setSearchLanguage = (next: SearchLanguage) =>
         updateSearch(query, next)
 

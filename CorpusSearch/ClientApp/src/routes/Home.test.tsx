@@ -96,6 +96,34 @@ describe("match accents option", () => {
     })
 })
 
+describe("editing the query mid-string", () => {
+    // a real keystroke at the DOM level: the value gains a character with the
+    // cursor just after it, then an input event fires
+    const typeAt = (input: HTMLInputElement, pos: number, ch: string) => {
+        const next = input.value.slice(0, pos) + ch + input.value.slice(pos)
+        Object.getOwnPropertyDescriptor(
+            HTMLInputElement.prototype,
+            "value",
+        )?.set?.call(input, next)
+        input.setSelectionRange(pos + 1, pos + 1)
+        fireEvent.input(input)
+    }
+
+    it("keeps the edit and the cursor position", () => {
+        renderWithQuery("foldaragh")
+        const input = screen.getByPlaceholderText<HTMLInputElement>(/Search in/)
+        expect(input.value).toBe("foldaragh")
+
+        typeAt(input, 4, "x")
+
+        // router updates ride startTransition: when the input's value came
+        // from the URL, React restored the pre-keystroke text, losing the
+        // edit and kicking the cursor to the end
+        expect(input.value).toBe("foldxaragh")
+        expect(input.selectionStart).toBe(5)
+    })
+})
+
 const emptySearchResponse = (query: string): SearchResponse => ({
     results: [],
     query,
