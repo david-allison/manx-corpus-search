@@ -112,7 +112,7 @@ public partial class SearchController(
     }
 
     [HttpGet("SearchWork/{workIdent}/{query}")]
-    public async Task<ActionResult<SearchWorkResult>> SearchWork(string workIdent, string query = null, bool manx = true, bool english = true, bool ignoreHyphens = false, bool caseSensitive = false, bool accentSensitive = false)
+    public async Task<ActionResult<SearchWorkResult>> SearchWork(string workIdent, string query = null, bool manx = true, bool english = true, [FromQuery] SearchOptions options = null)
     {
         if (QueryTooLong(query))
         {
@@ -125,12 +125,7 @@ public partial class SearchController(
             Ident = workIdent,
             Manx = manx,
             English = english,
-            Options = new SearchOptions
-            {
-                IgnoreHyphens = ignoreHyphens,
-                CaseSensitive = caseSensitive,
-                NormalizeDiacritics = !accentSensitive,
-            },
+            Options = options ?? SearchOptions.Default,
         };
         SearchWorkResult ret = await documentSearchService.SearchWork(workQuery);
 
@@ -188,7 +183,7 @@ public partial class SearchController(
     }
 
     [HttpGet("Search/{query}")]
-    public async Task<ActionResult<QueryDocumentSearchResult>> SearchCorpus(string query, bool manx = true, bool english = true, int minDate = 1600, int maxDate = 2100, bool ignoreHyphens = false, bool caseSensitive = false, bool accentSensitive = false)
+    public async Task<ActionResult<QueryDocumentSearchResult>> SearchCorpus(string query, bool manx = true, bool english = true, int minDate = 1600, int maxDate = 2100, [FromQuery] SearchOptions options = null)
     {
         if (QueryTooLong(query))
         {
@@ -207,12 +202,7 @@ public partial class SearchController(
             English = english,
             MinDate = DateTimeUtil.FromYear(Math.Max(1, minDate)),
             MaxDate = DateTimeUtil.FromYearMax(maxDate),
-            Options = new SearchOptions
-            {
-                IgnoreHyphens = ignoreHyphens,
-                CaseSensitive = caseSensitive,
-                NormalizeDiacritics = !accentSensitive,
-            },
+            Options = options ?? SearchOptions.Default,
         };
         if (!searchQuery.IsValid())
         {
@@ -238,7 +228,7 @@ public partial class SearchController(
 
         ret.DefinedInDictionaries = DictionaryLookup(query, new QueryLanguages(Manx: manx, English: english));
         ret.SetResults(results);
-        if (ret.Results.Count == 0 && !ignoreHyphens)
+        if (ret.Results.Count == 0 && !searchQuery.Options.IgnoreHyphens)
         {
             // #158: 'lumlane' found nothing, but 'lum-lane' exists
             ret.Suggestions = await overviewSearchService.GetSuggestions(searchQuery);
