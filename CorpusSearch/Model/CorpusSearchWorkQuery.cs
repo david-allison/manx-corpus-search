@@ -11,6 +11,8 @@ public class CorpusSearchWorkQuery(string query)
     public bool IgnoreHyphens { get; set; }
     /// <inheritdoc cref="ScanOptions.CaseSensitive"/>
     public bool CaseSensitive { get; set; }
+    /// <inheritdoc cref="ScanOptions.NormalizeDiacritics"/>
+    public bool NormalizeDiacritics { get; set; } = true;
 
     internal bool IsValid()
     {

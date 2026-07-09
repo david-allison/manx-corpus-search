@@ -23,6 +23,7 @@ public class Searcher(LuceneIndex luceneIndex, SearchParser parser)
             SearchType = options.Type,
             IgnoreHyphens = options.IgnoreHyphens,
             CaseSensitive = options.CaseSensitive,
+            NormalizeDiacritics = options.NormalizeDiacritics,
         };
 
         // Detect '*' on the normalized*query to handle '.*'.

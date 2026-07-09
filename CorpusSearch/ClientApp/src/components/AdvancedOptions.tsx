@@ -14,6 +14,8 @@ const AdvancedOptions = (props: {
     onIgnoreHyphensChange: (ignoreHyphens: boolean) => void
     caseSensitive: boolean
     onCaseSensitiveChange: (caseSensitive: boolean) => void
+    accentSensitive: boolean
+    onAccentSensitiveChange: (accentSensitive: boolean) => void
     children?: ReactNode
 }) => {
     // keep the raw text so clearing a field while typing doesn't snap the value back
@@ -76,6 +78,10 @@ const AdvancedOptions = (props: {
                     caseSensitive={props.caseSensitive}
                     onCaseSensitiveChange={props.onCaseSensitiveChange}
                 />
+                <AccentSensitive
+                    accentSensitive={props.accentSensitive}
+                    onAccentSensitiveChange={props.onAccentSensitiveChange}
+                />
                 {props.children}
             </div>
         </details>
@@ -120,6 +126,29 @@ export const CaseSensitive = (props: {
                 onChange={(e) => props.onCaseSensitiveChange(e.target.checked)}
             />
             Match case
+        </label>
+    )
+}
+
+// controlled from the page so the option can follow a result onto the document page (#20)
+export const AccentSensitive = (props: {
+    accentSensitive: boolean
+    onAccentSensitiveChange: (accentSensitive: boolean) => void
+}) => {
+    return (
+        <label
+            className="advanced-options-match"
+            title="“chengey” does not match “çhengey”"
+        >
+            <input
+                id="accentSensitive"
+                type="checkbox"
+                checked={props.accentSensitive}
+                onChange={(e) =>
+                    props.onAccentSensitiveChange(e.target.checked)
+                }
+            />
+            Match accents
         </label>
     )
 }

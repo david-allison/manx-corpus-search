@@ -16,10 +16,10 @@ public class HighlightingTest : QueryBase
     private const string DOC = "doc";
 
     private SearchResult SearchWork(string query, SearchType type = SearchType.Manx, bool ignoreHyphens = false,
-        bool caseSensitive = false)
+        bool caseSensitive = false, bool normalizeDiacritics = true)
     {
         return new Searcher(luceneIndex, parser)
-            .SearchWork(DOC, query, new SearchOptions { Type = type, IgnoreHyphens = ignoreHyphens, CaseSensitive = caseSensitive });
+            .SearchWork(DOC, query, new SearchOptions { Type = type, IgnoreHyphens = ignoreHyphens, CaseSensitive = caseSensitive, NormalizeDiacritics = normalizeDiacritics });
     }
 
     /// <summary>The substrings of the raw text selected by the returned highlight ranges</summary>
@@ -65,6 +65,24 @@ public class HighlightingTest : QueryBase
     {
         this.AddManxDoc(DOC, "Çhengey ny mayrey");
         var result = SearchWork("çhengey", caseSensitive: true);
+        Assert.That(result.Lines, Is.Empty);
+    }
+
+    [Test]
+    public void AccentSensitiveQueryHighlightsOnlyTheExactForm()
+    {
+        // matching becomes an exact term query; offsets still map back to the raw text
+        this.AddManxDoc(DOC, "Ta çhengey aym as chengey elley");
+        var line = SearchWork("çhengey", normalizeDiacritics: false).Lines.Single();
+        Assert.That(Highlighted(line.Manx, line.ManxHighlights), Is.EqualTo(new[] { "çhengey" }));
+        Assert.That(line.MatchesInLine, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void AccentSensitiveQueryFindsNothingWhenTheAccentsDiffer()
+    {
+        this.AddManxDoc(DOC, "Ta çhengey aym");
+        var result = SearchWork("chengey", normalizeDiacritics: false);
         Assert.That(result.Lines, Is.Empty);
     }
 
@@ -295,6 +313,14 @@ public class HighlightingTest : QueryBase
         this.AddManxDoc(DOC, "Çhengey ny mayrey as çhengey");
         var result = Scan("Chengey", new ScanOptions { CaseSensitive = true }).DocumentResults.Single();
         Assert.That(Highlighted(result.Sample, result.SampleHighlights), Is.EqualTo(new[] { "Çhengey" }));
+    }
+
+    [Test]
+    public void AccentSensitiveScanHighlightsTheSample()
+    {
+        this.AddManxDoc(DOC, "chengey ny mayrey as çhengey");
+        var result = Scan("çhengey", new ScanOptions { NormalizeDiacritics = false }).DocumentResults.Single();
+        Assert.That(Highlighted(result.Sample, result.SampleHighlights), Is.EqualTo(new[] { "çhengey" }));
     }
 
     [Test]

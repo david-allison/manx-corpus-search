@@ -61,6 +61,8 @@ type WorkSearch = {
     ignoreHyphens: boolean
     /** Case must match: "Moir" does not match "moir" */
     caseSensitive: boolean
+    /** Accents must match: "chengey" does not match "çhengey" */
+    accentSensitive: boolean
 }
 
 /**
@@ -72,7 +74,7 @@ export const searchWork = async (
 ): Promise<SearchWorkResponse> => {
     const searchValue = !params.value ? "*" : params.value
     const response = await fetch(
-        `search/searchWork/${params.docIdent}/${encodeURIComponent(searchValue)}?english=${params.searchEnglish.toString()}&manx=${params.searchManx.toString()}&ignoreHyphens=${params.ignoreHyphens.toString()}&caseSensitive=${params.caseSensitive.toString()}`,
+        `search/searchWork/${params.docIdent}/${encodeURIComponent(searchValue)}?english=${params.searchEnglish.toString()}&manx=${params.searchManx.toString()}&ignoreHyphens=${params.ignoreHyphens.toString()}&caseSensitive=${params.caseSensitive.toString()}&accentSensitive=${params.accentSensitive.toString()}`,
         { signal },
     )
     if (!response.ok) {
