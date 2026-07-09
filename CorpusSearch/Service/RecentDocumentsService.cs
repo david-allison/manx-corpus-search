@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using CorpusSearch.Model;
 using Microsoft.Extensions.Logging;
-using Serilog;
 
 namespace CorpusSearch.Service;
 
