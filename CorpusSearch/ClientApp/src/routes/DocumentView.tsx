@@ -2,7 +2,15 @@
 import "./DocumentView.css"
 import "../components/AdvancedOptions.css"
 
-import { Fragment, ReactNode, useEffect, useState, useTransition } from "react"
+import {
+    Fragment,
+    ReactNode,
+    useEffect,
+    useLayoutEffect,
+    useRef,
+    useState,
+    useTransition,
+} from "react"
 import { useLocation, useMatch } from "react-router-dom"
 import {
     searchWork,
@@ -241,6 +249,26 @@ export const DocumentView = () => {
         })
     }, [value, searchEnglish, searchManx, docIdent, options])
 
+    // selecting a document should start with its title at the top, above the
+    // search bar; wait for the first response, as until the lines render the
+    // page is too short to scroll (and re-searching in-page must not re-scroll)
+    const headerRef = useRef<HTMLDivElement>(null)
+    const scrolledToDoc = useRef<string>(undefined)
+    useLayoutEffect(() => {
+        if (searchWorkResponse == null || docIdent == null) {
+            return
+        }
+        if (scrolledToDoc.current != docIdent) {
+            scrolledToDoc.current = docIdent
+            headerRef.current?.scrollIntoView({
+                behavior: window.matchMedia("(prefers-reduced-motion: reduce)")
+                    .matches
+                    ? "auto"
+                    : "smooth",
+            })
+        }
+    }, [searchWorkResponse, docIdent])
+
     const [metadata, setMetadata] = useState<Metadata | null>(null)
     const [showAllMeta, setShowAllMeta] = useState(false)
 
@@ -388,7 +416,7 @@ export const DocumentView = () => {
                 </div>
             </details>
 
-            <div className="doc-header">
+            <div className="doc-header" ref={headerRef}>
                 <div className="doc-title-row">
                     <BackChevron to={"historyBack"} />
                     <h1 className="page-title" id="tabelLabel">
