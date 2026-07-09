@@ -15,14 +15,20 @@
     font-size: 13px;
 }
 
+/* a faint contained surface, so the open controls read as a dropdown panel
+   rather than blending into the page chrome ('Back', the language toggles) */
 .advanced-options-content {
     display: flex;
     align-items: center;
     gap: 28px;
     flex-wrap: wrap;
-    padding: 14px 6px 4px 6px;
+    margin-top: 10px;
+    padding: 12px 14px;
     font-size: 14px;
     color: var(--c-ink);
+    background: var(--c-row-stripe);
+    border: 1px solid var(--c-border-row);
+    border-radius: 6px;
 }
 
 .advanced-options-dates {
