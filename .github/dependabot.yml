@@ -4,6 +4,7 @@ updates:
     directory: "/"
     schedule:
       interval: "daily"
+    open-pull-requests-limit: 15
     groups:
       nuget-dependencies:
         patterns:
@@ -16,6 +17,7 @@ updates:
     directory: "/CorpusSearch/ClientApp"
     schedule:
       interval: "monthly"
+    open-pull-requests-limit: 15
     groups:
       npm-dependencies:
         patterns:
@@ -28,3 +30,4 @@ updates:
     directory: "/"
     schedule:
       interval: "monthly"
+    open-pull-requests-limit: 15
