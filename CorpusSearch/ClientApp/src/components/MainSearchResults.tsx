@@ -131,7 +131,7 @@ export default function MainSearchResults(props: {
                 <div className="results-compact-head">
                     <div>Date</div>
                     <div>Title</div>
-                    <div>Matches</div>
+                    <div className="results-compact-matches">Matches</div>
                 </div>
                 {items.map((result, i) => (
                     <ResultRow
@@ -205,6 +205,34 @@ const documentLink = (
     state: { searchLanguage: manx ? "Manx" : "English", previousPage: "/" },
 })
 
+/**
+ * The document's match count, tinted like the KWIC match highlight.
+ * Links to the document, same as the title.
+ */
+const MatchCountPill = (props: {
+    result: SearchResultEntry
+    link: ReturnType<typeof documentLink>
+    numberOnly?: boolean
+}) => {
+    const { result, link, numberOnly } = props
+    const count = result.count.toLocaleString()
+    const noun = result.count === 1 ? "match" : "matches"
+    return (
+        <Link
+            className="match-count-pill"
+            to={link.to}
+            state={link.state}
+            aria-label={`${count} ${noun} in ${result.documentName}`}
+        >
+            {numberOnly ? count : `${count} ${noun}`}
+            {/* disclosure cue: the pill (like the title) opens the document */}
+            <span className="match-count-pill-chevron" aria-hidden="true">
+                ›
+            </span>
+        </Link>
+    )
+}
+
 /** Comfortable density: one card per document */
 const ResultCard = (props: {
     result: SearchResultEntry
@@ -228,13 +256,7 @@ const ResultCard = (props: {
                 >
                     {result.documentName}
                 </Link>
-                <Link
-                    className="result-card-browse"
-                    to={link.to}
-                    state={link.state}
-                >
-                    Browse&nbsp;({result.count})&nbsp;→
-                </Link>
+                <MatchCountPill result={result} link={link} />
             </div>
             <KwicLine result={result} />
         </div>
@@ -263,10 +285,8 @@ const ResultRow = (props: {
                         {result.documentName}
                     </Link>
                 </div>
-                <div className="results-compact-browse">
-                    <Link to={link.to} state={link.state}>
-                        Browse&nbsp;({result.count})
-                    </Link>
+                <div className="results-compact-matches">
+                    <MatchCountPill result={result} link={link} numberOnly />
                 </div>
             </div>
             <KwicLine result={result} small />
