@@ -5,7 +5,15 @@ import { Fragment, useEffect, useRef, useState, ReactNode } from "react"
 import { DictionaryResponse, manxDictionaryLookup } from "../api/DictionaryApi"
 import { getMultidictLookupWord, MultidictLink } from "./MultidictLink"
 import Highlighter from "react-highlight-words"
-import { Box, CircularProgress, Modal, useMediaQuery } from "@mui/material"
+import {
+    Box,
+    CircularProgress,
+    IconButton,
+    Menu,
+    MenuItem,
+    Modal,
+    useMediaQuery,
+} from "@mui/material"
 import Typography from "@mui/material/Typography"
 import { diffChars } from "diff"
 import YouTuber, { Player } from "./YouTuber"
@@ -609,9 +617,10 @@ export const ComparisonTable = (props: {
         (manxVisible && originalManx) || (englishVisible && !originalManx)
     const rightVisible =
         (englishVisible && originalManx) || (manxVisible && !originalManx)
-    // per-line edit links don't earn a whole column on a phone; "Edit on GitHub"
-    // above the transcript still covers it. Rendered conditionally (not hidden in
-    // CSS) so the note rows' colSpan stays in step with the column count.
+    // on a phone the per-line links collapse into a per-row menu; for video
+    // transcripts the column is dropped entirely ("Edit on GitHub" above the
+    // transcript covers it). Rendered conditionally (not hidden in CSS) so the
+    // note rows' colSpan stays in step with the column count.
     const isMobile = useMediaQuery("(max-width: 600px)")
     // TODO: optimise this - no need to iterate each render
     const linkVisible =
@@ -622,6 +631,12 @@ export const ComparisonTable = (props: {
                     x.page != null &&
                     (response.pdfLink || response.googleBooksId),
             ).length > 0)
+    // the one menu is shared by every row's hamburger: anchored to whichever
+    // button opened it
+    const [lineMenu, setLineMenu] = useState<{
+        anchor: HTMLElement
+        line: SearchWorkResult
+    } | null>(null)
     const leftLang = originalManx ? "gv" : "en"
     const rightLang = originalManx ? "en" : "gv"
     // the expander and note bands cover the language columns only, leaving the
@@ -667,7 +682,11 @@ export const ComparisonTable = (props: {
                                     </th>
                                 )}
                                 {linkVisible && (
-                                    <th className="doc-th-link">Link</th>
+                                    <th className="doc-th-link">
+                                        {/* on a phone the column is just the
+                                            hamburgers: a label adds nothing */}
+                                        {!isMobile && "Link"}
+                                    </th>
                                 )}
                             </tr>
                         </thead>
@@ -821,42 +840,86 @@ export const ComparisonTable = (props: {
                                             )}
                                             {linkVisible && (
                                                 <td className="doc-link-cell">
-                                                    {line.page != null &&
-                                                        response.pdfLink && (
-                                                            <>
-                                                                <a
-                                                                    href={
-                                                                        response.pdfLink +
-                                                                        "#page=" +
-                                                                        line.page
-                                                                    }
-                                                                    target="_blank"
-                                                                    rel="noreferrer"
+                                                    {isMobile ? (
+                                                        (response.gitHubLink ||
+                                                            (line.page !=
+                                                                null &&
+                                                                (response.pdfLink ||
+                                                                    response.googleBooksId))) && (
+                                                            <IconButton
+                                                                className="doc-link-menu-btn"
+                                                                size="small"
+                                                                aria-label="Links for this line"
+                                                                aria-haspopup="true"
+                                                                onClick={(e) =>
+                                                                    setLineMenu(
+                                                                        {
+                                                                            anchor: e.currentTarget,
+                                                                            line,
+                                                                        },
+                                                                    )
+                                                                }
+                                                            >
+                                                                {/* Material "menu" glyph, inlined rather than
+                                                                    pulling in the whole @mui/icons-material
+                                                                    package */}
+                                                                <svg
+                                                                    viewBox="0 0 24 24"
+                                                                    width="18"
+                                                                    height="18"
+                                                                    fill="currentColor"
+                                                                    aria-hidden="true"
                                                                 >
-                                                                    p.
-                                                                    {line.page}
-                                                                </a>{" "}
-                                                            </>
-                                                        )}
-                                                    {line.page != null &&
-                                                        response.googleBooksId && (
-                                                            <>
+                                                                    <path d="M3 18h18v-2H3v2Zm0-5h18v-2H3v2Zm0-7v2h18V6H3Z" />
+                                                                </svg>
+                                                            </IconButton>
+                                                        )
+                                                    ) : (
+                                                        <>
+                                                            {line.page !=
+                                                                null &&
+                                                                response.pdfLink && (
+                                                                    <>
+                                                                        <a
+                                                                            href={
+                                                                                response.pdfLink +
+                                                                                "#page=" +
+                                                                                line.page
+                                                                            }
+                                                                            target="_blank"
+                                                                            rel="noreferrer"
+                                                                        >
+                                                                            p.
+                                                                            {
+                                                                                line.page
+                                                                            }
+                                                                        </a>{" "}
+                                                                    </>
+                                                                )}
+                                                            {line.page !=
+                                                                null &&
+                                                                response.googleBooksId && (
+                                                                    <>
+                                                                        <a
+                                                                            href={`https://books.google.im/books?id=${response.googleBooksId}&pg=PA${line.page}`}
+                                                                            target="_blank"
+                                                                            rel="noreferrer"
+                                                                        >
+                                                                            p.
+                                                                            {
+                                                                                line.page
+                                                                            }
+                                                                        </a>{" "}
+                                                                    </>
+                                                                )}
+                                                            {response.gitHubLink && (
                                                                 <a
-                                                                    href={`https://books.google.im/books?id=${response.googleBooksId}&pg=PA${line.page}`}
-                                                                    target="_blank"
-                                                                    rel="noreferrer"
+                                                                    href={`${response.gitHubLink}#L${line.csvLineNumber}`}
                                                                 >
-                                                                    p.
-                                                                    {line.page}
-                                                                </a>{" "}
-                                                            </>
-                                                        )}
-                                                    {response.gitHubLink && (
-                                                        <a
-                                                            href={`${response.gitHubLink}#L${line.csvLineNumber}`}
-                                                        >
-                                                            edit
-                                                        </a>
+                                                                    edit
+                                                                </a>
+                                                            )}
+                                                        </>
                                                     )}
                                                 </td>
                                             )}
@@ -885,6 +948,52 @@ export const ComparisonTable = (props: {
                     </table>
                 </div>
             </div>
+
+            <Menu
+                anchorEl={lineMenu?.anchor}
+                open={lineMenu != null}
+                onClose={() => setLineMenu(null)}
+            >
+                {lineMenu != null && [
+                    lineMenu.line.page != null && response.pdfLink && (
+                        <MenuItem
+                            key="pdf"
+                            dense
+                            component="a"
+                            href={`${response.pdfLink}#page=${lineMenu.line.page}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            onClick={() => setLineMenu(null)}
+                        >
+                            Page {lineMenu.line.page} (PDF)
+                        </MenuItem>
+                    ),
+                    lineMenu.line.page != null && response.googleBooksId && (
+                        <MenuItem
+                            key="books"
+                            dense
+                            component="a"
+                            href={`https://books.google.im/books?id=${response.googleBooksId}&pg=PA${lineMenu.line.page}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            onClick={() => setLineMenu(null)}
+                        >
+                            Page {lineMenu.line.page} (Google Books)
+                        </MenuItem>
+                    ),
+                    response.gitHubLink && (
+                        <MenuItem
+                            key="edit"
+                            dense
+                            component="a"
+                            href={`${response.gitHubLink}#L${lineMenu.line.csvLineNumber}`}
+                            onClick={() => setLineMenu(null)}
+                        >
+                            Edit on GitHub
+                        </MenuItem>
+                    ),
+                ]}
+            </Menu>
 
             <Modal
                 open={modalOpen}
