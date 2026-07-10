@@ -11,6 +11,12 @@ using Lucene.Net.Store;
 using Lucene.Net.Util;
 using Lucene.Net.Util.Automaton;
 using Document = Lucene.Net.Documents.Document;
+// Lucene's index of a line across the whole index, 0..MaxDoc-1: e.g. 73412.
+// This is not necessarily contiguous within a corpus document.
+// Note: 'document' refers to a Lucene document.
+using DocId = int;
+// names a corpus document (DOCUMENT_IDENT): e.g. "MatthewGospel1748"
+using Ident = string;
 
 namespace CorpusSearch.Dependencies.Lucene;
 
@@ -141,22 +147,22 @@ public class LuceneIndex(IndexWriter indexWriter)
     /// group matched lines into corpus documents without loading each line's stored document
     /// (the dominant cost when a common word matches tens of thousands of lines).
     /// </summary>
-    private sealed class DocumentLookup(string[] idents, int[] lineNumbers)
+    private sealed class DocumentLookup(Ident[] idents, int[] lineNumbers)
     {
         /// <summary>The corpus document ident and CsvLineNumber of the line with this docId</summary>
-        public (string Ident, int LineNumber) Get(int docId) => (idents[docId], lineNumbers[docId]);
+        public (Ident Ident, int LineNumber) Get(DocId docId) => (idents[docId], lineNumbers[docId]);
     }
 
     private DocumentLookup _documentLookup;
 
     private static DocumentLookup BuildDocumentLookup(IndexReader reader)
     {
-        var idents = new string[reader.MaxDoc];
+        var idents = new Ident[reader.MaxDoc];
         var lineNumbers = new int[reader.MaxDoc];
         // one shared string instance per document: ~800 idents across ~100k lines
-        var identPool = new Dictionary<string, string>();
+        var identPool = new Dictionary<Ident, Ident>();
         var fields = new HashSet<string> { DOCUMENT_IDENT, DOCUMENT_LINE_NUMBER };
-        for (var docId = 0; docId < reader.MaxDoc; docId++)
+        for (DocId docId = 0; docId < reader.MaxDoc; docId++)
         {
             var document = reader.Document(docId, fields);
             var ident = document.GetField(DOCUMENT_IDENT)?.GetStringValue();
@@ -179,17 +185,17 @@ public class LuceneIndex(IndexWriter indexWriter)
     }
 
 
-    internal SearchResult Search(string ident, SpanQuery query, bool getTranscriptData)
+    internal SearchResult Search(Ident ident, SpanQuery query, bool getTranscriptData)
     {
         using var reader = UseReader();
         var searcher = new IndexSearcher(reader);
 
-        ISet<int> acceptDocs = GetDocsForIdent(searcher, ident);
+        ISet<DocId> acceptDocs = GetDocsForIdent(searcher, ident);
 
         var rewritten = (SpanQuery)query.Rewrite(reader);
         var spanCollection = BuildSpanCollection(rewritten, reader, AcceptDocument);
 
-        var matchedDocs = new HashSet<int>(spanCollection.DistinctDocumentIds());
+        var matchedDocs = new HashSet<DocId>(spanCollection.DistinctDocumentIds());
         var highlightTokenSpans = CollectHighlightTokenSpans(rewritten, reader, matchedDocs);
         string searchedField = rewritten.Field;
 
@@ -268,10 +274,10 @@ public class LuceneIndex(IndexWriter indexWriter)
     /// full query, this collects the positions of each term/phrase of it (see
     /// <see cref="SpanQueryHighlightExtractor"/>) in the documents which matched.
     /// </summary>
-    private static Dictionary<int, List<(int Start, int End)>> CollectHighlightTokenSpans(
-        SpanQuery rewritten, IndexReader reader, ISet<int> matchedDocs)
+    private static Dictionary<DocId, List<(int Start, int End)>> CollectHighlightTokenSpans(
+        SpanQuery rewritten, IndexReader reader, ISet<DocId> matchedDocs)
     {
-        var result = new Dictionary<int, List<(int Start, int End)>>();
+        var result = new Dictionary<DocId, List<(int Start, int End)>>();
         if (matchedDocs.Count == 0)
         {
             return result;
@@ -286,7 +292,7 @@ public class LuceneIndex(IndexWriter indexWriter)
 
                 while (spans.MoveNext())
                 {
-                    int docId = leaf.DocBase + spans.Doc;
+                    DocId docId = leaf.DocBase + spans.Doc;
                     if (!matchedDocs.Contains(docId))
                     {
                         continue;
@@ -308,7 +314,7 @@ public class LuceneIndex(IndexWriter indexWriter)
     /// -> character offsets in the raw text (via <see cref="MappedText"/>).
     /// </summary>
     /// <returns>ranges ordered by start, overlaps merged; null if nothing can be highlighted</returns>
-    private static List<HighlightRange> ComputeHighlights(IndexReader reader, int docId, string field,
+    private static List<HighlightRange> ComputeHighlights(IndexReader reader, DocId docId, string field,
         string rawText, List<(int Start, int End)> tokenSpans)
     {
         if (tokenSpans == null || tokenSpans.Count == 0 || string.IsNullOrEmpty(rawText))
@@ -367,7 +373,7 @@ public class LuceneIndex(IndexWriter indexWriter)
         return merged;
     }
 
-    private ISet<int> GetDocsForIdent(IndexSearcher searcher, string ident)
+    private ISet<DocId> GetDocsForIdent(IndexSearcher searcher, Ident ident)
     {
         var query = new TermQuery(new Term(DOCUMENT_IDENT, ident));
 
@@ -389,7 +395,7 @@ public class LuceneIndex(IndexWriter indexWriter)
         // Group the matched lines into distinct Corpus Documents via the docId lookup. The
         // sample is the first line by line number: docID order is merge-dependent, so it
         // cannot be relied on (#303)
-        var corpusDocuments = new Dictionary<string, (int SampleDocId, int SampleLineNumber, int Count)>();
+        var corpusDocuments = new Dictionary<Ident, (DocId SampleDocId, int SampleLineNumber, int Count)>();
         foreach (var docId in distinctDocuments)
         {
             var (ident, lineNumber) = lookup.Get(docId);
@@ -407,7 +413,7 @@ public class LuceneIndex(IndexWriter indexWriter)
         }
 
         // The sample displayed on the Home page is always the Manx text: only highlight it when Manx was searched
-        var sampleDocIds = new HashSet<int>(corpusDocuments.Values.Select(x => x.SampleDocId));
+        var sampleDocIds = new HashSet<DocId>(corpusDocuments.Values.Select(x => x.SampleDocId));
         var highlightTokenSpans = IsManxField(spanQuery.Field)
             ? CollectHighlightTokenSpans(spanQuery, reader, sampleDocIds)
             : [];
@@ -448,7 +454,7 @@ public class LuceneIndex(IndexWriter indexWriter)
         };
     }
 
-    public List<DocumentLine> GetAllLines(string ident, bool getTranscript)
+    public List<DocumentLine> GetAllLines(Ident ident, bool getTranscript)
     {
         using var reader = UseReader();
         var searcher = new IndexSearcher(reader);
@@ -472,7 +478,7 @@ public class LuceneIndex(IndexWriter indexWriter)
     /// </summary>
     /// <returns>the lines, and the count in the range before the limit was applied: if it is no
     /// more than the limit, the range is exhausted</returns>
-    public (List<DocumentLine> Lines, int TotalInRange) GetLines(string ident, int start, int end, int limit,
+    public (List<DocumentLine> Lines, int TotalInRange) GetLines(Ident ident, int start, int end, int limit,
         bool fromEnd, bool getTranscript)
     {
         using var reader = UseReader();
@@ -501,7 +507,7 @@ public class LuceneIndex(IndexWriter indexWriter)
     }
 
     /// <summary>The first and last CsvLineNumber of a document; null if the document has no lines</summary>
-    public (int First, int Last)? GetLineNumberRange(string ident)
+    public (int First, int Last)? GetLineNumberRange(Ident ident)
     {
         using var reader = UseReader();
         var searcher = new IndexSearcher(reader);
