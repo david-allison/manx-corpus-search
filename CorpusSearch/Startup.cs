@@ -157,6 +157,14 @@ public class Startup(IConfiguration configuration)
                 pattern: "{controller}/{action=Index}/{id?}");
         });
 
+        if (!env.IsDevelopment())
+        {
+            // URLs which are neither a server route nor a SPA page must 404 rather
+            // than serve the shell with a 200 (see SpaRouteGuard). Development is
+            // excluded: there UseSpa also proxies Vite's own requests.
+            app.UseSpaRouteGuard(workService);
+        }
+
         app.UseSpa(spa =>
         {
             spa.Options.SourcePath = "ClientApp";

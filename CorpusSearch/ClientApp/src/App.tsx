@@ -1,10 +1,11 @@
 import { useReducer } from "react"
-import { Navigate, Route, Routes, useLocation } from "react-router-dom"
+import { Route, Routes, useLocation } from "react-router-dom"
 import { Layout } from "./components/Layout"
 import { ErrorBoundary } from "./components/ErrorBoundary"
 import { Home } from "./routes/Home"
 import { DocumentView } from "./routes/DocumentView"
 import { BitPlayer } from "./routes/BitPlayer"
+import { NotFound } from "./routes/NotFound"
 import "./custom.css"
 
 export const App = () => {
@@ -19,7 +20,7 @@ export const App = () => {
                     <Route path="/" element={<Home key={k} />} />
                     <Route path="/docs/:docId" element={<DocumentView />} />
                     <Route path={"/tools/youtube"} element={<BitPlayer />} />
-                    <Route path="*" element={<Navigate to="/" replace />} />
+                    <Route path="*" element={<NotFound />} />
                 </Routes>
             </ErrorBoundary>
         </Layout>
