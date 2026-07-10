@@ -336,6 +336,17 @@ const HomeIntro = ({
                     corpus-submissions@gaelg.im
                 </a>
                 .
+                <br />
+                You can also chat with Manx speakers and learners, including the
+                person behind the corpus, in the{" "}
+                <a
+                    href="https://discord.gg/MC96q3vwKu"
+                    target="_blank"
+                    rel="noreferrer"
+                >
+                    Celtic Languages Discord
+                </a>
+                .
             </div>
         </>
     )
