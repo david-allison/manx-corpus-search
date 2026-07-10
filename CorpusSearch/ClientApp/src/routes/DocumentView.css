@@ -310,6 +310,15 @@
     font-size: 13px;
 }
 
+/* phone-width rows: one hamburger opens the line's links (see the mobile block).
+   The two-class selector outweighs the MUI emotion class, whatever the
+   injection order */
+.doc-link-cell .doc-link-menu-btn {
+    color: var(--c-link);
+    /* the round hit target shouldn't add height to the row */
+    margin: -4px 0;
+}
+
 /* ============ Match highlights ============ */
 mark.textHighlight {
     color: var(--c-accent);
@@ -366,5 +375,11 @@ mark.textHighlightAlternate {
 
     .doc-speaker-time {
         display: block;
+    }
+
+    /* the hamburger replaces the text links (and the header label): the
+       column only needs the icon */
+    .doc-th-link {
+        width: 36px;
     }
 }
