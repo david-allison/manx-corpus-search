@@ -1,7 +1,14 @@
 import { SearchWorkResponse, SearchWorkResult } from "../api/SearchWorkApi"
 import { HighlightRange, Translations } from "../api/SearchApi"
-import { getSelectedWordOrPhrase } from "../utils/Selection"
-import { Fragment, useEffect, useRef, useState, ReactNode } from "react"
+import { getSelectedWordOrPhrase, getWordAtPoint } from "../utils/Selection"
+import {
+    Fragment,
+    MouseEvent as ReactMouseEvent,
+    useEffect,
+    useRef,
+    useState,
+    ReactNode,
+} from "react"
 import { DictionaryResponse, manxDictionaryLookup } from "../api/DictionaryApi"
 import { getMultidictLookupWord, MultidictLink } from "./MultidictLink"
 import Highlighter from "react-highlight-words"
@@ -330,31 +337,51 @@ export const ComparisonTable = (props: {
         showNotes,
     } = props
 
-    const onClickWordForDictionaryLookup = (context: string) => {
+    const onClickWordForDictionaryLookup = (
+        event: ReactMouseEvent,
+        context: string,
+    ) => {
+        // a mouse click places a caret to expand into the word under it (and a
+        // double-click selects the word itself), but a touch tap places
+        // nothing: locate the word from the tap position instead
+        const isTouch =
+            "pointerType" in event.nativeEvent &&
+            (event.nativeEvent as PointerEvent).pointerType == "touch"
         const selection = window.getSelection()
-        if (selection == null) {
-            return
-        }
+        const wordOrPhrase =
+            isTouch || selection == null || selection.rangeCount == 0
+                ? getWordAtPoint(event.clientX, event.clientY)
+                : getSelectedWordOrPhrase(selection)
 
-        const range = getSelectedWordOrPhrase(selection)
-
-        if (range == null || range.split(" ").length > 4) {
+        if (wordOrPhrase == null || wordOrPhrase.split(" ").length > 4) {
             return
         }
 
         // remove notes/citations '[1]' at the end of the string
-        const stringToSearch = range.replace(/\[\d+]/g, " ")
+        const stringToSearch = wordOrPhrase.replace(/\[\d+]/g, " ")
 
         setModalOpen(true)
+        modalOpenedAt.current = performance.now()
         setModalText(stringToSearch.trim())
         setModalContext(context)
     }
 
     const [modalOpen, setModalOpen] = useState(false)
+    const modalOpenedAt = useRef(0)
     const [modalText, setModalText] = useState("")
     // the text surrounding modalText: lets the server match phrases/idioms (#135)
     const [modalContext, setModalContext] = useState("")
-    const handleModalClose = () => setModalOpen(false)
+    const handleModalClose = (_event: unknown, reason?: string) => {
+        // a double-click's second click lands on the backdrop just after the
+        // first click opened the popup: it must not immediately close it
+        if (
+            reason == "backdropClick" &&
+            performance.now() - modalOpenedAt.current < 500
+        ) {
+            return
+        }
+        setModalOpen(false)
+    }
     const modalMultidictWord = getMultidictLookupWord(modalText)
 
     const [modalSummaries, setModalSummaries] =
@@ -420,9 +447,9 @@ export const ComparisonTable = (props: {
             segmentStart += item.length + 1 // + the removed "\n"
             return (
                 <div
-                    onClick={() => {
+                    onClick={(event) => {
                         if (languageCode == "gv") {
-                            onClickWordForDictionaryLookup(lineValue)
+                            onClickWordForDictionaryLookup(event, lineValue)
                         }
                     }}
                     className="doc-line"
@@ -464,8 +491,8 @@ export const ComparisonTable = (props: {
         // TODO: Also apply justify to 'browse' screen
         return (
             <div
-                onClick={() => {
-                    onClickWordForDictionaryLookup(currentText)
+                onClick={(event) => {
+                    onClickWordForDictionaryLookup(event, currentText)
                 }}
                 className="doc-line"
             >

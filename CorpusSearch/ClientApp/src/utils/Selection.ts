@@ -1,114 +1,105 @@
 /** Returns the selected word or phrase */
-export const getSelectedWordOrPhrase = (selection: Selection) => {
-    const range = selection.getRangeAt(0).cloneRange() // clone to ensure we don't modify selection
-    const node = selection.anchorNode
-
-    if (node == null) {
+export const getSelectedWordOrPhrase = (
+    selection: Selection,
+): string | null => {
+    // a touch tap fires a click without placing a caret: there is no range
+    // to expand (use getWordAtPoint instead)
+    if (selection.rangeCount == 0) {
         return null
     }
 
-    let currentSelection = selection.toString()
-    let beforeSelection = ""
-    let afterSelection = ""
-
-    //highlighting returns a non-empty string so we are good to go
-    if (currentSelection != "") return currentSelection
-
-    //clicking requires more work
-    if (currentSelection.split(" ").length == 1) {
-        beforeSelection = setRangeStartOffset(range, node)
-        afterSelection = setRangeEndOffset(range, node)
+    // a double-click or drag selection: use the selected text as-is
+    const selected = selection.toString()
+    if (selected != "") {
+        return selected
     }
 
-    if (
-        node.parentElement != null &&
-        node.parentElement.className == "part-removed"
+    // a single click places a collapsed caret: expand it to the word around it
+    const node = selection.anchorNode
+    if (node == null) {
+        return null
+    }
+    return getWordAround(node, selection.anchorOffset)
+}
+
+/** Returns the word at a viewport point. A touch tap does not place a caret
+ * for getSelectedWordOrPhrase to expand: the word under the finger is derived
+ * from the tap position instead. */
+export const getWordAtPoint = (x: number, y: number): string | null => {
+    const caret = caretFromPoint(x, y)
+    if (caret == null) {
+        return null
+    }
+    return getWordAround(caret.node, caret.offset)
+}
+
+/** The text position under a viewport point: Firefox implements the standard
+ * caretPositionFromPoint; Chrome and Safari the older caretRangeFromPoint */
+const caretFromPoint = (
+    x: number,
+    y: number,
+): { node: Node; offset: number } | null => {
+    if (document.caretPositionFromPoint != null) {
+        const position = document.caretPositionFromPoint(x, y)
+        return position == null
+            ? null
+            : { node: position.offsetNode, offset: position.offset }
+    }
+    if (document.caretRangeFromPoint != null) {
+        const range = document.caretRangeFromPoint(x, y)
+        return range == null
+            ? null
+            : { node: range.startContainer, offset: range.startOffset }
+    }
+    return null
+}
+
+/**
+ * Expands a caret position to the whitespace-delimited word around it.
+ *
+ * A word's letters can be split across highlight/diff elements (e.g.
+ * "Ta <mark>çhengey</mark> aym"), so the surrounding line's text nodes are
+ * stitched back together before expanding.
+ */
+const getWordAround = (node: Node, offset: number): string | null => {
+    // the nearest <div> is the displayed line (see .doc-line)
+    const line = node.parentElement?.closest("div")
+    if (line == null) {
+        return null
+    }
+
+    let text = ""
+    let caret = -1
+    const walker = document.createTreeWalker(line, NodeFilter.SHOW_TEXT)
+    for (
+        let current = walker.nextNode();
+        current != null;
+        current = walker.nextNode()
     ) {
-        currentSelection = ""
-    }
-
-    console.debug(`${beforeSelection}|${currentSelection}|${afterSelection}`)
-    return `${beforeSelection}${currentSelection}${afterSelection}`
-}
-
-const setRangeStartOffset = (inputRange: Range, node: Node) => {
-    const range = inputRange.cloneRange()
-    let currentString = ""
-    while (!range.toString().includes(" ")) {
-        if (
-            range.startOffset == 0 ||
-            node.parentElement == null ||
-            node.parentElement.className == "part-removed"
-        ) {
-            currentString = range.toString() + currentString
-            if (node?.parentNode?.previousSibling == null) {
-                return currentString
-            }
-            node = node.parentNode.previousSibling.childNodes[0]
-            if (node.textContent == null) {
-                console.warn("unexpected empty element")
-                return currentString
-            }
-            range.setEnd(node, node.textContent.length)
-            range.setStart(node, 0)
-        }
-
-        if (
-            node.parentElement == null ||
-            node.parentElement.className == "part-removed"
-        ) {
+        // 'part-removed' diff text and note-marker buttons ("[1]") are not
+        // part of the displayed word
+        if (current.parentElement?.closest(".part-removed, button") != null) {
             continue
         }
-
-        while (range.toString().indexOf(" ") != 0 && range.startOffset > 0) {
-            range.setStart(node, range.startOffset - 1)
+        if (current == node) {
+            caret = text.length + offset
         }
-
-        // reached a space and we can end
-        if (range.startOffset != 0) {
-            range.setStart(node, range.startOffset + 1)
-            currentString = range.toString() + currentString
-            return currentString
-        }
+        text += current.textContent ?? ""
     }
-    return range.toString() + currentString
-}
-
-const setRangeEndOffset = (inputRange: Range, node: Node) => {
-    const range = inputRange.cloneRange()
-
-    let currentString = ""
-    let firstTime = true
-    while (!range.toString().includes(" ")) {
-        currentString += range.toString()
-        if (!firstTime) {
-            if (node?.parentNode?.nextSibling == null) {
-                return currentString
-            }
-            node = node.parentNode.nextSibling.childNodes[0]
-            range.setEnd(node, 0)
-            range.setStart(node, 0)
-        }
-        firstTime = false
-
-        if (
-            node.parentElement == null ||
-            node.parentElement.className == "part-removed"
-        ) {
-            continue
-        }
-
-        try {
-            do {
-                range.setEnd(node, range.endOffset + 1)
-            } while (
-                !range.toString().includes(" ") &&
-                range.toString().trim() != ""
-            )
-        } catch {
-            // TODO: find a less hacky way to end if at the end
-        }
+    if (caret < 0) {
+        return null // the caret is in text excluded above
     }
 
-    return currentString + range.toString()
+    let start = caret
+    while (start > 0 && !isWhitespace(text[start - 1])) {
+        start--
+    }
+    let end = caret
+    while (end < text.length && !isWhitespace(text[end])) {
+        end++
+    }
+    const word = text.slice(start, end)
+    return word == "" ? null : word
 }
+
+const isWhitespace = (character: string) => /\s/.test(character)

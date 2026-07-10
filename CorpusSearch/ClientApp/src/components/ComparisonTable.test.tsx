@@ -40,9 +40,11 @@ vi.mock("../api/DictionaryApi", () => ({
 }))
 
 const mockGetSelectedWordOrPhrase = vi.hoisted(() => vi.fn())
+const mockGetWordAtPoint = vi.hoisted(() => vi.fn())
 
 vi.mock("../utils/Selection", () => ({
     getSelectedWordOrPhrase: mockGetSelectedWordOrPhrase,
+    getWordAtPoint: mockGetWordAtPoint,
 }))
 
 // vitest globals are off, so testing-library does not clean up by itself; without this,
@@ -471,8 +473,13 @@ describe("context expansion (#286)", () => {
 describe("dictionary popup (#51)", () => {
     beforeEach(() => {
         mockDictionaryLookup.mockReset()
-        // clicking a word 'selects' it: bypass the browser selection plumbing
-        mockGetSelectedWordOrPhrase.mockReturnValue("lhiam")
+        // a jsdom click places no caret, so the word comes from the click
+        // position: bypass the browser plumbing
+        mockGetWordAtPoint.mockReturnValue("lhiam")
+    })
+
+    afterEach(() => {
+        mockGetWordAtPoint.mockReset()
     })
 
     const openPopup = () => {
@@ -529,6 +536,97 @@ describe("dictionary popup (#51)", () => {
     })
 })
 
+describe("dictionary popup on touch", () => {
+    beforeEach(() => {
+        mockDictionaryLookup.mockReset()
+        mockDictionaryLookup.mockResolvedValue([])
+        mockGetSelectedWordOrPhrase.mockReset()
+        mockGetWordAtPoint.mockReset()
+    })
+
+    // a touch-originated click: a PointerEvent tap, which places no caret
+    const tap = (element: Element) => {
+        const event = new MouseEvent("click", {
+            bubbles: true,
+            cancelable: true,
+            clientX: 12,
+            clientY: 34,
+        })
+        Object.defineProperty(event, "pointerType", { value: "touch" })
+        fireEvent(element, event)
+    }
+
+    it("opens the popup for the word under the tap", async () => {
+        mockGetWordAtPoint.mockReturnValue("lhiam")
+        const { getByText } = renderTable([line({ manx: "she lhiam eh" })])
+
+        tap(getByText("she lhiam eh"))
+
+        expect(mockGetWordAtPoint).toHaveBeenCalledWith(12, 34)
+        await screen.findByRole("heading", { name: "lhiam" })
+    })
+
+    it("ignores a stale selection when tapping", () => {
+        // e.g. text long-press-selected earlier: the tapped word wins
+        mockGetWordAtPoint.mockReturnValue("lhiam")
+        const { getByText } = renderTable([line({ manx: "she lhiam eh" })])
+        const range = document.createRange()
+        range.selectNodeContents(getByText("she lhiam eh"))
+        window.getSelection()?.addRange(range)
+
+        tap(getByText("she lhiam eh"))
+
+        expect(mockGetWordAtPoint).toHaveBeenCalledWith(12, 34)
+        expect(mockGetSelectedWordOrPhrase).not.toHaveBeenCalled()
+        window.getSelection()?.removeAllRanges()
+    })
+
+    it("does not open the popup when no word is under the tap", () => {
+        mockGetWordAtPoint.mockReturnValue(null)
+        const { getByText } = renderTable([line({ manx: "she lhiam eh" })])
+
+        tap(getByText("she lhiam eh"))
+
+        expect(mockDictionaryLookup).not.toHaveBeenCalled()
+        expect(screen.queryByRole("heading", { name: "lhiam" })).toBeNull()
+    })
+
+    it("uses the selection, not the position, for a mouse click with a caret", () => {
+        mockGetSelectedWordOrPhrase.mockReturnValue("lhiam")
+        const { getByText } = renderTable([line({ manx: "she lhiam eh" })])
+        const range = document.createRange()
+        range.selectNodeContents(getByText("she lhiam eh"))
+        window.getSelection()?.addRange(range)
+
+        fireEvent.click(getByText("she lhiam eh"))
+
+        expect(mockGetSelectedWordOrPhrase).toHaveBeenCalled()
+        expect(mockGetWordAtPoint).not.toHaveBeenCalled()
+        window.getSelection()?.removeAllRanges()
+    })
+
+    it("is not closed again by the second click of a double-click", async () => {
+        // the first click opens the popup; the second click of a double-click
+        // lands on the backdrop and must not immediately close it
+        const nowSpy = vi.spyOn(performance, "now")
+        nowSpy.mockReturnValue(1000)
+        mockGetWordAtPoint.mockReturnValue("lhiam")
+        const { getByText } = renderTable([line({ manx: "she lhiam eh" })])
+        fireEvent.click(getByText("she lhiam eh"))
+
+        nowSpy.mockReturnValue(1100) // within the double-click window
+        fireEvent.click(document.querySelector(".MuiBackdrop-root")!)
+        expect(screen.queryByRole("heading", { name: "lhiam" })).not.toBeNull()
+
+        nowSpy.mockReturnValue(2000) // a deliberate dismissal later
+        fireEvent.click(document.querySelector(".MuiBackdrop-root")!)
+        await waitFor(() =>
+            expect(screen.queryByRole("heading", { name: "lhiam" })).toBeNull(),
+        )
+        nowSpy.mockRestore()
+    })
+})
+
 describe("note rows", () => {
     const notedLine = () =>
         line({
@@ -539,6 +637,7 @@ describe("note rows", () => {
 
     beforeEach(() => {
         mockGetSelectedWordOrPhrase.mockClear()
+        mockGetWordAtPoint.mockClear()
     })
 
     it("shows a linked note by default", () => {
@@ -607,6 +706,7 @@ describe("note rows", () => {
         const { container } = renderTable([notedLine()])
         fireEvent.click(container.querySelector(".doc-note-marker")!)
         expect(mockGetSelectedWordOrPhrase).not.toHaveBeenCalled()
+        expect(mockGetWordAtPoint).not.toHaveBeenCalled()
     })
 
     it("keeps the note row off the Link column", () => {
