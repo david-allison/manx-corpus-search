@@ -132,12 +132,50 @@ public class LuceneIndex(IndexWriter indexWriter)
     public void Compact()
     {
         indexWriter.ForceMerge(1);
+        using var reader = UseReader();
+        _documentLookup = BuildDocumentLookup(reader);
     }
 
-    public ScanResult Scan(SpanQuery query)
+    /// <summary>
+    /// docId -> (document ident, line number) for the whole index, so <see cref="Scan"/> can
+    /// group matched lines into corpus documents without loading each line's stored document
+    /// (the dominant cost when a common word matches tens of thousands of lines).
+    /// </summary>
+    private sealed class DocumentLookup(string[] idents, int[] lineNumbers)
     {
-        using var reader = UseReader();
-        return Scan(reader, query);
+        /// <summary>The corpus document ident and CsvLineNumber of the line with this docId</summary>
+        public (string Ident, int LineNumber) Get(int docId) => (idents[docId], lineNumbers[docId]);
+    }
+
+    private DocumentLookup _documentLookup;
+
+    private static DocumentLookup BuildDocumentLookup(IndexReader reader)
+    {
+        var idents = new string[reader.MaxDoc];
+        var lineNumbers = new int[reader.MaxDoc];
+        // one shared string instance per document: ~800 idents across ~100k lines
+        var identPool = new Dictionary<string, string>();
+        var fields = new HashSet<string> { DOCUMENT_IDENT, DOCUMENT_LINE_NUMBER };
+        for (var docId = 0; docId < reader.MaxDoc; docId++)
+        {
+            var document = reader.Document(docId, fields);
+            var ident = document.GetField(DOCUMENT_IDENT)?.GetStringValue();
+            if (ident != null)
+            {
+                if (identPool.TryGetValue(ident, out var pooled))
+                {
+                    ident = pooled;
+                }
+                else
+                {
+                    identPool.Add(ident, ident);
+                }
+            }
+            idents[docId] = ident;
+            lineNumbers[docId] = document.GetField(DOCUMENT_LINE_NUMBER)?.GetInt32Value() ?? -1;
+        }
+
+        return new DocumentLookup(idents, lineNumbers);
     }
 
 
@@ -338,33 +376,47 @@ public class LuceneIndex(IndexWriter indexWriter)
         return new HashSet<int>(ret);
     }
 
-    public static ScanResult Scan(IndexReader reader, SpanQuery query)
+    public ScanResult Scan(SpanQuery query)
     {
+        using var reader = UseReader();
+        // tests scan without compacting; production builds the lookup in Compact()
+        var lookup = _documentLookup ??= BuildDocumentLookup(reader);
+
         var spanQuery = (SpanQuery)query.Rewrite(reader);
         var spanCollection = BuildSpanCollection(spanQuery, reader, (_, _) => true);
         var distinctDocuments = spanCollection.DistinctDocumentIds().ToList();
 
-        var documentMapping = distinctDocuments.ToDictionary(x => x, reader.Document);
-
-        // A collection of Lucene documents, each refers to the first sample in a distinct Corpus Document.
-        // 'first' by line number: docID order is merge-dependent, so it cannot be relied on (#303)
-        var corpusDocuments = documentMapping
-            .GroupBy(x => x.Value.GetField(DOCUMENT_IDENT)?.GetStringValue())
-            .Select(g => g.OrderBy(x => x.Value.GetField(DOCUMENT_LINE_NUMBER)?.GetInt32Value() ?? -1).First())
-            .ToList();
-
-        // key: ident of corpus document, value: docIds of each segment
-        var corpusDocumentMapping = documentMapping.ToLookup(x => x.Value.GetField(DOCUMENT_IDENT).GetStringValue(), x => x.Key);
+        // Group the matched lines into distinct Corpus Documents via the docId lookup. The
+        // sample is the first line by line number: docID order is merge-dependent, so it
+        // cannot be relied on (#303)
+        var corpusDocuments = new Dictionary<string, (int SampleDocId, int SampleLineNumber, int Count)>();
+        foreach (var docId in distinctDocuments)
+        {
+            var (ident, lineNumber) = lookup.Get(docId);
+            var count = spanCollection.GetCount(docId);
+            if (corpusDocuments.TryGetValue(ident, out var existing))
+            {
+                corpusDocuments[ident] = lineNumber < existing.SampleLineNumber
+                    ? (docId, lineNumber, existing.Count + count)
+                    : (existing.SampleDocId, existing.SampleLineNumber, existing.Count + count);
+            }
+            else
+            {
+                corpusDocuments[ident] = (docId, lineNumber, count);
+            }
+        }
 
         // The sample displayed on the Home page is always the Manx text: only highlight it when Manx was searched
-        var sampleDocIds = new HashSet<int>(corpusDocuments.Select(x => x.Key));
+        var sampleDocIds = new HashSet<int>(corpusDocuments.Values.Select(x => x.SampleDocId));
         var highlightTokenSpans = IsManxField(spanQuery.Field)
             ? CollectHighlightTokenSpans(spanQuery, reader, sampleDocIds)
             : [];
 
         var samples = corpusDocuments.Select(kvp =>
         {
-            var doc = kvp.Value;
+            var (sampleDocId, _, count) = kvp.Value;
+            // only the sample line's stored document is loaded: one per corpus document
+            var doc = reader.Document(sampleDocId);
 
             string maybeStartDate = doc.GetField(DOCUMENT_CREATED_START)?.GetStringValue();
             string maybeEndDate = doc.GetField(DOCUMENT_CREATED_END)?.GetStringValue();
@@ -372,19 +424,18 @@ public class LuceneIndex(IndexWriter indexWriter)
             DateTime? startDate = maybeStartDate != null ? DateTime.Parse(maybeStartDate) : null;
             DateTime? endDate = maybeEndDate != null ? DateTime.Parse(maybeEndDate) : null;
 
-            var ident = doc.GetField(DOCUMENT_IDENT).GetStringValue();
             var sample = doc.GetField(DOCUMENT_REAL_MANX).GetStringValue();
 
             return new QueryDocumentResult
             {
-                Ident = ident,
+                Ident = kvp.Key,
                 DocumentName = doc.GetField(DOCUMENT_NAME).GetStringValue(),
                 Sample = sample,
-                SampleHighlights = ComputeHighlights(reader, kvp.Key, spanQuery.Field, sample,
-                    highlightTokenSpans.GetValueOrDefault(kvp.Key)),
+                SampleHighlights = ComputeHighlights(reader, sampleDocId, spanQuery.Field, sample,
+                    highlightTokenSpans.GetValueOrDefault(sampleDocId)),
                 EndDate = endDate,
                 StartDate = startDate,
-                Count = corpusDocumentMapping[ident].Sum(docIdForIdent => spanCollection.GetCount(docIdForIdent))
+                Count = count
             };
         });
 
