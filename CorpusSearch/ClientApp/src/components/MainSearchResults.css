@@ -96,14 +96,14 @@
     padding: 0 22px 0 10px; /* asymmetric: the right side keeps the chevron clear */
 }
 
-/* right-aligned over the pills: 10px cell padding + 2px optical inset lands
+/* right-aligned over the pills: 6px cell padding + 2px optical inset lands
    the label's right edge on the pills' right edge */
 .results-compact-matches {
     text-align: right;
 }
 
 .results-compact-head .results-compact-matches {
-    padding-right: 12px;
+    padding-right: 8px;
 }
 
 /* ============ KWIC line (shared) ============ */
@@ -115,7 +115,7 @@
 
 .result-kwic-small {
     /* left padding = date column + cell padding, so the line sits flush with the title */
-    padding: 0 10px 7px 100px;
+    padding: 0 6px 4px 96px;
     font-size: 13.5px;
 }
 
@@ -134,7 +134,7 @@
 }
 
 .results-compact-head div {
-    padding: 8px 10px;
+    padding: 5px 6px;
 }
 
 .results-compact-row {
@@ -152,7 +152,7 @@
 }
 
 .results-compact-grid > div {
-    padding: 7px 10px;
+    padding: 4px 6px;
     min-width: 0;
 }
 
@@ -199,7 +199,7 @@
 
     .result-kwic-small {
         /* the narrower date column, same formula as above */
-        padding-left: 82px;
+        padding-left: 78px;
     }
 }
 
