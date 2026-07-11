@@ -1,11 +1,10 @@
-#nullable disable // not yet migrated, see the .csproj
 namespace CorpusSearch.Model;
 
-public class CorpusSearchWorkQuery(string query)
+public class CorpusSearchWorkQuery(string? query)
 {
-    public string Query { get; } = query;
+    public string? Query { get; } = query;
 
-    public string Ident { get; set; }
+    public required string Ident { get; set; }
     public bool Manx { get; set; }
     public bool English { get; set; }
     public SearchOptions Options { get; set; } = SearchOptions.Default;
