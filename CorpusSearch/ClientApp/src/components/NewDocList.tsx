@@ -38,7 +38,8 @@ const RecentDocRow = ({ doc }: { doc: DocType }) => {
     }
     return (
         <div className="recent-doc-row">
-            <a href={"docs/" + doc.ident}>
+            {/* title: desktop clamps long names to one line */}
+            <a href={"docs/" + doc.ident} title={name}>
                 {emojiPrefix}
                 {name}
             </a>
