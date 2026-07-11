@@ -1,4 +1,3 @@
-#nullable disable // not yet migrated, see the .csproj
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,7 +13,7 @@ public class DictionaryLookupServiceTest
         return new DictionaryLookupService([new FakeDictionary(words)]);
     }
 
-    private static List<string> Lookup(DictionaryLookupService service, string selection, string context = null)
+    private static List<string> Lookup(DictionaryLookupService service, string selection, string? context = null)
     {
         return service.Lookup("gv", selection, context).Select(x => x.PrimaryWord).ToList();
     }

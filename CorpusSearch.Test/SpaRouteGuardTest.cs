@@ -1,4 +1,3 @@
-#nullable disable // not yet migrated, see the .csproj
 using CorpusSearch.Infrastructure;
 using CorpusSearch.Service;
 using CorpusSearch.Services;
@@ -13,7 +12,8 @@ namespace CorpusSearch.Test;
 [TestFixture]
 public class SpaRouteGuardTest
 {
-    private WorkService workService;
+    // assigned by SetUp before each test
+    private WorkService workService = null!;
 
     [SetUp]
     public void SetUp()

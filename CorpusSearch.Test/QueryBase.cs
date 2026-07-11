@@ -1,4 +1,3 @@
-﻿#nullable disable // not yet migrated, see the .csproj
 using CorpusSearch.Dependencies.csly;
 using CorpusSearch.Model;
 using CorpusSearch.Test.TestUtils;
@@ -13,8 +12,9 @@ namespace CorpusSearch.Test;
 [TestFixture]
 public class QueryBase : IDocumentStorage
 {
-    protected LuceneIndex luceneIndex;
-    protected SearchParser parser;
+    // assigned by setUp before each test
+    protected LuceneIndex luceneIndex = null!;
+    protected SearchParser parser = null!;
     protected DateTime DOC_DATE = new(2212, 10, 10);
 
     [SetUp]
@@ -44,16 +44,16 @@ public class QueryBase : IDocumentStorage
         public DateTime? CreatedCircaStart => dateTime;
         public DateTime? CreatedCircaEnd => dateTime;
 
-        public string ExternalPdfLink => null;
-        public string GoogleBooksId => null;
+        public string? ExternalPdfLink => null;
+        public string? GoogleBooksId => null;
 
-        public string GitHubRepo => null;
+        public string? GitHubRepo => null;
 
-        public string RelativeCsvPath => null;
+        public string? RelativeCsvPath => null;
 
-        public string Notes => null;
+        public string? Notes => null;
 
-        public string Source => null;
+        public string? Source => null;
         public string Original => "Manx";
 
         public IDictionary<string, object> GetAllExtensionData()

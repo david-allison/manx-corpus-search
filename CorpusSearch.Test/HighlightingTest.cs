@@ -1,4 +1,3 @@
-#nullable disable // not yet migrated, see the .csproj
 using System.Collections.Generic;
 using System.Linq;
 using CorpusSearch.Dependencies;
@@ -25,10 +24,11 @@ public class HighlightingTest : QueryBase
     }
 
     /// <summary>The substrings of the raw text selected by the returned highlight ranges</summary>
-    private static List<string> Highlighted(string raw, IReadOnlyList<HighlightRange> ranges)
+    private static List<string> Highlighted(string? raw, IReadOnlyList<HighlightRange>? ranges)
     {
+        Assert.That(raw, Is.Not.Null);
         Assert.That(ranges, Is.Not.Null, $"expected highlights on '{raw}'");
-        return ranges.Select(x => raw[x.Start..x.End]).ToList();
+        return ranges!.Select(x => raw![x.Start..x.End]).ToList();
     }
 
     private void AssertSingleLineHighlights(string query, params string[] expected)
@@ -286,7 +286,7 @@ public class HighlightingTest : QueryBase
         Assert.That(Highlighted(line.Manx, line.ManxHighlights), Is.EqualTo(new[] { "lhiam-lhiat" }));
     }
 
-    private ScanResult Scan(string query, SearchOptions options = null)
+    private ScanResult Scan(string query, SearchOptions? options = null)
     {
         return new Searcher(luceneIndex, parser).Scan(query, options ?? SearchOptions.Default);
     }

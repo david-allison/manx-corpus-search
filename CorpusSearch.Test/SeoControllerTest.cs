@@ -1,4 +1,3 @@
-#nullable disable // not yet migrated, see the .csproj
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using CorpusSearch.Controllers;
@@ -16,9 +15,9 @@ public class SeoControllerTest
 {
     private const string BaseUrl = "https://corpus.example";
 
-    private static SeoController BuildController(WorkService workService = null, string canonicalBaseUrl = BaseUrl)
+    private static SeoController BuildController(WorkService? workService = null, string? canonicalBaseUrl = BaseUrl)
     {
-        var settings = new Dictionary<string, string>();
+        var settings = new Dictionary<string, string?>();
         if (canonicalBaseUrl != null)
         {
             settings["Seo:CanonicalBaseUrl"] = canonicalBaseUrl;
