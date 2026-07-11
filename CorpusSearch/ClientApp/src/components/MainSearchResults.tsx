@@ -249,14 +249,24 @@ const ResultCard = (props: {
                 <span className="year-badge">
                     {getFullYear(result.startDate, result.endDate)}
                 </span>
-                <Link
-                    className="result-card-title"
-                    to={link.to}
-                    state={link.state}
-                >
-                    {result.documentName}
-                </Link>
-                <MatchCountPill result={result} link={link} numberOnly />
+                <div className="result-card-heading">
+                    {/* floated: only the first title line wraps around the
+                        pill (same treatment as the compact rows) */}
+                    <div className="result-card-matches">
+                        <MatchCountPill
+                            result={result}
+                            link={link}
+                            numberOnly
+                        />
+                    </div>
+                    <Link
+                        className="result-card-title"
+                        to={link.to}
+                        state={link.state}
+                    >
+                        {result.documentName}
+                    </Link>
+                </div>
             </div>
             <KwicLine result={result} />
         </div>
