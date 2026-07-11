@@ -32,7 +32,15 @@ public class MetadataController(WorkService workService, RecentDocumentsService 
     {
         var work = await workService.ByIdent(docId);
 
-        var ret = work.GetAllExtensionData();
+        // a copy: GetAllExtensionData is the document's live dictionary, and this
+        // method adds ("created") and removes ("uploaded by") entries
+        var ret = new Dictionary<string, object>(work.GetAllExtensionData());
+
+        // feeds api/Contributions, but isn't shown on document pages
+        foreach (var key in ret.Keys.Where(x => x.Equals("uploaded by", StringComparison.OrdinalIgnoreCase)).ToList())
+        {
+            ret.Remove(key);
+        }
 
         var skipCreated = work.CreatedCircaStart == work.CreatedCircaEnd;
         if (skipCreated && work.CreatedCircaStart != null)

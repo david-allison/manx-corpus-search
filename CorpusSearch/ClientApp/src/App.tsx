@@ -5,6 +5,7 @@ import { ErrorBoundary } from "./components/ErrorBoundary"
 import { Home } from "./routes/Home"
 import { DocumentView } from "./routes/DocumentView"
 import { BitPlayer } from "./routes/BitPlayer"
+import { Contributions } from "./routes/Contributions"
 import { NotFound } from "./routes/NotFound"
 import "./custom.css"
 
@@ -20,6 +21,7 @@ export const App = () => {
                     <Route path="/" element={<Home key={k} />} />
                     <Route path="/docs/:docId" element={<DocumentView />} />
                     <Route path={"/tools/youtube"} element={<BitPlayer />} />
+                    <Route path="/contributions" element={<Contributions />} />
                     <Route path="*" element={<NotFound />} />
                 </Routes>
             </ErrorBoundary>

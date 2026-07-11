@@ -48,7 +48,9 @@ internal static class SpaRouteGuard
     internal static bool IsSpaPage(PathString path, WorkService workService)
     {
         var value = (path.Value ?? "/").TrimEnd('/');
-        if (value.Length == 0 || value.Equals("/tools/youtube", StringComparison.OrdinalIgnoreCase))
+        if (value.Length == 0
+            || value.Equals("/tools/youtube", StringComparison.OrdinalIgnoreCase)
+            || value.Equals("/contributions", StringComparison.OrdinalIgnoreCase))
         {
             return true;
         }

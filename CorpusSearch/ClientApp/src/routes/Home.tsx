@@ -324,7 +324,7 @@ const HomeIntro = ({
                 )}
             </div>
             <Suspense fallback={null}>
-                <NewDocList />
+                <NewDocList contributionsLink />
             </Suspense>
             <div className="home-support">
                 Support our revitalisation efforts by{" "}

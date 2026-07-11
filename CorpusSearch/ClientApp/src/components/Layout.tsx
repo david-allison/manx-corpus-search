@@ -1,4 +1,5 @@
 import { ReactNode } from "react"
+import { Link } from "react-router-dom"
 import { NavMenu } from "./NavMenu"
 
 export const Layout = (props: {
@@ -29,8 +30,10 @@ const SiteFooter = () => (
             </a>{" "}
             · A Manx Language Research Group project
             <br />
-            With thanks to all the volunteers who transcribe, translate &amp;
-            contribute texts.
+            With thanks to <Link to="/contributions">
+                all the volunteers
+            </Link>{" "}
+            who transcribe, translate &amp; contribute texts.
         </span>
         <span>
             <a

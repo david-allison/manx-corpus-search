@@ -3,14 +3,16 @@
  * Which means those document.csv files that git detects as having recent changes
  */
 import { use } from "react"
+import { Link } from "react-router-dom"
 
 type DocType = { name: string; ident: string; uploaded: string }
 
 // called once per page load - could be changed to occur on mount
+// absolute path: the list is also rendered away from "/" (/contributions)
 const fetchNewDocs = async (): Promise<DocType[]> => {
-    const res = await fetch("api/metadata/latest")
+    const res = await fetch("/api/metadata/latest")
     if (!res.ok)
-        console.warn(`fetch api/metadata/latest returned: ${res.status}`)
+        console.warn(`fetch /api/metadata/latest returned: ${res.status}`)
     return (await res.json()) as DocType[]
 }
 
@@ -39,7 +41,7 @@ const RecentDocRow = ({ doc }: { doc: DocType }) => {
     return (
         <div className="recent-doc-row">
             {/* title: desktop clamps long names to one line */}
-            <a href={"docs/" + doc.ident} title={name}>
+            <a href={"/docs/" + doc.ident} title={name}>
                 {emojiPrefix}
                 {name}
             </a>
@@ -50,13 +52,21 @@ const RecentDocRow = ({ doc }: { doc: DocType }) => {
     )
 }
 
-export const NewDocList = () => {
+export const NewDocList = (props: { contributionsLink?: boolean }) => {
     const newDocs = use(newDocsPromise)
 
     if (!newDocs.length) return <></>
     return (
         <div className="recent-docs">
-            <div className="section-label">Recently added</div>
+            <div className="section-label recent-docs-label">
+                Recently added
+                {/* in the label row, so the link costs no vertical space (#347) */}
+                {props.contributionsLink && (
+                    <Link className="recent-docs-all" to="/contributions">
+                        All contributions →
+                    </Link>
+                )}
+            </div>
             <div className="recent-docs-list">
                 {newDocs.map((doc) => (
                     <RecentDocRow key={doc.ident} doc={doc} />
