@@ -1,4 +1,3 @@
-﻿#nullable disable // not yet migrated, see the .csproj
 using CorpusSearch.Dependencies.CsvHelper;
 using CorpusSearch.Model;
 using Newtonsoft.Json;
@@ -17,7 +16,7 @@ public class OpenDataLoader
     /// We copy files in from the "OpenData" directory, which is cloned into by git.
     /// </summary>
     /// <returns></returns>
-    public static List<OpenSourceDocument> LoadDocumentsFromFile(LoadConfig lConfig)
+    public static List<OpenSourceDocument> LoadDocumentsFromFile(LoadConfig? lConfig)
     {
         var paths = GetJsonPaths(lConfig);
 
@@ -35,7 +34,8 @@ public class OpenDataLoader
     {
         try
         {
-            OpenSourceDocument document = JsonConvert.DeserializeObject<OpenSourceDocument>(File.ReadAllText(path));
+            OpenSourceDocument document = JsonConvert.DeserializeObject<OpenSourceDocument>(File.ReadAllText(path))
+                ?? throw new InvalidOperationException("manifest deserialized to null");
             document.LocationOnDisk = Path.GetDirectoryName(path);
             return document;
         }
@@ -45,7 +45,7 @@ public class OpenDataLoader
         }
     }
 
-    public static List<string> GetJsonPaths(LoadConfig lConfig)
+    public static List<string> GetJsonPaths(LoadConfig? lConfig)
     {
         bool videoOnly = lConfig?.VideoOnly ?? false;
         String path = string.IsNullOrEmpty(lConfig?.OpenDataPath)
@@ -96,10 +96,14 @@ public class OpenDataLoader
             
         var allDocuments = await workService.GetAll();
 
-        var csvToDocumentMap = allDocuments.ToDictionary(x => x.RelativeCsvPath, x => x);
+        var csvToDocumentMap = allDocuments
+            .Where(x => x.RelativeCsvPath != null)
+            .ToDictionary(x => x.RelativeCsvPath!, x => x);
 
-        return dateAndPath.Select(obj => new RecentDocument(csvToDocumentMap.GetValueOrDefault(obj.Path), obj.Date))
+        return dateAndPath
+            .Select(obj => (Document: csvToDocumentMap.GetValueOrDefault(obj.Path), obj.Date))
             .Where(x => x.Document != null)
+            .Select(x => new RecentDocument(x.Document!, x.Date))
             .ToList();
     }
 }
@@ -146,30 +150,32 @@ public class OpenSourceDocument : Document
      * This also makes it easy for us to allow each folder to contain additional notes on the document
      */
 
-    public string LocationOnDisk { get; set; }
+    /// <summary>Set after deserialization; null for documents which never touch disk (tests)</summary>
+    public string? LocationOnDisk { get; set; }
 
-    public string FullCsvPath => Path.Combine(LocationOnDisk, CsvFileName);
+    public string FullCsvPath => Path.Combine(LocationOnDisk ?? "", CsvFileName);
 
-    public string LicenseLink => Path.Combine(LocationOnDisk, "license.txt");
+    public string LicenseLink => Path.Combine(LocationOnDisk ?? "", "license.txt");
 
     internal override List<DocumentLine> LoadLocalFile()
     {
         return CsvHelperUtils.LoadCsv(FullCsvPath);
     }
 
-    private string RelativeLocationOnDisk 
-    { 
+    private string RelativeLocationOnDisk
+    {
         get
         {
-            if (LocationOnDisk.StartsWith(AppDomain.CurrentDomain.BaseDirectory))
+            var location = LocationOnDisk ?? "";
+            if (location.StartsWith(AppDomain.CurrentDomain.BaseDirectory))
             {
-                return LocationOnDisk.Substring(AppDomain.CurrentDomain.BaseDirectory.Length);
+                return location.Substring(AppDomain.CurrentDomain.BaseDirectory.Length);
             }
-            return LocationOnDisk;
-        } 
+            return location;
+        }
     }
 
-    public override string GitHubRepo { get; set; }
+    public override string? GitHubRepo { get; set; }
     public override string RelativeCsvPath => RelativeLocationOnDisk + Path.DirectorySeparatorChar + CsvFileName;
 
     public override string ToString()

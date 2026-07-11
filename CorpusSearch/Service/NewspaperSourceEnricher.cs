@@ -1,4 +1,3 @@
-﻿#nullable disable // not yet migrated, see the .csproj
 using CorpusSearch.Controllers;
 using CorpusSearch.Model;
 using Newtonsoft.Json.Linq;
@@ -16,6 +15,11 @@ public class NewspaperSourceEnricher
         try
         {
             if (document.GetExtensionData("mnhNewsComponent") == null)
+            {
+                return;
+            }
+
+            if (document.Source == null)
             {
                 return;
             }
@@ -60,7 +64,7 @@ public class NewspaperSourceEnricher
         try
         {
             JArray componentIds = (JArray)document.GetExtensionData("mnhNewsComponent");
-            return componentIds.ToObject<List<string>>();
+            return componentIds.ToObject<List<string>>() ?? [];
         } catch
         {
             string componentId = (string)document.GetExtensionData("mnhNewsComponent");

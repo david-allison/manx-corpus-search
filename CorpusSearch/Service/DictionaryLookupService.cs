@@ -1,4 +1,3 @@
-#nullable disable // not yet migrated, see the .csproj
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -27,7 +26,7 @@ public class DictionaryLookupService(IEnumerable<ISearchDictionary> dictionarySe
     /// <param name="lang">the query language, for example 'gv'</param>
     /// <param name="selection">the word/phrase the user selected</param>
     /// <param name="context">the text surrounding the selection (typically the line it appears in)</param>
-    public List<DictionarySummary> Lookup(string lang, string selection, string context = null)
+    public List<DictionarySummary> Lookup(string lang, string selection, string? context = null)
     {
         var dictionaries = dictionaryServices.Where(x => x.QueryLanguages.Contains(lang)).ToList();
 
@@ -61,7 +60,7 @@ public class DictionaryLookupService(IEnumerable<ISearchDictionary> dictionarySe
     /// hyphenated and as separate words, so each candidate is also tried with hyphens
     /// exchanged for spaces (and vice versa), and with each apostrophe style.
     /// </summary>
-    private static List<string> GetCandidates(string selection, string context)
+    private static List<string> GetCandidates(string selection, string? context)
     {
         var selectionWords = Tokenize(selection);
         if (selectionWords.Count == 0)
@@ -144,9 +143,9 @@ public class DictionaryLookupService(IEnumerable<ISearchDictionary> dictionarySe
             .ToList();
     }
 
-    private static List<string> Tokenize(string text) =>
+    private static List<string> Tokenize(string? text) =>
         (text ?? "")
-            .Split((char[])null, StringSplitOptions.RemoveEmptyEntries)
+            .Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries)
             .Select(x => x.Trim(Punctuation))
             .Where(x => x.Any(char.IsLetter))
             .ToList();

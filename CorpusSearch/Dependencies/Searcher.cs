@@ -1,4 +1,3 @@
-﻿#nullable disable // not yet migrated, see the .csproj
 using CorpusSearch.Dependencies.csly;
 using CorpusSearch.Dependencies.Lucene;
 using CorpusSearch.Model;
@@ -253,7 +252,7 @@ public class Searcher(LuceneIndex luceneIndex, SearchParser parser)
     }
 
     /// <summary>The words of a plain word/phrase query; null for operators etc.</summary>
-    private static List<string> PlainWords(Expression expression) => expression switch
+    private static List<string>? PlainWords(Expression expression) => expression switch
     {
         StringExpression s => [s.Term],
         AdjacentWordExpression e => e.Words.ToList(),

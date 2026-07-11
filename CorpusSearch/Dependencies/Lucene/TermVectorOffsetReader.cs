@@ -1,4 +1,3 @@
-#nullable disable // not yet migrated, see the .csproj
 using System.Collections.Generic;
 using Lucene.Net.Index;
 using Lucene.Net.Search;
@@ -14,7 +13,7 @@ public static class TermVectorOffsetReader
     /// </summary>
     /// <returns>token position -> character offsets, or null if the document has no term vector
     /// with positions and offsets</returns>
-    public static Dictionary<int, (int Start, int End)> GetPositionOffsets(IndexReader reader, int docId, string field)
+    public static Dictionary<int, (int Start, int End)>? GetPositionOffsets(IndexReader reader, int docId, string field)
     {
         Terms termVector = reader.GetTermVector(docId, field);
         if (termVector is not { HasPositions: true, HasOffsets: true })
@@ -24,7 +23,7 @@ public static class TermVectorOffsetReader
 
         var result = new Dictionary<int, (int Start, int End)>();
         TermsEnum terms = termVector.GetEnumerator();
-        DocsAndPositionsEnum positions = null;
+        DocsAndPositionsEnum? positions = null;
         while (terms.MoveNext())
         {
             positions = terms.DocsAndPositions(null, positions);

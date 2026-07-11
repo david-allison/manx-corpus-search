@@ -1,4 +1,3 @@
-﻿#nullable disable // not yet migrated, see the .csproj
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,9 +12,9 @@ public class IMuseumNewspaperService
     {
         /// <summary>The ID of the clipping in the newspaper database</summary>
         /// <remarks>This is typically </remarks>
-        public string NewspaperClippingReferenceId { get; set; }
+        public required string NewspaperClippingReferenceId { get; set; }
 
-        public NewspaperReference Reference { get; set; }
+        public required NewspaperReference Reference { get; set; }
         public string Href => Reference.Href;
 
         internal static NewspaperClippingReference FromOrThrow(string newspaper, string date, string id)
@@ -43,9 +42,9 @@ public class IMuseumNewspaperService
     /// <remarks>Typically what we're after whn viewing, this is one or more items of Manx text</remarks>
     public class NewspaperComponent
     {
-        public string ComponentId { get; set; }
+        public required string ComponentId { get; set; }
 
-        public NewspaperReference Reference { get; set; }
+        public required NewspaperReference Reference { get; set; }
         public string Href => Reference.Href;
 
         internal static NewspaperComponent FromOrThrow(string newspaper, string date, string componentId)
@@ -86,7 +85,7 @@ public class IMuseumNewspaperService
         public DateTime Date { get; set; }
 
         /// <summary>Internal MNH identifier for the newspaper. "CHU" for Camp Humor</summary>
-        public string NewspaperIdentifier { get; set; }
+        public required string NewspaperIdentifier { get; set; }
 
         public int? Page { get; set; }
         public string Href => $"{NewspaperIdentifier}%2F{Date.Year}%2F{Date.Month:D2}%2F{Date.Day:D2}";

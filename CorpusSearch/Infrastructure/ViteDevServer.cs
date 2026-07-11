@@ -1,4 +1,3 @@
-#nullable disable // not yet migrated, see the .csproj
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -72,7 +71,7 @@ internal static class ViteDevServer
 
     private static async Task EnsureServesThisCheckoutAsync(Uri devServer)
     {
-        string served = null;
+        string? served = null;
         try
         {
             // ReSharper disable once ShortLivedHttpClient

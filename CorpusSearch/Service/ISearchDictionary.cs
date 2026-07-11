@@ -1,4 +1,3 @@
-﻿#nullable disable // not yet migrated, see the .csproj
 using System.Collections.Generic;
 
 namespace CorpusSearch.Service;
@@ -24,8 +23,9 @@ public interface ISearchDictionary
 /// <summary>When a query is made, provide a short summary of the result</summary>
 public class DictionarySummary
 {
-    public string Summary { get; set; }
-    public string PrimaryWord { get; set; }
+    public required string Summary { get; set; }
+    public required string PrimaryWord { get; set; }
     /// <summary>The <see cref="ISearchDictionary.Identifier"/> of the dictionary defining the entry (#51)</summary>
-    public string DictionaryName { get; set; }
+    /// <remarks>Stamped by <see cref="DictionaryLookupService"/> rather than the dictionary itself</remarks>
+    public string? DictionaryName { get; set; }
 }
