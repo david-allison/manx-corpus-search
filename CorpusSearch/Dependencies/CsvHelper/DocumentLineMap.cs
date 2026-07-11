@@ -14,19 +14,19 @@ public class DocumentLineMap : ClassMap<DocumentLine>
         Map(m => m.SubStart).Optional();
         Map(m => m.SubEnd).Optional();
         Map(m => m.Speaker).Optional();
-        Map(m => m.CsvLineNumber).Convert(row => row.Parser.RawRow);
-        Map(m => m.ManxOriginal).Convert(row =>
+        Map(m => m.CsvLineNumber).Convert(args => args.Row.Parser.RawRow);
+        Map(m => m.ManxOriginal).Convert(args =>
         {
-            if (!row.TryGetField<string>("Manx Original", out var field))
+            if (!args.Row.TryGetField<string>("Manx Original", out var field))
             {
                 return null;
             }
             return string.IsNullOrWhiteSpace(field) ? null : field;
 
         });
-        Map(m => m.EnglishOriginal).Convert(row =>
+        Map(m => m.EnglishOriginal).Convert(args =>
         {
-            if (!row.TryGetField<string>("English Original", out var field))
+            if (!args.Row.TryGetField<string>("English Original", out var field))
             {
                 return null;
             }
