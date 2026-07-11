@@ -41,9 +41,7 @@
     color: var(--c-link);
 }
 
-/* the match count, tinted like the KWIC match highlight; a link like the title.
-   Uniform width, sized for the largest possible count - "1,000,000" (the Bible,
-   the largest document, has ~700k matches for '*') - so the numbers align. */
+/* the match count, tinted like the KWIC match highlight; a link like the title */
 .match-count-pill {
     position: relative;
     display: inline-flex;
@@ -60,12 +58,13 @@
     text-decoration: none;
     font-variant-numeric: tabular-nums;
     box-sizing: border-box;
-    min-width: 76px; /* "9,999" - five-plus-figure counts widen the pill */
 }
 
-/* the card pill also carries the "match(es)" noun */
+/* the card pill also carries the "match(es)" noun. Uniform width, sized for
+   "9,999 matches" (larger counts widen the pill), so the numbers align down
+   the list. */
 .result-card-top .match-count-pill {
-    min-width: 124px; /* "9,999 matches" */
+    min-width: 124px;
 }
 
 /* invisible expansion of the hit area to 44px (touch-target guidelines) -
@@ -91,14 +90,20 @@
     line-height: 1;
 }
 
-/* the column header and the pills sit against the right edge; the header
-   shifts inward so it sits over the centered numbers, not the pill edge */
+/* compact: the pill hugs its count - every pill shares the cell's right edge,
+   so the tabular digits right-align with no dead space */
+.results-compact-grid .match-count-pill {
+    padding: 0 22px 0 10px; /* asymmetric: the right side keeps the chevron clear */
+}
+
+/* right-aligned over the pills: 10px cell padding + 2px optical inset lands
+   the label's right edge on the pills' right edge */
 .results-compact-matches {
     text-align: right;
 }
 
 .results-compact-head .results-compact-matches {
-    padding-right: 18px;
+    padding-right: 12px;
 }
 
 /* ============ KWIC line (shared) ============ */
