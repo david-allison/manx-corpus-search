@@ -1,4 +1,3 @@
-#nullable disable // not yet migrated, see the .csproj
 using System.Linq;
 using CorpusSearch.Model;
 using CorpusSearch.Services;
@@ -12,8 +11,10 @@ namespace CorpusSearch.Test;
 /// </summary>
 public class DocumentDeduplicationTest
 {
-    private static Document Doc(string ident, string location = "somewhere") =>
-        new OpenSourceDocument { Ident = ident, Name = ident, LocationOnDisk = location };
+    // 'required' notwithstanding, Newtonsoft can produce identless documents at runtime,
+    // so null idents remain a real input to WithoutDuplicates
+    private static Document Doc(string? ident, string location = "somewhere") =>
+        new OpenSourceDocument { Ident = ident!, Name = ident!, LocationOnDisk = location };
 
     [Test]
     public void DuplicateIdentsKeepTheFirstCopy()
