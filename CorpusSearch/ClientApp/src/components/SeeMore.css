@@ -1,0 +1,23 @@
+.see-more-clamped {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* styled like .doc-meta-toggle; the surrounding text may be italic (.doc-note) */
+.see-more-toggle {
+    border: none;
+    background: none;
+    cursor: pointer;
+    padding: 0;
+    margin-top: 4px;
+    font-size: 12.5px;
+    font-style: normal;
+    color: var(--c-link);
+    white-space: nowrap;
+}
+
+.see-more-toggle:hover {
+    color: var(--c-link-hover);
+    text-decoration: underline;
+}
