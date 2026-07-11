@@ -5,3 +5,5 @@ root = true
 dotnet_diagnostic.IDE0005.severity = warning
 # Fail the build on unused parameters
 dotnet_diagnostic.IDE0060.severity = warning
+# Fail the build on local functions which can be made static
+dotnet_diagnostic.IDE0062.severity = warning

@@ -95,7 +95,7 @@ public class KellyManxToEnglishDictionaryService(ISet<string> allWords, IList<Ke
 
         yield break;
 
-        DictionarySummary GetDictionarySummary(KellyManxToEnglishEntry entry)
+        static DictionarySummary GetDictionarySummary(KellyManxToEnglishEntry entry)
         {
             return new DictionarySummary
             {
