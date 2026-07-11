@@ -49,10 +49,6 @@ pre-commit install
 
 Deployable on a $5 DigitalOcean droplet. See GitHub actions
 
-## Analytics
-
-* Uses https://app.segment.com/ anonymously - tracking the count of searches
-
 ## Server requirements
 
 - git

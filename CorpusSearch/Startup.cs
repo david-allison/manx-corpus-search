@@ -18,7 +18,6 @@ using CorpusSearch.Dependencies;
 using CorpusSearch.Dependencies.Lucene;
 using CorpusSearch.Service;
 using CorpusSearch.Service.Dictionaries;
-using CorpusSearch.Utils;
 using Microsoft.Extensions.Logging;
 using static System.Text.Json.JsonSerializer;
 
@@ -109,10 +108,6 @@ public class Startup(IConfiguration configuration)
             app.UseHsts();
         }
 
-        if (!AnonymousAnalytics.Init())
-        {
-            log.LogWarning("Failed to init anonymous analytics. Was CORPUS_SEARCH_SEGMENT_KEY set?");
-        }
         var lConfig = Configuration.GetSection("Loading").Get<LoadConfig>();
 
         var databaseCount = SetupDatabase(workService, searcher, lConfig);

@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using CorpusSearch.Extensions;
 using CorpusSearch.Model;
 using CorpusSearch.Service;
-using CorpusSearch.Utils;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CorpusSearch.Controllers;
@@ -119,7 +118,6 @@ public partial class SearchController(
             return QueryTooLongResult();
         }
         var sw = Stopwatch.StartNew();
-        AnonymousAnalytics.Track("Search Work");
         var workQuery = new CorpusSearchWorkQuery(query)
         {
             Ident = workIdent,
@@ -177,7 +175,6 @@ public partial class SearchController(
         {
             return BadRequest($"limit must be between 1 and {MAX_CONTEXT_LINES}");
         }
-        AnonymousAnalytics.Track("Expand Context");
         var (lines, totalInRange) = await documentSearchService.GetLines(workIdent, start, end, limit, fromEnd);
         return new WorkLinesResult { Lines = lines, TotalInRange = totalInRange };
     }
@@ -190,7 +187,6 @@ public partial class SearchController(
             return QueryTooLongResult();
         }
         var sw = Stopwatch.StartNew();
-        AnonymousAnalytics.Track("Search Corpus");
         QueryDocumentSearchResult ret = new QueryDocumentSearchResult()
         {
             Query = query,
