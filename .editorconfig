@@ -3,3 +3,5 @@ root = true
 [*.cs]
 # Fail the build on unused using directives (requires EnforceCodeStyleInBuild in the .csproj)
 dotnet_diagnostic.IDE0005.severity = warning
+# Fail the build on unused parameters
+dotnet_diagnostic.IDE0060.severity = warning

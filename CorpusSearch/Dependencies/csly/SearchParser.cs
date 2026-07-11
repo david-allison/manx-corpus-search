@@ -31,7 +31,7 @@ public enum ExpressionToken
 public class ExpressionParser
 {
     [Production("expression: INT")]
-    public Expression intExpr(Token<ExpressionToken> intToken)
+    public Expression intExpr(Token<ExpressionToken> _)
     {
         return new StringExpression("expression");
     }
@@ -43,37 +43,37 @@ public class ExpressionParser
     }
 
     [Production("expression : subexpression OR expression")]
-    public Expression OrExpression(Expression left, Token<ExpressionToken> operatorToken, Expression right)
+    public Expression OrExpression(Expression left, Token<ExpressionToken> _, Expression right)
     {
         return new OrExpression(left, right);
     }
 
     [Production("expression : subexpression AND expression")]
-    public Expression AndExpression(Expression left, Token<ExpressionToken> operatorToken, Expression right)
+    public Expression AndExpression(Expression left, Token<ExpressionToken> _, Expression right)
     {
         return new AndExpression(left, right);
     }
 
     [Production("expression : subexpression NOT expression")]
-    public Expression NotExpression(Expression left, Token<ExpressionToken> operatorToken, Expression right)
+    public Expression NotExpression(Expression left, Token<ExpressionToken> _, Expression right)
     {
         return new NotExpression(left, right);
     }
 
     [Production("subexpression : LPAREN expression RPAREN")]
-    public Expression ParenExpressionTerm(Token<ExpressionToken> lParen, Expression middle, Token<ExpressionToken> RParen)
+    public Expression ParenExpressionTerm(Token<ExpressionToken> _, Expression middle, Token<ExpressionToken> _1)
     {
         return new WrappedExpression("(", middle, ")");
     }
 
     [Production("subexpression : LPAREN subexpression RPAREN")]
-    public Expression ParenSubexpressionTerm(Token<ExpressionToken> lParen, Expression middle, Token<ExpressionToken> RParen)
+    public Expression ParenSubexpressionTerm(Token<ExpressionToken> _, Expression middle, Token<ExpressionToken> _1)
     {
         return new WrappedExpression("(", middle, ")");
     }
 
     [Production("subexpression : INT")]
-    public Expression Expression(Token<ExpressionToken> intToken)
+    public Expression Expression(Token<ExpressionToken> _)
     {
         return new StringExpression("term");
     }
