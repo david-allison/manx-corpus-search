@@ -1,56 +1,28 @@
-<a href="https://corpus.gaelg.im//"><img src="https://img.shields.io/uptimerobot/status/m788600664-01eee56ee2b6a032b98b70c4"></a>
-
 # manx-corpus-search
 
 A corpus search for primarily bilingual manx to english texts.
 
-Deployed at https://corpus.gaelg.im/
+Live site: https://corpus.gaelg.im/
 
 To add/modify documents, see: [manx-search-data](https://github.com/david-allison/manx-search-data)
-
-## Installation
-
-1. Clone the source
-2. Copy the `OpenData` folder from [manx-search-data](https://github.com/david-allison/manx-search-data/) into `CorpusSearch/OpenData` folder
-3. `dotnet run`
-
-For UI-only changes, run the React app against the live site:
-
-```sh
-cd CorpusSearch/ClientApp && npm run dev:live
-```
-
-### Pre-commit hooks (contributors)
-
-TypeScript files are auto-formatted with [Prettier](https://prettier.io/) via [pre-commit](https://pre-commit.com/). Install the hook once per clone:
-
-```sh
-brew install pre-commit  # or: pip install pre-commit
-pre-commit install
-```
-
-## Tech Stack
-
-* React
-* C# (ASP.NET Core, both WebAPI and content server)
-* Document Searching: [Apache Lucene.NET](https://github.com/apache/lucenenet)
-* Query Search Syntax: [csly](https://github.com/b3b00/csly)
-* CSV: [CsvHelper](https://github.com/JoshClose/CsvHelper)
-* JSON: Newtonsoft.Json
 
 ## Aims
 
 * Run in RAM on a cheap (<$20/m) droplet
-* No expectation of scaling up for a large number of users
+* No expectation of scaling for a large number of users
 * Expected corpus size is unlikely to exceed 10MM words of Manx (and 10MM words of English)
-* Stateless
+* No backups needed (Stateless and immutable when running - updated and reindexed at night).
 
-## Deployment
 
-Deployable on a $5 DigitalOcean droplet. See GitHub actions
+## Development
+See [CONTRIBUTING.md](CONTRIBUTING.md).
 
-## Server requirements
+## Local hosting
 
-- git
-- dotnet-sdk-6.0
-- TODO
+The corpus can be hosted on your machine using [Docker](https://www.docker.com/). It should run on any modern computer.
+Run the following command then navigate to http://127.0.0.1:8080
+
+```sh
+docker pull ghcr.io/david-allison/manx-corpus-search:master
+docker run --rm -p 127.0.0.1:8080:8080 ghcr.io/david-allison/manx-corpus-search:master
+```
