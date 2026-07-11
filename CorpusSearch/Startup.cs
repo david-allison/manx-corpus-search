@@ -190,7 +190,7 @@ public class Startup(IConfiguration configuration)
 
         return;
 
-        Dictionary<string, IList<string>> ToCaseInsensitiveDict(FileStream fileStream) 
+        static Dictionary<string, IList<string>> ToCaseInsensitiveDict(FileStream fileStream)
         {
             var dict = DeserializeAsync<Dictionary<string, IList<string>>>(fileStream).Result;
             return new Dictionary<string, IList<string>>(dict, StringComparer.OrdinalIgnoreCase);
