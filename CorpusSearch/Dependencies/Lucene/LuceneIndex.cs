@@ -1,4 +1,3 @@
-﻿#nullable disable // not yet migrated, see the .csproj
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -128,7 +127,7 @@ public class LuceneIndex(IndexWriter indexWriter)
             indexWriter.AddDocument(doc);
             continue;
 
-            void AddField(string key, string value)
+            void AddField(string key, string? value)
             {
                 // ArgumentNullException if the value is null
                 value?.Let(val => doc.Add(new StringField(key, val, Field.Store.YES)));
@@ -154,7 +153,7 @@ public class LuceneIndex(IndexWriter indexWriter)
         public (Ident Ident, int LineNumber) Get(DocId docId) => (idents[docId], lineNumbers[docId]);
     }
 
-    private DocumentLookup _documentLookup;
+    private DocumentLookup? _documentLookup;
 
     private static DocumentLookup BuildDocumentLookup(IndexReader reader)
     {
@@ -166,17 +165,15 @@ public class LuceneIndex(IndexWriter indexWriter)
         for (DocId docId = 0; docId < reader.MaxDoc; docId++)
         {
             var document = reader.Document(docId, fields);
-            var ident = document.GetField(DOCUMENT_IDENT)?.GetStringValue();
-            if (ident != null)
+            // every line is indexed with its document's ident (see Add)
+            var ident = document.GetField(DOCUMENT_IDENT)?.GetStringValue() ?? "";
+            if (identPool.TryGetValue(ident, out var pooled))
             {
-                if (identPool.TryGetValue(ident, out var pooled))
-                {
-                    ident = pooled;
-                }
-                else
-                {
-                    identPool.Add(ident, ident);
-                }
+                ident = pooled;
+            }
+            else
+            {
+                identPool.Add(ident, ident);
             }
             idents[docId] = ident;
             lineNumbers[docId] = document.GetField(DOCUMENT_LINE_NUMBER)?.GetInt32Value() ?? -1;
@@ -207,7 +204,7 @@ public class LuceneIndex(IndexWriter indexWriter)
             var manx = document.GetField(DOCUMENT_REAL_MANX).GetStringValue();
             var english = document.GetField(DOCUMENT_REAL_ENGLISH).GetStringValue();
 
-            string notes = document.GetField(DOCUMENT_NOTES)?.GetStringValue();
+            string? notes = document.GetField(DOCUMENT_NOTES)?.GetStringValue();
             int lineNumber = document.GetField(DOCUMENT_LINE_NUMBER)?.GetInt32Value() ?? -1;
 
             var highlights = ComputeHighlights(reader, docId, searchedField,
@@ -315,8 +312,8 @@ public class LuceneIndex(IndexWriter indexWriter)
     /// -> character offsets in the raw text (via <see cref="MappedText"/>).
     /// </summary>
     /// <returns>ranges ordered by start, overlaps merged; null if nothing can be highlighted</returns>
-    private static List<HighlightRange> ComputeHighlights(IndexReader reader, DocId docId, string field,
-        string rawText, List<(int Start, int End)> tokenSpans)
+    private static List<HighlightRange>? ComputeHighlights(IndexReader reader, DocId docId, string field,
+        string rawText, List<(int Start, int End)>? tokenSpans)
     {
         if (tokenSpans == null || tokenSpans.Count == 0 || string.IsNullOrEmpty(rawText))
         {
@@ -425,8 +422,8 @@ public class LuceneIndex(IndexWriter indexWriter)
             // only the sample line's stored document is loaded: one per corpus document
             var doc = reader.Document(sampleDocId);
 
-            string maybeStartDate = doc.GetField(DOCUMENT_CREATED_START)?.GetStringValue();
-            string maybeEndDate = doc.GetField(DOCUMENT_CREATED_END)?.GetStringValue();
+            string? maybeStartDate = doc.GetField(DOCUMENT_CREATED_START)?.GetStringValue();
+            string? maybeEndDate = doc.GetField(DOCUMENT_CREATED_END)?.GetStringValue();
 
             DateTime? startDate = maybeStartDate != null ? DateTime.Parse(maybeStartDate) : null;
             DateTime? endDate = maybeEndDate != null ? DateTime.Parse(maybeEndDate) : null;
@@ -523,7 +520,7 @@ public class LuceneIndex(IndexWriter indexWriter)
             if (last == null || line > last) last = line;
         }
 
-        return first == null ? null : (first.Value, last.Value);
+        return first == null || last == null ? null : (first.Value, last.Value);
     }
 
     private static HashSet<string> LineFields(bool getTranscript)
