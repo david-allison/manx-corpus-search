@@ -50,7 +50,7 @@ public class SeoControllerTest
     }
 
     [Test]
-    public async Task SitemapListsServerRenderedPagesAndEveryDocument()
+    public async Task SitemapListsStaticPagesAndEveryDocument()
     {
         var controller = BuildController(WorkServiceWith("PargeiysCaillit", "Carn 130"));
 
@@ -62,9 +62,11 @@ public class SeoControllerTest
         Assert.That(result.Content, Does.Contain($"<loc>{BaseUrl}/Browse</loc>"));
         Assert.That(result.Content, Does.Contain($"<loc>{BaseUrl}/Tags</loc>"));
         Assert.That(result.Content, Does.Contain($"<loc>{BaseUrl}/Dictionary/Cregeen</loc>"));
-        Assert.That(result.Content, Does.Contain($"<loc>{BaseUrl}/Browse/PargeiysCaillit</loc>"));
+        Assert.That(result.Content, Does.Contain($"<loc>{BaseUrl}/docs/PargeiysCaillit</loc>"));
         // idents are not always URL-safe: 'Carn 130' must be escaped
-        Assert.That(result.Content, Does.Contain($"<loc>{BaseUrl}/Browse/Carn%20130</loc>"));
+        Assert.That(result.Content, Does.Contain($"<loc>{BaseUrl}/docs/Carn%20130</loc>"));
+        // /Browse/{id} pages canonicalise to /docs/{id}; only the canonical belongs here
+        Assert.That(result.Content, Does.Not.Contain($"{BaseUrl}/Browse/"));
     }
 
     [Test]

@@ -4,16 +4,24 @@ using System.Threading.Tasks;
 using CorpusSearch.Model;
 using CorpusSearch.Service;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 
 namespace CorpusSearch.Controllers;
 
+/// <summary>
+/// Displays HTML documents, for archive.org and non-JS crawlers.
+/// </summary>
 [Route("[controller]")]
-public class BrowseController(DocumentSearchService documentSearchService, WorkService workService)
+public class BrowseController(
+    DocumentSearchService documentSearchService,
+    WorkService workService,
+    IConfiguration configuration)
     : Controller
 {
     public async Task<IActionResult> Index()
     {
         ViewData["Documents"] = await workService.GetAll();
+        ViewData["CanonicalUrl"] = SeoUrls.CanonicalBaseUrl(configuration, Request) + "/Browse";
         return View("~/Views/Browse/Index.cshtml");
     }
 
@@ -24,6 +32,10 @@ public class BrowseController(DocumentSearchService documentSearchService, WorkS
         {
             return Redirect("/Browse");
         }
+        // the interactive app page is the indexable version of each text; this
+        // server-rendered duplicate exists for crawlers that don't execute JS
+        ViewData["CanonicalUrl"] = SeoUrls.CanonicalBaseUrl(configuration, Request)
+                                   + "/docs/" + Uri.EscapeDataString(documentId);
         // trim the end in-case the CSV had excess blank lines
         var lines = documentSearchService.GetAllLines(documentId).TrimEnd(x => String.IsNullOrEmpty(x.English + x.Manx + x.Notes));
         var document = await workService.ByIdent(documentId);
