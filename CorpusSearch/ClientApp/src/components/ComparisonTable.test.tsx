@@ -7,7 +7,8 @@ import {
     screen,
     waitFor,
 } from "@testing-library/react"
-import { ComparisonTable, segmentChunks } from "./ComparisonTable"
+import { ComparisonTable } from "./ComparisonTable"
+import { segmentChunks } from "./LineText"
 import { SearchWorkResponse, SearchWorkResult } from "../api/SearchWorkApi"
 import { Ref } from "react"
 import { Player } from "./YouTuber"
