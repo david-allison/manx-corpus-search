@@ -1,4 +1,3 @@
-﻿#nullable disable // not yet migrated, see the .csproj
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,14 +9,14 @@ namespace CorpusSearch.Model.Dictionary;
 /// </summary>
 public class CregeenEntry
 {
-    public List<string> Words { get; set; }
-    public string EntryHtml { get; set; }
-    public string Definition { get; set; }
-    public List<string> PartsOfSpeech { get; set; }
-    public List<string> Gender { get; set; }
-    public string HeadingHtml { get; set; }
-    // nullable
-    public List<CregeenEntry> Children { get; set; }
+    public required List<string> Words { get; set; }
+    public required string EntryHtml { get; set; }
+    /// <summary>Null in the filtered views built by <see cref="FilterTo"/></summary>
+    public string? Definition { get; set; }
+    public List<string>? PartsOfSpeech { get; set; }
+    public List<string>? Gender { get; set; }
+    public required string HeadingHtml { get; set; }
+    public List<CregeenEntry>? Children { get; set; }
 
     public List<CregeenEntry> SafeChildren => Children ?? [];
 

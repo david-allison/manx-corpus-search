@@ -1,4 +1,3 @@
-#nullable disable // not yet migrated, see the .csproj
 using System.Collections.Generic;
 using System.Linq;
 
@@ -9,9 +8,9 @@ namespace CorpusSearch.Model.Dictionary;
  */
 public class KellyManxToEnglishEntry
 {
-    public List<string> Words { get; set; }
-    public string Definition { get; set; }
-    public List<KellyManxToEnglishEntry> Children { get; set; } = [];
+    public required List<string> Words { get; set; }
+    public required string Definition { get; set; }
+    public List<KellyManxToEnglishEntry>? Children { get; set; } = [];
     
     // Added
     public List<KellyManxToEnglishEntry> SafeChildren => Children ?? [];

@@ -13,7 +13,7 @@ namespace CorpusSearch.Test;
 public class DocumentDeduplicationTest
 {
     private static Document Doc(string ident, string location = "somewhere") =>
-        new OpenSourceDocument { Ident = ident, LocationOnDisk = location };
+        new OpenSourceDocument { Ident = ident, Name = ident, LocationOnDisk = location };
 
     [Test]
     public void DuplicateIdentsKeepTheFirstCopy()

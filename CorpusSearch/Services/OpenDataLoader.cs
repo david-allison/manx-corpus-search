@@ -146,12 +146,6 @@ public class OpenSourceDocument : Document
      * This also makes it easy for us to allow each folder to contain additional notes on the document
      */
 
-    public OpenSourceDocument()
-    {
-        CsvFileName = "document.csv";
-    }
-
-
     public string LocationOnDisk { get; set; }
 
     public string FullCsvPath => Path.Combine(LocationOnDisk, CsvFileName);

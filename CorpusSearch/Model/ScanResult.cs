@@ -1,4 +1,3 @@
-﻿#nullable disable // not yet migrated, see the .csproj
 using System.Collections.Generic;
 
 namespace CorpusSearch.Model;
@@ -18,5 +17,5 @@ public class ScanResult
     public int NumberOfDocuments { get; internal set; }
         
     /// <summary>Result information on a per-document granularity</summary>
-    public List<QueryDocumentResult> DocumentResults { get; internal set; }
+    public List<QueryDocumentResult> DocumentResults { get; internal set; } = [];
 }

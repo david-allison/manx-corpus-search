@@ -1,4 +1,3 @@
-﻿#nullable disable // not yet migrated, see the .csproj
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -16,23 +15,23 @@ public interface IDocument
     public DateTime? CreatedCircaEnd { get; }
 
     /// <summary>(optional) link to PDF</summary>
-    public string ExternalPdfLink { get; }
-        
+    public string? ExternalPdfLink { get; }
+
     /// <summary>(optional) link to Google Books</summary>
     /// <remarks>Google books uses "&amp;pg=p7" to link to pages, slightly different from a PDF</remarks>
-    public string GoogleBooksId { get; }
+    public string? GoogleBooksId { get; }
 
-    public string GitHubRepo { get; }
-    public string RelativeCsvPath { get; }
-    string Notes { get; }
-    string Source { get; }
+    public string? GitHubRepo { get; }
+    public string? RelativeCsvPath { get; }
+    string? Notes { get; }
+    string? Source { get; }
         
     /// <summary>The language which the original document is in</summary>
     /// <remarks>
     /// Typically <code>"Manx"</code> or <code>"English"</code>, but other values are possible
     /// </remarks>
     /// <remarks>By convention, we display the original on the left (if known)</remarks>
-    string Original { get; }
+    string? Original { get; }
 
     IDictionary<string, object> GetAllExtensionData();
 }
@@ -40,7 +39,7 @@ public interface IDocument
 public static class IDocumentExtensions
 {
     /// <summary>(nullable) - full link to GitHub</summary>
-    public static string GetGitHubLink(this IDocument target)
+    public static string? GetGitHubLink(this IDocument target)
     {
         // BUG: THis needs to handle a + in the CSV Path as it's a valid character
         if (String.IsNullOrEmpty(target.GitHubRepo) || string.IsNullOrEmpty(target.RelativeCsvPath))
@@ -53,7 +52,7 @@ public static class IDocumentExtensions
     }
         
     /// <summary>(nullable) - full link to GitHub</summary>
-    public static string GetDownloadTextLink(this IDocument target)
+    public static string? GetDownloadTextLink(this IDocument target)
     {
         return GetGitHubLink(target)?
             .Replace("https://github.com", "https://raw.githubusercontent.com")
@@ -61,12 +60,12 @@ public static class IDocumentExtensions
     }
         
     /// <summary>(nullable) - full link to GitHub</summary>
-    public static string GetDownloadMetadataLink(this IDocument target)
+    public static string? GetDownloadMetadataLink(this IDocument target)
     {
         return GetDownloadTextLink(target)?.Replace("document.csv", "manifest.json.txt");
     }
 
-    private static DatePair GetDatePair(this IDocument document)
+    private static DatePair? GetDatePair(this IDocument document)
     {
         if (document.CreatedCircaStart == null && document.CreatedCircaEnd == null)
         {
@@ -84,7 +83,7 @@ public static class IDocumentExtensions
             return new DatePair(document.CreatedCircaEnd.Value, null);
         }
 
-        if (document.CreatedCircaStart!.Value.Year == document.CreatedCircaEnd!.Value.Year)
+        if (document.CreatedCircaStart.Value.Year == document.CreatedCircaEnd.Value.Year)
         {
             return new DatePair(document.CreatedCircaStart.Value, null);
         }

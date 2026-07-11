@@ -41,7 +41,7 @@ public class TagsController(WorkService workService, IConfiguration configuratio
         };
         return allTags;
 
-        Predicate<IDocument> PathMatcher(string path) => doc => doc.RelativeCsvPath.Contains(path);
+        Predicate<IDocument> PathMatcher(string path) => doc => doc.RelativeCsvPath?.Contains(path) ?? false;
 
         string? GetField(IDocument document, string field)
         {
