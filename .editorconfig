@@ -9,3 +9,7 @@ dotnet_diagnostic.IDE0060.severity = warning
 dotnet_diagnostic.IDE0062.severity = warning
 # Fail the build on fields which can be made readonly
 dotnet_diagnostic.IDE0044.severity = warning
+# Fail the build on unused private members
+dotnet_diagnostic.IDE0051.severity = warning
+# Fail the build on private members whose value is never read
+dotnet_diagnostic.IDE0052.severity = warning
