@@ -43,10 +43,12 @@ export const MultidictNotFoundRow = (props: {
     language: SearchLanguage
 }) => (
     <div className="dict-strip-row">
-        <span className="dict-strip-label">Dictionaries:</span>
-        <span className="dict-strip-text">
-            No results found. Try searching{" "}
-            <MultidictLink word={props.word} language={props.language} />
-        </span>
+        <div className="dict-strip-entry">
+            <span className="dict-strip-label">Dictionaries:</span>{" "}
+            <span className="dict-strip-text">
+                No results found. Try searching{" "}
+                <MultidictLink word={props.word} language={props.language} />
+            </span>
+        </div>
     </div>
 )

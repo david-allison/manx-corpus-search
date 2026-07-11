@@ -256,7 +256,7 @@ const ResultCard = (props: {
                 >
                     {result.documentName}
                 </Link>
-                <MatchCountPill result={result} link={link} />
+                <MatchCountPill result={result} link={link} numberOnly />
             </div>
             <KwicLine result={result} />
         </div>
