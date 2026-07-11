@@ -11,7 +11,7 @@ import {
 } from "./DictionaryLookupModal"
 import { isNoteLinked, LineText, NoteToggle } from "./LineText"
 import { ExpanderRow } from "./ExpanderRow"
-import { LineLinkCell, LineLinksMenu, LineMenuState } from "./LineLinks"
+import { LineLinkCell } from "./LineLinks"
 import "./ComparisonTable.css"
 
 export const ComparisonTable = (props: {
@@ -112,21 +112,20 @@ export const ComparisonTable = (props: {
         (manxVisible && originalManx) || (englishVisible && !originalManx)
     const rightVisible =
         (englishVisible && originalManx) || (manxVisible && !originalManx)
-    // on a phone the per-line links collapse into a per-row menu; for video
-    // transcripts the column is dropped entirely ("Edit on GitHub" above the
-    // transcript covers it). Rendered conditionally (not hidden in CSS) so the
-    // note rows' colSpan stays in step with the column count.
+    // on a phone the Link column is dropped entirely: the "Edit on GitHub"
+    // link above the document covers it, and the text needs the width.
+    // Rendered conditionally (not hidden in CSS) so the note rows' colSpan
+    // stays in step with the column count.
     const isMobile = useMediaQuery("(max-width: 600px)")
     // TODO: optimise this - no need to iterate each render
     const linkVisible =
-        !(isVideo && isMobile) &&
+        !isMobile &&
         (response.gitHubLink ||
             displayedLines.filter(
                 (x) =>
                     x.page != null &&
                     (response.pdfLink || response.googleBooksId),
             ).length > 0)
-    const [lineMenu, setLineMenu] = useState<LineMenuState>(null)
     const leftLang = originalManx ? "gv" : "en"
     const rightLang = originalManx ? "en" : "gv"
     // the expander and note bands cover the language columns only, leaving the
@@ -172,11 +171,7 @@ export const ComparisonTable = (props: {
                                     </th>
                                 )}
                                 {linkVisible && (
-                                    <th className="doc-th-link">
-                                        {/* on a phone the column is just the
-                                            hamburgers: a label adds nothing */}
-                                        {!isMobile && "Link"}
-                                    </th>
+                                    <th className="doc-th-link">Link</th>
                                 )}
                             </tr>
                         </thead>
@@ -331,8 +326,6 @@ export const ComparisonTable = (props: {
                                                 <LineLinkCell
                                                     line={line}
                                                     response={response}
-                                                    isMobile={isMobile}
-                                                    onOpenMenu={setLineMenu}
                                                 />
                                             )}
                                         </tr>
@@ -360,12 +353,6 @@ export const ComparisonTable = (props: {
                     </table>
                 </div>
             </div>
-
-            <LineLinksMenu
-                menu={lineMenu}
-                response={response}
-                onClose={() => setLineMenu(null)}
-            />
 
             <DictionaryLookupModal {...dictionary.modal} />
         </>
