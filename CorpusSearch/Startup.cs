@@ -77,6 +77,7 @@ public class Startup(IConfiguration configuration)
         services.AddSingleton<OverviewSearchService2>();
         // TODO: Move config here
         services.AddSingleton<RecentDocumentsService>();
+        services.AddSingleton<ContributionsService>();
 
         // In production, the React files will be served from this directory
         services.AddSpaStaticFiles(configuration =>

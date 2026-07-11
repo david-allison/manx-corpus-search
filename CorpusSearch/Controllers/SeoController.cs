@@ -19,8 +19,8 @@ public class SeoController(WorkService workService, IConfiguration configuration
 {
     private static readonly XNamespace SitemapNs = "http://www.sitemaps.org/schemas/sitemap/0.9";
 
-    /// <summary>Server-rendered pages, readable without JavaScript</summary>
-    private static readonly string[] StaticPages = ["/", "/Browse", "/Tags", "/Dictionary/Cregeen"];
+    /// <summary>The site's fixed pages: server-rendered, plus SPA pages (Googlebot renders those)</summary>
+    private static readonly string[] StaticPages = ["/", "/Browse", "/Tags", "/Dictionary/Cregeen", "/contributions"];
 
     [HttpGet("/robots.txt")]
     public ContentResult Robots()

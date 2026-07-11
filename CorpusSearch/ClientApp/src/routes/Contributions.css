@@ -1,0 +1,51 @@
+/* One 640px column, matching the "Recently added" block it shares the page with */
+.contributions-page {
+    max-width: 640px;
+    margin: 0 auto;
+}
+
+.contributions-page .page-title {
+    margin-top: 24px;
+}
+
+.contributions-intro {
+    margin-top: 10px;
+    font-size: 14.5px;
+    color: var(--c-secondary);
+    line-height: 1.7;
+    text-wrap: pretty;
+}
+
+.contributions-board {
+    margin-top: 24px;
+    margin-bottom: 28px;
+}
+
+.contributor-list {
+    margin: 0;
+    padding: 0;
+    /* rank is implicit in the order: no markers */
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 11px;
+}
+
+.contributor-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 16px;
+}
+
+.contributor-name {
+    font-family: var(--font-display);
+    font-size: 16px;
+    color: var(--c-ink);
+}
+
+.contributor-count {
+    color: var(--c-muted-2);
+    font-size: 13px;
+    white-space: nowrap;
+}

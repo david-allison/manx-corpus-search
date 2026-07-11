@@ -27,6 +27,8 @@ public class SpaRouteGuardTest
     [TestCase("/tools/youtube")]
     // React Router matches routes case-insensitively and with a trailing slash
     [TestCase("/Tools/YouTube/")]
+    [TestCase("/contributions")]
+    [TestCase("/Contributions/")]
     [TestCase("/docs/PargeiysCaillit")]
     [TestCase("/docs/PargeiysCaillit/")]
     public void SpaPagesFallThroughToTheShell(string path)
