@@ -169,3 +169,32 @@
     color: var(--c-link);
 }
 
+/* phones: give the freed width to the title. 72px fits every single-year
+   value ("c. 1761" is the widest); range dates ("1744-1810") ellipsize to
+   their start year, and the cell (focusable, see ResultRow) expands in
+   place on tap */
+@media (max-width: 480px) {
+    .results-compact-head,
+    .results-compact-grid {
+        grid-template-columns: 72px 1fr 120px;
+    }
+
+    .results-compact-year {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .results-compact-year:focus {
+        white-space: normal;
+        overflow: visible;
+        outline: none; /* the expansion itself indicates focus */
+        text-decoration: underline dotted;
+    }
+
+    .result-kwic-small {
+        /* the narrower date column, same formula as above */
+        padding-left: 82px;
+    }
+}
+

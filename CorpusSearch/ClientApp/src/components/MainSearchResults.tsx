@@ -274,11 +274,20 @@ const ResultRow = (props: {
     const { result, query, manx, options, striped } = props
     const link = documentLink(result, query, manx, options)
 
+    const dateLabel = getFullYear(result.startDate, result.endDate).toString()
+    // range dates ("1744-1810") ellipsize on phones; focusing the cell
+    // expands them in place (see .results-compact-year)
+    const isDateRange = dateLabel.includes("-")
+
     return (
         <div className={"results-compact-row" + (striped ? " striped" : "")}>
             <div className="results-compact-grid">
-                <div className="results-compact-year">
-                    {getFullYear(result.startDate, result.endDate)}
+                <div
+                    className="results-compact-year"
+                    tabIndex={isDateRange ? 0 : undefined}
+                    title={isDateRange ? dateLabel : undefined}
+                >
+                    {dateLabel}
                 </div>
                 <div className="results-compact-title">
                     <Link to={link.to} state={link.state}>
