@@ -148,6 +148,11 @@
     padding: 5px 6px;
 }
 
+/* over the right-aligned dates */
+.results-compact-head > div:first-child {
+    text-align: right;
+}
+
 .results-compact-row {
     font-size: 15px;
     line-height: 1.5;
@@ -172,6 +177,14 @@
 
 .results-compact-year {
     font-variant-numeric: tabular-nums;
+    /* numeric column: right-aligned, so every date sits tight against its
+       title regardless of width */
+    text-align: right;
+}
+
+/* the bare start year, shown only on phones (see the media query) */
+.results-compact-year .year-short {
+    display: none;
 }
 
 .results-compact-title {
@@ -189,35 +202,44 @@
     color: var(--c-link);
 }
 
-/* phones: give the freed width to the title. 72px fits every single-year
-   value ("c. 1761" is the widest); range dates ("1744-1810") ellipsize to
-   their start year, and the cell (focusable, see ResultRow) expands in
-   place on tap */
+/* phones: give the freed width to the title. 48px fits a bare 4-digit year;
+   "c." and range dates show just their start year, dotted-underlined, and
+   the cell (focusable, see ResultRow) reveals the full date on tap */
 @media (max-width: 480px) {
     .results-compact-head {
-        grid-template-columns: 72px 1fr 120px;
+        grid-template-columns: 48px 1fr 120px;
     }
 
     .results-compact-grid {
-        grid-template-columns: 72px 1fr;
+        grid-template-columns: 48px 1fr;
     }
 
-    .results-compact-year {
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
+    .results-compact-year .year-full {
+        display: none;
     }
 
+    .results-compact-year .year-short {
+        display: inline;
+        text-decoration: underline dotted; /* the tap-to-expand affordance */
+        text-underline-offset: 2px;
+    }
+
+    /* expanded: the full date replaces the year, wrapping within the column */
     .results-compact-year:focus {
-        white-space: normal;
-        overflow: visible;
-        outline: none; /* the expansion itself indicates focus */
-        text-decoration: underline dotted;
+        outline: none; /* the content swap itself indicates focus */
+    }
+
+    .results-compact-year:focus .year-full {
+        display: inline;
+    }
+
+    .results-compact-year:focus .year-short {
+        display: none;
     }
 
     .result-kwic-small {
         /* the narrower date column, same formula as above */
-        padding-left: 78px;
+        padding-left: 54px;
     }
 }
 
