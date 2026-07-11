@@ -6,7 +6,7 @@ namespace CorpusSearch.Service;
 
 public class DiacriticService
 {
-    private static Dictionary<string, string> diacriticMap = new()
+    private static readonly Dictionary<string, string> diacriticMap = new()
     {
         ["á"] = "a",
         ["é"] = "e",

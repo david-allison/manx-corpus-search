@@ -7,3 +7,5 @@ dotnet_diagnostic.IDE0005.severity = warning
 dotnet_diagnostic.IDE0060.severity = warning
 # Fail the build on local functions which can be made static
 dotnet_diagnostic.IDE0062.severity = warning
+# Fail the build on fields which can be made readonly
+dotnet_diagnostic.IDE0044.severity = warning
