@@ -274,20 +274,28 @@ const ResultRow = (props: {
     const { result, query, manx, options, striped } = props
     const link = documentLink(result, query, manx, options)
 
-    const dateLabel = getFullYear(result.startDate, result.endDate).toString()
-    // range dates ("1744-1810") ellipsize on phones; focusing the cell
-    // expands them in place (see .results-compact-year)
-    const isDateRange = dateLabel.includes("-")
+    const fullDate = getFullYear(result.startDate, result.endDate).toString()
+    const startYear = new Date(result.startDate).getFullYear().toString()
+    // "c." and range dates show only their start year on phones (see
+    // .results-compact-year): focusing the cell reveals the full date
+    const isAbbreviated = startYear !== fullDate
 
     return (
         <div className={"results-compact-row" + (striped ? " striped" : "")}>
             <div className="results-compact-grid">
                 <div
                     className="results-compact-year"
-                    tabIndex={isDateRange ? 0 : undefined}
-                    title={isDateRange ? dateLabel : undefined}
+                    tabIndex={isAbbreviated ? 0 : undefined}
+                    title={isAbbreviated ? fullDate : undefined}
                 >
-                    {dateLabel}
+                    {isAbbreviated ? (
+                        <>
+                            <span className="year-full">{fullDate}</span>
+                            <span className="year-short">{startYear}</span>
+                        </>
+                    ) : (
+                        fullDate
+                    )}
                 </div>
                 <div className="results-compact-title">
                     {/* floated within the title cell (not a grid column), so
