@@ -52,4 +52,4 @@ The link to the newspaper images appear in the corpus article under 'Additional 
 Example page: https://corpus.gaelg.im/docs/Manx-Gaelic-Gathering-first-chaglym
 
 * Example URL: 
-  * http://manxcorpus.com/api/IMuseumNewspaper/Component/V1?newspaper=IMT&date=1913-05-03&id=Ar00905 
+  * https://corpus.gaelg.im/api/IMuseumNewspaper/Component/V1?newspaper=IMT&date=1913-05-03&id=Ar00905 
