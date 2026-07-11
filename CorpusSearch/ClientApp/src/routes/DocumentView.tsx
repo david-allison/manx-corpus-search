@@ -27,6 +27,7 @@ import { SeeMore } from "../components/SeeMore"
 import { BackChevron } from "../components/BackChevron"
 import { OptionCheckbox } from "../components/AdvancedOptions"
 import { parseSearchOptions } from "../api/SearchOptions"
+import { useDocumentHeadElements } from "../hooks/useDocumentHeadElements"
 import { useLanguageVisibility } from "../hooks/useLanguageVisibility"
 import { usePersistedState } from "../hooks/usePersistedState"
 import { iMuseumUrl } from "../utils/IMuseum"
@@ -309,35 +310,7 @@ export const DocumentView = () => {
             ? `${(response.totalMatches ?? 0).toLocaleString()} matches for “${value}” · ${response.numberOfResults.toLocaleString()} lines`
             : `${response.numberOfResults.toLocaleString()} lines`
 
-    // Sync the index.html tags (title, description, canonical) imperatively, as React 19
-    // doesn't handle non-static strings in <title>.
-    useEffect(() => {
-        if (docIdent == null || title.trim() == "") {
-            return
-        }
-        document.title = `${title} | Manx Corpus Search`
-
-        const description = document.querySelector('meta[name="description"]')
-        const defaultDescription = description?.getAttribute("content") ?? null
-        const year = yearLabel ? ` (${yearLabel})` : ""
-        description?.setAttribute(
-            "content",
-            `“${title}”${year} — Manx and English parallel text from the Manx corpus.`,
-        )
-
-        const canonical = document.createElement("link")
-        canonical.rel = "canonical"
-        canonical.href = `${window.location.origin}/docs/${encodeURIComponent(docIdent)}`
-        document.head.appendChild(canonical)
-
-        return () => {
-            document.title = "Manx Corpus Search"
-            if (defaultDescription != null) {
-                description?.setAttribute("content", defaultDescription)
-            }
-            canonical.remove()
-        }
-    }, [docIdent, title, yearLabel])
+    useDocumentHeadElements(docIdent, title, yearLabel)
 
     return (
         <div>
