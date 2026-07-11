@@ -1,4 +1,5 @@
-﻿using CorpusSearch.Dependencies.csly;
+﻿#nullable disable // not yet migrated, see the .csproj
+using CorpusSearch.Dependencies.csly;
 using CorpusSearch.Dependencies.Lucene;
 using CorpusSearch.Model;
 using Lucene.Net.Index;

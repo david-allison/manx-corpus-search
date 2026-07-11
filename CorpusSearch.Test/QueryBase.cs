@@ -1,4 +1,5 @@
-﻿using CorpusSearch.Dependencies.csly;
+﻿#nullable disable // not yet migrated, see the .csproj
+using CorpusSearch.Dependencies.csly;
 using CorpusSearch.Model;
 using CorpusSearch.Test.TestUtils;
 using NUnit.Framework;

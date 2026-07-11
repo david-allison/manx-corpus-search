@@ -1,3 +1,4 @@
+#nullable disable // not yet migrated, see the .csproj
 using CorpusSearch.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;

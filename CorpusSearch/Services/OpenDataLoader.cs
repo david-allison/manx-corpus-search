@@ -1,4 +1,5 @@
-﻿using CorpusSearch.Dependencies.CsvHelper;
+﻿#nullable disable // not yet migrated, see the .csproj
+using CorpusSearch.Dependencies.CsvHelper;
 using CorpusSearch.Model;
 using Newtonsoft.Json;
 using System;

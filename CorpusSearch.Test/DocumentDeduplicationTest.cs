@@ -1,3 +1,4 @@
+#nullable disable // not yet migrated, see the .csproj
 using System.Linq;
 using CorpusSearch.Model;
 using CorpusSearch.Services;

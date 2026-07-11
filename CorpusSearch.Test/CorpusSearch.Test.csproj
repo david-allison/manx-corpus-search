@@ -6,6 +6,8 @@
     <IsPublishable>false</IsPublishable>
 
     <TargetFramework>net10.0</TargetFramework>
+    <!-- Files which predate this have '#nullable disable' and are being migrated file-by-file -->
+    <Nullable>enable</Nullable>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <!-- Required for IDE0005 (unused usings) to be reported at build time (dotnet/roslyn#41640) -->
     <GenerateDocumentationFile>true</GenerateDocumentationFile>

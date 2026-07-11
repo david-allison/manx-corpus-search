@@ -1,3 +1,4 @@
+#nullable disable // not yet migrated, see the .csproj
 using System;
 using System.Diagnostics;
 using System.IO;

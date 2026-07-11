@@ -1,3 +1,4 @@
+#nullable disable // not yet migrated, see the .csproj
 namespace CorpusSearch.Model;
 
 public class CorpusSearchWorkQuery(string query)
