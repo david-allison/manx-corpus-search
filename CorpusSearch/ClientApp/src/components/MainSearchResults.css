@@ -17,24 +17,39 @@
     box-shadow: 0 1px 3px rgba(62, 80, 88, 0.04);
 }
 
-/* no wrapping: badge, title and "Browse (n)" always share the row, so Browse
-   stays pinned top-right at any window size */
 .result-card-top {
     display: flex;
     align-items: baseline;
     gap: 12px;
 }
 
+/* the title paragraph: the pill floats top-right within it, so wrapped
+   title lines keep the full width */
+.result-card-heading {
+    flex: 1;
+    min-width: 0;
+    /* one line box (16.5px x 1.5 = 24.75px) must exceed the 24px pill, or
+       the float also shortens the second title line (see the compact rows) */
+    line-height: 1.5;
+}
+
+.result-card-matches {
+    float: right;
+    padding-left: 12px;
+}
+
+/* blockified: a line-box strut would inflate the float past 24px */
+.result-card-matches .match-count-pill {
+    display: flex;
+}
+
 /* clickable, but styled as a title rather than a link */
 .result-card-title {
     font-family: var(--font-display);
-    font-size: 18px;
+    font-size: 16.5px;
     color: var(--c-ink);
     font-weight: bold;
     text-decoration: none;
-    /* long titles take the middle and wrap within their own column */
-    flex: 1;
-    min-width: 0;
 }
 
 .result-card-title:hover {
