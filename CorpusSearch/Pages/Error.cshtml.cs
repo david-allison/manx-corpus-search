@@ -1,3 +1,4 @@
+#nullable disable // not yet migrated, see the .csproj
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using System.Diagnostics;

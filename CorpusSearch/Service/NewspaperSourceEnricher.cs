@@ -1,4 +1,5 @@
-﻿using CorpusSearch.Controllers;
+﻿#nullable disable // not yet migrated, see the .csproj
+using CorpusSearch.Controllers;
 using CorpusSearch.Model;
 using Newtonsoft.Json.Linq;
 using System;

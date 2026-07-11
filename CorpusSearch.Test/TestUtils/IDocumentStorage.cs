@@ -1,4 +1,5 @@
-﻿namespace CorpusSearch.Test.TestUtils;
+﻿#nullable disable // not yet migrated, see the .csproj
+namespace CorpusSearch.Test.TestUtils;
 
 public interface IDocumentStorage
 {

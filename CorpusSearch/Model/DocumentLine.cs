@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿#nullable disable // not yet migrated, see the .csproj
+using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
 namespace CorpusSearch.Model;

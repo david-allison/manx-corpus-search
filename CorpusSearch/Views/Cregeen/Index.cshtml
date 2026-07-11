@@ -22,7 +22,7 @@
     ViewData["ActiveNav"] = "dictionary";
 
     var query = ViewData["query"]?.ToString();
-    if (!CregeenDictionaryService.IsValidSearch(query))
+    if (query is null || !CregeenDictionaryService.IsValidSearch(query))
     {
         query = "A";
     }

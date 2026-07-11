@@ -1,4 +1,5 @@
-﻿namespace CorpusSearch.Model;
+﻿#nullable disable // not yet migrated, see the .csproj
+namespace CorpusSearch.Model;
 
 /// <summary>A link to a source</summary>
 public class SourceLink

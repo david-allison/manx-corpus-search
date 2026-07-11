@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿#nullable disable // not yet migrated, see the .csproj
+using System.Collections.Generic;
 
 namespace CorpusSearch.Service;
 
