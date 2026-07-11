@@ -3,7 +3,7 @@ import { cleanup, render, renderHook } from "@testing-library/react"
 import { useDocumentHeadElements } from "./useDocumentHeadElements"
 
 const DEFAULT_DESCRIPTION =
-    "Search for words & phrases within over 500 translated texts, from 1610 to the present era. Free & Open Source"
+    "Search for words & phrases within over 800 translated texts, from 1610 to the present era. Free & Open Source"
 
 const description = () =>
     document.querySelector('meta[name="description"]')?.getAttribute("content")
