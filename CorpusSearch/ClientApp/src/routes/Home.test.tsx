@@ -129,7 +129,6 @@ const emptySearchResponse = (query: string): SearchResponse => ({
     query,
     numberOfResults: 0,
     numberOfDocuments: 0,
-    timeTaken: "0ms",
     definedInDictionaries: {},
     translations: {},
 })

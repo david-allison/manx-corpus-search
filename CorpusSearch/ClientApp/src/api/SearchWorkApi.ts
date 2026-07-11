@@ -29,7 +29,6 @@ export type SearchWorkResponse = {
     title: string
     translations: Translations
     totalMatches: number | null
-    timeTaken: string
     numberOfResults: number
     notes: string
     source: string

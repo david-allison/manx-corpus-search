@@ -19,7 +19,6 @@ const response = (
     title: "Test Document",
     translations: {},
     totalMatches: lineNumbers.length,
-    timeTaken: "0s",
     numberOfResults: lineNumbers.length,
     notes: "",
     source: "",

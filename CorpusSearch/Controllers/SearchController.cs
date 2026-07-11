@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using CorpusSearch.Extensions;
@@ -54,11 +53,10 @@ public partial class SearchController(
         }
     }
 
-    public class SearchWorkResult : IResultContainer<DocumentLine>, ITimedResult
+    public class SearchWorkResult : IResultContainer<DocumentLine>
     {
         public List<DocumentLine> Results { get; set; } = [];
         public int NumberOfResults { get; set; }
-        public string TimeTaken { get; set; }
         public string Title { get; set; }
             
         public string Original { get; set; }
@@ -117,7 +115,6 @@ public partial class SearchController(
         {
             return QueryTooLongResult();
         }
-        var sw = Stopwatch.StartNew();
         var workQuery = new CorpusSearchWorkQuery(query)
         {
             Ident = workIdent,
@@ -139,7 +136,6 @@ public partial class SearchController(
         ret.GitHubLink = (await workService.ByIdent(workIdent))?.GetGitHubLink();
         ret.DefinedInDictionaries = DictionaryLookup(query, new QueryLanguages(Manx: manx, English: english));
 
-        ret.EnrichWithTime(sw);
         return ret;
     }
 
@@ -186,7 +182,6 @@ public partial class SearchController(
         {
             return QueryTooLongResult();
         }
-        var sw = Stopwatch.StartNew();
         QueryDocumentSearchResult ret = new QueryDocumentSearchResult()
         {
             Query = query,
@@ -202,7 +197,6 @@ public partial class SearchController(
         };
         if (!searchQuery.IsValid())
         {
-            ret.EnrichWithTime(sw);
             return ret;
         }
 
@@ -229,7 +223,6 @@ public partial class SearchController(
             // #158: 'lumlane' found nothing, but 'lum-lane' exists
             ret.Suggestions = await overviewSearchService.GetSuggestions(searchQuery);
         }
-        ret.EnrichWithTime(sw);
         ret.NumberOfDocuments = ret.Results.Count;
         return ret;
     }
@@ -254,13 +247,12 @@ public partial class SearchController(
 
     public record DictionaryData(List<string> Entries, bool AllowLookup);
 
-    public class QueryDocumentSearchResult : IResultContainer<QueryDocumentResult>, ITimedResult
+    public class QueryDocumentSearchResult : IResultContainer<QueryDocumentResult>
     {
         public string Query { get; set; }
         public int NumberOfDocuments { get; set; }
         public List<QueryDocumentResult> Results { get; set; }
         public int NumberOfResults { get; set; }
-        public string TimeTaken { get; set; }
         public Dictionary<string, DictionaryData> DefinedInDictionaries { get; internal set; } = new();
         public Translations Translations { get; set; } = new();
         /// <summary>'Did you mean' alternatives, populated when the search found nothing (#158)</summary>

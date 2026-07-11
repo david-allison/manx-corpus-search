@@ -34,7 +34,6 @@ export type SearchResponse = {
     query: string
     numberOfResults: number
     numberOfDocuments: number
-    timeTaken: string
     definedInDictionaries: DefinedInDictionaries
     translations: Translations
     /** populated when the search found nothing (#158) */
