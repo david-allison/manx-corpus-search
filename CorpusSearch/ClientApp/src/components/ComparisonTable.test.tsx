@@ -67,7 +67,6 @@ const response = (results: SearchWorkResult[]): SearchWorkResponse => ({
     title: "Test Document",
     translations: {},
     totalMatches: results.length,
-    timeTaken: "0s",
     numberOfResults: results.length,
     notes: "",
     source: "",
