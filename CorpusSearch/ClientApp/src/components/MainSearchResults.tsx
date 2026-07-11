@@ -290,12 +290,18 @@ const ResultRow = (props: {
                     {dateLabel}
                 </div>
                 <div className="results-compact-title">
+                    {/* floated within the title cell (not a grid column), so
+                        only the first title line wraps around the pill */}
+                    <div className="results-compact-matches">
+                        <MatchCountPill
+                            result={result}
+                            link={link}
+                            numberOnly
+                        />
+                    </div>
                     <Link to={link.to} state={link.state}>
                         {result.documentName}
                     </Link>
-                </div>
-                <div className="results-compact-matches">
-                    <MatchCountPill result={result} link={link} numberOnly />
                 </div>
             </div>
             <KwicLine result={result} small />
