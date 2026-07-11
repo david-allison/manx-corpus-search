@@ -41,7 +41,7 @@
 /* ============ Home (empty state) ============ */
 .home-intro {
     text-align: center;
-    margin-top: 44px;
+    margin-top: 28px;
     font-family: var(--font-display);
     font-size: 22px;
     line-height: 1.5;
@@ -50,7 +50,7 @@
 }
 
 .recent-docs {
-    margin-top: 30px;
+    margin-top: 20px;
     max-width: 640px;
     margin-left: auto;
     margin-right: auto;
@@ -74,9 +74,19 @@
     text-decoration: none;
     color: var(--c-ink);
     font-family: var(--font-display);
-    /* long titles wrap in their own column; the date stays pinned right */
+    /* long titles get their own column; the date stays pinned right */
     flex: 1;
     min-width: 0;
+}
+
+/* one line per document, so the list height (and the footer's fold position)
+   doesn't depend on title length; mobile keeps wrapping */
+@media (min-width: 601px) {
+    .recent-doc-row a {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
 }
 
 .recent-doc-row a:hover {
@@ -90,7 +100,7 @@
 }
 
 .home-support {
-    margin-top: 34px;
+    margin-top: 22px;
     text-align: center;
     font-size: 14.5px;
     color: var(--c-secondary);
