@@ -172,13 +172,6 @@
     font-size: 14.5px;
 }
 
-.dict-strip-row {
-    display: flex;
-    gap: 10px;
-    align-items: baseline;
-    flex-wrap: wrap;
-}
-
 .dict-strip-label {
     color: var(--c-accent);
     font-weight: 600;
@@ -191,12 +184,33 @@ a.dict-strip-label:hover {
     text-decoration: underline;
 }
 
-.dict-strip-text {
+/* heading + text flow as one paragraph */
+.dict-strip-entry {
     font-family: var(--font-display);
     color: var(--c-ink);
-    flex: 1;
-    min-width: 240px;
     line-height: 1.55;
+}
+
+/* long entries (5+ lines) collapse to two; the toggle restores them */
+.dict-strip-entry-clamped {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* styled like the dictionary names; no hover colour - it would stick after
+   a tap on touch devices */
+.dict-strip-toggle {
+    display: block;
+    margin: 1px auto 0;
+    background: none;
+    border: none;
+    padding: 0 6px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--c-accent);
+    cursor: pointer;
 }
 
 /* ============ No results ============ */
