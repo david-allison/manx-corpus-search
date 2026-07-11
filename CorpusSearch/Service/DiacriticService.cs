@@ -1,4 +1,3 @@
-﻿#nullable disable // not yet migrated, see the .csproj
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -65,7 +64,7 @@ public class DiacriticService
     /// <returns></returns>
     public static IList<string> Replace(char input)
     {
-        var ret = diacriticMap.GetValueOrDefault(input.ToString(), null);
+        var ret = diacriticMap.GetValueOrDefault(input.ToString());
         if (ret != null)
         {
             return new[] { ret };

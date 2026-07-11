@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace CorpusSearch.Model;
 
 public class CorpusSearchWorkQuery(string? query)
@@ -13,6 +15,7 @@ public class CorpusSearchWorkQuery(string? query)
     public SearchOptions ToSearchOptions() =>
         Options with { SearchType = Manx ? SearchType.Manx : SearchType.English };
 
+    [MemberNotNullWhen(true, nameof(Query))]
     internal bool IsValid()
     {
         if (string.IsNullOrWhiteSpace(Query) || string.IsNullOrEmpty(Ident) || Query.Length > CorpusSearchQuery.MAX_LENGTH)
