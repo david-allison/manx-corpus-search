@@ -41,23 +41,3 @@
     height: 100%;
     border: 0;
 }
-
-/* the dictionary lookup popup: entries are grouped per dictionary (#51) */
-.dict-popup-group + .dict-popup-group {
-    margin-top: 20px;
-}
-
-.dict-popup-dictionary {
-    font-size: 11px;
-    letter-spacing: 2.5px;
-    color: var(--c-accent);
-    font-weight: 600;
-    margin: 0 0 8px;
-    border-bottom: 1px solid var(--c-border-meta);
-    padding-bottom: 6px;
-    text-transform: uppercase;
-}
-
-.dict-popup-entry + .dict-popup-entry {
-    margin-top: 12px;
-}
