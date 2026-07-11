@@ -1,4 +1,3 @@
-#nullable disable // not yet migrated, see the .csproj
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -38,15 +37,16 @@ public class MetadataController(WorkService workService, RecentDocumentsService 
         var skipCreated = work.CreatedCircaStart == work.CreatedCircaEnd;
         if (skipCreated && work.CreatedCircaStart != null)
         {
-            ret["created"] = work.CreatedCircaStart?.ToString("yyyy-MM-dd");
+            ret["created"] = work.CreatedCircaStart.Value.ToString("yyyy-MM-dd");
         }
 
         // hack: JObject was not serialised correctly
         foreach (var (k,v) in ret)
         {
-            if (v is JObject)
+            if (v is JObject jObject)
             {
-                ret[k] = JsonSerializer.Deserialize<JsonObject>(v.ToString());
+                // a JObject serializes to "{...}", never to "null"
+                ret[k] = JsonSerializer.Deserialize<JsonObject>(jObject.ToString())!;
             }
         }
 

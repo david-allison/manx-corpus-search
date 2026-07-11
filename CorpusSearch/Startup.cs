@@ -1,4 +1,3 @@
-#nullable disable // not yet migrated, see the .csproj
 using CorpusSearch.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -37,19 +36,21 @@ public class LoadConfig
     public bool OpenDataOnly { get; set;}
     public int MaxOpenData { get; set;}
     /// <summary>Overrides the directory documents are loaded from (e2e tests use a fixture corpus)</summary>
-    public string OpenDataPath { get; set; }
+    public string? OpenDataPath { get; set; }
     //public LoadConfig(bool videoOnlyConfig) => videoOnlyConfig = videoOnly;
 }
 
 public class Startup(IConfiguration configuration)
 {
-    public static Dictionary<string, IList<string>> EnglishToManxDictionary { get; set; }
-    public static Dictionary<string, IList<string>> ManxToEnglishDictionary { get; set; }
+    // set by SetupDictionaries before the server starts serving
+    public static Dictionary<string, IList<string>> EnglishToManxDictionary { get; set; } = null!;
+    public static Dictionary<string, IList<string>> ManxToEnglishDictionary { get; set; } = null!;
 
 
     public IConfiguration Configuration { get; } = configuration;
 
-    private ILogger<Startup> log;
+    // assigned at the start of Configure, before its callees use it
+    private ILogger<Startup> log = null!;
 
     // Dev only: the Vite dev server the SPA middleware proxies to (and launches).
     private static readonly Uri ViteDevServerUrl = new("http://localhost:3000");
@@ -65,10 +66,10 @@ public class Startup(IConfiguration configuration)
         services.AddSingleton(provider => LuceneIndex.GetInstance());
         services.AddSingleton(provider => SearchParser.GetParser());
         services.AddSingleton<Searcher>();
-        services.AddSingleton(provider => CregeenDictionaryService.Init(provider.GetService<ILogger<CregeenDictionaryService>>()));
-        services.AddSingleton<ISearchDictionary>(provider => provider.GetService<CregeenDictionaryService>());
-        services.AddSingleton(provider => KellyManxToEnglishDictionaryService.Init(provider.GetService<ILogger<KellyManxToEnglishDictionaryService>>()));
-        services.AddSingleton<ISearchDictionary>(provider => provider.GetService<KellyManxToEnglishDictionaryService>());
+        services.AddSingleton(provider => CregeenDictionaryService.Init(provider.GetRequiredService<ILogger<CregeenDictionaryService>>()));
+        services.AddSingleton<ISearchDictionary>(provider => provider.GetRequiredService<CregeenDictionaryService>());
+        services.AddSingleton(provider => KellyManxToEnglishDictionaryService.Init(provider.GetRequiredService<ILogger<KellyManxToEnglishDictionaryService>>()));
+        services.AddSingleton<ISearchDictionary>(provider => provider.GetRequiredService<KellyManxToEnglishDictionaryService>());
         services.AddSingleton<DictionaryLookupService>();
         services.AddSingleton<WorkService>();
         services.AddSingleton<DocumentSearchService>();
@@ -193,12 +194,13 @@ public class Startup(IConfiguration configuration)
 
         static Dictionary<string, IList<string>> ToCaseInsensitiveDict(FileStream fileStream)
         {
-            var dict = DeserializeAsync<Dictionary<string, IList<string>>>(fileStream).Result;
+            var dict = DeserializeAsync<Dictionary<string, IList<string>>>(fileStream).Result
+                ?? throw new InvalidOperationException($"dictionary '{fileStream.Name}' deserialized to null");
             return new Dictionary<string, IList<string>>(dict, StringComparer.OrdinalIgnoreCase);
         }
     }
 
-    internal (long totalDocuments, long totalManxTerms) SetupDatabase(WorkService workService, Searcher searcher, LoadConfig lConfig)
+    internal (long totalDocuments, long totalManxTerms) SetupDatabase(WorkService workService, Searcher searcher, LoadConfig? lConfig)
     {
         // load all the document manifests first, so the (parallel) indexing is one batch
         var allDocuments = new List<Document>();
@@ -245,7 +247,7 @@ public class Startup(IConfiguration configuration)
     /// line of the document in search results. The data repo's lint should catch this;
     /// the server merely warns and carries on with the first copy.
     /// </summary>
-    internal static List<Document> WithoutDuplicates(List<Document> documents, ILogger log)
+    internal static List<Document> WithoutDuplicates(List<Document> documents, ILogger? log)
     {
         // not firstByIdent.Values: preserve order, and allow nulls
         var ret = new List<Document>();
