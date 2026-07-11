@@ -23,6 +23,7 @@ import { ManxEnglishSelector } from "../components/ManxEnglishSelector"
 import { metadataLookup } from "../api/MetadataApi"
 import { ComparisonTable } from "../components/ComparisonTable"
 import { SearchBar } from "../components/SearchBar"
+import { SeeMore } from "../components/SeeMore"
 import { BackChevron } from "../components/BackChevron"
 import { OptionCheckbox } from "../components/AdvancedOptions"
 import { parseSearchOptions } from "../api/SearchOptions"
@@ -528,7 +529,7 @@ export const DocumentView = () => {
 
                     {searchWorkResponse.notes && (
                         <div className="doc-note">
-                            {searchWorkResponse.notes}
+                            <SeeMore>{searchWorkResponse.notes}</SeeMore>
                         </div>
                     )}
 
