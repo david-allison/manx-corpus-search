@@ -23,10 +23,14 @@ export const TranslationList = (props: { translations: Translations }) => {
                 }
                 return (
                     <div className="dict-strip-row" key={langCode}>
-                        <span className="dict-strip-label">{langCode}:</span>
-                        <span className="dict-strip-text">
-                            {langCodeTranslations.join(", ")}
-                        </span>
+                        <div className="dict-strip-entry">
+                            <span className="dict-strip-label">
+                                {langCode}:
+                            </span>{" "}
+                            <span className="dict-strip-text">
+                                {langCodeTranslations.join(", ")}
+                            </span>
+                        </div>
                     </div>
                 )
             })}
