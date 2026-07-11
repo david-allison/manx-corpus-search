@@ -4,6 +4,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using CorpusSearch.Service;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 
@@ -34,13 +35,13 @@ public class SeoController(WorkService workService, IConfiguration configuration
     public async Task<ContentResult> Sitemap()
     {
         var baseUrl = CanonicalBaseUrl();
-        // Each text is listed as /Browse/{id}, not /docs/{id}: the sitemap should
-        // carry the server-rendered version; /docs/* is an empty shell until the
-        // client renders it, so it would be crawled as hundreds of identical pages.
+        // Each text is listed as /docs/{id}: the live app URLs, which Googlebot
+        // renders fully and historically indexed. The server-rendered /Browse/{id}
+        // duplicates declare rel=canonical to /docs, so they stay out of the sitemap.
         var documentPages = (await workService.GetAll())
             .Select(document => document.Ident)
             .OrderBy(ident => ident, StringComparer.Ordinal)
-            .Select(ident => $"/Browse/{Uri.EscapeDataString(ident)}");
+            .Select(ident => $"/docs/{Uri.EscapeDataString(ident)}");
 
         var urlSet = new XElement(SitemapNs + "urlset",
             StaticPages.Concat(documentPages).Select(page =>
@@ -51,16 +52,22 @@ public class SeoController(WorkService workService, IConfiguration configuration
             "application/xml", Encoding.UTF8);
     }
 
-    /// <summary>
-    /// Sitemaps and the robots.txt Sitemap directive require absolute URLs.
-    /// Configured in production: the origin sits behind Cloudflare, so the request's
-    /// scheme/host are the origin's, not the public https URL. Dev falls back to the request.
-    /// </summary>
-    private string CanonicalBaseUrl()
+    private string CanonicalBaseUrl() => SeoUrls.CanonicalBaseUrl(configuration, Request);
+}
+
+/// <summary>
+/// Sitemaps, the robots.txt Sitemap directive and rel=canonical links require
+/// absolute URLs. Configured in production: the origin sits behind Cloudflare, so
+/// the request's scheme/host are the origin's, not the public https URL.
+/// Dev falls back to the request.
+/// </summary>
+public static class SeoUrls
+{
+    public static string CanonicalBaseUrl(IConfiguration configuration, HttpRequest request)
     {
         var configured = configuration["Seo:CanonicalBaseUrl"];
         return string.IsNullOrEmpty(configured)
-            ? $"{Request.Scheme}://{Request.Host}"
+            ? $"{request.Scheme}://{request.Host}"
             : configured.TrimEnd('/');
     }
 }

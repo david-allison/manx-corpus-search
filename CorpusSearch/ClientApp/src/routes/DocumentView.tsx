@@ -309,18 +309,38 @@ export const DocumentView = () => {
             ? `${(response.totalMatches ?? 0).toLocaleString()} matches for “${value}” · ${response.numberOfResults.toLocaleString()} lines`
             : `${response.numberOfResults.toLocaleString()} lines`
 
+    // Sync the index.html tags (title, description, canonical) imperatively, as React 19
+    // doesn't handle non-static strings in <title>.
+    useEffect(() => {
+        if (docIdent == null || title.trim() == "") {
+            return
+        }
+        document.title = `${title} | Manx Corpus Search`
+
+        const description = document.querySelector('meta[name="description"]')
+        const defaultDescription = description?.getAttribute("content") ?? null
+        const year = yearLabel ? ` (${yearLabel})` : ""
+        description?.setAttribute(
+            "content",
+            `“${title}”${year} — Manx and English parallel text from the Manx corpus.`,
+        )
+
+        const canonical = document.createElement("link")
+        canonical.rel = "canonical"
+        canonical.href = `${window.location.origin}/docs/${encodeURIComponent(docIdent)}`
+        document.head.appendChild(canonical)
+
+        return () => {
+            document.title = "Manx Corpus Search"
+            if (defaultDescription != null) {
+                description?.setAttribute("content", defaultDescription)
+            }
+            canonical.remove()
+        }
+    }, [docIdent, title, yearLabel])
+
     return (
         <div>
-            {searchWorkResponse == null ? (
-                <title>Manx Corpus Search</title>
-            ) : (
-                <title>{title} | Manx Corpus Search</title>
-            )}
-            <meta
-                name="description"
-                content="Search for words &amp; phrases within over 500 translated texts, from 1610 to the present era. Free &amp; Open Source"
-            />
-
             <div className="search-row search-row-hero">
                 <SearchBar
                     query={value}

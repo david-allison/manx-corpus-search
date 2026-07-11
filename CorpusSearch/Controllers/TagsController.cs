@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using CorpusSearch.Model;
 using CorpusSearch.Service;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 
 namespace CorpusSearch.Controllers;
 
@@ -17,7 +18,7 @@ namespace CorpusSearch.Controllers;
 /// <remarks>Only 1 level, not properly recursive</remarks>
 /// <remarks>Serves both the JSON API (absolute /api/Tags routes) and the HTML pages (/Tags)</remarks>
 [Route("[controller]")]
-public class TagsController(WorkService workService) : Controller
+public class TagsController(WorkService workService, IConfiguration configuration) : Controller
 {
     [HttpGet("/api/Tags/All")]
     public async Task<List<Tag>> GetTags()
@@ -129,12 +130,13 @@ public class TagsController(WorkService workService) : Controller
     [HttpGet]
     public async Task<IActionResult> Get()
     {
+        ViewData["CanonicalUrl"] = SeoUrls.CanonicalBaseUrl(configuration, Request) + "/Tags";
         return View("~/Views/Browse/Tags.cshtml", new TagListModel(
-            Title: "Category List", 
+            Title: "Category List",
             Tags: await GetTags()
         ));
     }
-    
+
     [HttpGet("{tag}")]
     public async Task<IActionResult> Get(string tag)
     {
@@ -143,6 +145,8 @@ public class TagsController(WorkService workService) : Controller
         {
             return await Get();
         }
+        ViewData["CanonicalUrl"] = SeoUrls.CanonicalBaseUrl(configuration, Request)
+                                   + "/Tags/" + Uri.EscapeDataString(tag);
         return View("~/Views/Browse/ViewTag.cshtml", result);
     }
 }
