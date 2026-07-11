@@ -1,4 +1,3 @@
-#nullable disable // not yet migrated, see the .csproj
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,7 +12,8 @@ public class StatisticsController : Controller
 {
     private static long _documentCount;
     private static long _manxWordCount;
-    private static List<TermFrequency> _termFrequency;
+    // set by Init before the server starts serving
+    private static List<TermFrequency> _termFrequency = null!;
 
     [HttpGet]
     public CorpusStatistics GetStatistics()
@@ -49,7 +49,7 @@ public class StatisticsController : Controller
     
     record TermFrequency
     {
-        public string Term { get; init; }
+        public required string Term { get; init; }
         public long Frequency { get; init; }
     }
 }

@@ -1,4 +1,3 @@
-﻿#nullable disable // not yet migrated, see the .csproj
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -58,9 +57,9 @@ public partial class SearchController(
     {
         public List<DocumentLine> Results { get; set; } = [];
         public int NumberOfResults { get; set; }
-        public string Title { get; set; }
-            
-        public string Original { get; set; }
+        public required string Title { get; set; }
+
+        public string? Original { get; set; }
 
         public Translations Translations { get; set; } = new();
         /// <summary>
@@ -71,21 +70,21 @@ public partial class SearchController(
         /// <summary>
         /// Optional link to external PDF
         /// </summary>
-        public string PdfLink { get; internal set; }
+        public string? PdfLink { get; internal set; }
             
         /// <summary>
         /// Optional ID of the content on Google Books
         /// </summary>
-        public string GoogleBooksId { get; set; }
+        public string? GoogleBooksId { get; set; }
 
         /// <summary>A list of the dictionaries that the word is defined in</summary>
         public Dictionary<string, DictionaryData> DefinedInDictionaries { get; set; } = new();
 
         /// <summary>https uri to the file on GitHub</summary>
         /// <remarks>This views the file, as "edit" on GitHub does not handle line numbers</remarks>
-        public string GitHubLink { get; set; }
-        public object Notes { get; internal set; }
-        public string Source { get; set; }
+        public string? GitHubLink { get; set; }
+        public object? Notes { get; internal set; }
+        public string? Source { get; set; }
         public List<SourceLink> SourceLinks { get; internal set; } = [];
 
         /// <summary>
@@ -110,7 +109,7 @@ public partial class SearchController(
     }
 
     [HttpGet("SearchWork/{workIdent}/{query}")]
-    public async Task<ActionResult<SearchWorkResult>> SearchWork(string workIdent, string query = null, bool manx = true, bool english = true, [FromQuery] SearchOptions options = null)
+    public async Task<ActionResult<SearchWorkResult>> SearchWork(string workIdent, string query, bool manx = true, bool english = true, [FromQuery] SearchOptions? options = null)
     {
         if (QueryTooLong(query))
         {
@@ -177,7 +176,7 @@ public partial class SearchController(
     }
 
     [HttpGet("Search/{query}")]
-    public async Task<ActionResult<QueryDocumentSearchResult>> SearchCorpus(string query, bool manx = true, bool english = true, int minDate = 1600, int maxDate = 2100, [FromQuery] SearchOptions options = null)
+    public async Task<ActionResult<QueryDocumentSearchResult>> SearchCorpus(string query, bool manx = true, bool english = true, int minDate = 1600, int maxDate = 2100, [FromQuery] SearchOptions? options = null)
     {
         if (QueryTooLong(query))
         {
@@ -250,9 +249,9 @@ public partial class SearchController(
 
     public class QueryDocumentSearchResult : IResultContainer<QueryDocumentResult>
     {
-        public string Query { get; set; }
+        public required string Query { get; set; }
         public int NumberOfDocuments { get; set; }
-        public List<QueryDocumentResult> Results { get; set; }
+        public List<QueryDocumentResult> Results { get; set; } = [];
         public int NumberOfResults { get; set; }
         public Dictionary<string, DictionaryData> DefinedInDictionaries { get; internal set; } = new();
         public Translations Translations { get; set; } = new();

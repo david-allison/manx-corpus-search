@@ -1,4 +1,3 @@
-#nullable disable // not yet migrated, see the .csproj
 using System.Collections.Generic;
 using CorpusSearch.Service;
 using Microsoft.AspNetCore.Mvc;
@@ -20,7 +19,7 @@ public class DictionaryController(DictionaryLookupService lookupService)
     /// <param name="context">optional: the text surrounding the word, used to match phrases/idioms</param>
     /// <returns></returns>
     [HttpGet]
-    public IEnumerable<DictionarySummary> Get([FromQuery] string lang, [FromQuery] string word, [FromQuery] string context = null)
+    public IEnumerable<DictionarySummary> Get([FromQuery] string lang, [FromQuery] string word, [FromQuery] string? context = null)
     {
         return lookupService.Lookup(lang, word, context);
     }
