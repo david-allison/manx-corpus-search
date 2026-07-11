@@ -94,15 +94,26 @@
    so the tabular digits right-align with no dead space */
 .results-compact-grid .match-count-pill {
     padding: 0 22px 0 10px; /* asymmetric: the right side keeps the chevron clear */
+    /* the float must be shorter than one title line box (15px x 1.5 = 22.5px),
+       or it also shortens the second title line, not just the first. display:
+       flex blockifies the pill so no line-box strut inflates the wrapper */
+    display: flex;
+    min-height: 22px;
+    /* not inherited from the title cell */
+    font-weight: normal;
+}
+
+/* floated within the title cell (see ResultRow): the first title line wraps
+   around the pill, later lines run the full width */
+.results-compact-grid .results-compact-matches {
+    float: right;
+    padding-left: 10px;
 }
 
 /* right-aligned over the pills: 6px cell padding + 2px optical inset lands
    the label's right edge on the pills' right edge */
-.results-compact-matches {
-    text-align: right;
-}
-
 .results-compact-head .results-compact-matches {
+    text-align: right;
     padding-right: 8px;
 }
 
@@ -148,7 +159,10 @@
 
 .results-compact-grid {
     display: grid;
-    grid-template-columns: 90px 1fr 120px;
+    /* no matches column - the pill floats inside the title cell, so wrapped
+       titles keep the full width (the 120px column would reserve the row's
+       whole height for a one-line pill) */
+    grid-template-columns: 90px 1fr;
 }
 
 .results-compact-grid > div {
@@ -164,13 +178,14 @@
     font-weight: bold;
 }
 
-/* clickable, but styled as a title rather than a link */
-.results-compact-title a {
+/* clickable, but styled as a title rather than a link. Direct child only:
+   the floated pill's link keeps its own colour */
+.results-compact-title > a {
     color: var(--c-ink);
     text-decoration: none;
 }
 
-.results-compact-title a:hover {
+.results-compact-title > a:hover {
     color: var(--c-link);
 }
 
@@ -179,9 +194,12 @@
    their start year, and the cell (focusable, see ResultRow) expands in
    place on tap */
 @media (max-width: 480px) {
-    .results-compact-head,
-    .results-compact-grid {
+    .results-compact-head {
         grid-template-columns: 72px 1fr 120px;
+    }
+
+    .results-compact-grid {
+        grid-template-columns: 72px 1fr;
     }
 
     .results-compact-year {
