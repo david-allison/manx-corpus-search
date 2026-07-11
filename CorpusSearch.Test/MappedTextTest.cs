@@ -10,9 +10,6 @@ namespace CorpusSearch.Test;
 
 public class MappedTextTest
 {
-    private static (int Start, int End)? ManxRange(string raw, int start, int end) =>
-        NormalizationMapper.NormalizeManxMapped(raw).MapRangeToSource(start, end);
-
     [Test]
     public void CurlyApostropheMapsOneToOne()
     {
