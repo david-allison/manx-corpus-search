@@ -37,6 +37,17 @@ public class AdjudicationExporter
     private const int EvalSentencesPerFile = 60;
     private const int CorpusLinesPerFile = 120;
 
+    /// <summary>A UD-attested reading missing from the candidates with this many
+    /// observations marks a table gap (ching -> kione): un-adjudicable</summary>
+    private const int GapMinObservations = 2;
+
+    /// <summary>UD attesting two readings each above this share (with enough
+    /// observations) marks a convention split (ny: DET is lemmatized ny 185x
+    /// and yn 179x): ungradeable, so un-adjudicable</summary>
+    private const double SplitShare = 0.3;
+
+    private const int SplitMinObservations = 20;
+
     [Test]
     public void Export()
     {
@@ -74,15 +85,40 @@ public class AdjudicationExporter
                 .ToArray();
         }
 
-        // an adjudicable token: ambiguous in the table, not already resolved
-        // by the overrides layer
+        var sentences = AdjudicationCommon.TreebankSentences();
+        var attestedCounts = AdjudicationCommon.AttestedCounts(sentences);
+        var unAdjudicableForms = new HashSet<string>();
+
+        // an adjudicable token: ambiguous in the table, not already resolved by
+        // the overrides layer, and gradeable - forms whose candidates miss a
+        // UD-attested reading are table gaps, and forms UD itself lemmatizes
+        // inconsistently are convention calls; both stay fully ambiguous
         bool Adjudicable(string form)
         {
-            return table.CandidatesFor(form).Count >= 2 && !overrides.ContainsKey(form);
+            if (table.CandidatesFor(form).Count < 2 || overrides.ContainsKey(form))
+            {
+                return false;
+            }
+            if (!attestedCounts.TryGetValue(form, out var counts))
+            {
+                return true;
+            }
+            var candidateDisplays = table.CandidatesFor(form)
+                .Select(id => AdjudicationCommon.DisplayKey(displayById.GetValueOrDefault(id, id)))
+                .ToHashSet();
+            var gap = counts.Any(x => x.Value >= GapMinObservations && !candidateDisplays.Contains(x.Key));
+            var total = counts.Values.Sum();
+            var split = total >= SplitMinObservations
+                        && counts.Values.Count(x => x / (double)total >= SplitShare) >= 2;
+            if (gap || split)
+            {
+                unAdjudicableForms.Add(form);
+                return false;
+            }
+            return true;
         }
 
         // ---- eval set: UD sentences with an English translation ----
-        var sentences = AdjudicationCommon.TreebankSentences();
         var evalRequests = new List<string>();
         var evalGold = new List<string>();
         var evalTokens = 0;
@@ -179,6 +215,8 @@ public class AdjudicationExporter
 
         var report = new StringBuilder();
         report.AppendLine($"overrides layer: {overrides.Count} forms ({overridesPath})");
+        report.AppendLine($"un-adjudicable forms (table gap / UD convention split): "
+                          + string.Join(", ", unAdjudicableForms.OrderBy(x => x, StringComparer.Ordinal)));
         report.AppendLine($"eval: {evalRequests.Count:N0} UD sentences with text_en carrying {evalTokens:N0} adjudicable tokens");
         report.AppendLine($"corpus: {corpusRequests.Count:N0} unique translated lines carrying {corpusTokens:N0} adjudicable tokens "
                           + $"({duplicateLines:N0} duplicate lines folded into their first occurrence)");
