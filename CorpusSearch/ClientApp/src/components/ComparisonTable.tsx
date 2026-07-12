@@ -221,7 +221,13 @@ export const ComparisonTable = (props: {
                                         translations={getTranslations("gv")}
                                         query={value}
                                         noteToggle={noteToggle}
-                                        onWordClick={dictionary.openFromClick}
+                                        // a non-Manx row (line.language set, e.g. an untranslated
+                                        // English passage) has no Manx to look up
+                                        onWordClick={
+                                            line.language == null
+                                                ? dictionary.openFromClick
+                                                : undefined
+                                        }
                                     />
                                 )
                                 const englishText = (

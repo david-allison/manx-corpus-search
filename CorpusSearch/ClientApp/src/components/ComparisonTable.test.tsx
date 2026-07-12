@@ -535,6 +535,19 @@ describe("dictionary popup (#51)", () => {
         await screen.findByText(/Could not find definition/)
     })
 
+    it("does not open on a non-Manx row", () => {
+        // the Manx column of a row with a language marker is not Manx
+        // (an untranslated English passage): there is nothing to look up
+        mockGetWordAtPoint.mockReturnValue("cat")
+        const { getByText } = renderTable([
+            line({ manx: "the cat sat", language: "en" }),
+        ])
+
+        fireEvent.click(getByText("the cat sat"))
+
+        expect(mockDictionaryLookup).not.toHaveBeenCalled()
+    })
+
     it("does not open from the English column", () => {
         mockGetWordAtPoint.mockReturnValue("tongue")
         const { getByText } = renderTable([
