@@ -1,6 +1,7 @@
 import "./Contributions.css"
 
 import { Suspense, use, useEffect, useMemo } from "react"
+import { CircularProgress } from "@mui/material"
 import { NewDocList } from "../components/NewDocList"
 
 type Contributor = { name: string; documentCount: number }
@@ -71,7 +72,13 @@ export const Contributions = () => {
             </p>
             <div className="contributions-board">
                 <div className="section-label">All-time contributors</div>
-                <Suspense fallback={null}>
+                <Suspense
+                    fallback={
+                        <div className="contributions-loading">
+                            <CircularProgress />
+                        </div>
+                    }
+                >
                     <ContributorList promise={contributorsPromise} />
                 </Suspense>
             </div>
@@ -81,5 +88,3 @@ export const Contributions = () => {
         </div>
     )
 }
-
-export default Contributions
