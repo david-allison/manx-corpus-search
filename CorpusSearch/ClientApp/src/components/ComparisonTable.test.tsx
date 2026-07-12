@@ -534,6 +534,17 @@ describe("dictionary popup (#51)", () => {
 
         await screen.findByText(/Could not find definition/)
     })
+
+    it("does not open from the English column", () => {
+        mockGetWordAtPoint.mockReturnValue("tongue")
+        const { getByText } = renderTable([
+            line({ manx: "Ta çhengey aym", english: "I have a tongue" }),
+        ])
+
+        fireEvent.click(getByText("I have a tongue"))
+
+        expect(mockDictionaryLookup).not.toHaveBeenCalled()
+    })
 })
 
 describe("dictionary popup on touch", () => {
