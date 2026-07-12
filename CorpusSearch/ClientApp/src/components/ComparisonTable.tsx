@@ -103,8 +103,8 @@ export const ComparisonTable = (props: {
         x.type == "line" ? [x.line] : [],
     )
 
+    // any document may carry speakers (interview transcriptions), not just videos
     const hasSpeakerColumn =
-        isVideo &&
         displayedLines.filter((x) => x.speaker != null && x.speaker != "")
             .length > 0
 
