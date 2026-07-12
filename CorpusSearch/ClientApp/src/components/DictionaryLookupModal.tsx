@@ -38,13 +38,17 @@ export const classifyEntries = (
             .split(/[\s'’-]+/)
             .includes(wordLc) ||
         wordLc.split(/[\s'’-]+/).includes(p.toLowerCase())
-    // a phrase entry must also occur in the tapped line (when one is known):
-    // 'ry gheddyn' matches the word 'gheddyn' but is not what the line says
+    // a phrase or compound entry must also occur in the tapped line (when
+    // one is known): 'ry gheddyn' matches the word 'gheddyn' but is not what
+    // the line says, and 'sheeyney-magh' is not what a line saying just
+    // 'magh' says. Texts and dictionaries spell compounds with hyphen or
+    // space interchangeably, so containment ignores the difference
+    const foldHyphens = (s: string) => s.toLowerCase().replace(/[-‑]/g, " ")
     const supportedByContext = (p: string) =>
-        !/\s/.test(p) ||
+        !/[\s\-‑]/.test(p) ||
         p.toLowerCase() == wordLc ||
         context == "" ||
-        context.toLowerCase().includes(p.toLowerCase())
+        foldHyphens(context).includes(foldHyphens(p))
     const isOwn = (x: DictionaryResponse[number]) =>
         !x.rootDepth &&
         headsSelection(x.primaryWord) &&
