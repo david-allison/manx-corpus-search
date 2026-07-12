@@ -13,9 +13,11 @@ import "./DictionaryLookupModal.css"
 
 /** Splits a dictionary's entries into those that are entries *for* the
  * selection (`own`) and those merely reached through it (`derived`: root
- * lemmas, variant spellings like 'muir' -> mooir, and phrase entries the
- * tapped line doesn't actually contain, like 'ry gheddyn' when the line
- * says 'dy gheddyn'). Derived entries nest under the selection. */
+ * lemmas and variant spellings like 'muir' -> mooir), nesting the derived
+ * ones under the selection. Phrase entries the tapped line doesn't actually
+ * contain ('ry gheddyn' when the line says 'dy gheddyn', 'thie veg' when it
+ * says 'feer veg') are dropped from both tiers, unless nothing else would
+ * remain. */
 /** Trims punctuation (but never letters/digits, so internal apostrophes and
  * hyphens survive) from the edges of a tapped word: 'meenid,' -> 'meenid' */
 export const trimPunctuation = (s: string): string =>
@@ -56,15 +58,12 @@ export const classifyEntries = (
             (x) => !x.rootDepth && headsSelection(x.primaryWord),
         )
     }
-    // the context rule applies down the chain too: a phrase entry reached
-    // through a root's word list ('cur mow' via vow ↳ mow, 'dy olk' via
-    // smessey ↳ olk) is noise unless the line says it; a phrase on the
-    // selection itself ('cha vow' under vow) still nests
+    // the context rule applies down the chain too: a phrase entry is noise
+    // unless the line says it, whether it rode in on a root's word list
+    // ('cur mow' via vow ↳ mow, 'dy olk' via smessey ↳ olk) or on the
+    // selection's own ('ro veg'/'thie veg' under veg)
     let derived = entries.filter((x) => !own.includes(x))
-    const inContext = derived.filter(
-        (x) =>
-            headsSelection(x.primaryWord) || supportedByContext(x.primaryWord),
-    )
+    const inContext = derived.filter((x) => supportedByContext(x.primaryWord))
     if (own.length > 0 || inContext.length > 0) {
         derived = inContext
     }

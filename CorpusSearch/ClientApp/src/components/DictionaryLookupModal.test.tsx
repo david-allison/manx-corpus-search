@@ -9,7 +9,7 @@ const entry = (primaryWord: string, rootDepth: number = 0) => ({
 })
 
 describe("classifyEntries", () => {
-    it("keeps the phrase the tapped line contains, demotes the one it doesn't", () => {
+    it("keeps the phrase the tapped line contains, drops the one it doesn't", () => {
         // tapping 'gheddyn' in 'Padjeryn dy gheddyn aarloo ny chour': the line
         // says 'dy gheddyn'; 'ry gheddyn' merely shares the word
         const { own, derived } = classifyEntries(
@@ -19,10 +19,7 @@ describe("classifyEntries", () => {
         )
 
         expect(own.map((x) => x.primaryWord)).toEqual(["dy gheddyn"])
-        expect(derived.map((x) => x.primaryWord)).toEqual([
-            "ry gheddyn",
-            "geddyn",
-        ])
+        expect(derived.map((x) => x.primaryWord)).toEqual(["geddyn"])
     })
 
     it("keeps an out-of-context phrase when nothing else heads the selection", () => {
@@ -101,8 +98,8 @@ describe("classifyEntries", () => {
 
     it("drops a root's phrase entry the tapped line doesn't contain", () => {
         // tapping 'vow' surfaces the root chain (fow, and the demutation
-        // candidate mow); 'cur mow' rode in on mow's word list but the line
-        // doesn't say it. 'cha vow' is a phrase on the selection itself: kept
+        // candidate mow); neither 'cha vow' (a phrase on the selection) nor
+        // 'cur mow' (riding in on mow's word list) is what the line says
         const { own, derived } = classifyEntries(
             "vow",
             "T’ad shirrey mayrneys raad nagh vow ad eh,",
@@ -116,11 +113,28 @@ describe("classifyEntries", () => {
         )
 
         expect(own.map((x) => x.primaryWord)).toEqual(["vow"])
-        expect(derived.map((x) => x.primaryWord)).toEqual([
-            "cha vow",
-            "fow",
-            "mow",
-        ])
+        expect(derived.map((x) => x.primaryWord)).toEqual(["fow", "mow"])
+    })
+
+    it("drops the selection's own phrase entries the line doesn't contain", () => {
+        // tapping 'veg' in a 'feer veg' line: 'ro veg' and 'thie veg' head
+        // the selection but are not what the line says; the root beg and the
+        // demutation candidate meg stay
+        const { own, derived } = classifyEntries(
+            "veg",
+            "Feer veg ta’d cur da’n labbree boght,",
+            [
+                entry("feer veg"),
+                entry("veg"),
+                entry("ro veg"),
+                entry("thie veg"),
+                entry("beg", 1),
+                entry("meg", 1),
+            ],
+        )
+
+        expect(own.map((x) => x.primaryWord)).toEqual(["feer veg", "veg"])
+        expect(derived.map((x) => x.primaryWord)).toEqual(["beg", "meg"])
     })
 
     it("drops a root's phrase entry at any depth ('dy olk' under smessey)", () => {
