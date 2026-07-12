@@ -1,0 +1,203 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text;
+using CorpusSearch.Dependencies.Lucene;
+using CorpusSearch.Services;
+using Newtonsoft.Json;
+using NUnit.Framework;
+
+namespace CorpusSearch.Test.LemmaAdjudication;
+
+/// <summary>
+/// Exports LLM adjudication requests for translation-based lemma
+/// disambiguation (plan: multi-agent translate+lemmatize; the LLM runs are
+/// Claude Code workflow subagents, not API calls — JSONL files are the
+/// contract between this harness and the agents).
+///
+/// - eval-requests-*.jsonl / eval-gold.jsonl: UD_Manx-Cadhan sentences with
+///   text_en — the labelled pilot set that gates the corpus run.
+/// - corpus-requests-*.jsonl: corpus lines (deduplicated by content key) with
+///   >=1 ambiguous token left unresolved by the form-level overrides layer.
+///
+/// A request line: {key, docId, manx, english, tokens: [{i, form,
+/// candidates: [{id, lemma, gloss, link}]}]}. `key` is a hash of the
+/// normalized Manx token stream (punctuation/case edits can't orphan rows;
+/// token changes correctly invalidate). Verdicts come back as
+/// verdicts-*.jsonl: {key, i, chosenIds, confidence}.
+///
+/// Run: LEMMA_ADJUDICATION_DIR=... LEMMA_OVERRIDES_TSV=...
+///   dotnet test CorpusSearch.Test --filter FullyQualifiedName~AdjudicationExporter
+/// </summary>
+[TestFixture]
+[Explicit("artifact generator over the full corpus, not a regression test")]
+public class AdjudicationExporter
+{
+    private const int EvalSentencesPerFile = 60;
+    private const int CorpusLinesPerFile = 120;
+
+    [Test]
+    public void Export()
+    {
+        var outDir = Environment.GetEnvironmentVariable("LEMMA_ADJUDICATION_DIR");
+        Assert.That(outDir, Is.Not.Null.And.Not.Empty, "set LEMMA_ADJUDICATION_DIR to the work directory");
+        var overridesPath = Environment.GetEnvironmentVariable("LEMMA_OVERRIDES_TSV");
+        Assert.That(overridesPath, Is.Not.Null.And.Not.Empty,
+            "set LEMMA_OVERRIDES_TSV to the form-level overrides file (lemma.overrides[.seed].tsv)");
+        Directory.CreateDirectory(outDir!);
+
+        var table = LemmaTable.Instance;
+        var displayById = AdjudicationCommon.DisplayLemmaById();
+        var glossTexts = AdjudicationCommon.LoadGlossTexts();
+        var linkTypes = AdjudicationCommon.LinkTypesByFormId();
+        var overrides = AdjudicationCommon.LoadOverrides(overridesPath!);
+
+        object[] Candidates(string form)
+        {
+            return table.CandidatesFor(form)
+                .Select(id =>
+                {
+                    var lemma = displayById.GetValueOrDefault(id, id);
+                    var glossKey = LemmaTable.NormalizeForm(lemma);
+                    var gloss = glossTexts.TryGetValue(glossKey, out var texts)
+                        ? string.Join("; ", texts.Take(3))
+                        : "";
+                    return (object)new
+                    {
+                        id,
+                        lemma,
+                        gloss = gloss.Length > 200 ? gloss[..200] : gloss,
+                        link = linkTypes.GetValueOrDefault((form, id), "self"),
+                    };
+                })
+                .ToArray();
+        }
+
+        // an adjudicable token: ambiguous in the table, not already resolved
+        // by the overrides layer
+        bool Adjudicable(string form)
+        {
+            return table.CandidatesFor(form).Count >= 2 && !overrides.ContainsKey(form);
+        }
+
+        // ---- eval set: UD sentences with an English translation ----
+        var sentences = AdjudicationCommon.TreebankSentences();
+        var evalRequests = new List<string>();
+        var evalGold = new List<string>();
+        var evalTokens = 0;
+        var sentenceIndex = 0;
+        foreach (var sentence in sentences)
+        {
+            sentenceIndex++;
+            if (string.IsNullOrWhiteSpace(sentence.TextEn))
+            {
+                continue;
+            }
+            var key = $"ud:{sentenceIndex}";
+            var tokens = new List<object>();
+            foreach (var (word, i) in sentence.Words.Select((w, i) => (w, i)))
+            {
+                var form = LemmaTable.NormalizeForm(word.Form);
+                if (!Adjudicable(form))
+                {
+                    continue;
+                }
+                tokens.Add(new { i, form, candidates = Candidates(form) });
+                evalGold.Add(JsonConvert.SerializeObject(new
+                {
+                    key,
+                    i,
+                    form,
+                    gold = AdjudicationCommon.DisplayKey(word.Lemma),
+                    isTest = sentence.IsTestFile,
+                }));
+                evalTokens++;
+            }
+            if (tokens.Count == 0)
+            {
+                continue;
+            }
+            evalRequests.Add(JsonConvert.SerializeObject(new
+            {
+                key,
+                docId = "UD_Manx-Cadhan",
+                manx = sentence.Text ?? string.Join(" ", sentence.Words.Select(x => x.Form)),
+                english = sentence.TextEn,
+                tokens,
+            }));
+        }
+
+        WriteBatches(outDir!, "eval-requests", evalRequests, EvalSentencesPerFile);
+        File.WriteAllLines(Path.Combine(outDir!, "eval-gold.jsonl"), evalGold);
+
+        // ---- corpus set: translated lines, deduplicated by content key ----
+        var documents = OpenDataLoader.LoadDocumentsFromFile(null)
+            .Concat(ClosedDataLoader.LoadDocumentsFromFile())
+            .ToList();
+        var corpusRequests = new List<string>();
+        var seenKeys = new HashSet<string>();
+        long corpusTokens = 0, duplicateLines = 0;
+        AdjudicationCommon.ForEachManxLine(documents, (docId, line) =>
+        {
+            if (string.IsNullOrWhiteSpace(line.English))
+            {
+                return;
+            }
+            var streamTokens = AdjudicationCommon.Tokenize(line.NormalizedManx);
+            var tokens = new List<object>();
+            for (var i = 0; i < streamTokens.Count; i++)
+            {
+                if (Adjudicable(streamTokens[i]))
+                {
+                    tokens.Add(new { i, form = streamTokens[i], candidates = Candidates(streamTokens[i]) });
+                }
+            }
+            if (tokens.Count == 0)
+            {
+                return;
+            }
+            var key = AdjudicationCommon.Hash(string.Join(" ", streamTokens));
+            if (!seenKeys.Add(key))
+            {
+                duplicateLines++;
+                return;
+            }
+            corpusTokens += tokens.Count;
+            corpusRequests.Add(JsonConvert.SerializeObject(new
+            {
+                key,
+                docId,
+                manx = line.NormalizedManx,
+                english = line.English,
+                englishHash = AdjudicationCommon.Hash(line.English),
+                tokens,
+            }));
+        });
+
+        WriteBatches(outDir!, "corpus-requests", corpusRequests, CorpusLinesPerFile);
+
+        var report = new StringBuilder();
+        report.AppendLine($"overrides layer: {overrides.Count} forms ({overridesPath})");
+        report.AppendLine($"eval: {evalRequests.Count:N0} UD sentences with text_en carrying {evalTokens:N0} adjudicable tokens");
+        report.AppendLine($"corpus: {corpusRequests.Count:N0} unique translated lines carrying {corpusTokens:N0} adjudicable tokens "
+                          + $"({duplicateLines:N0} duplicate lines folded into their first occurrence)");
+        report.AppendLine($"wrote {Directory.GetFiles(outDir!, "eval-requests-*.jsonl").Length} eval files, "
+                          + $"{Directory.GetFiles(outDir!, "corpus-requests-*.jsonl").Length} corpus files -> {outDir}");
+        TestContext.Progress.WriteLine(report.ToString());
+    }
+
+    private static void WriteBatches(string outDir, string prefix, List<string> lines, int perFile)
+    {
+        foreach (var stale in Directory.GetFiles(outDir, $"{prefix}-*.jsonl"))
+        {
+            File.Delete(stale);
+        }
+        var fileIndex = 0;
+        foreach (var chunk in lines.Chunk(perFile))
+        {
+            File.WriteAllLines(Path.Combine(outDir, $"{prefix}-{fileIndex:D3}.jsonl"), chunk);
+            fileIndex++;
+        }
+    }
+}
