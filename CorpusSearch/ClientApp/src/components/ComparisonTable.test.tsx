@@ -784,3 +784,21 @@ describe("segmentChunks", () => {
         ])
     })
 })
+
+describe("speaker column", () => {
+    it("shows the speakers of a non-video document", () => {
+        // e.g. an interview transcription: speakers are not a video-only concept
+        const { getByText } = renderTable([
+            line({ manx: "Ta fys aym", speaker: "NM" }),
+        ])
+
+        getByText("Speaker")
+        getByText("NM")
+    })
+
+    it("has no Speaker column when no line names a speaker", () => {
+        const { queryByText } = renderTable([line({ manx: "Ta fys aym" })])
+
+        expect(queryByText("Speaker")).toBeNull()
+    })
+})
