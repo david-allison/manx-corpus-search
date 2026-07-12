@@ -22,12 +22,12 @@ namespace CorpusSearch.Test;
 public class UdLemmaAgreementTest
 {
     // Floors sit just below the values measured at the pinned treebank commit
-    // (9069716) and table version: 88.91% coverage, 96.60% agreement — matching
-    // cregeen-nvh's generation-side eval (96.6/88.9) exactly, so the C# lookup
+    // (9069716) and table version: 88.91% coverage, 97.43% agreement — matching
+    // cregeen-nvh's generation-side eval (97.4/88.9) exactly, so the C# lookup
     // reimplementation has no divergence from the F# one. The metric is
     // deterministic; the small slack only tolerates deliberate trade-offs.
     private const double CoverageFloor = 0.8875;
-    private const double AgreementFloor = 0.9650;
+    private const double AgreementFloor = 0.9725;
 
     /// <summary>Not evaluated: punctuation and numerals aren't dictionary material,
     /// X marks foreign/unanalysable words</summary>
