@@ -2,13 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Security.Cryptography;
 using System.Text;
 using CorpusSearch.Dependencies.Lucene;
 using CorpusSearch.Services;
-using Lucene.Net.Analysis.TokenAttributes;
-using Lucene.Net.Util;
-using Newtonsoft.Json;
+using CorpusSearch.Test.LemmaAdjudication;
 using NUnit.Framework;
 
 namespace CorpusSearch.Test;
@@ -48,15 +45,9 @@ public class LemmaSidecarGenerator
     private sealed record Occurrence(string DocIdent, string LineHash, int TokenIndex, string Form,
         IReadOnlyList<string> Candidates, string English);
 
-    private sealed record UdWord(string Form, string Lemma);
-
-    private sealed record UdSentence(string? TextEn, List<UdWord> Words, bool IsTestFile);
-
-    /// <summary>Lemma comparison key: normalized with hyphens/spaces collapsed away,
-    /// so the table's "neu-ghlen" matches UD's "neughlen"</summary>
     private static string DisplayKey(string lemma)
     {
-        return LemmaTable.NormalizeForm(lemma).Replace(" ", "");
+        return AdjudicationCommon.DisplayKey(lemma);
     }
 
     [Test]
@@ -67,9 +58,9 @@ public class LemmaSidecarGenerator
         Directory.CreateDirectory(outDir!);
 
         var table = LemmaTable.Instance;
-        var displayById = DisplayLemmaById();
-        var glosses = LoadGlosses();
-        var sentences = TreebankSentences();
+        var displayById = AdjudicationCommon.DisplayLemmaById();
+        var glosses = AdjudicationCommon.LoadGlosses();
+        var sentences = AdjudicationCommon.TreebankSentences();
 
         // ---- form-level layer: decisive UD majorities -> overrides seed ----
         var readingsByForm = new Dictionary<string, Dictionary<string, int>>();
@@ -91,25 +82,8 @@ public class LemmaSidecarGenerator
         // every reading UD ever attests for a form must survive resolution; the
         // eval uses train-file attestations only, so the veto isn't graded on
         // its own labels
-        Dictionary<string, HashSet<string>> Attested(bool trainOnly)
-        {
-            var result = new Dictionary<string, HashSet<string>>();
-            foreach (var sentence in sentences.Where(x => !trainOnly || !x.IsTestFile))
-            {
-                foreach (var word in sentence.Words)
-                {
-                    var form = LemmaTable.NormalizeForm(word.Form);
-                    if (!result.TryGetValue(form, out var readings))
-                    {
-                        result[form] = readings = [];
-                    }
-                    readings.Add(DisplayKey(word.Lemma));
-                }
-            }
-            return result;
-        }
-        var attestedTrain = Attested(trainOnly: true);
-        var attestedAll = Attested(trainOnly: false);
+        var attestedTrain = AdjudicationCommon.AttestedReadings(sentences, trainOnly: true);
+        var attestedAll = AdjudicationCommon.AttestedReadings(sentences, trainOnly: false);
 
         var overrides = new Dictionary<string, (IReadOnlyList<string> Ids, string Evidence)>();
         var undecidableDecisive = 0;
@@ -140,14 +114,14 @@ public class LemmaSidecarGenerator
             .ToList();
         var lineFrequency = new Dictionary<string, int>();
         long translatedLines = 0;
-        ForEachManxLine(documents, (_, line) =>
+        AdjudicationCommon.ForEachManxLine(documents, (_, line) =>
         {
             if (string.IsNullOrWhiteSpace(line.English))
             {
                 return;
             }
             translatedLines++;
-            foreach (var word in EnglishWords(line.English).Distinct())
+            foreach (var word in AdjudicationCommon.EnglishWords(line.English).Distinct())
             {
                 lineFrequency[word] = lineFrequency.GetValueOrDefault(word) + 1;
             }
@@ -174,7 +148,7 @@ public class LemmaSidecarGenerator
         var wrongSample = new List<string>();
         foreach (var sentence in sentences.Where(x => x.IsTestFile && !string.IsNullOrWhiteSpace(x.TextEn)))
         {
-            var english = EnglishWords(sentence.TextEn!).Where(CarriesEvidence).ToHashSet();
+            var english = AdjudicationCommon.EnglishWords(sentence.TextEn!).Where(CarriesEvidence).ToHashSet();
             foreach (var word in sentence.Words)
             {
                 var form = LemmaTable.NormalizeForm(word.Form);
@@ -206,12 +180,12 @@ public class LemmaSidecarGenerator
         long ambiguousTokens = 0, overrideTokens = 0, sidecarTokens = 0;
         var sidecar = new List<Occurrence>();
         var chosenByOccurrence = new List<string>();
-        ForEachManxLine(documents, (document, line) =>
+        AdjudicationCommon.ForEachManxLine(documents, (document, line) =>
         {
             var tokenIndex = -1;
             HashSet<string>? english = null;
             string? lineHash = null;
-            foreach (var token in Tokenize(line.NormalizedManx))
+            foreach (var token in AdjudicationCommon.Tokenize(line.NormalizedManx))
             {
                 tokenIndex++;
                 var candidates = table.CandidatesFor(token);
@@ -229,14 +203,14 @@ public class LemmaSidecarGenerator
                 {
                     continue;
                 }
-                english ??= EnglishWords(line.English).Where(CarriesEvidence).ToHashSet();
+                english ??= AdjudicationCommon.EnglishWords(line.English).Where(CarriesEvidence).ToHashSet();
                 var chosen = VetoedResolve(token, candidates, english, attestedAll);
                 if (chosen == null)
                 {
                     continue;
                 }
                 sidecarTokens++;
-                lineHash ??= Hash(line.Manx ?? "");
+                lineHash ??= AdjudicationCommon.Hash(line.Manx ?? "");
                 sidecar.Add(new Occurrence(document, lineHash, tokenIndex, token, candidates, line.English!));
                 chosenByOccurrence.Add(string.Join(",", chosen));
             }
@@ -323,152 +297,4 @@ public class LemmaSidecarGenerator
         return chosen.Select(i => candidates[i]).ToList();
     }
 
-    /// <summary>lemma id -> display lemma, straight from the vendored table's columns</summary>
-    private static Dictionary<string, string> DisplayLemmaById()
-    {
-        var result = new Dictionary<string, string>();
-        var path = Path.Combine(TestContext.CurrentContext.TestDirectory, "Resources", "cregeen.tsv");
-        foreach (var line in File.ReadLines(path).Skip(1))
-        {
-            var columns = line.Split('\t');
-            if (columns.Length >= 3)
-            {
-                result.TryAdd(columns[1], columns[2]);
-            }
-        }
-        return result;
-    }
-
-    /// <summary>display lemma (normalized) -> gloss word set from manx.json,
-    /// with s-stripped variants for light stemming</summary>
-    private static Dictionary<string, HashSet<string>> LoadGlosses()
-    {
-        var path = Path.Combine(TestContext.CurrentContext.TestDirectory, "Resources", "manx.json");
-        var dictionary = JsonConvert.DeserializeObject<Dictionary<string, List<string>>>(File.ReadAllText(path))
-            ?? throw new InvalidOperationException("manx.json deserialized to null");
-        var result = new Dictionary<string, HashSet<string>>();
-        foreach (var (headword, senses) in dictionary)
-        {
-            var key = LemmaTable.NormalizeForm(headword);
-            if (!result.TryGetValue(key, out var words))
-            {
-                result[key] = words = [];
-            }
-            foreach (var word in senses.SelectMany(EnglishWords))
-            {
-                words.Add(word);
-            }
-        }
-        return result;
-    }
-
-    private static IEnumerable<string> EnglishWords(string text)
-    {
-        var word = new StringBuilder();
-        foreach (var c in text.ToLowerInvariant() + " ")
-        {
-            if (char.IsLetter(c))
-            {
-                word.Append(c);
-                continue;
-            }
-            if (word.Length == 0)
-            {
-                continue;
-            }
-            var value = word.ToString();
-            word.Clear();
-            yield return value;
-            if (value.Length > 3 && value.EndsWith('s'))
-            {
-                yield return value[..^1];
-            }
-        }
-    }
-
-    private static void ForEachManxLine(List<OpenSourceDocument> documents,
-        Action<string, CorpusSearch.Model.DocumentLine> action)
-    {
-        foreach (var document in documents)
-        {
-            List<CorpusSearch.Model.DocumentLine> lines;
-            try
-            {
-                lines = document.LoadPreparedLines();
-            }
-            catch (Exception)
-            {
-                continue;
-            }
-            foreach (var line in lines.Where(x => x.IsManxLanguage))
-            {
-                action(document.Ident, line);
-            }
-        }
-    }
-
-    private static List<UdSentence> TreebankSentences()
-    {
-        var directory = Path.Combine(TestContext.CurrentContext.TestDirectory, "Resources", "UD_Manx-Cadhan");
-        var files = Directory.Exists(directory) ? Directory.GetFiles(directory, "*.conllu") : [];
-        Assert.That(files, Is.Not.Empty, "treebank missing: git submodule update --init && rebuild");
-
-        var sentences = new List<UdSentence>();
-        foreach (var file in files.OrderBy(x => x))
-        {
-            var isTestFile = Path.GetFileName(file).Contains("-test");
-            var current = new UdSentence(null, [], isTestFile);
-            foreach (var line in File.ReadLines(file).Append(""))
-            {
-                if (line.Length == 0)
-                {
-                    if (current.Words.Count > 0)
-                    {
-                        sentences.Add(current);
-                    }
-                    current = new UdSentence(null, [], isTestFile);
-                    continue;
-                }
-                if (line.StartsWith("# text_en = "))
-                {
-                    current = current with { TextEn = line["# text_en = ".Length..] };
-                    continue;
-                }
-                if (line[0] == '#')
-                {
-                    continue;
-                }
-                var columns = line.Split('\t');
-                if (columns.Length < 4 || columns[0].Contains('-') || columns[0].Contains('.'))
-                {
-                    continue;
-                }
-                if (columns[3] is "PUNCT" or "NUM" or "X")
-                {
-                    continue;
-                }
-                current.Words.Add(new UdWord(columns[1], columns[2]));
-            }
-        }
-        return sentences;
-    }
-
-    private static string Hash(string text)
-    {
-        return Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(text)))[..16];
-    }
-
-    /// <summary>The manx_lemma pipeline's tokens: uncased ManxTokenizer + ManxTokenFilter</summary>
-    private static IEnumerable<string> Tokenize(string text)
-    {
-        var tokenizer = new ManxTokenizer(LuceneVersion.LUCENE_48, new StringReader(text));
-        using var stream = new ManxTokenFilter(tokenizer);
-        var term = stream.GetAttribute<ICharTermAttribute>();
-        stream.Reset();
-        while (stream.IncrementToken())
-        {
-            yield return term.ToString();
-        }
-        stream.End();
-    }
 }
