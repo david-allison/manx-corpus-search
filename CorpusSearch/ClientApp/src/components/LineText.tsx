@@ -173,7 +173,6 @@ export const isNoteLinked = (
 const HighlightedLine = (props: {
     /** highlight the server-matched ranges (the searched language) */
     shouldHighlight: boolean
-    languageCode: "gv" | "en"
     text: string
     highlights?: HighlightRange[]
     /** dictionary translations of the query, fuzzy-matched on the unsearched column */
@@ -181,11 +180,10 @@ const HighlightedLine = (props: {
     /** the raw query: no fuzzy highlighting without one */
     query: string
     noteToggle?: NoteToggle
-    onWordClick: (event: ReactMouseEvent, context: string) => void
+    onWordClick?: (event: ReactMouseEvent, context: string) => void
 }) => {
     const {
         shouldHighlight,
-        languageCode,
         text,
         highlights,
         translations,
@@ -212,11 +210,9 @@ const HighlightedLine = (props: {
                 segmentStart += item.length + 1 // + the removed "\n"
                 return (
                     <div
-                        onClick={(event) => {
-                            if (languageCode == "gv") {
-                                onWordClick(event, text)
-                            }
-                        }}
+                        onClick={
+                            onWordClick && ((event) => onWordClick(event, text))
+                        }
                         className="doc-line"
                         key={key}
                     >
@@ -248,7 +244,7 @@ const DiffedLine = (props: {
     original: string
     text: string
     highlights?: HighlightRange[]
-    onWordClick: (event: ReactMouseEvent, context: string) => void
+    onWordClick?: (event: ReactMouseEvent, context: string) => void
 }) => {
     const { original, text, highlights, onWordClick } = props
     const result = diffChars(original, text)
@@ -258,9 +254,7 @@ const DiffedLine = (props: {
     // TODO: Also apply justify to 'browse' screen
     return (
         <div
-            onClick={(event) => {
-                onWordClick(event, text)
-            }}
+            onClick={onWordClick && ((event) => onWordClick(event, text))}
             className="doc-line"
         >
             {result.map((part, index) => {
@@ -306,11 +300,12 @@ export const LineText = (props: {
     original?: string
     highlights?: HighlightRange[]
     shouldHighlight: boolean
-    languageCode: "gv" | "en"
     translations: string[]
     query: string
     noteToggle?: NoteToggle
-    onWordClick: (event: ReactMouseEvent, context: string) => void
+    /** opens the dictionary popup for the tapped word: only pass it for text
+     * which is actually Manx (not the English column or a non-Manx row) */
+    onWordClick?: (event: ReactMouseEvent, context: string) => void
 }) => {
     const { original, ...rest } = props
     if (original) {

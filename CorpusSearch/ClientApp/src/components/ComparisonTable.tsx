@@ -218,7 +218,6 @@ export const ComparisonTable = (props: {
                                         original={line.manxOriginal}
                                         highlights={line.manxHighlights}
                                         shouldHighlight={highlightManx}
-                                        languageCode="gv"
                                         translations={getTranslations("gv")}
                                         query={value}
                                         noteToggle={noteToggle}
@@ -231,11 +230,9 @@ export const ComparisonTable = (props: {
                                         original={line.englishOriginal}
                                         highlights={line.englishHighlights}
                                         shouldHighlight={highlightEnglish}
-                                        languageCode="en"
                                         translations={getTranslations("en")}
                                         query={value}
                                         noteToggle={noteToggle}
-                                        onWordClick={dictionary.openFromClick}
                                     />
                                 )
 
