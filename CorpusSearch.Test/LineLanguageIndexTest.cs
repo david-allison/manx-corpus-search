@@ -7,7 +7,8 @@ namespace CorpusSearch.Test;
 
 /// <summary>
 /// Index-side half of the line-language contract: non-Manx lines stay searchable but
-/// no longer count towards Manx statistics, and their language is returned.
+/// no longer count towards Manx statistics, and their language (like any line's speaker)
+/// is returned.
 /// </summary>
 [TestFixture]
 public class LineLanguageIndexTest : QueryBase
@@ -19,8 +20,8 @@ public class LineLanguageIndexTest : QueryBase
         luceneIndex.Add(new TestDocument(DOC, DOC_DATE), lines);
     }
 
-    private static DocumentLine Line(int lineNumber, string manx, string? language = null)
-        => new() { Manx = manx, English = "", CsvLineNumber = lineNumber, Language = language };
+    private static DocumentLine Line(int lineNumber, string manx, string? language = null, string? speaker = null)
+        => new() { Manx = manx, English = "", CsvLineNumber = lineNumber, Language = language, Speaker = speaker };
 
     [Test]
     public void NonManxLinesDoNotCountAsManxTerms()
@@ -73,5 +74,18 @@ public class LineLanguageIndexTest : QueryBase
 
         var line = luceneIndex.GetAllLines(DOC, getTranscript: false).Single();
         Assert.That(line.Language, Is.Null);
+    }
+
+    [Test]
+    public void SpeakerIsReturnedWithoutTranscriptData()
+    {
+        AddLines(Line(2, "Ta fys aym", speaker: "NM"));
+
+        var browsed = luceneIndex.GetAllLines(DOC, getTranscript: false).Single();
+        Assert.That(browsed.Speaker, Is.EqualTo("NM"));
+
+        var searched = new Searcher(luceneIndex, parser).SearchWork(DOC, "fys",
+            new SearchOptions { SearchType = SearchType.Manx }, returnTranscriptData: false);
+        Assert.That(searched.Lines.Single().Speaker, Is.EqualTo("NM"));
     }
 }
