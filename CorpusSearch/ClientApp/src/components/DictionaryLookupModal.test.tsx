@@ -98,4 +98,49 @@ describe("classifyEntries", () => {
         expect(own.map((x) => x.primaryWord)).toEqual(["daase"])
         expect(derived.map((x) => x.primaryWord)).toEqual(["aase"])
     })
+
+    it("drops a root's phrase entry the tapped line doesn't contain", () => {
+        // tapping 'vow' surfaces the root chain (fow, and the demutation
+        // candidate mow); 'cur mow' rode in on mow's word list but the line
+        // doesn't say it. 'cha vow' is a phrase on the selection itself: kept
+        const { own, derived } = classifyEntries(
+            "vow",
+            "T’ad shirrey mayrneys raad nagh vow ad eh,",
+            [
+                entry("vow"),
+                entry("cha vow"),
+                entry("fow", 1),
+                entry("mow", 1),
+                entry("cur mow", 1),
+            ],
+        )
+
+        expect(own.map((x) => x.primaryWord)).toEqual(["vow"])
+        expect(derived.map((x) => x.primaryWord)).toEqual([
+            "cha vow",
+            "fow",
+            "mow",
+        ])
+    })
+
+    it("drops a root's phrase entry at any depth ('dy olk' under smessey)", () => {
+        const { own, derived } = classifyEntries(
+            "smessey",
+            "Agh va whisteragh ny smessey na ooilley.",
+            [entry("smessey"), entry("olk", 1), entry("dy olk", 1)],
+        )
+
+        expect(own.map((x) => x.primaryWord)).toEqual(["smessey"])
+        expect(derived.map((x) => x.primaryWord)).toEqual(["olk"])
+    })
+
+    it("keeps the root's phrase entry when the line does contain it", () => {
+        const { derived } = classifyEntries(
+            "smessey",
+            "ta shen dy olk as ny smessey foast",
+            [entry("smessey"), entry("olk", 1), entry("dy olk", 1)],
+        )
+
+        expect(derived.map((x) => x.primaryWord)).toEqual(["olk", "dy olk"])
+    })
 })

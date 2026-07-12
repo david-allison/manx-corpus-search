@@ -56,10 +56,19 @@ export const classifyEntries = (
             (x) => !x.rootDepth && headsSelection(x.primaryWord),
         )
     }
-    return {
-        own,
-        derived: entries.filter((x) => !own.includes(x)),
+    // the context rule applies down the chain too: a phrase entry reached
+    // through a root's word list ('cur mow' via vow ↳ mow, 'dy olk' via
+    // smessey ↳ olk) is noise unless the line says it; a phrase on the
+    // selection itself ('cha vow' under vow) still nests
+    let derived = entries.filter((x) => !own.includes(x))
+    const inContext = derived.filter(
+        (x) =>
+            headsSelection(x.primaryWord) || supportedByContext(x.primaryWord),
+    )
+    if (own.length > 0 || inContext.length > 0) {
+        derived = inContext
     }
+    return { own, derived }
 }
 
 /** Groups the popup's entries under the dictionary defining them (#51) */
