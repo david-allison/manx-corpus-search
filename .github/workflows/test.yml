@@ -27,6 +27,34 @@ jobs:
       - run: npm run format:check
       - run: npm run test
 
+  submodule-pins:
+    # A submodule pointer must be a commit reachable from its upstream's
+    # default branch: a pin to an unpushed local commit, or to a branch that
+    # is later force-pushed away, checks out fine today and breaks every
+    # clone (and the production data pull) once upstream garbage-collects.
+    # Fail on the PR that moves the pin, not months later.
+    name: Submodule Pins
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.0
+      - name: Pins are reachable from each upstream default branch
+        run: |
+          [ -f .gitmodules ] || exit 0
+          for name in $(git config -f .gitmodules --name-only --get-regexp '\.path$' | sed 's/\.path$//'); do
+            path=$(git config -f .gitmodules "$name.path")
+            url=$(git config -f .gitmodules "$name.url")
+            sha=$(git rev-parse ":$path")
+            branch=$(git ls-remote --symref "$url" HEAD | awk '/^ref:/ {sub("refs/heads/","",$2); print $2}')
+            clone=$(mktemp -d)/upstream.git
+            git clone --quiet --bare --filter=tree:0 "$url" "$clone"
+            if git -C "$clone" merge-base --is-ancestor "$sha" "refs/heads/$branch"; then
+              echo "$path: $sha is on '$branch' of $url"
+            else
+              echo "::error::$path pins $sha, which is not reachable from '$branch' of $url - push/merge it upstream before pinning"
+              exit 1
+            fi
+          done
+
   tests:
     env:
       DOTNET_CLI_TELEMETRY_OPTOUT: 1
