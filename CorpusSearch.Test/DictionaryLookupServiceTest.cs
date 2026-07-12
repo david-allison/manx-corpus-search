@@ -201,7 +201,8 @@ public class DictionaryLookupServiceTest
 
     private static LemmaTable Lemmas(params (string Form, string Lemma)[] rows)
     {
-        var tsv = "form\tlemmaId\tlemma\n" + string.Join("\n", rows.Select(r => $"{r.Form}\t{r.Lemma}.x\t{r.Lemma}"));
+        var tsv = "form\tlemmaId\tlemma\tlinkType\n"
+                  + string.Join("\n", rows.Select(r => $"{r.Form}\t{r.Lemma}.x\t{r.Lemma}\tinflected"));
         return LemmaTable.Load(new StringReader(tsv));
     }
 
@@ -222,6 +223,32 @@ public class DictionaryLookupServiceTest
             Lemmas(("daase", "aase")));
 
         Assert.That(Lookup(service, "daase"), Is.EqualTo(new[] { "daase", "aase" }));
+    }
+
+    /// <summary>Root-derived entries carry their hop depth so the popup can nest
+    /// them; entries for the selection itself stay at depth 0</summary>
+    [Test]
+    public void RootEntriesCarryTheirDepth()
+    {
+        var service = new DictionaryLookupService([new FakeDictionary(["daase", "aase"])],
+            Lemmas(("daase", "aase")));
+
+        var results = service.Lookup("gv", "daase");
+        Assert.That(results.Select(x => (x.PrimaryWord, x.RootDepth)),
+            Is.EqualTo(new[] { ("daase", 0), ("aase", 1) }));
+    }
+
+    /// <summary>A root's own root is walked too: 'gheiney' (mutated plural) ->
+    /// 'deiney' (the plural's entry) -> 'dooinney' (the singular)</summary>
+    [Test]
+    public void TheRootChainIsWalked()
+    {
+        var service = new DictionaryLookupService([new FakeDictionary(["deiney", "dooinney"])],
+            Lemmas(("gheiney", "deiney"), ("deiney", "dooinney")));
+
+        var results = service.Lookup("gv", "gheiney");
+        Assert.That(results.Select(x => (x.PrimaryWord, x.RootDepth)),
+            Is.EqualTo(new[] { ("deiney", 1), ("dooinney", 2) }));
     }
 
     /// <summary>The popup labels each entry with the dictionary it came from (#51)</summary>

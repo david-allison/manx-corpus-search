@@ -149,21 +149,49 @@ export const DictionaryLookupModal = (props: DictionaryLookupState) => {
                                     <h3 className="dict-popup-dictionary">
                                         {dictionaryName}
                                     </h3>
-                                    {entries.map((summary, index) => (
-                                        // primaryWord differentiates fuzzy matches:
-                                        // 'dy hroggal' and 'cha greck' both resolve
-                                        // via 'hroggal'/'greck'
-                                        <div
-                                            className="dict-popup-entry"
-                                            key={index}
-                                        >
-                                            <strong>
-                                                {summary.primaryWord}
-                                            </strong>
-                                            {": "}
-                                            {summary.summary}
-                                        </div>
-                                    ))}
+                                    {entries
+                                        .filter((x) => !x.rootDepth)
+                                        .map((summary, index) => (
+                                            // primaryWord differentiates fuzzy matches:
+                                            // 'dy hroggal' and 'cha greck' both resolve
+                                            // via 'hroggal'/'greck'
+                                            <div
+                                                className="dict-popup-entry"
+                                                key={index}
+                                            >
+                                                <strong>
+                                                    {summary.primaryWord}
+                                                </strong>
+                                                {": "}
+                                                {summary.summary}
+                                            </div>
+                                        ))}
+                                    {entries
+                                        .filter((x) => x.rootDepth > 0)
+                                        .map((summary, index) => (
+                                            // the selection's root-lemma chain:
+                                            // each hop indents one level further
+                                            <div
+                                                className="dict-popup-entry dict-popup-root-entry"
+                                                style={{
+                                                    marginLeft:
+                                                        14 * summary.rootDepth,
+                                                }}
+                                                key={`root-${index}`}
+                                            >
+                                                <span
+                                                    className="dict-popup-root-connector"
+                                                    aria-label="root form"
+                                                >
+                                                    {"↳ "}
+                                                </span>
+                                                <strong>
+                                                    {summary.primaryWord}
+                                                </strong>
+                                                {": "}
+                                                {summary.summary}
+                                            </div>
+                                        ))}
                                 </div>
                             ),
                         )}

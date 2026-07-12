@@ -28,4 +28,9 @@ public class DictionarySummary
     /// <summary>The <see cref="ISearchDictionary.Identifier"/> of the dictionary defining the entry (#51)</summary>
     /// <remarks>Stamped by <see cref="DictionaryLookupService"/> rather than the dictionary itself</remarks>
     public string? DictionaryName { get; set; }
+    /// <summary>How many root-lemma hops from the selection the entry was
+    /// reached through: 0 for the selection's own entries, 1 for its root
+    /// ('gheiney' -> 'deiney'), 2 for the root's root ('deiney' -> 'dooinney').
+    /// The client nests each level under the previous one</summary>
+    public int RootDepth { get; set; }
 }
