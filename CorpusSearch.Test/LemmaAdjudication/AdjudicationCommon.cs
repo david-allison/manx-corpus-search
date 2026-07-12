@@ -246,6 +246,24 @@ public static class AdjudicationCommon
         return result;
     }
 
+    /// <summary>form -> UD-attested reading -> observation count, over the whole
+    /// treebank; the exporter's un-adjudicable-form rules read the counts.</summary>
+    public static Dictionary<string, Dictionary<string, int>> AttestedCounts(IEnumerable<UdSentence> sentences)
+    {
+        var result = new Dictionary<string, Dictionary<string, int>>();
+        foreach (var word in sentences.SelectMany(x => x.Words))
+        {
+            var form = LemmaTable.NormalizeForm(word.Form);
+            if (!result.TryGetValue(form, out var readings))
+            {
+                result[form] = readings = [];
+            }
+            var reading = DisplayKey(word.Lemma);
+            readings[reading] = readings.GetValueOrDefault(reading) + 1;
+        }
+        return result;
+    }
+
     public static string Hash(string text)
     {
         return Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(text)))[..16];
