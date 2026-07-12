@@ -56,7 +56,9 @@ public sealed class LemmaTokenFilter(TokenStream input, LemmaTable table) : Toke
             return true;
         }
 
-        foreach (var lemmaId in CliticCandidates(token))
+        // a token the table doesn't know may be a productive clitic contraction:
+        // its parts' candidates are injected (the surface token stays)
+        foreach (var lemmaId in table.CliticCandidatesFor(token))
         {
             pending.Enqueue(lemmaId);
         }
@@ -65,35 +67,6 @@ public sealed class LemmaTokenFilter(TokenStream input, LemmaTable table) : Toke
             current = CaptureState();
         }
         return true;
-    }
-
-    /// <summary>
-    /// A token the table doesn't know may be a productive clitic contraction: its
-    /// parts' candidates are injected (the surface token stays). `t'X`/`v'X` are
-    /// present-/past-of-'bee' + X, `X'n` is X + the article 'yn'.
-    /// </summary>
-    private List<string> CliticCandidates(string token)
-    {
-        var combined = new List<string>();
-        foreach (var part in CliticParts(token) ?? [])
-        {
-            foreach (var lemmaId in table.CandidatesFor(part))
-            {
-                if (!combined.Contains(lemmaId))
-                {
-                    combined.Add(lemmaId);
-                }
-            }
-        }
-        return combined;
-    }
-
-    private static string[]? CliticParts(string token)
-    {
-        if (token.Length > 2 && token.StartsWith("t'")) return ["ta", token[2..]];
-        if (token.Length > 2 && token.StartsWith("v'")) return ["va", token[2..]];
-        if (token.Length > 2 && token.EndsWith("'n")) return [token[..^2], "yn"];
-        return null;
     }
 
     public override void Reset()
