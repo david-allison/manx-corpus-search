@@ -1,6 +1,0 @@
-https://github.com/david-allison/manx-lemma-data
-commit a3ae0a9476ba21498d65791e14f050eecee818c0 (vendored 2026-07-12)
-
-The lemma table behind lemma-aware search (HANDOFF-lemma-search.md).
-Update by copying cregeen.tsv from a tagged manx-lemma-data revision
-and recording the new commit here.
