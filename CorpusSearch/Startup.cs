@@ -91,7 +91,8 @@ public class Startup(IConfiguration configuration)
         WorkService workService,
         ILogger<Startup> logger,
         Searcher searcher,
-        RecentDocumentsService recentDocumentsService)
+        RecentDocumentsService recentDocumentsService,
+        ContributionsService contributionsService)
     {
         log = logger;
         if (env.IsDevelopment())
@@ -126,6 +127,18 @@ public class Startup(IConfiguration configuration)
         catch (Exception e)
         {
             log.LogError(e , "failed to read latest documents");
+        }
+
+        try
+        {
+            // warm the cache: the first computation reads every document's license file
+            var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+            var contributors = contributionsService.GetContributors().Result;
+            log.LogInformation("Found {Count} contributors in {Milliseconds}ms", contributors.Count, stopwatch.ElapsedMilliseconds);
+        }
+        catch (Exception e)
+        {
+            log.LogError(e, "failed to compute contributions");
         }
             
         // app.UseHttpsRedirection();
