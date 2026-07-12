@@ -3,6 +3,10 @@ type Summary = {
     primaryWord: string
     /** the dictionary defining the entry, e.g. 'Cregeen' (#51) */
     dictionaryName: string
+    /** root-lemma hops from the selection: 0 = the selection's own entries,
+     * 1 = its root ('gheiney' -> 'deiney'), 2 = the root's root ('dooinney');
+     * each level nests under the previous one */
+    rootDepth: number
 }
 export type DictionaryResponse = Summary[]
 

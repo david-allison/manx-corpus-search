@@ -17,3 +17,15 @@
 .dict-popup-entry + .dict-popup-entry {
     margin-top: 12px;
 }
+
+/* the selection's root lemma: indented under the selection's own entries,
+   with a hanging indent so wrapped lines stay aligned past the connector */
+.dict-popup-root-entry {
+    margin-left: 14px;
+    padding-left: 18px;
+    text-indent: -18px;
+}
+
+.dict-popup-root-connector {
+    color: var(--c-accent);
+}

@@ -16,6 +16,7 @@ public class LemmaTable
 {
     private readonly Dictionary<string, string[]> candidatesByForm;
     private readonly Dictionary<string, string[]> displayLemmasByForm;
+    private readonly Dictionary<string, string[]> rootDisplayLemmasByForm;
     private readonly HashSet<string> lemmaIds;
 
     // read once, shared by the index-time analyzer and the query path
@@ -23,10 +24,12 @@ public class LemmaTable
     public static LemmaTable Instance => Lazy.Value;
 
     private LemmaTable(Dictionary<string, string[]> candidatesByForm,
-        Dictionary<string, string[]> displayLemmasByForm, HashSet<string> lemmaIds)
+        Dictionary<string, string[]> displayLemmasByForm,
+        Dictionary<string, string[]> rootDisplayLemmasByForm, HashSet<string> lemmaIds)
     {
         this.candidatesByForm = candidatesByForm;
         this.displayLemmasByForm = displayLemmasByForm;
+        this.rootDisplayLemmasByForm = rootDisplayLemmasByForm;
         this.lemmaIds = lemmaIds;
     }
 
@@ -47,6 +50,16 @@ public class LemmaTable
     public IReadOnlyList<string> DisplayLemmasFor(string form)
     {
         return displayLemmasByForm.TryGetValue(NormalizeForm(form), out var lemmas) ? lemmas : [];
+    }
+
+    /// <summary>The display lemmas <paramref name="form"/> belongs to as part of
+    /// another lexeme's paradigm ("deiney" -> "dooinney"): rows whose link is
+    /// neither the form's own entry nor a demutation guess. Lets a root chain be
+    /// walked ('gheiney' -> 'deiney' -> 'dooinney') without wandering into
+    /// mutation ambiguity ('aase' -/-> 'faase').</summary>
+    public IReadOnlyList<string> RootDisplayLemmasFor(string form)
+    {
+        return rootDisplayLemmasByForm.TryGetValue(NormalizeForm(form), out var lemmas) ? lemmas : [];
     }
 
     /// <summary>
@@ -160,6 +173,7 @@ public class LemmaTable
     {
         var listsByForm = new Dictionary<string, List<string>>();
         var displayListsByForm = new Dictionary<string, List<string>>();
+        var rootListsByForm = new Dictionary<string, List<string>>();
         var lemmaIds = new HashSet<string>();
 
         reader.ReadLine(); // header
@@ -187,16 +201,35 @@ public class LemmaTable
             {
                 displays.Add(displayLemma);
             }
+            // paradigm links (see RootDisplayLemmasFor): not the form's own entry,
+            // not a demutation guess
+            var linkType = columns.Length > 3 ? columns[3] : "self";
+            if (linkType is not ("self" or "demutated"))
+            {
+                if (!rootListsByForm.TryGetValue(form, out var roots))
+                {
+                    rootListsByForm[form] = roots = [];
+                }
+                if (!roots.Contains(displayLemma))
+                {
+                    roots.Add(displayLemma);
+                }
+            }
         }
 
         var candidatesByForm = new Dictionary<string, string[]>(listsByForm.Count);
         var displayLemmasByForm = new Dictionary<string, string[]>(displayListsByForm.Count);
+        var rootDisplayLemmasByForm = new Dictionary<string, string[]>(rootListsByForm.Count);
         foreach (var (form, candidates) in listsByForm)
         {
             candidatesByForm[form] = [.. candidates];
             displayLemmasByForm[form] = [.. displayListsByForm[form]];
         }
-        return new LemmaTable(candidatesByForm, displayLemmasByForm, lemmaIds);
+        foreach (var (form, roots) in rootListsByForm)
+        {
+            rootDisplayLemmasByForm[form] = [.. roots];
+        }
+        return new LemmaTable(candidatesByForm, displayLemmasByForm, rootDisplayLemmasByForm, lemmaIds);
     }
 
     private static LemmaTable LoadVendored()
@@ -207,7 +240,7 @@ public class LemmaTable
             // an uninitialised submodule shouldn't take the whole server down:
             // lemma search just finds nothing
             Serilog.Log.Warning("{Path} not found (is the submodule initialised?): lemma search disabled", path);
-            return new LemmaTable([], [], []);
+            return new LemmaTable([], [], [], []);
         }
         using var reader = new StreamReader(path);
         return Load(reader);

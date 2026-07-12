@@ -45,15 +45,33 @@ public class DictionaryLookupService(IEnumerable<ISearchDictionary> dictionarySe
                 .ToList();
 
         var candidates = GetCandidates(selection, context);
+        var results = GetSummaries(candidates);
         if (lang == "gv")
         {
-            // the roots of an inflected/mutated selection ('daase' -> 'aase') follow
-            // the surface candidates: exact entries stay first, and the reader always
-            // gets the headword a dictionary actually lists
-            candidates.AddRange(lemmaTable.DisplayLemmasFor(selection)
-                .Where(root => !candidates.Contains(root, StringComparer.InvariantCultureIgnoreCase)));
+            // the root chain of an inflected/mutated selection follows the surface
+            // candidates, each hop tagged with its depth so the client can nest it
+            // ('gheiney' -> 'deiney' -> 'dooinney'): the reader always gets the
+            // headwords a dictionary actually lists, without them posing as
+            // entries for the selection
+            var seen = new HashSet<string>(candidates, StringComparer.InvariantCultureIgnoreCase);
+            var frontier = lemmaTable.DisplayLemmasFor(selection).Where(x => !seen.Contains(x)).ToList();
+            for (var depth = 1; frontier.Count > 0 && depth <= 3; depth++)
+            {
+                seen.UnionWith(frontier);
+                foreach (var summary in GetSummaries(frontier))
+                {
+                    summary.RootDepth = depth;
+                    results.Add(summary);
+                }
+                // deeper hops follow paradigm links only: a mutation guess is a
+                // candidate reading of the selection, not a root of the root
+                frontier = frontier
+                    .SelectMany(root => lemmaTable.RootDisplayLemmasFor(root))
+                    .Where(x => !seen.Contains(x))
+                    .Distinct(StringComparer.InvariantCultureIgnoreCase)
+                    .ToList();
+            }
         }
-        var results = GetSummaries(candidates);
 
         if (results.Count == 0)
         {
