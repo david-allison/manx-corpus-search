@@ -6,7 +6,8 @@ using System.Text;
 namespace CorpusSearch.Dependencies.Lucene;
 
 /// <summary>
-/// The vendored lemma table (Resources/cregeen.tsv, provenance in cregeen.tsv.source):
+/// The lemma table (the external/manx-lemma-data submodule pins its revision;
+/// published as Resources/cregeen.tsv):
 /// normalized surface form -> candidate lemma ids ("aase.v", "bagh-1").
 /// A form maps to several lemmas (homographs; mutation candidates are additive), so
 /// the candidate set is ambiguous by design: consumers index and query every candidate.
@@ -161,9 +162,9 @@ public class LemmaTable
         var path = Startup.GetLocalFile("Resources", "cregeen.tsv");
         if (!File.Exists(path))
         {
-            // a broken checkout shouldn't take the whole server down: lemma
-            // search just finds nothing
-            Serilog.Log.Warning("{Path} not found: lemma search disabled", path);
+            // an uninitialised submodule shouldn't take the whole server down:
+            // lemma search just finds nothing
+            Serilog.Log.Warning("{Path} not found (is the submodule initialised?): lemma search disabled", path);
             return new LemmaTable([], [], []);
         }
         using var reader = new StreamReader(path);

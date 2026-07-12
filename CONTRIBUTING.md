@@ -2,7 +2,8 @@
 
 ## Getting started
 
-1. Clone the source
+1. Clone the source (`git clone --recurse-submodules`, or `git submodule update --init`
+   in an existing clone — `external/` directories hold data consumed as submodules)
 2. Copy the `OpenData` folder from [manx-search-data](https://github.com/david-allison/manx-search-data/) into `CorpusSearch/OpenData` folder
 3. `dotnet run`
 

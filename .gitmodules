@@ -1,0 +1,3 @@
+[submodule "CorpusSearch/external/manx-lemma-data"]
+	path = CorpusSearch/external/manx-lemma-data
+	url = https://github.com/david-allison/manx-lemma-data.git
