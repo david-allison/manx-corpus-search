@@ -9,18 +9,20 @@ using NUnit.Framework;
 namespace CorpusSearch.Test;
 
 /// <summary>
-/// Load-time resolution of the manifest's language contract: each line's effective
-/// language resolves as line value ⇒ collection default ⇒ "gv".
+/// Load-time honouring of the manifest's speaker-code and language contract:
+/// inline speaker codes move into Speaker, and each line's effective language
+/// resolves as line value ⇒ collection default ⇒ "gv".
 /// </summary>
 [TestFixture]
 public class DocumentLinePreparerTest
 {
-    private static OpenSourceDocument Manifest(string? manxColumnLanguage = null)
+    private static OpenSourceDocument Manifest(string? manxColumnLanguage = null, params string[] inlineSpeakerCodes)
         => new()
         {
             Name = "doc",
             Ident = "doc",
             ManxColumnLanguage = manxColumnLanguage,
+            InlineSpeakerCodes = inlineSpeakerCodes.Length == 0 ? null : inlineSpeakerCodes.ToList(),
         };
 
     private static DocumentLine Prepared(Document document, DocumentLine line)
@@ -64,14 +66,74 @@ public class DocumentLinePreparerTest
     }
 
     [Test]
-    public void ManifestFieldDeserializes()
+    public void SpeakerCodeMovesToSpeakerField()
+    {
+        var line = Prepared(Manifest(null, "NM", "WR"), new DocumentLine { Manx = "NM. Ta fys aym" });
+        Assert.That(line.Speaker, Is.EqualTo("NM"));
+        Assert.That(line.Manx, Is.EqualTo("Ta fys aym"));
+    }
+
+    [TestCase("nm: ta", "ta")]
+    [TestCase("NM ta", "ta")]
+    [TestCase("  NM.ta", "ta")]
+    public void ColonBareAndLowercaseMarkersAreStripped(string manx, string expected)
+    {
+        var line = Prepared(Manifest(null, "NM"), new DocumentLine { Manx = manx });
+        Assert.That(line.Speaker, Is.EqualTo("NM"));
+        Assert.That(line.Manx, Is.EqualTo(expected));
+    }
+
+    [Test]
+    public void CodeOnlyCellBecomesEmpty()
+    {
+        var line = Prepared(Manifest(null, "NM"), new DocumentLine { Manx = "NM." });
+        Assert.That(line.Speaker, Is.EqualTo("NM"));
+        Assert.That(line.Manx, Is.EqualTo(""));
+    }
+
+    [Test]
+    public void CodeMustBeAWholeWord()
+    {
+        var line = Prepared(Manifest(null, "Q"), new DocumentLine { Manx = "Quirk as Juan" });
+        Assert.That(line.Speaker, Is.Null);
+        Assert.That(line.Manx, Is.EqualTo("Quirk as Juan"));
+    }
+
+    [Test]
+    public void NoDeclaredCodesMeansNoStripping()
+    {
+        var line = Prepared(Manifest(), new DocumentLine { Manx = "NM. Ta fys aym" });
+        Assert.That(line.Speaker, Is.Null);
+        Assert.That(line.Manx, Is.EqualTo("NM. Ta fys aym"));
+    }
+
+    [Test]
+    public void FilledSpeakerColumnIsKept()
+    {
+        var line = Prepared(Manifest(null, "NM"), new DocumentLine { Manx = "NM. Ta", Speaker = "Ned Maddrell" });
+        Assert.That(line.Speaker, Is.EqualTo("Ned Maddrell"));
+        Assert.That(line.Manx, Is.EqualTo("Ta"));
+    }
+
+    [Test]
+    public void LongerCodeWinsOverItsPrefix()
+    {
+        var line = Prepared(Manifest(null, "J", "JTK"), new DocumentLine { Manx = "JTK: ta" });
+        Assert.That(line.Speaker, Is.EqualTo("JTK"));
+        Assert.That(line.Manx, Is.EqualTo("ta"));
+    }
+
+    [Test]
+    public void ManifestFieldsDeserialize()
     {
         const string json = """
-            {"name": "n", "ident": "i", "translated": "Rob Teare 2021", "manxColumnLanguage": "mixed"}
+            {"name": "n", "ident": "i", "translated": "Rob Teare 2021",
+             "inlineSpeakerCodes": ["NM", "Q"], "manxColumnLanguage": "mixed"}
             """;
         var document = JsonConvert.DeserializeObject<OpenSourceDocument>(json)!;
+        Assert.That(document.InlineSpeakerCodes, Is.EqualTo(new[] { "NM", "Q" }));
         Assert.That(document.ManxColumnLanguage, Is.EqualTo("mixed"));
-        // the new field binds to a property, not the extension data shown to users
+        // the new fields bind to properties, not the extension data shown to users
         Assert.That(document.ExtensionData.Keys, Is.EquivalentTo(new[] { "translated" }));
     }
 

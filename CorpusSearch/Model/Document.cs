@@ -40,6 +40,13 @@ public abstract class Document : IDocument
     public string? Source { get; set; }
 
     /// <summary>
+    /// Speaker codes which may prefix the collection's Manx cells as `CODE.` / `CODE:`
+    /// markers (e.g. ["NM", "WR"] in interview transcriptions). Moved into
+    /// <see cref="DocumentLine.Speaker"/> at load time: see <see cref="DocumentLinePreparer"/>.
+    /// </summary>
+    public List<string>? InlineSpeakerCodes { get; set; }
+
+    /// <summary>
     /// The language of Manx-column cells without a line-level Language value:
     /// "gv" if absent. A knowingly mixed collection declares "mixed" and relies on
     /// the line-level column.
@@ -59,8 +66,8 @@ public abstract class Document : IDocument
         return CsvHelperUtils.LoadCsv(Startup.GetLocalFile("Resources", CsvFileName));
     }
 
-    /// <summary>The document's lines, with each line's effective language resolved
-    /// (see <see cref="DocumentLinePreparer"/>)</summary>
+    /// <summary>The document's lines, with the load-time cleanup its manifest declares
+    /// (effective language, inline speaker codes) applied</summary>
     internal List<DocumentLine> LoadPreparedLines()
     {
         var lines = LoadLocalFile();
