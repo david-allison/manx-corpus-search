@@ -70,6 +70,8 @@ public class Startup(IConfiguration configuration)
         services.AddSingleton<ISearchDictionary>(provider => provider.GetRequiredService<CregeenDictionaryService>());
         services.AddSingleton(provider => KellyManxToEnglishDictionaryService.Init(provider.GetRequiredService<ILogger<KellyManxToEnglishDictionaryService>>()));
         services.AddSingleton<ISearchDictionary>(provider => provider.GetRequiredService<KellyManxToEnglishDictionaryService>());
+        // eager: the lemma table is also the analyzer's, best loaded before indexing
+        services.AddSingleton(LemmaTable.Instance);
         services.AddSingleton<DictionaryLookupService>();
         services.AddSingleton<WorkService>();
         services.AddSingleton<DocumentSearchService>();
