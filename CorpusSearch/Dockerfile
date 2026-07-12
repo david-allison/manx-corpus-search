@@ -7,6 +7,7 @@ WORKDIR /app
 VOLUME /var/corpus-search/dictionaries
 VOLUME /var/corpus-search/open-data
 VOLUME /var/corpus-search/closed-data
+VOLUME /var/corpus-search/lemma-data
 EXPOSE 8080
 
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
