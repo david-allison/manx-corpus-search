@@ -29,4 +29,15 @@
     <ProjectReference Include="..\CorpusSearch\CorpusSearch.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- UD_Manx-Cadhan treebank (CC BY-SA 4.0): reference data for the lemma
+    agreement eval, pinned by the external/UD_Manx-Cadhan submodule commit.
+    An uninitialised submodule matches nothing; the eval test then fails with
+    instructions rather than at build time. -->
+    <Content Include="external\UD_Manx-Cadhan\*.conllu">
+      <Link>Resources\UD_Manx-Cadhan\%(Filename)%(Extension)</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
 </Project>
