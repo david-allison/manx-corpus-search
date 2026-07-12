@@ -49,11 +49,14 @@ public class LemmaIndexTest : QueryBase
     }
 
     [Test]
-    public void SurfaceTokensRemainInTheLemmaField()
+    public void UncoveredSurfaceTokensRemainInTheLemmaField()
     {
-        AddLines(new DocumentLine { Manx = "Daase yn billey", English = "", CsvLineNumber = 2 });
+        // 'xyzzy' has no table entry: its surface token backs the unknown-term
+        // query fallback. Covered tokens ('daase') are replaced by their ids.
+        AddLines(new DocumentLine { Manx = "Daase xyzzy", English = "", CsvLineNumber = 2 });
 
-        Assert.That(SearchLemma("daase").Lines, Has.Count.EqualTo(1));
+        Assert.That(SearchLemma("xyzzy").Lines, Has.Count.EqualTo(1));
+        Assert.That(SearchLemma("daase").Lines, Is.Empty);
     }
 
     [Test]
