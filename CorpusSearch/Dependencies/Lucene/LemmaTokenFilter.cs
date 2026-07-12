@@ -5,11 +5,16 @@ using Lucene.Net.Analysis.TokenAttributes;
 namespace CorpusSearch.Dependencies.Lucene;
 
 /// <summary>
-/// Injects each token's candidate lemma ids as extra tokens at the same position:
-/// 'daase' emits 'daase' then 'aase.v' with a position increment of 0 and the
-/// original token's offsets untouched — so a hit on manx_lemma:aase.v highlights
-/// 'daase' in the raw line (ComputeHighlights reads the term vector offsets).
-/// Ambiguity is intentional: every candidate of a form is indexed.
+/// Maps each token to its candidate lemma ids at the same position, offsets
+/// untouched — so a hit on manx_lemma:aase.v highlights 'daase' in the raw line
+/// (ComputeHighlights reads the term vector offsets). Ambiguity is intentional:
+/// every candidate of a form is indexed, extras at a position increment of 0.
+///
+/// A token the table covers directly is *replaced* by its ids (queries resolve
+/// such tokens the same way, so the surface term is never needed and the field
+/// stays ~40% smaller). Uncovered tokens — including productive clitics, whose
+/// parts' ids are injected alongside — keep their surface token, so phrase
+/// positions and the unknown-term query fallback hold.
 /// </summary>
 public sealed class LemmaTokenFilter(TokenStream input, LemmaTable table) : TokenFilter(input)
 {
@@ -35,7 +40,23 @@ public sealed class LemmaTokenFilter(TokenStream input, LemmaTable table) : Toke
             return false;
         }
 
-        foreach (var lemmaId in CandidatesOf(termAtt.ToString()))
+        var token = termAtt.ToString();
+        var direct = table.CandidatesFor(token);
+        if (direct.Count > 0)
+        {
+            for (var i = 1; i < direct.Count; i++)
+            {
+                pending.Enqueue(direct[i]);
+            }
+            if (pending.Count > 0)
+            {
+                current = CaptureState();
+            }
+            termAtt.SetEmpty().Append(direct[0]);
+            return true;
+        }
+
+        foreach (var lemmaId in CliticCandidates(token))
         {
             pending.Enqueue(lemmaId);
         }
@@ -47,25 +68,14 @@ public sealed class LemmaTokenFilter(TokenStream input, LemmaTable table) : Toke
     }
 
     /// <summary>
-    /// The token's candidates; a token the table doesn't know may be a productive
-    /// clitic contraction, and falls back to its parts' candidates:
-    /// `t'X`/`v'X` are present-/past-of-'bee' + X, `X'n` is X + the article 'yn'.
+    /// A token the table doesn't know may be a productive clitic contraction: its
+    /// parts' candidates are injected (the surface token stays). `t'X`/`v'X` are
+    /// present-/past-of-'bee' + X, `X'n` is X + the article 'yn'.
     /// </summary>
-    private IEnumerable<string> CandidatesOf(string token)
+    private List<string> CliticCandidates(string token)
     {
-        var direct = table.CandidatesFor(token);
-        if (direct.Count > 0)
-        {
-            return direct;
-        }
-
-        var parts = CliticParts(token);
-        if (parts == null)
-        {
-            return [];
-        }
         var combined = new List<string>();
-        foreach (var part in parts)
+        foreach (var part in CliticParts(token) ?? [])
         {
             foreach (var lemmaId in table.CandidatesFor(part))
             {

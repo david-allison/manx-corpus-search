@@ -46,14 +46,13 @@ public class LemmaTokenFilterTest
     }
 
     [Test]
-    public void CandidatesFollowTheTokenAtItsPosition()
+    public void ACoveredTokenIsReplacedByItsCandidate()
     {
         var tokens = Tokens("daase eh", Table(Row("daase", "aase.v")));
 
         Assert.That(tokens.Select(x => (x.Term, x.PosIncr)), Is.EqualTo(new[]
         {
-            ("daase", 1),
-            ("aase.v", 0),
+            ("aase.v", 1),
             ("eh", 1),
         }));
     }
@@ -63,20 +62,23 @@ public class LemmaTokenFilterTest
     {
         var table = Table(Row("aase", "aase.n"), Row("aase", "aase.v"), Row("aase", "faase.a"));
 
-        var terms = Tokens("aase", table).Select(x => x.Term);
-        Assert.That(terms, Is.EqualTo(new[] { "aase", "aase.n", "aase.v", "faase.a" }));
+        var tokens = Tokens("aase", table);
+        Assert.That(tokens.Select(x => (x.Term, x.PosIncr)), Is.EqualTo(new[]
+        {
+            ("aase.n", 1),
+            ("aase.v", 0),
+            ("faase.a", 0),
+        }));
     }
 
     [Test]
-    public void InjectedTokensKeepTheSurfaceOffsets()
+    public void LemmaTokensKeepTheSurfaceOffsets()
     {
         // "my daase" - 'daase' spans offsets 3..8
-        var tokens = Tokens("my daase", Table(Row("daase", "aase.v")));
+        var tokens = Tokens("my daase", Table(Row("daase", "aase.n"), Row("daase", "aase.v")));
 
-        var daase = tokens.Single(x => x.Term == "daase");
-        var lemma = tokens.Single(x => x.Term == "aase.v");
-        Assert.That((lemma.Start, lemma.End), Is.EqualTo((daase.Start, daase.End)));
-        Assert.That((lemma.Start, lemma.End), Is.EqualTo((3, 8)));
+        var lemmas = tokens.Where(x => x.Term.StartsWith("aase.")).ToList();
+        Assert.That(lemmas.Select(x => (x.Start, x.End)), Is.EqualTo(new[] { (3, 8), (3, 8) }));
     }
 
     [Test]
@@ -91,7 +93,7 @@ public class LemmaTokenFilterTest
         // the tokenizer keeps 'aa-aase' as one token; the table's form is 'aa aase'
         var terms = Tokens("aa-aase", Table(Row("aa aase", "aa-aase.n"))).Select(x => x.Term);
 
-        Assert.That(terms, Is.EqualTo(new[] { "aa-aase", "aa-aase.n" }));
+        Assert.That(terms, Is.EqualTo(new[] { "aa-aase.n" }));
     }
 
     [Test]
@@ -128,7 +130,7 @@ public class LemmaTokenFilterTest
         var table = Table(Row("v'aym", "v'aym.x"), Row("va", "bee.v"), Row("aym", "aym.x"));
 
         var terms = Tokens("v'aym", table).Select(x => x.Term);
-        Assert.That(terms, Is.EqualTo(new[] { "v'aym", "v'aym.x" }));
+        Assert.That(terms, Is.EqualTo(new[] { "v'aym.x" }));
     }
 
     [Test]

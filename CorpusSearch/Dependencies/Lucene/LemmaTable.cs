@@ -48,6 +48,35 @@ public class LemmaTable
     /// </summary>
     public static string NormalizeForm(string input)
     {
+        // runs for every token of the corpus at index time: most arrive already
+        // lowercase and plain from the analyzer, and skip the allocating path
+        return NeedsNormalization(input) ? NormalizeSlow(input) : input;
+    }
+
+    private static bool NeedsNormalization(string input)
+    {
+        if (input.Length == 0)
+        {
+            return false;
+        }
+        if (IsTrimChar(input[0]) || IsTrimChar(input[^1]))
+        {
+            return true;
+        }
+        foreach (var c in input)
+        {
+            if (char.IsUpper(c) || c is 'ç' or '’' or '‑' or '-' || char.IsWhiteSpace(c))
+            {
+                return true;
+            }
+        }
+        return false;
+
+        static bool IsTrimChar(char c) => System.Array.IndexOf(TrimChars, c) >= 0;
+    }
+
+    private static string NormalizeSlow(string input)
+    {
         var lowered = input.ToLowerInvariant()
             .Replace('‑', '-') // non-breaking hyphen
             .Replace('’', '\'') // curly apostrophe
