@@ -37,9 +37,10 @@ public class AdjudicationExporter
     private const int EvalSentencesPerFile = 60;
     private const int CorpusLinesPerFile = 120;
 
-    /// <summary>A UD-attested reading missing from the candidates with this many
-    /// observations marks a table gap (ching -> kione): un-adjudicable</summary>
-    private const int GapMinObservations = 2;
+    /// <summary>Any UD-attested reading missing from the candidates marks a table
+    /// gap (ching -> kione, single-obs faagail/cronk): un-adjudicable, because
+    /// the veto cannot protect a reading the table doesn't offer</summary>
+    private const int GapMinObservations = 1;
 
     /// <summary>UD attesting two readings each above this share (with enough
     /// observations) marks a convention split (ny: DET is lemmatized ny 185x
