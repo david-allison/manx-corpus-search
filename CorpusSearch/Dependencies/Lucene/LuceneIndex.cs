@@ -48,6 +48,11 @@ public class LuceneIndex(IndexWriter indexWriter)
     /// <see cref="GetTermFrequencyList"/>) read this field, so untranslated rows and speaker
     /// codes don't count as Manx. Term frequencies only.</summary>
     public const string DOCUMENT_MANX_GV = "manx_gv";
+    /// <summary><see cref="DOCUMENT_NORMALIZED_MANX"/> with candidate lemma ids injected at
+    /// each token's position (<see cref="LemmaTokenFilter"/>): a query on manx_lemma:aase.v
+    /// matches 'daase' and highlights it, via the preserved surface offsets. Only fed for
+    /// Manx lines, so lemma statistics stay clean. Queried and highlighted, never read back.</summary>
+    public const string DOCUMENT_LEMMA_MANX = "manx_lemma";
 
     public const string SUBTITLE_START = "subtitle_start";
     public const string SUBTITLE_END = "subtitle_end";
@@ -55,7 +60,11 @@ public class LuceneIndex(IndexWriter indexWriter)
     /// <summary>Whether the field preserves case (so its analyzer must not case-fold)</summary>
     internal static bool IsCasedField(string field) => field is DOCUMENT_CASED_MANX or DOCUMENT_CASED_ENGLISH;
 
-    private static bool IsManxField(string field) => field is DOCUMENT_NORMALIZED_MANX or DOCUMENT_CASED_MANX;
+    /// <summary>Whether the field's tokens append candidate lemma ids (<see cref="LemmaTokenFilter"/>)</summary>
+    internal static bool IsLemmaField(string field) => field is DOCUMENT_LEMMA_MANX;
+
+    private static bool IsManxField(string field) =>
+        field is DOCUMENT_NORMALIZED_MANX or DOCUMENT_CASED_MANX or DOCUMENT_LEMMA_MANX;
 
     private static bool IsEnglishField(string field) => field is DOCUMENT_NORMALIZED_ENGLISH or DOCUMENT_CASED_ENGLISH;
 
@@ -136,10 +145,12 @@ public class LuceneIndex(IndexWriter indexWriter)
             AddField(DOCUMENT_SPEAKER, line.Speaker);
 
             // non-Manx lines stay searchable (the manx field above), but only Manx lines
-            // feed the Manx statistics
+            // feed the Manx statistics and the lemma field
             if (line.IsManxLanguage)
             {
                 doc.Add(new Field(DOCUMENT_MANX_GV, line.NormalizedManx, statsFieldType));
+                // same text as the manx field: the analyzer injects the lemma ids
+                doc.Add(new Field(DOCUMENT_LEMMA_MANX, line.NormalizedManx, casedFieldType));
             }
             else
             {
