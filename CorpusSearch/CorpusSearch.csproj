@@ -60,8 +60,10 @@
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <!-- The lemma table, pinned by the external/manx-lemma-data submodule
-    (inside the project so it reaches the Docker build context);
-    published as Resources/cregeen.tsv -->
+    (inside the project so it reaches the Docker build context); published as
+    Resources/cregeen.tsv. The pin is what dev/tests run against and what the
+    image boots with as a fallback: production overwrites it with the repo's
+    HEAD on container start (tools/init.sh) -->
     <Content Include="external\manx-lemma-data\cregeen.tsv">
         <Link>Resources\cregeen.tsv</Link>
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

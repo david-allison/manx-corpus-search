@@ -173,6 +173,7 @@ flowchart TD
         code[manx-corpus-search<br/>code + image]
         data1[manx-search-data<br/>primary corpus]
         data2[Manx-Language-Toolkit/<br/>corpus-search-data-private]
+        data3[manx-lemma-data<br/>lemma table]
         dict1[cregeen-manx-dictionary-data<br/>release artifact]
         dict2[kelly-m2e-manx-dictionary-data<br/>release artifact]
     end
@@ -183,6 +184,7 @@ flowchart TD
     code -. image pull .-> container
     data1 -. git clone on start .-> container
     data2 -. git clone on start .-> container
+    data3 -. git clone on start .-> container
     dict1 -. download on start .-> container
     dict2 -. download on start .-> container
     user -. subscribes .-> mailjet
@@ -195,6 +197,8 @@ flowchart TD
   - https://github.com/Manx-Language-Toolkit/corpus-search-data-private
   - https://github.com/david-allison/cregeen-manx-dictionary-data
   - https://github.com/david-allison/kelly-m2e-manx-dictionary-data
+  - https://github.com/david-allison/manx-lemma-data (lemma table; also pinned
+    as a git submodule for development, tests and the boot fallback)
 
 
 ### Corpus data structure
@@ -210,15 +214,17 @@ These dictionary repos are runtime dependencies and should transfer alongside th
 
 ### Container startup
 
-The image does not bundle data. The entrypoint script (`CorpusSearch/tools/init.sh`) runs on each container start:
+The image does not bundle data (except a fallback copy of the lemma table).
+The entrypoint script (`CorpusSearch/tools/init.sh`) runs on each container start:
 
 1. Clones or pulls `manx-search-data`.
 2. Clones or pulls `corpus-search-data-private` from the `Manx-Language-Toolkit` GitHub org.
 3. Downloads the Cregeen and Kelly Manx-English dictionaries from GitHub release artifacts.
-4. Starts the .NET search service.
+4. Clones or pulls `manx-lemma-data` (the lemma table behind lemma-aware search).
+5. Starts the .NET search service.
 
 All sources are public. Self-hosters get the same corpus the live service has. The service is not airgap-friendly without modification.
 
 ### Update propagation
 
-The droplet container restarts daily. Because the entrypoint re-clones the data repositories on each start, changes merged to either repository appear on the live site within 24 hours with no manual action.
+The droplet container restarts daily. Because the entrypoint re-clones the data repositories on each start, changes merged to any of the data repositories appear on the live site within 24 hours with no manual action.

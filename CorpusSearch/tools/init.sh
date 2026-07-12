@@ -20,6 +20,12 @@ cd /var/corpus-search/dictionaries
 echo "Copying dictionaries to /Resources"
 cp * /app/Resources
 
+# setup the lemma table: prod tracks manx-lemma-data HEAD (the daily restart
+# picks up merges); the image's baked copy remains as the fallback
+cd /var/corpus-search/lemma-data
+if cd manx-lemma-data; then git pull; else git clone https://github.com/david-allison/manx-lemma-data.git ; fi
+cp /var/corpus-search/lemma-data/manx-lemma-data/cregeen.tsv /app/Resources
+
 
 # do better here
 rm -rf /app/OpenData/{*,.*}
