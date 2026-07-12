@@ -18,6 +18,9 @@ export type SearchWorkResult = {
     subStart?: number
     subEnd?: number
     speaker?: string
+    /** The line's language when its Manx column is not Manx, e.g. "en" for an
+     * untranslated row. Absent on Manx lines */
+    language?: string
     /** Ranges of `manx` which matched. Absent unless Manx was searched */
     manxHighlights?: HighlightRange[]
     /** Ranges of `english` which matched. Absent unless English was searched */

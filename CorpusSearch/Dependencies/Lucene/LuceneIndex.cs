@@ -40,6 +40,14 @@ public class LuceneIndex(IndexWriter indexWriter)
     public const string DOCUMENT_CREATED_START = "created_start";
     public const string DOCUMENT_CREATED_END = "created_end";
     public const string DOCUMENT_SPEAKER = "speaker";
+    /// <summary>The line's language when the Manx column is not Manx (e.g. "en" for an
+    /// untranslated row); absent on Manx lines. Not queried yet: ready for a search filter.</summary>
+    public const string DOCUMENT_LANGUAGE = "language";
+    /// <summary><see cref="DOCUMENT_NORMALIZED_MANX"/> restricted to lines whose Manx column
+    /// is really Manx: Manx-language statistics (<see cref="CountManxTerms"/>,
+    /// <see cref="GetTermFrequencyList"/>) read this field, so untranslated rows and speaker
+    /// codes don't count as Manx. Term frequencies only.</summary>
+    public const string DOCUMENT_MANX_GV = "manx_gv";
 
     public const string SUBTITLE_START = "subtitle_start";
     public const string SUBTITLE_END = "subtitle_end";
@@ -94,6 +102,12 @@ public class LuceneIndex(IndexWriter indexWriter)
             StoreTermVectorOffsets = true
         };
 
+        // the statistics field only sums term frequencies: no positions, vectors or storage
+        var statsFieldType = new FieldType(TextField.TYPE_NOT_STORED)
+        {
+            IndexOptions = IndexOptions.DOCS_AND_FREQS,
+        };
+
         foreach (var line in data)
         {
             var doc = new Document
@@ -120,6 +134,17 @@ public class LuceneIndex(IndexWriter indexWriter)
             AddField(DOCUMENT_NOTES, line.Notes);
             AddField(DOCUMENT_PAGE, line.Page.ToString());
             AddField(DOCUMENT_SPEAKER, line.Speaker);
+
+            // non-Manx lines stay searchable (the manx field above), but only Manx lines
+            // feed the Manx statistics
+            if (line.IsManxLanguage)
+            {
+                doc.Add(new Field(DOCUMENT_MANX_GV, line.NormalizedManx, statsFieldType));
+            }
+            else
+            {
+                AddField(DOCUMENT_LANGUAGE, line.Language);
+            }
 
             line.SubStart?.Let(start => doc.Add(new DoubleField(SUBTITLE_START, start, Field.Store.YES)));
             line.SubEnd?.Let(end => doc.Add(new DoubleField(SUBTITLE_END, end, Field.Store.YES)));
@@ -225,6 +250,7 @@ public class LuceneIndex(IndexWriter indexWriter)
                 SubStart = getTranscriptData ? document.GetField(SUBTITLE_START)?.GetDoubleValue() : null,
                 SubEnd = getTranscriptData ? document.GetField(SUBTITLE_END)?.GetDoubleValue() : null,
                 Speaker = getTranscriptData ? document.GetField(DOCUMENT_SPEAKER)?.GetStringValue() : null,
+                Language = document.GetField(DOCUMENT_LANGUAGE)?.GetStringValue(),
                 MatchesInLine = countInDoc
             };
         // document order: docID order is merge-dependent, so it cannot be relied on (#303)
@@ -527,7 +553,8 @@ public class LuceneIndex(IndexWriter indexWriter)
     {
         var fieldsToLoad = new HashSet<string> { DOCUMENT_REAL_MANX, DOCUMENT_REAL_ENGLISH, DOCUMENT_NOTES,
             DOCUMENT_PAGE,
-            DOCUMENT_LINE_NUMBER, DOCUMENT_ORIGINAL_MANX, DOCUMENT_ORIGINAL_ENGLISH };
+            DOCUMENT_LINE_NUMBER, DOCUMENT_ORIGINAL_MANX, DOCUMENT_ORIGINAL_ENGLISH,
+            DOCUMENT_LANGUAGE };
         if (getTranscript)
         {
             fieldsToLoad.Add(SUBTITLE_END);
@@ -549,14 +576,15 @@ public class LuceneIndex(IndexWriter indexWriter)
         EnglishOriginal = document.GetField(DOCUMENT_ORIGINAL_ENGLISH)?.GetStringValue(),
         SubStart = getTranscript ? document.GetField(SUBTITLE_START)?.GetDoubleValue() : null,
         SubEnd = getTranscript ? document.GetField(SUBTITLE_END)?.GetDoubleValue() : null,
-        Speaker = getTranscript ? document.GetField(DOCUMENT_SPEAKER)?.GetStringValue() : null
+        Speaker = getTranscript ? document.GetField(DOCUMENT_SPEAKER)?.GetStringValue() : null,
+        Language = document.GetField(DOCUMENT_LANGUAGE)?.GetStringValue()
     };
 
     public long CountManxTerms()
     {
         using var reader = UseReader();
         // the total occurrence count of all terms is a stored index statistic
-        var terms = MultiFields.GetTerms(reader, DOCUMENT_NORMALIZED_MANX);
+        var terms = MultiFields.GetTerms(reader, DOCUMENT_MANX_GV);
         return terms == null ? 0 : Math.Max(0, terms.SumTotalTermFreq);
     }
         
@@ -589,7 +617,7 @@ public class LuceneIndex(IndexWriter indexWriter)
         var termList = new List<(string, long)>();
 
         using var reader = UseReader();
-        var terms = MultiFields.GetTerms(reader, DOCUMENT_NORMALIZED_MANX);
+        var terms = MultiFields.GetTerms(reader, DOCUMENT_MANX_GV);
         if (terms == null)
         {
             // no documents were loaded: don't crash on startup
