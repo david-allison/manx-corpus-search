@@ -24,8 +24,21 @@ public class DocumentLine
 
     /// <summary>The name of the speaker in a transcription. Nullable</summary>
     public string? Speaker { get; set; }
-        
+
     public long? MatchesInLine { get; set; }
+
+    /// <summary>The language of the Manx column: "gv" unless the row is untranslated
+    /// English/Latin/mixed matter. Read from the sparse `ManxColumnLanguage` CSV column;
+    /// at load time the collection default (the manifest field of the same name, else
+    /// "gv") replaces an absent value.</summary>
+    public string? Language { get; set; }
+
+    /// <summary>Value of <see cref="Language"/> meaning the Manx column is really Manx</summary>
+    public const string ManxLanguageCode = "gv";
+
+    /// <summary>Whether the Manx column is Manx, so its tokens belong in Manx-language statistics</summary>
+    [JsonIgnore]
+    public bool IsManxLanguage => Language is null or ManxLanguageCode;
 
     [JsonIgnore]
     // TODO: NBSP?
