@@ -249,7 +249,7 @@ public class LuceneIndex(IndexWriter indexWriter)
                 EnglishOriginal = document.GetField(DOCUMENT_ORIGINAL_ENGLISH)?.GetStringValue(),
                 SubStart = getTranscriptData ? document.GetField(SUBTITLE_START)?.GetDoubleValue() : null,
                 SubEnd = getTranscriptData ? document.GetField(SUBTITLE_END)?.GetDoubleValue() : null,
-                Speaker = getTranscriptData ? document.GetField(DOCUMENT_SPEAKER)?.GetStringValue() : null,
+                Speaker = document.GetField(DOCUMENT_SPEAKER)?.GetStringValue(),
                 Language = document.GetField(DOCUMENT_LANGUAGE)?.GetStringValue(),
                 MatchesInLine = countInDoc
             };
@@ -554,12 +554,11 @@ public class LuceneIndex(IndexWriter indexWriter)
         var fieldsToLoad = new HashSet<string> { DOCUMENT_REAL_MANX, DOCUMENT_REAL_ENGLISH, DOCUMENT_NOTES,
             DOCUMENT_PAGE,
             DOCUMENT_LINE_NUMBER, DOCUMENT_ORIGINAL_MANX, DOCUMENT_ORIGINAL_ENGLISH,
-            DOCUMENT_LANGUAGE };
+            DOCUMENT_SPEAKER, DOCUMENT_LANGUAGE };
         if (getTranscript)
         {
             fieldsToLoad.Add(SUBTITLE_END);
             fieldsToLoad.Add(SUBTITLE_START);
-            fieldsToLoad.Add(DOCUMENT_SPEAKER);
         }
 
         return fieldsToLoad;
@@ -576,7 +575,7 @@ public class LuceneIndex(IndexWriter indexWriter)
         EnglishOriginal = document.GetField(DOCUMENT_ORIGINAL_ENGLISH)?.GetStringValue(),
         SubStart = getTranscript ? document.GetField(SUBTITLE_START)?.GetDoubleValue() : null,
         SubEnd = getTranscript ? document.GetField(SUBTITLE_END)?.GetDoubleValue() : null,
-        Speaker = getTranscript ? document.GetField(DOCUMENT_SPEAKER)?.GetStringValue() : null,
+        Speaker = document.GetField(DOCUMENT_SPEAKER)?.GetStringValue(),
         Language = document.GetField(DOCUMENT_LANGUAGE)?.GetStringValue()
     };
 
