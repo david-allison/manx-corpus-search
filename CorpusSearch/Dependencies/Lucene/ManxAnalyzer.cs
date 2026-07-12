@@ -17,6 +17,11 @@ public class ManxAnalyzer : Analyzer
         bool preserveCase = LuceneIndex.IsCasedField(fieldName);
         Tokenizer tokenizer = new ManxTokenizer(LuceneVersion.LUCENE_48, reader, preserveCase);
 
-        return new TokenStreamComponents(tokenizer, new ManxTokenFilter(tokenizer, preserveCase));
+        TokenStream filter = new ManxTokenFilter(tokenizer, preserveCase);
+        if (LuceneIndex.IsLemmaField(fieldName))
+        {
+            filter = new LemmaTokenFilter(filter, LemmaTable.Instance);
+        }
+        return new TokenStreamComponents(tokenizer, filter);
     }
 }
