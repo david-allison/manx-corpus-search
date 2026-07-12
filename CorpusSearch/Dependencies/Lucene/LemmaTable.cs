@@ -14,15 +14,18 @@ namespace CorpusSearch.Dependencies.Lucene;
 public class LemmaTable
 {
     private readonly Dictionary<string, string[]> candidatesByForm;
+    private readonly Dictionary<string, string[]> displayLemmasByForm;
     private readonly HashSet<string> lemmaIds;
 
     // read once, shared by the index-time analyzer and the query path
     private static readonly Lazy<LemmaTable> Lazy = new(LoadVendored);
     public static LemmaTable Instance => Lazy.Value;
 
-    private LemmaTable(Dictionary<string, string[]> candidatesByForm, HashSet<string> lemmaIds)
+    private LemmaTable(Dictionary<string, string[]> candidatesByForm,
+        Dictionary<string, string[]> displayLemmasByForm, HashSet<string> lemmaIds)
     {
         this.candidatesByForm = candidatesByForm;
+        this.displayLemmasByForm = displayLemmasByForm;
         this.lemmaIds = lemmaIds;
     }
 
@@ -37,6 +40,13 @@ public class LemmaTable
     /// <summary>Whether <paramref name="value"/> is a lemma id itself ("aase.v"): a query
     /// for one skips form resolution</summary>
     public bool IsLemmaId(string value) => lemmaIds.Contains(value);
+
+    /// <summary>The display lemmas of <paramref name="form"/> ("daase" -> "aase"): the
+    /// radical, particle-free headwords a reader would look up in a dictionary</summary>
+    public IReadOnlyList<string> DisplayLemmasFor(string form)
+    {
+        return displayLemmasByForm.TryGetValue(NormalizeForm(form), out var lemmas) ? lemmas : [];
+    }
 
     private static readonly char[] TrimChars = [' ', '.', ',', ';', ':', '\''];
 
@@ -106,35 +116,44 @@ public class LemmaTable
     public static LemmaTable Load(TextReader reader)
     {
         var listsByForm = new Dictionary<string, List<string>>();
+        var displayListsByForm = new Dictionary<string, List<string>>();
         var lemmaIds = new HashSet<string>();
 
         reader.ReadLine(); // header
         while (reader.ReadLine() is { } line)
         {
             var columns = line.Split('\t');
-            if (columns.Length < 2 || columns[0].Length == 0)
+            if (columns.Length < 3 || columns[0].Length == 0)
             {
                 continue;
             }
-            var (form, lemmaId) = (columns[0], columns[1]);
+            var (form, lemmaId, displayLemma) = (columns[0], columns[1], columns[2]);
             lemmaIds.Add(lemmaId);
             if (!listsByForm.TryGetValue(form, out var candidates))
             {
                 listsByForm[form] = candidates = [];
+                displayListsByForm[form] = [];
             }
             // homographs repeat the (form, lemmaId) pair across rows: one candidate each
             if (!candidates.Contains(lemmaId))
             {
                 candidates.Add(lemmaId);
             }
+            var displays = displayListsByForm[form];
+            if (!displays.Contains(displayLemma))
+            {
+                displays.Add(displayLemma);
+            }
         }
 
         var candidatesByForm = new Dictionary<string, string[]>(listsByForm.Count);
+        var displayLemmasByForm = new Dictionary<string, string[]>(displayListsByForm.Count);
         foreach (var (form, candidates) in listsByForm)
         {
             candidatesByForm[form] = [.. candidates];
+            displayLemmasByForm[form] = [.. displayListsByForm[form]];
         }
-        return new LemmaTable(candidatesByForm, lemmaIds);
+        return new LemmaTable(candidatesByForm, displayLemmasByForm, lemmaIds);
     }
 
     private static LemmaTable LoadVendored()
@@ -145,7 +164,7 @@ public class LemmaTable
             // a broken checkout shouldn't take the whole server down: lemma
             // search just finds nothing
             Serilog.Log.Warning("{Path} not found: lemma search disabled", path);
-            return new LemmaTable([], []);
+            return new LemmaTable([], [], []);
         }
         using var reader = new StreamReader(path);
         return Load(reader);

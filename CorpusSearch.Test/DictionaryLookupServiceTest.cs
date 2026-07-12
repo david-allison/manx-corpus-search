@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using CorpusSearch.Dependencies.Lucene;
 using CorpusSearch.Service;
 using NUnit.Framework;
 
@@ -8,9 +10,11 @@ namespace CorpusSearch.Test;
 
 public class DictionaryLookupServiceTest
 {
+    private static readonly LemmaTable NoLemmas = LemmaTable.Load(new StringReader("form\tlemmaId\tlemma\n"));
+
     private static DictionaryLookupService Service(params string[] words)
     {
-        return new DictionaryLookupService([new FakeDictionary(words)]);
+        return new DictionaryLookupService([new FakeDictionary(words)], NoLemmas);
     }
 
     private static List<string> Lookup(DictionaryLookupService service, string selection, string? context = null)
@@ -163,7 +167,7 @@ public class DictionaryLookupServiceTest
     [Test]
     public void EntriesHeadedByTheQueryAreReturnedFirst()
     {
-        var service = new DictionaryLookupService([new FakeDictionary(["EEN", "YN"], ["YN"])]);
+        var service = new DictionaryLookupService([new FakeDictionary(["EEN", "YN"], ["YN"])], NoLemmas);
         Assert.That(Lookup(service, "yn"), Is.EqualTo(new[] { "YN", "EEN" }));
     }
 
@@ -171,7 +175,7 @@ public class DictionaryLookupServiceTest
     public void PhrasesFromTheContextStillOutrankTheHeadedEntry()
     {
         // specificity wins over the headword: the phrase match is more useful than the exact entry
-        var service = new DictionaryLookupService([new FakeDictionary(["goll mygeayrt"], ["goll", "gholl"])]);
+        var service = new DictionaryLookupService([new FakeDictionary(["goll mygeayrt"], ["goll", "gholl"])], NoLemmas);
         var result = Lookup(service, "goll", context: "v'eh goll mygeayrt y valley");
         Assert.That(result, Is.EqualTo(new[] { "goll mygeayrt", "goll" }));
     }
@@ -180,11 +184,11 @@ public class DictionaryLookupServiceTest
     public void DuplicateMatchesAreRemoved()
     {
         // one entry known under both forms: both hyphen variants of the query resolve to it
-        var service = new DictionaryLookupService([new FakeDictionary(new Dictionary<string, string>
+        var service = new DictionaryLookupService(dictionaryServices: [new FakeDictionary(new Dictionary<string, string>
         {
             ["goll-mygeayrt"] = "goll mygeayrt",
             ["goll mygeayrt"] = "goll mygeayrt",
-        })]);
+        })], lemmaTable: NoLemmas);
         Assert.That(Lookup(service, "goll-mygeayrt"), Is.EqualTo(new[] { "goll mygeayrt" }));
     }
 
@@ -193,6 +197,31 @@ public class DictionaryLookupServiceTest
     {
         var service = Service("goll");
         Assert.That(Lookup(service, " ", context: "goll mygeayrt"), Is.Empty);
+    }
+
+    private static LemmaTable Lemmas(params (string Form, string Lemma)[] rows)
+    {
+        var tsv = "form\tlemmaId\tlemma\n" + string.Join("\n", rows.Select(r => $"{r.Form}\t{r.Lemma}.x\t{r.Lemma}"));
+        return LemmaTable.Load(new StringReader(tsv));
+    }
+
+    [Test]
+    public void AnInflectedSelectionOffersItsRoot()
+    {
+        // 'daase' has no entry of its own: the reader gets the root's entry
+        var service = new DictionaryLookupService([new FakeDictionary(["aase"])],
+            Lemmas(("daase", "aase")));
+
+        Assert.That(Lookup(service, "daase"), Is.EqualTo(new[] { "aase" }));
+    }
+
+    [Test]
+    public void TheExactEntryStaysAheadOfTheRoot()
+    {
+        var service = new DictionaryLookupService([new FakeDictionary(["daase", "aase"])],
+            Lemmas(("daase", "aase")));
+
+        Assert.That(Lookup(service, "daase"), Is.EqualTo(new[] { "daase", "aase" }));
     }
 
     /// <summary>The popup labels each entry with the dictionary it came from (#51)</summary>

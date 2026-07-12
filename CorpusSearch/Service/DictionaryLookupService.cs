@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using CorpusSearch.Dependencies.Lucene;
 
 namespace CorpusSearch.Service;
 
@@ -10,7 +11,7 @@ namespace CorpusSearch.Service;
 /// The selection alone is often not enough (#135): the surrounding text lets us expand a word to a
 /// known phrase/idiom, and a compound such as 'goll-mygeayrt' can be broken into its parts.
 /// </summary>
-public class DictionaryLookupService(IEnumerable<ISearchDictionary> dictionaryServices)
+public class DictionaryLookupService(IEnumerable<ISearchDictionary> dictionaryServices, LemmaTable lemmaTable)
 {
     /// <summary>The longest dictionary phrase (in words) we attempt to match around a selection</summary>
     private const int MaxPhraseWords = 4;
@@ -43,7 +44,16 @@ public class DictionaryLookupService(IEnumerable<ISearchDictionary> dictionarySe
                     .OrderBy(x => string.Equals(x.PrimaryWord, query, StringComparison.InvariantCultureIgnoreCase) ? 0 : 1))
                 .ToList();
 
-        var results = GetSummaries(GetCandidates(selection, context));
+        var candidates = GetCandidates(selection, context);
+        if (lang == "gv")
+        {
+            // the roots of an inflected/mutated selection ('daase' -> 'aase') follow
+            // the surface candidates: exact entries stay first, and the reader always
+            // gets the headword a dictionary actually lists
+            candidates.AddRange(lemmaTable.DisplayLemmasFor(selection)
+                .Where(root => !candidates.Contains(root, StringComparer.InvariantCultureIgnoreCase)));
+        }
+        var results = GetSummaries(candidates);
 
         if (results.Count == 0)
         {
