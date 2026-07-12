@@ -292,7 +292,7 @@ public class Startup(IConfiguration configuration)
         {
             try
             {
-                List<DocumentLine> data = document.LoadLocalFile();
+                List<DocumentLine> data = document.LoadPreparedLines();
                 Parallel.ForEach(data.Chunk(linesPerChunk), chunk => searcher.AddDocument(document, chunk));
                 workService.AddWork(document);
             }

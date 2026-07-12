@@ -39,6 +39,13 @@ public abstract class Document : IDocument
 
     public string? Source { get; set; }
 
+    /// <summary>
+    /// The language of Manx-column cells without a line-level Language value:
+    /// "gv" if absent. A knowingly mixed collection declares "mixed" and relies on
+    /// the line-level column.
+    /// </summary>
+    public string? ManxColumnLanguage { get; set; }
+
     [JsonExtensionData]
     public IDictionary<string, object> ExtensionData { get; set; } = new Dictionary<string, object>();
 
@@ -50,5 +57,14 @@ public abstract class Document : IDocument
     internal virtual List<DocumentLine> LoadLocalFile()
     {
         return CsvHelperUtils.LoadCsv(Startup.GetLocalFile("Resources", CsvFileName));
+    }
+
+    /// <summary>The document's lines, with each line's effective language resolved
+    /// (see <see cref="DocumentLinePreparer"/>)</summary>
+    internal List<DocumentLine> LoadPreparedLines()
+    {
+        var lines = LoadLocalFile();
+        DocumentLinePreparer.Prepare(this, lines);
+        return lines;
     }
 }
