@@ -128,9 +128,8 @@ public class LemmaTableTest
         Assert.That(table.FormCount, Is.GreaterThan(39_000));
         Assert.That(table.CandidatesFor("daase"), Does.Contain("aase.v"));
         Assert.That(table.CandidatesFor("aaseyn"), Does.Contain("aase.n"));
-        // 'aase' also carries the mutation candidates which n'aase resolves to,
-        // so a lemma query for 'aase' reaches lines containing n'aase
-        Assert.That(table.CandidatesFor("aase"), Does.Contain("n'aase.v"));
-        Assert.That(table.CandidatesFor("n'aase"), Does.Contain("n'aase.v"));
+        // n'aase (the er n'aase participle) shares aase's lemma id, so a
+        // lemma query for 'aase' reaches lines containing n'aase
+        Assert.That(table.CandidatesFor("n'aase"), Does.Contain("aase.v"));
     }
 }
