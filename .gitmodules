@@ -1,3 +1,6 @@
 [submodule "CorpusSearch/external/manx-lemma-data"]
 	path = CorpusSearch/external/manx-lemma-data
 	url = https://github.com/david-allison/manx-lemma-data.git
+[submodule "CorpusSearch.Test/external/UD_Manx-Cadhan"]
+	path = CorpusSearch.Test/external/UD_Manx-Cadhan
+	url = https://github.com/UniversalDependencies/UD_Manx-Cadhan.git

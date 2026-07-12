@@ -77,6 +77,48 @@ public class LemmaTableTest
         Assert.That(table.IsLemmaId("aase"), Is.False);
     }
 
+    [TestCase("t'ayn", "ta")]
+    [TestCase("v'ayn", "va")]
+    public void BeeCliticContractionCombinesItsParts(string form, string beeForm)
+    {
+        var table = Table(
+            $"{beeForm}\tbee.v\tbee\tinflected\tv.\t{beeForm}\t",
+            "ayn\tayn.x\tayn\tself\tx\tayn\t");
+
+        Assert.That(table.CliticCandidatesFor(form), Is.EqualTo(new[] { "bee.v", "ayn.x" }));
+        Assert.That(table.CliticDisplayLemmasFor(form), Is.EqualTo(new[] { "bee", "ayn" }));
+    }
+
+    [Test]
+    public void ArticleCliticContractionCombinesItsParts()
+    {
+        var table = Table(
+            "shoh\tshoh.x\tshoh\tself\tx\tshoh\t",
+            "yn\tyn.d\tyn\tself\td\tyn\t");
+
+        Assert.That(table.CliticCandidatesFor("shoh'n"), Is.EqualTo(new[] { "shoh.x", "yn.d" }));
+    }
+
+    [Test]
+    public void CliticLookupNormalizesItsInput()
+    {
+        var table = Table(
+            "ta\tbee.v\tbee\tinflected\tv.\tta\t",
+            "ayn\tayn.x\tayn\tself\tx\tayn\t");
+
+        // curly apostrophe and case are normalized before the pattern match
+        Assert.That(table.CliticCandidatesFor("T’ayn"), Is.EqualTo(new[] { "bee.v", "ayn.x" }));
+    }
+
+    [Test]
+    public void NonCliticFormsHaveNoCliticCandidates()
+    {
+        var table = Table("ta\tbee.v\tbee\tinflected\tv.\tta\t");
+
+        Assert.That(table.CliticCandidatesFor("aase"), Is.Empty);
+        Assert.That(table.CliticCandidatesFor("ta"), Is.Empty); // no clitic pattern: direct lookup's job
+    }
+
     /// <summary>The vendored table loads and covers the acceptance forms</summary>
     [Test]
     public void VendoredTableLoads()

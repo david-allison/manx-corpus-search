@@ -49,6 +49,48 @@ public class LemmaTable
         return displayLemmasByForm.TryGetValue(NormalizeForm(form), out var lemmas) ? lemmas : [];
     }
 
+    /// <summary>
+    /// The candidate ids of a form read as a productive clitic contraction:
+    /// `t'X`/`v'X` are present-/past-of-'bee' + X, `X'n` is X + the article 'yn'.
+    /// The fallback for forms the table doesn't cover directly — callers give a
+    /// direct table row precedence.
+    /// </summary>
+    public IReadOnlyList<string> CliticCandidatesFor(string form)
+    {
+        return CliticLookup(form, CandidatesFor);
+    }
+
+    /// <summary>The display lemmas of a clitic contraction's parts
+    /// (see <see cref="CliticCandidatesFor"/>)</summary>
+    public IReadOnlyList<string> CliticDisplayLemmasFor(string form)
+    {
+        return CliticLookup(form, DisplayLemmasFor);
+    }
+
+    private static IReadOnlyList<string> CliticLookup(string form, Func<string, IReadOnlyList<string>> lookup)
+    {
+        var combined = new List<string>();
+        foreach (var part in CliticParts(NormalizeForm(form)) ?? [])
+        {
+            foreach (var value in lookup(part))
+            {
+                if (!combined.Contains(value))
+                {
+                    combined.Add(value);
+                }
+            }
+        }
+        return combined;
+    }
+
+    private static string[]? CliticParts(string form)
+    {
+        if (form.Length > 2 && form.StartsWith("t'")) return ["ta", form[2..]];
+        if (form.Length > 2 && form.StartsWith("v'")) return ["va", form[2..]];
+        if (form.Length > 2 && form.EndsWith("'n")) return [form[..^2], "yn"];
+        return null;
+    }
+
     private static readonly char[] TrimChars = [' ', '.', ',', ';', ':', '\''];
 
     /// <summary>
