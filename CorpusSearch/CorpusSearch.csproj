@@ -59,6 +59,9 @@
     <Content Include="Resources\*.csv">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="Resources\cregeen.tsv">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
 </ItemGroup>
 
   <!-- Files copied in from a public GitHub -->
