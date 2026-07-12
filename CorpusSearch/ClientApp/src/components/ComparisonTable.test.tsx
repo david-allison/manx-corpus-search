@@ -525,7 +525,9 @@ describe("dictionary popup (#51)", () => {
 
         await screen.findByText(/to go/)
         expect(screen.getAllByText("Cregeen")).toHaveLength(1)
-        expect(document.querySelectorAll(".dict-popup-entry")).toHaveLength(2)
+        // neither mocked headword heads the clicked word, so both render as
+        // derived entries beneath a bare anchor line for the selection: 2 + 1
+        expect(document.querySelectorAll(".dict-popup-entry")).toHaveLength(3)
     })
 
     it("reports when no dictionary defines the word", async () => {

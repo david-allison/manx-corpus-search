@@ -141,17 +141,43 @@ export const DictionaryLookupModal = (props: DictionaryLookupState) => {
 
                     {summaries != null &&
                         groupByDictionary(summaries).map(
-                            ([dictionaryName, entries]) => (
-                                <div
-                                    className="dict-popup-group"
-                                    key={dictionaryName}
-                                >
-                                    <h3 className="dict-popup-dictionary">
-                                        {dictionaryName}
-                                    </h3>
-                                    {entries
-                                        .filter((x) => !x.rootDepth)
-                                        .map((summary, index) => (
+                            ([dictionaryName, entries]) => {
+                                // an entry headed by a variant spelling ('muir'
+                                // matching mooir's entry) or by a root lemma is
+                                // presented as derived from the selection, not
+                                // as an entry for it
+                                const wordLc = word.toLowerCase()
+                                // …in either direction: 'dy yannoo' heads the
+                                // selection 'yannoo'; the part 'goll' heads the
+                                // compound selection 'goll-mygeayrt'
+                                const headsSelection = (p: string) =>
+                                    p.toLowerCase() == wordLc ||
+                                    p
+                                        .toLowerCase()
+                                        .split(/[\s'’-]+/)
+                                        .includes(wordLc) ||
+                                    wordLc
+                                        .split(/[\s'’-]+/)
+                                        .includes(p.toLowerCase())
+                                const own = entries.filter(
+                                    (x) =>
+                                        !x.rootDepth &&
+                                        headsSelection(x.primaryWord),
+                                )
+                                const derived = entries.filter(
+                                    (x) =>
+                                        x.rootDepth > 0 ||
+                                        !headsSelection(x.primaryWord),
+                                )
+                                return (
+                                    <div
+                                        className="dict-popup-group"
+                                        key={dictionaryName}
+                                    >
+                                        <h3 className="dict-popup-dictionary">
+                                            {dictionaryName}
+                                        </h3>
+                                        {own.map((summary, index) => (
                                             // primaryWord differentiates fuzzy matches:
                                             // 'dy hroggal' and 'cha greck' both resolve
                                             // via 'hroggal'/'greck'
@@ -166,18 +192,29 @@ export const DictionaryLookupModal = (props: DictionaryLookupState) => {
                                                 {summary.summary}
                                             </div>
                                         ))}
-                                    {entries
-                                        .filter((x) => x.rootDepth > 0)
-                                        .map((summary, index) => (
+                                        {own.length == 0 &&
+                                            derived.length > 0 && (
+                                                // the selection has no entry of
+                                                // its own: anchor the chain
+                                                <div className="dict-popup-entry">
+                                                    <strong>{word}</strong>
+                                                </div>
+                                            )}
+                                        {derived.map((summary, index) => (
                                             // the selection's root-lemma chain:
                                             // each hop indents one level further
                                             <div
                                                 className="dict-popup-entry dict-popup-root-entry"
                                                 style={{
                                                     marginLeft:
-                                                        14 * summary.rootDepth,
+                                                        20 *
+                                                        Math.max(
+                                                            1,
+                                                            summary.rootDepth ||
+                                                                0,
+                                                        ),
                                                 }}
-                                                key={`root-${index}`}
+                                                key={`derived-${index}`}
                                             >
                                                 <span
                                                     className="dict-popup-root-connector"
@@ -192,8 +229,9 @@ export const DictionaryLookupModal = (props: DictionaryLookupState) => {
                                                 {summary.summary}
                                             </div>
                                         ))}
-                                </div>
-                            ),
+                                    </div>
+                                )
+                            },
                         )}
                     {summaries?.length == 0 && (
                         <span>
