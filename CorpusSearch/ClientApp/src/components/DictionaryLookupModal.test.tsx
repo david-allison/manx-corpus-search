@@ -148,6 +148,30 @@ describe("classifyEntries", () => {
         expect(derived.map((x) => x.primaryWord)).toEqual(["olk"])
     })
 
+    it("drops a hyphenated compound entry the line doesn't contain", () => {
+        // tapping 'magh': 'sheeyney-magh' is a compound sharing the word,
+        // not what the line says - hyphens don't exempt it from the rule
+        const { own, derived } = classifyEntries(
+            "magh",
+            "O Yee, ta liauyragh magh my vea",
+            [entry("magh"), entry("sheeyney-magh")],
+        )
+
+        expect(own.map((x) => x.primaryWord)).toEqual(["magh"])
+        expect(derived).toEqual([])
+    })
+
+    it("a compound entry matches the line across hyphen/space spelling", () => {
+        // the line writes 'sheeyney magh'; Cregeen's headword is hyphenated
+        const { own } = classifyEntries(
+            "magh",
+            "lesh keoied, sheeyney magh e vair dys yn droyn",
+            [entry("magh"), entry("sheeyney-magh")],
+        )
+
+        expect(own.map((x) => x.primaryWord)).toEqual(["magh", "sheeyney-magh"])
+    })
+
     it("keeps the root's phrase entry when the line does contain it", () => {
         const { derived } = classifyEntries(
             "smessey",
