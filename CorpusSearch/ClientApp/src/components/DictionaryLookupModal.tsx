@@ -11,6 +11,57 @@ import { getMultidictLookupWord, MultidictLink } from "./MultidictLink"
 import { getSelectedWordOrPhrase, getWordAtPoint } from "../utils/Selection"
 import "./DictionaryLookupModal.css"
 
+/** Splits a dictionary's entries into those that are entries *for* the
+ * selection (`own`) and those merely reached through it (`derived`: root
+ * lemmas, variant spellings like 'muir' -> mooir, and phrase entries the
+ * tapped line doesn't actually contain, like 'ry gheddyn' when the line
+ * says 'dy gheddyn'). Derived entries nest under the selection. */
+/** Trims punctuation (but never letters/digits, so internal apostrophes and
+ * hyphens survive) from the edges of a tapped word: 'meenid,' -> 'meenid' */
+export const trimPunctuation = (s: string): string =>
+    s.trim().replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, "")
+
+export const classifyEntries = (
+    word: string,
+    context: string,
+    entries: DictionaryResponse,
+): { own: DictionaryResponse; derived: DictionaryResponse } => {
+    const wordLc = trimPunctuation(word.toLowerCase())
+    // an entry heads the selection in either direction: 'dy yannoo' heads the
+    // selection 'yannoo'; the part 'goll' heads the compound 'goll-mygeayrt'
+    const headsSelection = (p: string) =>
+        p.toLowerCase() == wordLc ||
+        p
+            .toLowerCase()
+            .split(/[\s'’-]+/)
+            .includes(wordLc) ||
+        wordLc.split(/[\s'’-]+/).includes(p.toLowerCase())
+    // a phrase entry must also occur in the tapped line (when one is known):
+    // 'ry gheddyn' matches the word 'gheddyn' but is not what the line says
+    const supportedByContext = (p: string) =>
+        !/\s/.test(p) ||
+        p.toLowerCase() == wordLc ||
+        context == "" ||
+        context.toLowerCase().includes(p.toLowerCase())
+    const isOwn = (x: DictionaryResponse[number]) =>
+        !x.rootDepth &&
+        headsSelection(x.primaryWord) &&
+        supportedByContext(x.primaryWord)
+    let own = entries.filter(isOwn)
+    if (own.length == 0) {
+        // nothing heads the selection in-context: an out-of-context phrase
+        // entry ('my yinnagh' for yinnagh) is better shown plainly than as
+        // an orphaned arrow under a definition-less anchor
+        own = entries.filter(
+            (x) => !x.rootDepth && headsSelection(x.primaryWord),
+        )
+    }
+    return {
+        own,
+        derived: entries.filter((x) => !own.includes(x)),
+    }
+}
+
 /** Groups the popup's entries under the dictionary defining them (#51) */
 export const groupByDictionary = (
     summaries: DictionaryResponse,
@@ -64,12 +115,18 @@ export const useDictionaryLookup = (): {
             return
         }
 
-        // remove notes/citations '[1]' at the end of the string
-        const stringToSearch = wordOrPhrase.replace(/\[\d+]/g, " ")
+        // remove notes/citations '[1]' at the end of the string, and the
+        // line's punctuation around the tap ('meenid,' -> 'meenid')
+        const stringToSearch = trimPunctuation(
+            wordOrPhrase.replace(/\[\d+]/g, " "),
+        )
+        if (stringToSearch == "") {
+            return
+        }
 
         setOpen(true)
         openedAt.current = performance.now()
-        setWord(stringToSearch.trim())
+        setWord(stringToSearch)
         setContext(lineContext)
     }
 
@@ -142,32 +199,10 @@ export const DictionaryLookupModal = (props: DictionaryLookupState) => {
                     {summaries != null &&
                         groupByDictionary(summaries).map(
                             ([dictionaryName, entries]) => {
-                                // an entry headed by a variant spelling ('muir'
-                                // matching mooir's entry) or by a root lemma is
-                                // presented as derived from the selection, not
-                                // as an entry for it
-                                const wordLc = word.toLowerCase()
-                                // …in either direction: 'dy yannoo' heads the
-                                // selection 'yannoo'; the part 'goll' heads the
-                                // compound selection 'goll-mygeayrt'
-                                const headsSelection = (p: string) =>
-                                    p.toLowerCase() == wordLc ||
-                                    p
-                                        .toLowerCase()
-                                        .split(/[\s'’-]+/)
-                                        .includes(wordLc) ||
-                                    wordLc
-                                        .split(/[\s'’-]+/)
-                                        .includes(p.toLowerCase())
-                                const own = entries.filter(
-                                    (x) =>
-                                        !x.rootDepth &&
-                                        headsSelection(x.primaryWord),
-                                )
-                                const derived = entries.filter(
-                                    (x) =>
-                                        x.rootDepth > 0 ||
-                                        !headsSelection(x.primaryWord),
+                                const { own, derived } = classifyEntries(
+                                    word,
+                                    context,
+                                    entries,
                                 )
                                 return (
                                     <div
