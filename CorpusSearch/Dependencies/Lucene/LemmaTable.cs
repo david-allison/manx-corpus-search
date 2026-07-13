@@ -184,50 +184,61 @@ public class LemmaTable
     /// <summary>Reads the TSV (header row; `form` and `lemmaId` are the first columns)</summary>
     public static LemmaTable Load(TextReader reader)
     {
+        return Load([reader]);
+    }
+
+    /// <summary>One table over several TSVs (cregeen.tsv plus the names.tsv supplement):
+    /// candidate sets merge per form, and a repeated (form, lemmaId) pair — a supplement
+    /// bridge entry re-heading a Cregeen name — stays one candidate</summary>
+    public static LemmaTable Load(IEnumerable<TextReader> readers)
+    {
         var listsByForm = new Dictionary<string, List<string>>();
         var displayListsByForm = new Dictionary<string, List<string>>();
         var rootListsByForm = new Dictionary<string, List<string>>();
         var lemmaIds = new HashSet<string>();
         var displayLemmaById = new Dictionary<string, string>();
 
-        reader.ReadLine(); // header
-        while (reader.ReadLine() is { } line)
+        foreach (var reader in readers)
         {
-            var columns = line.Split('\t');
-            if (columns.Length < 3 || columns[0].Length == 0)
+            reader.ReadLine(); // header
+            while (reader.ReadLine() is { } line)
             {
-                continue;
-            }
-            var (form, lemmaId, displayLemma) = (columns[0], columns[1], columns[2]);
-            lemmaIds.Add(lemmaId);
-            displayLemmaById.TryAdd(lemmaId, displayLemma);
-            if (!listsByForm.TryGetValue(form, out var candidates))
-            {
-                listsByForm[form] = candidates = [];
-                displayListsByForm[form] = [];
-            }
-            // homographs repeat the (form, lemmaId) pair across rows: one candidate each
-            if (!candidates.Contains(lemmaId))
-            {
-                candidates.Add(lemmaId);
-            }
-            var displays = displayListsByForm[form];
-            if (!displays.Contains(displayLemma))
-            {
-                displays.Add(displayLemma);
-            }
-            // paradigm links (see RootDisplayLemmasFor): not the form's own entry,
-            // not a demutation guess
-            var linkType = columns.Length > 3 ? columns[3] : "self";
-            if (linkType is not ("self" or "demutated"))
-            {
-                if (!rootListsByForm.TryGetValue(form, out var roots))
+                var columns = line.Split('\t');
+                if (columns.Length < 3 || columns[0].Length == 0)
                 {
-                    rootListsByForm[form] = roots = [];
+                    continue;
                 }
-                if (!roots.Contains(displayLemma))
+                var (form, lemmaId, displayLemma) = (columns[0], columns[1], columns[2]);
+                lemmaIds.Add(lemmaId);
+                displayLemmaById.TryAdd(lemmaId, displayLemma);
+                if (!listsByForm.TryGetValue(form, out var candidates))
                 {
-                    roots.Add(displayLemma);
+                    listsByForm[form] = candidates = [];
+                    displayListsByForm[form] = [];
+                }
+                // homographs repeat the (form, lemmaId) pair across rows: one candidate each
+                if (!candidates.Contains(lemmaId))
+                {
+                    candidates.Add(lemmaId);
+                }
+                var displays = displayListsByForm[form];
+                if (!displays.Contains(displayLemma))
+                {
+                    displays.Add(displayLemma);
+                }
+                // paradigm links (see RootDisplayLemmasFor): not the form's own entry,
+                // not a demutation guess
+                var linkType = columns.Length > 3 ? columns[3] : "self";
+                if (linkType is not ("self" or "demutated"))
+                {
+                    if (!rootListsByForm.TryGetValue(form, out var roots))
+                    {
+                        rootListsByForm[form] = roots = [];
+                    }
+                    if (!roots.Contains(displayLemma))
+                    {
+                        roots.Add(displayLemma);
+                    }
                 }
             }
         }
@@ -259,6 +270,13 @@ public class LemmaTable
             return new LemmaTable([], [], [], [], []);
         }
         using var reader = new StreamReader(path);
-        return Load(reader);
+        // the proper-nouns supplement rides beside the table when vendored
+        var namesPath = Startup.GetLocalFile("Resources", "names.tsv");
+        if (!File.Exists(namesPath))
+        {
+            return Load(reader);
+        }
+        using var names = new StreamReader(namesPath);
+        return Load([reader, names]);
     }
 }

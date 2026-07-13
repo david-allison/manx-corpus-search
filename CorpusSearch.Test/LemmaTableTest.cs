@@ -132,4 +132,30 @@ public class LemmaTableTest
         // lemma query for 'aase' reaches lines containing n'aase
         Assert.That(table.CandidatesFor("n'aase"), Does.Contain("aase.v"));
     }
+
+    /// <summary>The names supplement loads beside the main table: candidates merge
+    /// per form, and a bridge entry repeating a (form, lemmaId) pair stays one
+    /// candidate with the main table's display</summary>
+    [Test]
+    public void ASupplementMergesIntoOneTable()
+    {
+        using var cregeen = new StringReader(
+            "form\tlemmaId\tlemma\tlinkType\n"
+            + "creest\tcreest.n\tCreest\tself\n"
+            + "veg\tveg.x\tveg\tself\n");
+        using var names = new StringReader(
+            "form\tlemmaId\tlemma\tlinkType\tpos\n"
+            + "creest\tcreest.n\tCreest\tself\tnp. personal\n" // bridge: same id
+            + "chreest\tcreest.n\tCreest\tmutation\tnp. personal\n"
+            + "doolish\tdoolish.np\tDoolish\tself\tnp. place\n");
+        var table = LemmaTable.Load([cregeen, names]);
+
+        Assert.That(table.CandidatesFor("creest"), Is.EqualTo(new[] { "creest.n" }));
+        Assert.That(table.CandidatesFor("chreest"), Is.EqualTo(new[] { "creest.n" }));
+        Assert.That(table.DisplayLemmasFor("chreest"), Is.EqualTo(new[] { "Creest" }));
+        // the generated mutation is root-eligible: tapping Chreest offers Creest
+        Assert.That(table.RootDisplayLemmasFor("chreest"), Is.EqualTo(new[] { "Creest" }));
+        Assert.That(table.CandidatesFor("doolish"), Is.EqualTo(new[] { "doolish.np" }));
+        Assert.That(table.CandidatesFor("veg"), Is.EqualTo(new[] { "veg.x" }));
+    }
 }

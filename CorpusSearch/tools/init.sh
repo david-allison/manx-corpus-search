@@ -26,7 +26,7 @@ cd /var/corpus-search/lemma-data
 if cd manx-lemma-data; then git pull; else git clone https://github.com/david-allison/manx-lemma-data.git ; fi
 cp /var/corpus-search/lemma-data/manx-lemma-data/cregeen.tsv /app/Resources
 # the disambiguation layers (LemmaResolver) are optional until adopted upstream
-for f in lemma.overrides.tsv lemma.sidecar.tsv; do
+for f in names.tsv lemma.overrides.tsv lemma.sidecar.tsv; do
     if [ -f "/var/corpus-search/lemma-data/manx-lemma-data/$f" ]; then
         cp "/var/corpus-search/lemma-data/manx-lemma-data/$f" /app/Resources
     fi
