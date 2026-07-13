@@ -46,3 +46,38 @@ export const manxDictionaryLookup = async (
     // TODO: Validation
     return (await response.json()) as DictionaryResponse
 }
+
+/** One token of a line in the dictionary-coverage debug view: how a tap on it
+ * would resolve. "entry" = a dictionary lists the token; "root" = reached
+ * through the lemma table's root chain; "lemma" = the table knows it but no
+ * dictionary documents it; "none" = unknown everywhere. */
+export type TokenCoverage = {
+    start: number
+    length: number
+    status: "entry" | "root" | "lemma" | "none"
+}
+
+/** Per-token dictionary coverage for each line (the dictionary debug mode).
+ * Requests are chunked: the endpoint bounds each call. */
+export const dictionaryCoverage = async (
+    lang: string,
+    lines: string[],
+    signal?: AbortSignal,
+): Promise<TokenCoverage[][]> => {
+    const result: TokenCoverage[][] = []
+    const chunkSize = 300
+    for (let i = 0; i < lines.length; i += chunkSize) {
+        const response = await fetch("api/Dictionary/coverage", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                lang,
+                lines: lines.slice(i, i + chunkSize),
+            }),
+            signal,
+        })
+        const data = (await response.json()) as { lines: TokenCoverage[][] }
+        result.push(...data.lines)
+    }
+    return result
+}
