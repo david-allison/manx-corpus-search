@@ -1,7 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using CorpusSearch.Dependencies.Lucene;
+using Lucene.Net.Analysis.TokenAttributes;
+using Lucene.Net.Util;
 
 namespace CorpusSearch.Service;
 
@@ -80,6 +83,65 @@ public class DictionaryLookupService(IEnumerable<ISearchDictionary> dictionarySe
         }
 
         return Deduplicate(results);
+    }
+
+    /// <summary>
+    /// The dictionary-coverage debug view (#dict-debug): for each line, every
+    /// token with its offsets and how a tap on it would resolve.
+    /// </summary>
+    /// <remarks>
+    /// Statuses, best first: "entry" — a dictionary lists the token itself;
+    /// "root" — no direct entry, but the lemma table's root chain reaches one
+    /// ('daase' -> aase); "lemma" — the lemma table knows the token but no
+    /// dictionary documents any of its lemmas; "none" — unknown everywhere.
+    /// </remarks>
+    public List<List<TokenCoverage>> Coverage(string lang, IReadOnlyList<string> lines)
+    {
+        var dictionaries = dictionaryServices.Where(x => x.QueryLanguages.Contains(lang)).ToList();
+        bool InDictionary(string word) => dictionaries.Any(d => d.ContainsWord(word));
+
+        var result = new List<List<TokenCoverage>>(lines.Count);
+        foreach (var line in lines)
+        {
+            var tokens = new List<TokenCoverage>();
+            var tokenizer = new ManxTokenizer(LuceneVersion.LUCENE_48, new StringReader(line ?? ""));
+            using var stream = new ManxTokenFilter(tokenizer);
+            var term = stream.GetAttribute<ICharTermAttribute>();
+            var offsets = stream.GetAttribute<IOffsetAttribute>();
+            stream.Reset();
+            while (stream.IncrementToken())
+            {
+                var token = term.ToString();
+                string status;
+                if (InDictionary(token))
+                {
+                    status = "entry";
+                }
+                else if (lemmaTable.DisplayLemmasFor(token).Concat(lemmaTable.CliticDisplayLemmasFor(token))
+                         .Any(InDictionary))
+                {
+                    status = "root";
+                }
+                else if (lemmaTable.CandidatesFor(token).Count > 0
+                         || lemmaTable.CliticCandidatesFor(token).Count > 0)
+                {
+                    status = "lemma";
+                }
+                else
+                {
+                    status = "none";
+                }
+                tokens.Add(new TokenCoverage
+                {
+                    Start = offsets.StartOffset,
+                    Length = offsets.EndOffset - offsets.StartOffset,
+                    Status = status,
+                });
+            }
+            stream.End();
+            result.Add(tokens);
+        }
+        return result;
     }
 
     /// <summary>
@@ -184,4 +246,16 @@ public class DictionaryLookupService(IEnumerable<ISearchDictionary> dictionarySe
             .GroupBy(x => (x.PrimaryWord, x.Summary))
             .Select(x => x.First())
             .ToList();
+}
+
+/// <summary>One token of a line in the dictionary-coverage debug view</summary>
+public class TokenCoverage
+{
+    /// <summary>Offset of the token within its line</summary>
+    public int Start { get; set; }
+
+    public int Length { get; set; }
+
+    /// <summary>"entry" | "root" | "lemma" | "none" (see <see cref="DictionaryLookupService.Coverage"/>)</summary>
+    public required string Status { get; set; }
 }

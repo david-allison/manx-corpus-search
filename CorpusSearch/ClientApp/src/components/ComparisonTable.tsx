@@ -12,6 +12,8 @@ import {
 import { isNoteLinked, LineText, NoteToggle } from "./LineText"
 import { ExpanderRow } from "./ExpanderRow"
 import { LineLinkCell } from "./LineLinks"
+import { CoverageText } from "./CoverageText"
+import { TokenCoverage } from "../api/DictionaryApi"
 import "./ComparisonTable.css"
 
 export const ComparisonTable = (props: {
@@ -29,6 +31,9 @@ export const ComparisonTable = (props: {
     /** the "Show notes" option. When off, a note row linked to a "[1]"
      * marker collapses behind it, and the marker reveals it */
     showNotes?: boolean
+    /** dictionary debug mode: per-token coverage keyed by the line's Manx
+     * text; when set, Manx cells render colour-coded tokens instead */
+    dictCoverage?: Map<string, TokenCoverage[]> | null
 }) => {
     const {
         response,
@@ -41,6 +46,7 @@ export const ComparisonTable = (props: {
         docIdent,
         expandContext,
         showNotes,
+        dictCoverage,
     } = props
 
     const dictionary = useDictionaryLookup()
@@ -212,7 +218,16 @@ export const ComparisonTable = (props: {
                                                   ),
                                           }
                                         : undefined
-                                const manxText = (
+                                const lineCoverage =
+                                    line.language == null
+                                        ? dictCoverage?.get(line.manx)
+                                        : undefined
+                                const manxText = lineCoverage ? (
+                                    <CoverageText
+                                        text={line.manx}
+                                        tokens={lineCoverage}
+                                    />
+                                ) : (
                                     <LineText
                                         text={line.manx}
                                         original={line.manxOriginal}

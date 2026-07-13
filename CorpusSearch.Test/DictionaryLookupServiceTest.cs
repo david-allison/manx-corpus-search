@@ -267,6 +267,38 @@ public class DictionaryLookupServiceTest
         Assert.That(Lookup(service, "goll", context: "v'eh goll [1] mygeayrt"), Is.EqualTo(new[] { "goll mygeayrt" }));
     }
 
+    [Test]
+    public void CoverageClassifiesEachToken()
+    {
+        var table = LemmaTable.Load(new StringReader(
+            "form\tlemmaId\tlemma\tlinkType\n"
+            + "daase\taase.v\taase\tinflected\n"
+            + "aase\taase.v\taase\tself\n"
+            + "ghow\tgow.v\tgow\tinflected\n"));
+        var service = new DictionaryLookupService([new FakeDictionary("moddey", "aase")], table);
+
+        var coverage = service.Coverage("gv", ["Moddey, daase ghow xyzzy"]);
+
+        // moddey: its own entry; daase: the root chain reaches aase's entry;
+        // ghow: the table knows it but no dictionary does; xyzzy: unknown
+        Assert.That(coverage[0].Select(x => x.Status),
+            Is.EqualTo(new[] { "entry", "root", "lemma", "none" }));
+        Assert.That(coverage[0].Select(x => (x.Start, x.Length)),
+            Is.EqualTo(new[] { (0, 6), (8, 5), (14, 4), (19, 5) }));
+    }
+
+    [Test]
+    public void CoverageResolvesClitics()
+    {
+        var table = LemmaTable.Load(new StringReader(
+            "form\tlemmaId\tlemma\tlinkType\naase\taase.v\taase\tself\n"));
+        var service = new DictionaryLookupService([new FakeDictionary("aase")], table);
+
+        var coverage = service.Coverage("gv", ["T'aase"]);
+
+        Assert.That(coverage[0].Select(x => x.Status), Is.EqualTo(new[] { "root" }));
+    }
+
     private class FakeDictionary : ISearchDictionary
     {
         private readonly List<(List<string> Words, string PrimaryWord)> entries;
@@ -295,5 +327,8 @@ public class DictionaryLookupServiceTest
                 yield return new DictionarySummary { PrimaryWord = primaryWord, Summary = $"definition of {primaryWord}" };
             }
         }
+
+        public bool ContainsWord(string word) =>
+            entries.Any(e => e.Words.Contains(word, StringComparer.InvariantCultureIgnoreCase));
     }
 }

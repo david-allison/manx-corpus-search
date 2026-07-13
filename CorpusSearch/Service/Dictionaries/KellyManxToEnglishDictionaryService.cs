@@ -81,6 +81,11 @@ public class KellyManxToEnglishDictionaryService(ISet<string> allWords, IList<Ke
         return allWords.Contains(s);
     }
 
+    public bool ContainsWord(string word)
+    {
+        return ContainsWordExact(word);
+    }
+
     public IEnumerable<DictionarySummary> GetSummaries(string query, bool basic)
     {
         if (!ContainsWordExact(query)) { yield break; }

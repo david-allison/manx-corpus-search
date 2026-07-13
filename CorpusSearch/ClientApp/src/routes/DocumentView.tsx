@@ -22,6 +22,9 @@ import { CircularProgress } from "@mui/material"
 import { ManxEnglishSelector } from "../components/ManxEnglishSelector"
 import { metadataLookup } from "../api/MetadataApi"
 import { ComparisonTable } from "../components/ComparisonTable"
+import { dictionaryCoverage, TokenCoverage } from "../api/DictionaryApi"
+import { CoverageLegend } from "../components/CoverageText"
+import "../components/CoverageText.css"
 import { SearchBar } from "../components/SearchBar"
 import { SeeMore } from "../components/SeeMore"
 import { BackChevron } from "../components/BackChevron"
@@ -271,6 +274,64 @@ export const DocumentView = () => {
         }
     }, [searchWorkResponse, docIdent])
 
+    // The dictionary debug mode (#dict-debug): colour-codes every Manx token
+    // by whether a dictionary tap would find it. Toggled by Ctrl+Alt+D, or by
+    // triple-clicking the document title (for touch devices).
+    const [dictDebug, setDictDebug] = useState(false)
+    const [dictCoverage, setDictCoverage] = useState<Map<
+        string,
+        TokenCoverage[]
+    > | null>(null)
+    const titleClicks = useRef<number[]>([])
+    const toggleDictDebug = () => setDictDebug((x) => !x)
+    const onTitleClick = () => {
+        const now = performance.now()
+        titleClicks.current = [
+            ...titleClicks.current.filter((t) => now - t < 600),
+            now,
+        ]
+        if (titleClicks.current.length >= 3) {
+            titleClicks.current = []
+            toggleDictDebug()
+        }
+    }
+    useEffect(() => {
+        const onKey = (e: KeyboardEvent) => {
+            if (e.ctrlKey && e.altKey && e.code == "KeyD") {
+                e.preventDefault()
+                toggleDictDebug()
+            }
+        }
+        window.addEventListener("keydown", onKey)
+        return () => window.removeEventListener("keydown", onKey)
+    }, [])
+    useEffect(() => {
+        if (!dictDebug || searchWorkResponse == null) {
+            return
+        }
+        const lines = [
+            ...new Set(
+                searchWorkResponse.results
+                    .filter((x) => x.language == null && x.manx)
+                    .map((x) => x.manx),
+            ),
+        ]
+        if (lines.length == 0) {
+            return
+        }
+        const abort = new AbortController()
+        dictionaryCoverage("gv", lines, abort.signal)
+            .then((coverage) =>
+                setDictCoverage(new Map(lines.map((l, i) => [l, coverage[i]]))),
+            )
+            .catch((e) => {
+                console.warn(e)
+            })
+        return () => {
+            abort.abort()
+        }
+    }, [dictDebug, searchWorkResponse])
+
     const [metadata, setMetadata] = useState<Metadata | null>(null)
     const [showAllMeta, setShowAllMeta] = useState(false)
 
@@ -410,10 +471,20 @@ export const DocumentView = () => {
                 </div>
             </details>
 
+            {dictDebug && (
+                <CoverageLegend
+                    coverage={dictCoverage}
+                    onClose={toggleDictDebug}
+                />
+            )}
             <div className="doc-header" ref={headerRef}>
                 <div className="doc-title-row">
                     <BackChevron to={"historyBack"} />
-                    <h1 className="page-title" id="tabelLabel">
+                    <h1
+                        className="page-title"
+                        id="tabelLabel"
+                        onClick={onTitleClick}
+                    >
                         {searchWorkResponse == null ? (
                             "\u00A0" /* keep the line height; no title or year badge until loaded */
                         ) : (
@@ -528,6 +599,7 @@ export const DocumentView = () => {
 
                     <ComparisonTable
                         response={searchWorkResponse}
+                        dictCoverage={dictDebug ? dictCoverage : null}
                         docIdent={docIdent}
                         expandContext={contextEnabled}
                         showNotes={notesEnabled}

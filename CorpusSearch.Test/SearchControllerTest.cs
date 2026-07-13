@@ -138,5 +138,7 @@ public class SearchControllerTest
         public bool LinkToDictionary => false;
         public IEnumerable<DictionarySummary> GetSummaries(string query, bool basic = false) =>
             [new DictionarySummary { Summary = $"definition of {query}", PrimaryWord = query }];
+
+        public bool ContainsWord(string word) => true;
     }
 }

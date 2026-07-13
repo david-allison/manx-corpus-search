@@ -18,6 +18,10 @@ public interface ISearchDictionary
     /// </summary>
     bool LinkToDictionary { get; }
     IEnumerable<DictionarySummary> GetSummaries(string query, bool basic = false);
+
+    /// <summary>Whether the word appears in an entry's word list (exact,
+    /// case-insensitive): the fast containment test behind GetSummaries</summary>
+    bool ContainsWord(string word);
 }
 
 /// <summary>When a query is made, provide a short summary of the result</summary>

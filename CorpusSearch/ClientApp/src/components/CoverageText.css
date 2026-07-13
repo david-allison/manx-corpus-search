@@ -1,0 +1,60 @@
+/* The dictionary debug mode (toggle: Ctrl+Alt+D on a document page).
+   Colours mirror the legend in DocumentView. */
+
+.dict-coverage {
+    border-radius: 2px;
+    padding: 0 1px;
+}
+
+.dict-coverage-entry {
+    border-bottom: 2px solid #7cb342;
+}
+
+.dict-coverage-root {
+    border-bottom: 2px solid #29b6f6;
+}
+
+.dict-coverage-lemma {
+    border-bottom: 2px solid #ffb300;
+    background: rgba(255, 179, 0, 0.12);
+}
+
+.dict-coverage-none {
+    border-bottom: 2px solid #e53935;
+    background: rgba(229, 57, 53, 0.14);
+}
+
+.dict-coverage-legend {
+    position: fixed;
+    bottom: 12px;
+    right: 12px;
+    z-index: 1000;
+    background: #fffef9;
+    border: 1px solid #e8ddc4;
+    border-radius: 6px;
+    box-shadow: 0 2px 12px rgba(62, 80, 88, 0.2);
+    padding: 8px 12px;
+    font-size: 13px;
+    color: #2e3f46;
+    max-width: 280px;
+}
+
+.dict-coverage-legend .dict-coverage {
+    margin-right: 2px;
+}
+
+.dict-coverage-legend-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.dict-coverage-legend-close {
+    float: right;
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-size: 14px;
+    color: #2e3f46;
+    padding: 0 0 0 8px;
+}
