@@ -1,11 +1,16 @@
 import { describe, expect, it } from "vitest"
-import { classifyEntries } from "./DictionaryLookupModal"
+import { classifyEntries, headingFor } from "./DictionaryLookupModal"
 
-const entry = (primaryWord: string, rootDepth: number = 0) => ({
+const entry = (
+    primaryWord: string,
+    rootDepth: number = 0,
+    words?: string[],
+) => ({
     primaryWord,
     summary: "…",
     dictionaryName: "Cregeen",
     rootDepth,
+    words,
 })
 
 describe("classifyEntries", () => {
@@ -75,6 +80,27 @@ describe("classifyEntries", () => {
     it("demotes a variant-spelling headword ('muir' -> mooir)", () => {
         const { own, derived } = classifyEntries("muir", "er yn muir", [
             entry("mooir"),
+        ])
+
+        expect(own).toEqual([])
+        expect(derived.map((x) => x.primaryWord)).toEqual(["mooir"])
+    })
+
+    it("a homograph listing the tapped word is own, not a root (BILL, BILLEY)", () => {
+        // Kelly's 'BILL, BILLEY: a bill' entry answers a tap on 'billey'
+        // directly: it must render as a peer of the tree entry, not '↳ BILL'
+        const { own, derived } = classifyEntries("billey", "yn billey mooar", [
+            entry("BILLEY"),
+            entry("BILL", 0, ["BILL", "BILLEY"]),
+        ])
+
+        expect(own.map((x) => x.primaryWord)).toEqual(["BILLEY", "BILL"])
+        expect(derived).toEqual([])
+    })
+
+    it("a word list does not rescue an entry for a word it doesn't carry", () => {
+        const { own, derived } = classifyEntries("muir", "er yn muir", [
+            entry("mooir", 0, ["mooir", "vooir"]),
         ])
 
         expect(own).toEqual([])
@@ -211,5 +237,37 @@ describe("classifyEntries", () => {
         )
 
         expect(derived.map((x) => x.primaryWord)).toEqual(["olk", "dy olk"])
+    })
+})
+
+describe("headingFor", () => {
+    it("appends the tapped spelling to a homograph's canonical head", () => {
+        expect(headingFor("billey", entry("BILL", 0, ["BILL", "BILLEY"]))).toBe(
+            "BILL, BILLEY",
+        )
+    })
+
+    it("shows just the head when it is what was tapped", () => {
+        expect(headingFor("billey", entry("BILLEY"))).toBe("BILLEY")
+    })
+
+    it("a ç/c respelling is the same word, not another spelling", () => {
+        // the c-variant word list rides in for matching; the heading must not
+        // read 'ÇHENGEY, CHENGEY'
+        expect(
+            headingFor(
+                "chengey",
+                entry("ÇHENGEY", 0, ["ÇHENGEY", "TEANGEY", "CHENGEY"]),
+            ),
+        ).toBe("ÇHENGEY")
+    })
+
+    it("a genuinely different listed spelling is appended (TEANGEY)", () => {
+        expect(
+            headingFor(
+                "teangey",
+                entry("ÇHENGEY", 0, ["ÇHENGEY", "TEANGEY", "CHENGEY"]),
+            ),
+        ).toBe("ÇHENGEY, TEANGEY")
     })
 })
