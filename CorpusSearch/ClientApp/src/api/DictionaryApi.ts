@@ -10,6 +10,12 @@ type Summary = {
     /** set on "did you mean" fallback entries only: the near spelling the
      * entry was reached through, when nothing matched the selection itself */
     nearMatchOf?: string | null
+    /** pronunciation recording, streamed from the defining source's site */
+    audioUrl?: string | null
+    /** the defining source's home page: the group heading links the citation */
+    sourceUrl?: string | null
+    /** compact display credit for the corner control ("Spoken Dictionary") */
+    sourceCredit?: string | null
 }
 export type DictionaryResponse = Summary[]
 

@@ -44,4 +44,14 @@ public class DictionarySummary
     /// <summary>Set on "did you mean" fallback entries only: the near spelling
     /// the entry was reached through, when nothing matched the selection itself</summary>
     public string? NearMatchOf { get; set; }
+
+    /// <summary>Pronunciation recording, streamed from the defining source's site</summary>
+    public string? AudioUrl { get; set; }
+
+    /// <summary>The defining source's home page: the popup links the citation</summary>
+    public string? SourceUrl { get; set; }
+
+    /// <summary>Compact display credit for the corner control ("Spoken
+    /// Dictionary"); the full <see cref="DictionaryName"/> carries the citation</summary>
+    public string? SourceCredit { get; set; }
 }

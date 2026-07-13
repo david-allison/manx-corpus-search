@@ -45,3 +45,69 @@
     color: #6b5a1e;
     font-weight: 600;
 }
+
+/* the tapped word's own recording: one prominent control in the modal's
+   top-right corner, clear of the title, with its attribution beneath */
+.dict-popup-audio-corner {
+    position: absolute;
+    top: 20px;
+    right: 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+}
+
+.dict-popup-audio-main {
+    width: 38px;
+    height: 38px;
+    border: 1px solid var(--c-accent);
+    border-radius: 50%;
+    background: none;
+    color: var(--c-accent);
+    font-size: 15px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.dict-popup-audio-main:hover {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+.dict-popup-audio-credit {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    line-height: 1.35;
+    font-size: 9px;
+    letter-spacing: 0.5px;
+    color: var(--c-accent);
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.dict-popup-audio-credit:hover {
+    text-decoration: underline;
+}
+
+/* inline play button: recordings for words other than the tapped one */
+.dict-popup-audio {
+    margin-left: 8px;
+    padding: 0 7px;
+    border: 1px solid var(--c-border-meta);
+    border-radius: 10px;
+    background: none;
+    color: var(--c-accent);
+    font-size: 10px;
+    line-height: 16px;
+    cursor: pointer;
+    vertical-align: 1px;
+}
+
+.dict-popup-audio:hover {
+    border-color: var(--c-accent);
+}
+
+.dict-popup-dictionary a {
+    color: inherit;
+}
