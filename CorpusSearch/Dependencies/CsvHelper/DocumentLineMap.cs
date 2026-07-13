@@ -14,6 +14,7 @@ public class DocumentLineMap : ClassMap<DocumentLine>
         Map(m => m.SubStart).Optional();
         Map(m => m.SubEnd).Optional();
         Map(m => m.Speaker).Optional();
+        Map(m => m.Reference).Optional();
         // named after the manifest field it overrides (manxColumnLanguage): a bare
         // "Language" header would not say which column it describes
         Map(m => m.Language).Name("ManxColumnLanguage").Optional();

@@ -25,6 +25,14 @@ public class DocumentLinePreparerTest
             InlineSpeakerCodes = inlineSpeakerCodes.Length == 0 ? null : inlineSpeakerCodes.ToList(),
         };
 
+    private static OpenSourceDocument ReferenceManifest(params string[] inlineReferences)
+        => new()
+        {
+            Name = "doc",
+            Ident = "doc",
+            InlineReferences = inlineReferences.ToList(),
+        };
+
     private static DocumentLine Prepared(Document document, DocumentLine line)
     {
         DocumentLinePreparer.Prepare(document, [line]);
@@ -159,5 +167,91 @@ public class DocumentLinePreparerTest
         {
             File.Delete(path);
         }
+    }
+
+    /// <summary>[MS 1 Thessalonians 2.16] Text... - the citation becomes line
+    /// metadata and leaves the Manx token stream</summary>
+    [Test]
+    public void ABracketedCitationBecomesTheReference()
+    {
+        var line = Prepared(ReferenceManifest("bracketed-citation"),
+            new DocumentLine { Manx = "[MS 1 Thessalonians 2.16] Liettal shin vei loayrt" });
+
+        Assert.That(line.Reference, Is.EqualTo("MS 1 Thessalonians 2.16"));
+        Assert.That(line.Manx, Is.EqualTo("Liettal shin vei loayrt"));
+    }
+
+    [Test]
+    public void ABracketedVerseNumberBecomesTheReference()
+    {
+        var line = Prepared(ReferenceManifest("bracketed-number"),
+            new DocumentLine { Manx = "[3] Ta'n Chiarn er my hroggal" });
+
+        Assert.That(line.Reference, Is.EqualTo("3"));
+        Assert.That(line.Manx, Is.EqualTo("Ta'n Chiarn er my hroggal"));
+    }
+
+    /// <summary>bracketed-number must not swallow citations or recording events</summary>
+    [Test]
+    public void ABracketedNumberFormatIgnoresNonNumbers()
+    {
+        var line = Prepared(ReferenceManifest("bracketed-number"),
+            new DocumentLine { Manx = "[laughs] as eisht" });
+
+        Assert.That(line.Reference, Is.Null);
+        Assert.That(line.Manx, Is.EqualTo("[laughs] as eisht"));
+    }
+
+    /// <summary>A whole-cell chapter heading becomes a reference-only row</summary>
+    [Test]
+    public void AHeadingLineBecomesAReferenceOnlyRow()
+    {
+        var line = Prepared(ReferenceManifest("heading-line"),
+            new DocumentLine { Manx = "CAB. II." });
+
+        Assert.That(line.Reference, Is.EqualTo("CAB. II."));
+        Assert.That(line.Manx, Is.Empty);
+    }
+
+    [Test]
+    public void AHeadingFormatLeavesOrdinaryLinesAlone()
+    {
+        var line = Prepared(ReferenceManifest("heading-line"),
+            new DocumentLine { Manx = "Cabdil dy row ayn" });
+
+        Assert.That(line.Reference, Is.Null);
+        Assert.That(line.Manx, Is.EqualTo("Cabdil dy row ayn"));
+    }
+
+    [Test]
+    public void AFilledReferenceColumnWinsOverTheInlineMarker()
+    {
+        var line = Prepared(ReferenceManifest("bracketed-number"),
+            new DocumentLine { Manx = "[3] Text", Reference = "Psalm 23:3" });
+
+        Assert.That(line.Reference, Is.EqualTo("Psalm 23:3"));
+        Assert.That(line.Manx, Is.EqualTo("Text"));
+    }
+
+    /// <summary>An undeclared manifest leaves every line untouched: the no-op default</summary>
+    [Test]
+    public void NoDeclaredFormatsIsANoOp()
+    {
+        var line = Prepared(Manifest(),
+            new DocumentLine { Manx = "[MS 1 Thessalonians 2.16] Liettal shin" });
+
+        Assert.That(line.Reference, Is.Null);
+        Assert.That(line.Manx, Is.EqualTo("[MS 1 Thessalonians 2.16] Liettal shin"));
+    }
+
+    /// <summary>Dramatic speakers arrive bracketed ([SATAN] in Pargeiys Caillit)</summary>
+    [Test]
+    public void ABracketedSpeakerCodeIsExtracted()
+    {
+        var line = Prepared(Manifest(null, "SATAN", "GOD"),
+            new DocumentLine { Manx = "[SATAN] Cre'n ynnyd shoh" });
+
+        Assert.That(line.Speaker, Is.EqualTo("SATAN"));
+        Assert.That(line.Manx, Is.EqualTo("Cre'n ynnyd shoh"));
     }
 }

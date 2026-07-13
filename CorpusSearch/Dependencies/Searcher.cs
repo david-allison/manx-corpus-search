@@ -33,12 +33,74 @@ public class Searcher(LuceneIndex luceneIndex, SearchParser parser)
         // parse the string into a Result<Expression>
         var parsed = parser.Parse(query);
 
-        // Convert the result to a Lucene Span Query (or throw ArgumentException)
-        SpanQuery spanQuery = ToSpanQuery(parsed, options);
-
-        return luceneIndex.Search(ident, spanQuery, returnTranscriptData);
-
+        var (spanQuery, referenceQuery) = BuildQueries(query, parsed, options);
+        return luceneIndex.Search(ident, spanQuery, returnTranscriptData, referenceQuery);
     }
+
+    /// <summary>
+    /// The text-field query plus the verse/chapter reference side-query (Manx
+    /// searches only), so "Thessalonians" or "2.16" still finds referenced lines.
+    /// A query the grammar cannot parse at all ("2.16" lexes as a number plus a
+    /// fragment) is retried as a literal term: the per-field term builders
+    /// normalize its punctuation away, which is strictly better than the error
+    /// the parse used to throw.
+    /// </summary>
+    private (SpanQuery Query, SpanQuery? ReferenceQuery) BuildQueries(string rawQuery,
+        ParseResult<ExpressionToken, Expression> parsed, SearchOptions options)
+    {
+        if (parsed.IsOk && parsed.Result != null)
+        {
+            return (ToSpanQuery(parsed.Result, options), ReferenceQueryOrNull(parsed, options));
+        }
+        var literalOptions = options with { IgnoreHyphens = true };
+        var literal = ManxTermQuery(rawQuery, literalOptions);
+        return (literal, ReferenceTermOrNull(rawQuery, literalOptions));
+    }
+
+    private static SpanQuery? ReferenceTermOrNull(string rawQuery, SearchOptions options)
+    {
+        if (options.SearchType != SearchType.Manx)
+        {
+            return null;
+        }
+        try
+        {
+            return ManxTermQuery(rawQuery, ReferenceOptions(options));
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// The same query against the verse/chapter reference field, run beside a Manx
+    /// search so "Thessalonians" or "2.16" still finds referenced lines. Null when
+    /// the side-query cannot be built: reference matching must never break search.
+    /// </summary>
+    private SpanQuery? ReferenceQueryOrNull(ParseResult<ExpressionToken, Expression> parsed, SearchOptions options)
+    {
+        if (options.SearchType != SearchType.Manx)
+        {
+            return null;
+        }
+        try
+        {
+            return ToSpanQuery(parsed, ReferenceOptions(options));
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+    }
+
+    private static SearchOptions ReferenceOptions(SearchOptions options) => options with
+    {
+        SearchType = SearchType.Reference,
+        CaseSensitive = false,
+        NormalizeDiacritics = false,
+        IgnoreHyphens = true, // "2 16" queries as an ordered phrase
+    };
 
     /// <summary>
     /// Returns all lines for a provided document
@@ -76,11 +138,8 @@ public class Searcher(LuceneIndex luceneIndex, SearchParser parser)
         // parse the string into a Result<Expression>
         var parsed = parser.Parse(query);
 
-        // Convert the result to a Lucene Span Query (or throw ArgumentException)
-        SpanQuery spanQuery = ToSpanQuery(parsed, searchOptions);
-
-        // Perform the search
-        return luceneIndex.Scan(spanQuery);
+        var (spanQuery, referenceQuery) = BuildQueries(query, parsed, searchOptions);
+        return luceneIndex.Scan(spanQuery, referenceQuery);
     }
 
 
@@ -284,8 +343,17 @@ public class Searcher(LuceneIndex luceneIndex, SearchParser parser)
         {
             case SearchType.Manx: return DocumentLine.NormalizeManx(value, allowQuestionMark: true, preserveCase: searchOptions.CaseSensitive);
             case SearchType.English: return DocumentLine.NormalizeEnglish(value, allowQuestionMark: true, preserveCase: searchOptions.CaseSensitive);
+            case SearchType.Reference: return NormalizeReference(value);
             default: throw new ArgumentException("Unhandlded case: " + searchOptions.SearchType);
         }
+    }
+
+    /// <summary>Mirrors <see cref="Lucene.ReferenceTokenizer"/>: letter/digit runs,
+    /// lowercased — "2.16" and "Psalm 23" keep their numbers</summary>
+    private static string NormalizeReference(string value)
+    {
+        return System.Text.RegularExpressions.Regex.Replace(
+            value.ToLowerInvariant(), @"[^\p{L}\p{N}]+", " ").Trim();
     }
 
     private static string GetTermKey(SearchOptions searchOptions)
@@ -296,6 +364,8 @@ public class Searcher(LuceneIndex luceneIndex, SearchParser parser)
                 return searchOptions.CaseSensitive ? LuceneIndex.DOCUMENT_CASED_MANX : LuceneIndex.DOCUMENT_NORMALIZED_MANX;
             case SearchType.English:
                 return searchOptions.CaseSensitive ? LuceneIndex.DOCUMENT_CASED_ENGLISH : LuceneIndex.DOCUMENT_NORMALIZED_ENGLISH;
+            case SearchType.Reference:
+                return LuceneIndex.DOCUMENT_REFERENCE;
             default: throw new ArgumentException("Unhandlded case: " + searchOptions.SearchType);
         }
     }

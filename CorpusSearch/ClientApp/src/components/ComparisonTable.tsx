@@ -114,6 +114,11 @@ export const ComparisonTable = (props: {
         displayedLines.filter((x) => x.speaker != null && x.speaker != "")
             .length > 0
 
+    // verse/chapter references (scripture documents): metadata, not body text
+    const hasReferenceColumn =
+        displayedLines.filter((x) => x.reference != null && x.reference != "")
+            .length > 0
+
     const leftVisible =
         (manxVisible && originalManx) || (englishVisible && !originalManx)
     const rightVisible =
@@ -136,7 +141,10 @@ export const ComparisonTable = (props: {
     const rightLang = originalManx ? "en" : "gv"
     // the expander and note bands cover the language columns only, leaving the
     // video/speaker/Link cells uncoloured
-    const leadingCells = (isVideo ? 1 : 0) + (hasSpeakerColumn ? 1 : 0)
+    const leadingCells =
+        (isVideo ? 1 : 0) +
+        (hasSpeakerColumn ? 1 : 0) +
+        (hasReferenceColumn ? 1 : 0)
     const languageColSpan = Math.max(
         1,
         (leftVisible ? 1 : 0) + (rightVisible ? 1 : 0),
@@ -165,6 +173,9 @@ export const ComparisonTable = (props: {
                                 {isVideo && <th className="doc-th-play" />}
                                 {hasSpeakerColumn && (
                                     <th className="doc-th-speaker">Speaker</th>
+                                )}
+                                {hasReferenceColumn && (
+                                    <th className="doc-th-reference">Ref</th>
                                 )}
                                 {leftVisible && (
                                     <th className="doc-lang-head">
@@ -324,6 +335,11 @@ export const ComparisonTable = (props: {
                                                             </span>
                                                         </>
                                                     )}
+                                                </td>
+                                            )}
+                                            {hasReferenceColumn && (
+                                                <td className="doc-td-reference">
+                                                    {line.reference}
                                                 </td>
                                             )}
                                             {leftVisible && (

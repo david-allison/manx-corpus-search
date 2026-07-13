@@ -1,4 +1,5 @@
 ﻿using Lucene.Net.Analysis;
+using Lucene.Net.Analysis.Core;
 using Lucene.Net.Util;
 using System.IO;
 
@@ -17,6 +18,15 @@ public class ManxAnalyzer : Analyzer
 
     protected override TokenStreamComponents CreateComponents(string fieldName, TextReader reader)
     {
+        if (LuceneIndex.IsReferenceField(fieldName))
+        {
+            // references keep their digits ("Psalm 23", "2.16"): letter+digit
+            // tokens, lowercased - ManxTokenizer would drop the numbers
+            var referenceTokenizer = new ReferenceTokenizer(LuceneVersion.LUCENE_48, reader);
+            return new TokenStreamComponents(referenceTokenizer,
+                new LowerCaseFilter(LuceneVersion.LUCENE_48, referenceTokenizer));
+        }
+
         bool preserveCase = LuceneIndex.IsCasedField(fieldName);
         Tokenizer tokenizer = new ManxTokenizer(LuceneVersion.LUCENE_48, reader, preserveCase);
 

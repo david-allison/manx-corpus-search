@@ -18,6 +18,8 @@ export type SearchWorkResult = {
     subStart?: number
     subEnd?: number
     speaker?: string
+    /** verse/chapter reference ("MS 1 Thessalonians 2.16"): line metadata */
+    reference?: string
     /** The line's language when its Manx column is not Manx, e.g. "en" for an
      * untranslated row. Absent on Manx lines */
     language?: string

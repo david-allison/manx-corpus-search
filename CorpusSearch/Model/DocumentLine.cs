@@ -25,6 +25,11 @@ public class DocumentLine
     /// <summary>The name of the speaker in a transcription. Nullable</summary>
     public string? Speaker { get; set; }
 
+    /// <summary>The line's verse/chapter reference ("MS 1 Thessalonians 2.16",
+    /// "CAB. II."): metadata like <see cref="Speaker"/>, kept out of the Manx
+    /// token stream but searchable through its own index field</summary>
+    public string? Reference { get; set; }
+
     public long? MatchesInLine { get; set; }
 
     /// <summary>The language of the Manx column: "gv" unless the row is untranslated
