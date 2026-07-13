@@ -138,9 +138,12 @@ public class LemmaTable
 
     /// <summary>
     /// Mirrors the `form` column's normalization exactly (the cregeen.tsv contract):
-    /// lowercase; `‑`→`-`; `’`→`'`; `ç`→`c`; hyphen runs → a single space; whitespace
-    /// collapsed; ` .,;:'` trimmed. Multiword forms also appear space-collapsed in the
-    /// table, so a hyphenated token ("aa-aase") resolves via its spaced form.
+    /// lowercase; `‑`→`-`; `’`→`'`; combining marks stripped after NFD decomposition
+    /// (`ç`→`c`, `benreïn`→`benrein`, `mârish`→`marish` — diacritics in the sources
+    /// are display conventions, never lexically contrastive); hyphen runs → a single
+    /// space; whitespace collapsed; ` .,;:'` trimmed. Multiword forms also appear
+    /// space-collapsed in the table, so a hyphenated token ("aa-aase") resolves via
+    /// its spaced form.
     /// </summary>
     public static string NormalizeForm(string input)
     {
@@ -161,7 +164,8 @@ public class LemmaTable
         }
         foreach (var c in input)
         {
-            if (char.IsUpper(c) || c is 'ç' or '’' or '‑' or '-' || char.IsWhiteSpace(c))
+            // any non-ASCII goes the slow path: it may carry combining marks
+            if (char.IsUpper(c) || c is '-' || c > (char)127 || char.IsWhiteSpace(c))
             {
                 return true;
             }
@@ -175,8 +179,8 @@ public class LemmaTable
     {
         var lowered = input.ToLowerInvariant()
             .Replace('‑', '-') // non-breaking hyphen
-            .Replace('’', '\'') // curly apostrophe
-            .Replace('ç', 'c');
+            .Replace('’', '\''); // curly apostrophe
+        lowered = StripCombiningMarks(lowered); // ç→c, benreïn→benrein, mârish→marish
 
         var builder = new StringBuilder(lowered.Length);
         var pendingSeparator = false;
@@ -196,6 +200,35 @@ public class LemmaTable
         }
 
         return builder.ToString().Trim(TrimChars);
+    }
+
+    /// <summary>Diacritics are display conventions in the sources: combining marks
+    /// are stripped after NFD decomposition, mirroring the generator's fold</summary>
+    private static string StripCombiningMarks(string input)
+    {
+        var hasNonAscii = false;
+        foreach (var c in input)
+        {
+            if (c > (char)127)
+            {
+                hasNonAscii = true;
+                break;
+            }
+        }
+        if (!hasNonAscii)
+        {
+            return input;
+        }
+        var builder = new StringBuilder(input.Length);
+        foreach (var c in input.Normalize(NormalizationForm.FormD))
+        {
+            if (System.Globalization.CharUnicodeInfo.GetUnicodeCategory(c)
+                != System.Globalization.UnicodeCategory.NonSpacingMark)
+            {
+                builder.Append(c);
+            }
+        }
+        return builder.ToString();
     }
 
     /// <summary>Reads the TSV (header row; `form` and `lemmaId` are the first columns)</summary>
