@@ -17,26 +17,46 @@ public static class DocumentLinePreparer
     {
         var defaultLanguage = NormalizeLanguage(document.ManxColumnLanguage) ?? DocumentLine.ManxLanguageCode;
         var speakerCode = BuildSpeakerCodeRegex(document.InlineSpeakerCodes);
+        var referenceFormats = BuildReferenceRegexes(document.InlineReferences);
 
         foreach (var line in lines)
         {
             line.Language = NormalizeLanguage(line.Language) ?? defaultLanguage;
 
-            if (speakerCode == null || line.Manx == null)
+            if (line.Manx == null)
             {
                 continue;
             }
-            var match = speakerCode.Match(line.Manx);
-            if (!match.Success)
+
+            if (speakerCode != null)
             {
-                continue;
+                var match = speakerCode.Match(line.Manx);
+                if (match.Success)
+                {
+                    // a filled Speaker column wins; the marker is dropped from the text either way
+                    if (string.IsNullOrWhiteSpace(line.Speaker))
+                    {
+                        line.Speaker = match.Groups["code"].Value.ToUpperInvariant();
+                    }
+                    line.Manx = line.Manx[match.Length..];
+                }
             }
-            // a filled Speaker column wins; the marker is dropped from the text either way
-            if (string.IsNullOrWhiteSpace(line.Speaker))
+
+            foreach (var format in referenceFormats)
             {
-                line.Speaker = match.Groups["code"].Value.ToUpperInvariant();
+                var match = format.Match(line.Manx);
+                if (!match.Success)
+                {
+                    continue;
+                }
+                // an explicit Reference column wins; the marker leaves the text either way
+                if (string.IsNullOrWhiteSpace(line.Reference))
+                {
+                    line.Reference = match.Groups["ref"].Value.Trim();
+                }
+                line.Manx = line.Manx[match.Length..].TrimStart();
+                break;
             }
-            line.Manx = line.Manx[match.Length..];
         }
     }
 
@@ -48,9 +68,9 @@ public static class DocumentLinePreparer
     }
 
     /// <summary>
-    /// A leading `CODE.` / `CODE:` (or bare `CODE`) marker, for the codes the manifest
-    /// declares; null when it declares none. The code must be a whole word: code "Q"
-    /// must not match "Quirk".
+    /// A leading `CODE.` / `CODE:` / `[CODE]` (or bare `CODE`) marker, for the codes
+    /// the manifest declares; null when it declares none. The code must be a whole
+    /// word: code "Q" must not match "Quirk".
     /// </summary>
     internal static Regex? BuildSpeakerCodeRegex(IReadOnlyCollection<string>? codes)
     {
@@ -66,7 +86,40 @@ public static class DocumentLinePreparer
             return null;
         }
 
-        return new Regex(@"^\s*(?<code>" + string.Join("|", patterns) + @")(?:[.:]\s*|\s+|$)",
+        var joined = string.Join("|", patterns);
+        // the bracketed form covers dramatic speakers ([SATAN] in Pargeiys Caillit)
+        return new Regex(@"^\s*(?:\[(?<code>" + joined + @")\]\s*|(?<code>" + joined + @")(?:[.:]\s*|\s+|$))",
             RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.CultureInvariant);
+    }
+
+    /// <summary>
+    /// The manifest's named inline reference formats, as anchored regexes with a
+    /// `ref` group. Unknown names are ignored (an old consumer must not crash on a
+    /// newer manifest). Formats apply in declaration order; the first match wins.
+    /// </summary>
+    internal static IReadOnlyList<Regex> BuildReferenceRegexes(IReadOnlyCollection<string>? formats)
+    {
+        const RegexOptions options =
+            RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.CultureInvariant;
+        var result = new List<Regex>();
+        foreach (var format in formats ?? [])
+        {
+            switch (format?.Trim())
+            {
+                case "bracketed-citation":
+                    // [MS 1 Thessalonians 2.16] Text...
+                    result.Add(new Regex(@"^\s*\[(?<ref>[^\]]+)\]\s*", options));
+                    break;
+                case "bracketed-number":
+                    // [3] Text...
+                    result.Add(new Regex(@"^\s*\[(?<ref>\d+)\]\s*", options));
+                    break;
+                case "heading-line":
+                    // the whole cell is a chapter/psalm heading: CAB. II. / Psalm 23 / CHAPTER V
+                    result.Add(new Regex(@"^\s*(?<ref>(?:cab\.?|cabdil|chapter|psalm)\s+[ivxlcdm\d]+\.?)\s*$", options));
+                    break;
+            }
+        }
+        return result;
     }
 }

@@ -54,6 +54,11 @@ public class LuceneIndex(IndexWriter indexWriter)
     /// Manx lines, so lemma statistics stay clean. Queried and highlighted, never read back.</summary>
     public const string DOCUMENT_LEMMA_MANX = "manx_lemma";
 
+    /// <summary>The line's verse/chapter reference ("MS 1 Thessalonians 2.16"): metadata
+    /// like <see cref="DOCUMENT_SPEAKER"/>, but tokenized (digit-preserving analyzer) so
+    /// references stay searchable without polluting the Manx token stream.</summary>
+    public const string DOCUMENT_REFERENCE = "reference";
+
     public const string SUBTITLE_START = "subtitle_start";
     public const string SUBTITLE_END = "subtitle_end";
 
@@ -62,6 +67,9 @@ public class LuceneIndex(IndexWriter indexWriter)
 
     /// <summary>Whether the field's tokens append candidate lemma ids (<see cref="LemmaTokenFilter"/>)</summary>
     internal static bool IsLemmaField(string field) => field is DOCUMENT_LEMMA_MANX;
+
+    /// <summary>Whether the field holds verse/chapter references (digit-preserving analyzer)</summary>
+    internal static bool IsReferenceField(string field) => field is DOCUMENT_REFERENCE;
 
     private static bool IsManxField(string field) =>
         field is DOCUMENT_NORMALIZED_MANX or DOCUMENT_CASED_MANX or DOCUMENT_LEMMA_MANX;
@@ -143,6 +151,11 @@ public class LuceneIndex(IndexWriter indexWriter)
             AddField(DOCUMENT_NOTES, line.Notes);
             AddField(DOCUMENT_PAGE, line.Page.ToString());
             AddField(DOCUMENT_SPEAKER, line.Speaker);
+            if (!string.IsNullOrWhiteSpace(line.Reference))
+            {
+                // tokenized and stored: searchable via its own analyzer, returned for display
+                doc.Add(new TextField(DOCUMENT_REFERENCE, line.Reference, Field.Store.YES));
+            }
 
             // non-Manx lines stay searchable (the manx field above), but only Manx lines
             // feed the Manx statistics and the lemma field
@@ -219,7 +232,8 @@ public class LuceneIndex(IndexWriter indexWriter)
     }
 
 
-    internal SearchResult Search(Ident ident, SpanQuery query, bool getTranscriptData)
+    internal SearchResult Search(Ident ident, SpanQuery query, bool getTranscriptData,
+        SpanQuery? referenceQuery = null)
     {
         using var reader = UseReader();
         var searcher = new IndexSearcher(reader);
@@ -233,7 +247,19 @@ public class LuceneIndex(IndexWriter indexWriter)
         var highlightTokenSpans = CollectHighlightTokenSpans(rewritten, reader, matchedDocs);
         string searchedField = rewritten.Field;
 
-        var docs = spanCollection.DistinctDocuments().Select(x =>
+        // lines matched only through their verse/chapter reference ride along,
+        // without text highlights (the match is in the reference, not the text)
+        var referenceMatches = new List<(DocId, int)>();
+        if (referenceQuery != null)
+        {
+            var referenceRewritten = (SpanQuery)referenceQuery.Rewrite(reader);
+            var referenceCollection = BuildSpanCollection(referenceRewritten, reader, AcceptDocument);
+            referenceMatches = referenceCollection.DistinctDocuments()
+                .Where(x => !matchedDocs.Contains(x.Item1))
+                .ToList();
+        }
+
+        var docs = spanCollection.DistinctDocuments().Concat(referenceMatches).Select(x =>
         {
             var (docId, countInDoc) = x;
             var document = searcher.Doc(docId);
@@ -243,9 +269,11 @@ public class LuceneIndex(IndexWriter indexWriter)
             string? notes = document.GetField(DOCUMENT_NOTES)?.GetStringValue();
             int lineNumber = document.GetField(DOCUMENT_LINE_NUMBER)?.GetInt32Value() ?? -1;
 
-            var highlights = ComputeHighlights(reader, docId, searchedField,
-                IsEnglishField(searchedField) ? english : manx,
-                highlightTokenSpans.GetValueOrDefault(docId));
+            var highlights = matchedDocs.Contains(docId)
+                ? ComputeHighlights(reader, docId, searchedField,
+                    IsEnglishField(searchedField) ? english : manx,
+                    highlightTokenSpans.GetValueOrDefault(docId))
+                : null;
 
             return new DocumentLine
             {
@@ -261,6 +289,7 @@ public class LuceneIndex(IndexWriter indexWriter)
                 SubStart = getTranscriptData ? document.GetField(SUBTITLE_START)?.GetDoubleValue() : null,
                 SubEnd = getTranscriptData ? document.GetField(SUBTITLE_END)?.GetDoubleValue() : null,
                 Speaker = document.GetField(DOCUMENT_SPEAKER)?.GetStringValue(),
+                Reference = document.GetField(DOCUMENT_REFERENCE)?.GetStringValue(),
                 Language = document.GetField(DOCUMENT_LANGUAGE)?.GetStringValue(),
                 MatchesInLine = countInDoc
             };
@@ -270,7 +299,7 @@ public class LuceneIndex(IndexWriter indexWriter)
         return new SearchResult
         {
             Lines = docs,
-            TotalMatches = spanCollection.GetTotalCount(),
+            TotalMatches = spanCollection.GetTotalCount() + referenceMatches.Sum(x => x.Item2),
         };
 
         bool AcceptDocument(AtomicReaderContext leaf, Spans spans)
@@ -417,7 +446,7 @@ public class LuceneIndex(IndexWriter indexWriter)
         return new HashSet<int>(ret);
     }
 
-    public ScanResult Scan(SpanQuery query)
+    public ScanResult Scan(SpanQuery query, SpanQuery? referenceQuery = null)
     {
         using var reader = UseReader();
         // tests scan without compacting; production builds the lookup in Compact()
@@ -427,14 +456,32 @@ public class LuceneIndex(IndexWriter indexWriter)
         var spanCollection = BuildSpanCollection(spanQuery, reader, (_, _) => true);
         var distinctDocuments = spanCollection.DistinctDocumentIds().ToList();
 
+        // lines matched only through their verse/chapter reference count too
+        var referenceCounts = new Dictionary<DocId, int>();
+        if (referenceQuery != null)
+        {
+            var referenceRewritten = (SpanQuery)referenceQuery.Rewrite(reader);
+            var referenceCollection = BuildSpanCollection(referenceRewritten, reader, (_, _) => true);
+            var textMatched = new HashSet<DocId>(distinctDocuments);
+            foreach (var (docId, count) in referenceCollection.DistinctDocuments())
+            {
+                if (!textMatched.Contains(docId))
+                {
+                    referenceCounts[docId] = count;
+                }
+            }
+        }
+
         // Group the matched lines into distinct Corpus Documents via the docId lookup. The
         // sample is the first line by line number: docID order is merge-dependent, so it
         // cannot be relied on (#303)
         var corpusDocuments = new Dictionary<Ident, (DocId SampleDocId, int SampleLineNumber, int Count)>();
-        foreach (var docId in distinctDocuments)
+        foreach (var docId in distinctDocuments.Concat(referenceCounts.Keys))
         {
             var (ident, lineNumber) = lookup.Get(docId);
-            var count = spanCollection.GetCount(docId);
+            var count = referenceCounts.TryGetValue(docId, out var referenceCount)
+                ? referenceCount
+                : spanCollection.GetCount(docId);
             if (corpusDocuments.TryGetValue(ident, out var existing))
             {
                 corpusDocuments[ident] = lineNumber < existing.SampleLineNumber
@@ -482,7 +529,7 @@ public class LuceneIndex(IndexWriter indexWriter)
 
         return new ScanResult
         {
-            NumberOfMatches = spanCollection.GetTotalCount(),
+            NumberOfMatches = spanCollection.GetTotalCount() + referenceCounts.Values.Sum(),
             NumberOfSegments = distinctDocuments.Count,
             NumberOfDocuments = corpusDocuments.Count,
             DocumentResults = samples.ToList(),
@@ -565,7 +612,7 @@ public class LuceneIndex(IndexWriter indexWriter)
         var fieldsToLoad = new HashSet<string> { DOCUMENT_REAL_MANX, DOCUMENT_REAL_ENGLISH, DOCUMENT_NOTES,
             DOCUMENT_PAGE,
             DOCUMENT_LINE_NUMBER, DOCUMENT_ORIGINAL_MANX, DOCUMENT_ORIGINAL_ENGLISH,
-            DOCUMENT_SPEAKER, DOCUMENT_LANGUAGE };
+            DOCUMENT_SPEAKER, DOCUMENT_REFERENCE, DOCUMENT_LANGUAGE };
         if (getTranscript)
         {
             fieldsToLoad.Add(SUBTITLE_END);
@@ -587,6 +634,7 @@ public class LuceneIndex(IndexWriter indexWriter)
         SubStart = getTranscript ? document.GetField(SUBTITLE_START)?.GetDoubleValue() : null,
         SubEnd = getTranscript ? document.GetField(SUBTITLE_END)?.GetDoubleValue() : null,
         Speaker = document.GetField(DOCUMENT_SPEAKER)?.GetStringValue(),
+        Reference = document.GetField(DOCUMENT_REFERENCE)?.GetStringValue(),
         Language = document.GetField(DOCUMENT_LANGUAGE)?.GetStringValue()
     };
 

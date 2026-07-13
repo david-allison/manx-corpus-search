@@ -47,6 +47,13 @@ public abstract class Document : IDocument
     public List<string>? InlineSpeakerCodes { get; set; }
 
     /// <summary>
+    /// Named verse/chapter reference formats found inline in the collection's Manx
+    /// cells ("bracketed-citation", "bracketed-number", "heading-line"). Moved into
+    /// <see cref="DocumentLine.Reference"/> at load time: see <see cref="DocumentLinePreparer"/>.
+    /// </summary>
+    public List<string>? InlineReferences { get; set; }
+
+    /// <summary>
     /// The language of Manx-column cells without a line-level Language value:
     /// "gv" if absent. A knowingly mixed collection declares "mixed" and relies on
     /// the line-level column.

@@ -167,6 +167,16 @@
     width: 120px;
 }
 
+/* verse/chapter references: narrow, muted metadata beside the text */
+.doc-th-reference {
+    width: 90px;
+}
+
+.doc-td-reference {
+    color: #5a6b72;
+    font-size: 0.85em;
+}
+
 .doc-th-link {
     width: 70px;
 }
