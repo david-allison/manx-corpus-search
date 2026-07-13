@@ -20,6 +20,9 @@ type Summary = {
      * (Kelly's 'BILL, BILLEY'): a homograph headed by another spelling is
      * the selection's own entry, not a root */
     words?: string[] | null
+    /** plural forms the dictionary declares ('BILJIN' under BILLEY),
+     * shown as structured metadata after the definition */
+    plurals?: string[] | null
 }
 export type DictionaryResponse = Summary[]
 
