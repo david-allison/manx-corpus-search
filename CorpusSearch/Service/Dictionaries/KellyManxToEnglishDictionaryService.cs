@@ -25,7 +25,9 @@ public class KellyManxToEnglishDictionaryService(ISet<string> allWords, IList<Ke
         try
         {
             entries = GetEntries();
-            var allEntries = entries.SelectMany(x => x.ChildrenRecursive).SelectMany(x => x.Words);
+            var allEntries = entries.SelectMany(x => x.ChildrenRecursive)
+                .SelectMany(x => x.Words.Concat(
+                    (x.Plurals ?? []).SelectMany(p => new[] { p, p.Replace('ç', 'c').Replace('Ç', 'C') })));
             allWords = new HashSet<string>(allEntries, StringComparer.InvariantCultureIgnoreCase);
         } 
         catch (Exception)
@@ -75,6 +77,16 @@ public class KellyManxToEnglishDictionaryService(ISet<string> allWords, IList<Ke
         entry.SafeChildren.ForEach(EnrichCedillaEntries);
     }
 
+    /// <summary>The plural list answers for its ç-respellings at match time
+    /// (ÇHENTYN matches chentyn) so the display list stays as printed</summary>
+    private static bool PluralMatches(KellyManxToEnglishEntry entry, string query)
+    {
+        return (entry.Plurals ?? []).Any(p =>
+            p.Equals(query, StringComparison.InvariantCultureIgnoreCase)
+            || p.Replace('ç', 'c').Replace('Ç', 'C')
+                .Equals(query, StringComparison.InvariantCultureIgnoreCase));
+    }
+
     /// <summary>Whether the dictionary contains the provided word (no fuzziness)</summary>
     public bool ContainsWordExact(string s)
     {
@@ -114,7 +126,9 @@ public class KellyManxToEnglishDictionaryService(ISet<string> allWords, IList<Ke
         // PERF: extract to member
         var entries1 = entries.SelectMany(x => x.ChildrenRecursive).ToList();
 
-        foreach (var validEntry in entries1.Where(e => e.Words.Contains(query, StringComparer.InvariantCultureIgnoreCase)))
+        foreach (var validEntry in entries1.Where(e =>
+                     e.Words.Contains(query, StringComparer.InvariantCultureIgnoreCase)
+                     || PluralMatches(e, query)))
         {
             yield return GetDictionarySummary(validEntry);
         }
@@ -129,6 +143,7 @@ public class KellyManxToEnglishDictionaryService(ISet<string> allWords, IList<Ke
                 Summary = entry.Definition,
                 PartsOfSpeech = PartsOfSpeechOf(entry.Definition),
                 Words = entry.Words.Count > 1 ? entry.Words : null,
+                Plurals = entry.Plurals is { Count: > 0 } ? entry.Plurals : null,
             };
         }
     }

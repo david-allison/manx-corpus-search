@@ -216,6 +216,15 @@ const DictionaryHeading = ({
     </h3>
 )
 
+/** The entry's declared plural, split out of the definition text */
+const PluralNote = ({ summary }: { summary: DictionaryResponse[number] }) =>
+    summary.plurals?.length ? (
+        <span className="dict-popup-plural">
+            {" — pl. "}
+            {summary.plurals.join(", ")}
+        </span>
+    ) : null
+
 /** Plays the entry's pronunciation recording (streamed from the source) */
 const AudioButton = ({
     summary,
@@ -408,6 +417,7 @@ export const DictionaryLookupModal = (props: DictionaryLookupState) => {
                                                 </strong>
                                                 {": "}
                                                 {summary.summary}
+                                                <PluralNote summary={summary} />
                                                 {summary != cornerAudio && (
                                                     <AudioButton
                                                         summary={summary}
@@ -450,6 +460,7 @@ export const DictionaryLookupModal = (props: DictionaryLookupState) => {
                                                 </strong>
                                                 {": "}
                                                 {summary.summary}
+                                                <PluralNote summary={summary} />
                                                 {summary != cornerAudio && (
                                                     <AudioButton
                                                         summary={summary}

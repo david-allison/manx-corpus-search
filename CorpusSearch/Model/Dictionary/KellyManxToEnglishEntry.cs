@@ -10,6 +10,8 @@ public class KellyManxToEnglishEntry
 {
     public required List<string> Words { get; set; }
     public required string Definition { get; set; }
+    /// <summary>Plural forms split out of the printed definition ("s. pl. BILJIN.")</summary>
+    public List<string>? Plurals { get; set; } = [];
     public List<KellyManxToEnglishEntry>? Children { get; set; } = [];
     
     // Added

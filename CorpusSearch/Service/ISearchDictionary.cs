@@ -65,4 +65,9 @@ public class DictionarySummary
     /// recognise a homograph headed by another spelling as the selection's own
     /// entry rather than nesting it like a root</summary>
     public List<string>? Words { get; set; }
+
+    /// <summary>Plural forms the dictionary declares for the entry ("BILJIN"
+    /// under BILLEY), rendered as structured metadata rather than definition
+    /// text</summary>
+    public List<string>? Plurals { get; set; }
 }
