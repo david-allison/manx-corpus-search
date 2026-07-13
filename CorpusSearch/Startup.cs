@@ -62,6 +62,8 @@ public class Startup(IConfiguration configuration)
         {
             options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
         });
+        // the pronunciation relay (AudioController) fetches from learnmanx.com
+        services.AddHttpClient();
 
         services.AddSingleton(provider => LuceneIndex.GetInstance());
         services.AddSingleton(provider => SearchParser.GetParser());
@@ -70,6 +72,8 @@ public class Startup(IConfiguration configuration)
         services.AddSingleton<ISearchDictionary>(provider => provider.GetRequiredService<CregeenDictionaryService>());
         services.AddSingleton(provider => KellyManxToEnglishDictionaryService.Init(provider.GetRequiredService<ILogger<KellyManxToEnglishDictionaryService>>()));
         services.AddSingleton<ISearchDictionary>(provider => provider.GetRequiredService<KellyManxToEnglishDictionaryService>());
+        services.AddSingleton(provider => CultureVanninSpokenDictionaryService.Init(provider.GetRequiredService<ILogger<CultureVanninSpokenDictionaryService>>()));
+        services.AddSingleton<ISearchDictionary>(provider => provider.GetRequiredService<CultureVanninSpokenDictionaryService>());
         // eager: the lemma table is also the analyzer's, best loaded before indexing
         services.AddSingleton(LemmaTable.Instance);
         // eager for the same reason: the resolution layers narrow the lemma field

@@ -68,6 +68,15 @@
         <Link>Resources\cregeen.tsv</Link>
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <!-- The Culture Vannin spoken dictionary (generated from cregeen-nvh
+    spoken/spoken.nvh): popup entries with pronunciation audio streamed from
+    learnmanx.com -->
+    <!-- Update, not Include: the Web SDK already includes json files as Content -->
+    <Content Update="external\manx-lemma-data\spoken.json"
+             Condition="Exists('external\manx-lemma-data\spoken.json')">
+        <Link>Resources\spoken.json</Link>
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <!-- The proper-nouns supplement (generated from cregeen-nvh names.nvh):
     loaded beside cregeen.tsv when present -->
     <Content Include="external\manx-lemma-data\names.tsv"

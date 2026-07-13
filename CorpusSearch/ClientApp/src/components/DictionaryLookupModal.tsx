@@ -155,6 +155,59 @@ export const useDictionaryLookup = (): {
     return { openFromClick, modal: { open, word, context, onClose } }
 }
 
+/** "learnmanx.com" from the source URL, for the corner credit's second line */
+const hostOf = (url: string): string => {
+    try {
+        return new URL(url).hostname.replace(/^www\./, "")
+    } catch {
+        return ""
+    }
+}
+
+/** The dictionary group heading; linked when the source publishes a home
+ * page (the Culture Vannin citation) */
+const DictionaryHeading = ({
+    dictionaryName,
+    entries,
+}: {
+    dictionaryName: string
+    entries: DictionaryResponse
+}) => (
+    <h3 className="dict-popup-dictionary">
+        {entries[0]?.sourceUrl ? (
+            <a href={entries[0].sourceUrl} target="_blank" rel="noreferrer">
+                {dictionaryName}
+            </a>
+        ) : (
+            dictionaryName
+        )}
+    </h3>
+)
+
+/** Plays the entry's pronunciation recording (streamed from the source) */
+const AudioButton = ({
+    summary,
+    className = "dict-popup-audio",
+}: {
+    summary: DictionaryResponse[number]
+    className?: string
+}) => {
+    if (!summary.audioUrl) return null
+    const url = summary.audioUrl
+    return (
+        <button
+            className={className}
+            aria-label={`Play pronunciation of ${summary.primaryWord}`}
+            title="Play pronunciation"
+            onClick={() => {
+                new Audio(url).play().catch(console.warn)
+            }}
+        >
+            {"\u25B6"}
+        </button>
+    )
+}
+
 export const DictionaryLookupModal = (props: DictionaryLookupState) => {
     const { open, word, context, onClose } = props
 
@@ -172,6 +225,16 @@ export const DictionaryLookupModal = (props: DictionaryLookupState) => {
 
     const multidictWord = getMultidictLookupWord(word)
 
+    // the tapped word's own recording anchors the modal's corner as a single
+    // control, not an entry row; other words' recordings stay inline
+    const wordKey = trimPunctuation(word).toLowerCase()
+    const cornerAudio = summaries?.find(
+        (x) =>
+            x.audioUrl &&
+            !x.nearMatchOf &&
+            trimPunctuation(x.primaryWord).toLowerCase() == wordKey,
+    )
+
     // the suggestion tier only fires on a total miss, so a response is either
     // all near-matches or none
     const nearMatchOnly =
@@ -187,11 +250,38 @@ export const DictionaryLookupModal = (props: DictionaryLookupState) => {
             aria-describedby="modal-modal-description"
         >
             <Box sx={style}>
+                {cornerAudio && (
+                    <div className="dict-popup-audio-corner">
+                        <AudioButton
+                            summary={cornerAudio}
+                            className="dict-popup-audio-main"
+                        />
+                        {cornerAudio.sourceUrl && (
+                            // the recording's attribution stays with the control
+                            <a
+                                className="dict-popup-audio-credit"
+                                href={cornerAudio.sourceUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                            >
+                                <span>
+                                    {cornerAudio.sourceCredit ||
+                                        cornerAudio.dictionaryName}
+                                </span>
+                                <span>{hostOf(cornerAudio.sourceUrl)}</span>
+                            </a>
+                        )}
+                    </div>
+                )}
                 <Typography
                     id="modal-modal-title"
                     variant="h6"
                     component="h2"
-                    sx={{ fontFamily: "Georgia, serif", color: "#33454D" }}
+                    sx={{
+                        fontFamily: "Georgia, serif",
+                        color: "#33454D",
+                        pr: "96px",
+                    }}
                 >
                     {word}
                 </Typography>
@@ -226,9 +316,10 @@ export const DictionaryLookupModal = (props: DictionaryLookupState) => {
                                         className="dict-popup-group"
                                         key={dictionaryName}
                                     >
-                                        <h3 className="dict-popup-dictionary">
-                                            {dictionaryName}
-                                        </h3>
+                                        <DictionaryHeading
+                                            dictionaryName={dictionaryName}
+                                            entries={entries}
+                                        />
                                         {entries.map((summary, index) => (
                                             // flat, un-nested: a suggestion is
                                             // not the selection's root chain
@@ -241,6 +332,11 @@ export const DictionaryLookupModal = (props: DictionaryLookupState) => {
                                                 </strong>
                                                 {": "}
                                                 {summary.summary}
+                                                {summary != cornerAudio && (
+                                                    <AudioButton
+                                                        summary={summary}
+                                                    />
+                                                )}
                                             </div>
                                         ))}
                                     </div>
@@ -263,9 +359,10 @@ export const DictionaryLookupModal = (props: DictionaryLookupState) => {
                                         className="dict-popup-group"
                                         key={dictionaryName}
                                     >
-                                        <h3 className="dict-popup-dictionary">
-                                            {dictionaryName}
-                                        </h3>
+                                        <DictionaryHeading
+                                            dictionaryName={dictionaryName}
+                                            entries={entries}
+                                        />
                                         {own.map((summary, index) => (
                                             // primaryWord differentiates fuzzy matches:
                                             // 'dy hroggal' and 'cha greck' both resolve
@@ -279,6 +376,11 @@ export const DictionaryLookupModal = (props: DictionaryLookupState) => {
                                                 </strong>
                                                 {": "}
                                                 {summary.summary}
+                                                {summary != cornerAudio && (
+                                                    <AudioButton
+                                                        summary={summary}
+                                                    />
+                                                )}
                                             </div>
                                         ))}
                                         {own.length == 0 &&
@@ -316,6 +418,11 @@ export const DictionaryLookupModal = (props: DictionaryLookupState) => {
                                                 </strong>
                                                 {": "}
                                                 {summary.summary}
+                                                {summary != cornerAudio && (
+                                                    <AudioButton
+                                                        summary={summary}
+                                                    />
+                                                )}
                                             </div>
                                         ))}
                                     </div>
