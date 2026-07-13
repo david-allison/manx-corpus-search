@@ -261,7 +261,7 @@ public class AdjudicationImporter
                          .ThenBy(x => x.Token.Key, StringComparer.Ordinal).ThenBy(x => x.Token.I))
             {
                 writer.WriteLine($"{token.DocId}\t{token.Key}\t{token.EnglishHash}\t{token.I}\t{token.Form}"
-                                 + $"\t{string.Join(",", verdict.ChosenIds)}\t{tier}\t0");
+                                 + $"\t{string.Join(",", verdict.ChosenIds.OrderBy(x => x, StringComparer.Ordinal))}\t{tier}\t0");
             }
         }
 
