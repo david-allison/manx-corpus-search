@@ -178,6 +178,7 @@ public class CregeenDictionaryService(ISet<string> allWords, IList<CregeenEntry>
         {
             return new DictionarySummary
             {
+                PartsOfSpeech = entry.PartsOfSpeech,
                 PrimaryWord = entry.Words.First(),
                 Summary = GetSummary(entry),
             };

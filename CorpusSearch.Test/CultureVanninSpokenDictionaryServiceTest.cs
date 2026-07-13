@@ -27,6 +27,7 @@ public class CultureVanninSpokenDictionaryServiceTest
                 {
                     Word = "moddey", Translation = "dog",
                     AudioUrl = "https://www.learnmanx.com/media/x.mp3", Topic = "animals",
+                    PartsOfSpeech = ["Noun"],
                 },
                 new CultureVanninSpokenDictionaryService.SpokenEntry
                 {
@@ -55,6 +56,7 @@ public class CultureVanninSpokenDictionaryServiceTest
                 Is.EqualTo("/api/Audio?url=" + Uri.EscapeDataString("https://www.learnmanx.com/media/x.mp3")));
             Assert.That(summary.SourceUrl, Is.EqualTo("https://www.learnmanx.com/learning/spoken-dictionary/"));
             Assert.That(summary.SourceCredit, Is.EqualTo("Spoken Dictionary"));
+            Assert.That(summary.PartsOfSpeech, Is.EqualTo(new[] { "Noun" }));
         });
     }
 

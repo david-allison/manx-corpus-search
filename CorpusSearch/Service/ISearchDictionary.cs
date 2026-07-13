@@ -54,4 +54,9 @@ public class DictionarySummary
     /// <summary>Compact display credit for the corner control ("Spoken
     /// Dictionary"); the full <see cref="DictionaryName"/> carries the citation</summary>
     public string? SourceCredit { get; set; }
+
+    /// <summary>The entry's word classes ("Verb", "Noun", "Adjective", ...) where the
+    /// dictionary knows them: lets the root chain keep only the senses the lemma id
+    /// means (row -> bee.v offers the verb 'bee', not the food)</summary>
+    public List<string>? PartsOfSpeech { get; set; }
 }

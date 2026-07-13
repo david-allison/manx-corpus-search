@@ -60,13 +60,34 @@ public class DictionaryLookupService(IEnumerable<ISearchDictionary> dictionarySe
             // entries for the selection
             var seen = new HashSet<string>(candidates, StringComparer.InvariantCultureIgnoreCase);
             var frontier = ResolvedDisplayLemmas(selection, context).Where(x => !seen.Contains(x)).ToList();
+            // which sense of a root the chain means: the word classes of the
+            // candidate ids that produced each display (row -> bee.v is the
+            // verb 'bee', never the food)
+            var expectedPos = ExpectedPosByDisplay(selection, context);
             for (var depth = 1; frontier.Count > 0 && depth <= 3; depth++)
             {
                 seen.UnionWith(frontier);
-                foreach (var summary in GetSummaries(frontier))
+                foreach (var display in frontier)
                 {
-                    summary.RootDepth = depth;
-                    results.Add(summary);
+                    var summaries = GetSummaries([display]);
+                    if (depth == 1 && expectedPos.TryGetValue(display, out var expected))
+                    {
+                        // entries without a declared class are kept; if the filter
+                        // would empty the list, the guess loses and everything stays
+                        var filtered = summaries
+                            .Where(x => x.PartsOfSpeech == null || x.PartsOfSpeech.Count == 0
+                                || x.PartsOfSpeech.Any(expected.Contains))
+                            .ToList();
+                        if (filtered.Count > 0)
+                        {
+                            summaries = filtered;
+                        }
+                    }
+                    foreach (var summary in summaries)
+                    {
+                        summary.RootDepth = depth;
+                        results.Add(summary);
+                    }
                 }
                 // deeper hops follow paradigm links only: a mutation guess is a
                 // candidate reading of the selection, not a root of the root
@@ -267,6 +288,47 @@ public class DictionaryLookupService(IEnumerable<ISearchDictionary> dictionarySe
         return allowedIds == null
             ? lemmaTable.DisplayLemmasFor(selection)
             : lemmaTable.DisplayLemmasFor(selection, allowedIds);
+    }
+
+    /// <summary>display lemma -> the word classes of the candidate ids behind it
+    /// ("bee" -> Verb when reached from row/bee.v). Displays reached through an id
+    /// of unknown class stay unconstrained.</summary>
+    private Dictionary<string, HashSet<string>> ExpectedPosByDisplay(string selection, string? context)
+    {
+        var ids = ResolvedLemmaIds(selection, context)
+                  ?? (IReadOnlyCollection<string>)lemmaTable.CandidatesFor(selection);
+        var result = new Dictionary<string, HashSet<string>>(StringComparer.InvariantCultureIgnoreCase);
+        var unconstrained = new HashSet<string>(StringComparer.InvariantCultureIgnoreCase);
+        foreach (var id in ids)
+        {
+            var display = lemmaTable.DisplayLemmaOf(id);
+            if (display == null)
+            {
+                continue;
+            }
+            var pos = id[(id.LastIndexOf('.') + 1)..] switch
+            {
+                "v" => "Verb",
+                "n" => "Noun",
+                "a" => "Adjective",
+                _ => null, // .x, .np and explicit ids ("bagh-1") constrain nothing
+            };
+            if (pos == null || id.LastIndexOf('.') < 0)
+            {
+                unconstrained.Add(display);
+                continue;
+            }
+            if (!result.TryGetValue(display, out var set))
+            {
+                result[display] = set = [];
+            }
+            set.Add(pos);
+        }
+        foreach (var display in unconstrained)
+        {
+            result.Remove(display);
+        }
+        return result;
     }
 
     /// <summary>The resolved candidate ids of the selection: the form-level override
