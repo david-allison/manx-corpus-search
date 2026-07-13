@@ -78,6 +78,13 @@ public class DictionaryLookupService(IEnumerable<ISearchDictionary> dictionarySe
             }
         }
 
+        if (results.Count == 0 && lang == "gv")
+        {
+            // the names supplement documents proper nouns no dictionary lists
+            // (Solomon, Yudah): the popup still identifies the name
+            results = NameSummaries(selection);
+        }
+
         if (results.Count == 0)
         {
             // 'goll-mygeayrt' has no entry, but 'goll' and 'mygeayrt' do
@@ -86,6 +93,42 @@ public class DictionaryLookupService(IEnumerable<ISearchDictionary> dictionarySe
 
         return Deduplicate(results);
     }
+
+    /// <summary>Entries synthesized from the lemma table's name metadata (the
+    /// names.tsv pos column): the selection's own name at depth 0, the name a
+    /// mutated spelling belongs to ('Yudah' -> Judah) at depth 1</summary>
+    private List<DictionarySummary> NameSummaries(string selection)
+    {
+        var results = new List<DictionarySummary>();
+        var seen = new HashSet<string>(StringComparer.InvariantCultureIgnoreCase);
+        foreach (var lemmaId in lemmaTable.CandidatesFor(selection))
+        {
+            var nameType = lemmaTable.NameTypeOf(lemmaId);
+            var display = lemmaTable.DisplayLemmaOf(lemmaId);
+            if (nameType == null || display == null || !seen.Add(display))
+            {
+                continue;
+            }
+            var isSelection = LemmaTable.NormalizeForm(display) == LemmaTable.NormalizeForm(selection);
+            results.Add(new DictionarySummary
+            {
+                PrimaryWord = display,
+                Summary = NameTypeDescription(nameType),
+                DictionaryName = "Proper nouns",
+                RootDepth = isSelection ? 0 : 1,
+            });
+        }
+        return results;
+    }
+
+    private static string NameTypeDescription(string nameType) => nameType switch
+    {
+        "personal" => "personal name",
+        "place" => "place name",
+        "language" => "language",
+        "ethnonym" => "people",
+        _ => "proper noun",
+    };
 
     /// <summary>
     /// The selection's display lemmas, narrowed by the resolution layers when they

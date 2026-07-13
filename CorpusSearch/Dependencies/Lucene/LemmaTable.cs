@@ -20,6 +20,7 @@ public class LemmaTable
     private readonly Dictionary<string, string[]> rootDisplayLemmasByForm;
     private readonly HashSet<string> lemmaIds;
     private readonly Dictionary<string, string> displayLemmaById;
+    private readonly Dictionary<string, string> nameTypeById;
 
     // read once, shared by the index-time analyzer and the query path
     private static readonly Lazy<LemmaTable> Lazy = new(LoadVendored);
@@ -28,13 +29,14 @@ public class LemmaTable
     private LemmaTable(Dictionary<string, string[]> candidatesByForm,
         Dictionary<string, string[]> displayLemmasByForm,
         Dictionary<string, string[]> rootDisplayLemmasByForm, HashSet<string> lemmaIds,
-        Dictionary<string, string> displayLemmaById)
+        Dictionary<string, string> displayLemmaById, Dictionary<string, string> nameTypeById)
     {
         this.candidatesByForm = candidatesByForm;
         this.displayLemmasByForm = displayLemmasByForm;
         this.rootDisplayLemmasByForm = rootDisplayLemmasByForm;
         this.lemmaIds = lemmaIds;
         this.displayLemmaById = displayLemmaById;
+        this.nameTypeById = nameTypeById;
     }
 
     public int FormCount => candidatesByForm.Count;
@@ -48,6 +50,16 @@ public class LemmaTable
     /// <summary>Whether <paramref name="value"/> is a lemma id itself ("aase.v"): a query
     /// for one skips form resolution</summary>
     public bool IsLemmaId(string value) => lemmaIds.Contains(value);
+
+    /// <summary>The proper-noun class of <paramref name="lemmaId"/> ("personal", "place",
+    /// "language", "ethnonym", "other"; "" for a bare np.), from the names supplement's
+    /// pos column; null when the id is not a name</summary>
+    public string? NameTypeOf(string lemmaId) =>
+        nameTypeById.TryGetValue(lemmaId, out var nameType) ? nameType : null;
+
+    /// <summary>The display lemma of <paramref name="lemmaId"/>; null when unknown</summary>
+    public string? DisplayLemmaOf(string lemmaId) =>
+        displayLemmaById.TryGetValue(lemmaId, out var lemma) ? lemma : null;
 
     /// <summary>The display lemmas of <paramref name="form"/> ("daase" -> "aase"): the
     /// radical, particle-free headwords a reader would look up in a dictionary</summary>
@@ -197,6 +209,7 @@ public class LemmaTable
         var rootListsByForm = new Dictionary<string, List<string>>();
         var lemmaIds = new HashSet<string>();
         var displayLemmaById = new Dictionary<string, string>();
+        var nameTypeById = new Dictionary<string, string>();
 
         foreach (var reader in readers)
         {
@@ -211,6 +224,11 @@ public class LemmaTable
                 var (form, lemmaId, displayLemma) = (columns[0], columns[1], columns[2]);
                 lemmaIds.Add(lemmaId);
                 displayLemmaById.TryAdd(lemmaId, displayLemma);
+                // the names supplement's pos column: "np. personal", "np. place", ...
+                if (columns.Length > 4 && columns[4].StartsWith("np."))
+                {
+                    nameTypeById.TryAdd(lemmaId, columns[4]["np.".Length..].Trim());
+                }
                 if (!listsByForm.TryGetValue(form, out var candidates))
                 {
                     listsByForm[form] = candidates = [];
@@ -256,7 +274,7 @@ public class LemmaTable
             rootDisplayLemmasByForm[form] = [.. roots];
         }
         return new LemmaTable(candidatesByForm, displayLemmasByForm, rootDisplayLemmasByForm, lemmaIds,
-            displayLemmaById);
+            displayLemmaById, nameTypeById);
     }
 
     private static LemmaTable LoadVendored()
@@ -267,7 +285,7 @@ public class LemmaTable
             // an uninitialised submodule shouldn't take the whole server down:
             // lemma search just finds nothing
             Serilog.Log.Warning("{Path} not found (is the submodule initialised?): lemma search disabled", path);
-            return new LemmaTable([], [], [], [], []);
+            return new LemmaTable([], [], [], [], [], []);
         }
         using var reader = new StreamReader(path);
         // the proper-nouns supplement rides beside the table when vendored
