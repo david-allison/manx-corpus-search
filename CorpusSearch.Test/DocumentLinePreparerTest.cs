@@ -202,6 +202,36 @@ public class DocumentLinePreparerTest
         Assert.That(line.Manx, Is.EqualTo("[laughs] as eisht"));
     }
 
+    /// <summary>1 Lioar Sheeloghe... - a bare verse number opens the cell</summary>
+    [Test]
+    public void ALeadingVerseNumberBecomesTheReference()
+    {
+        var line = Prepared(ReferenceManifest("leading-number"),
+            new DocumentLine { Manx = "1 Lioar Sheeloghe Yeesey Creest, Mac Ghavid. " });
+
+        Assert.That(line.Reference, Is.EqualTo("1"));
+        Assert.That(line.Manx, Is.EqualTo("Lioar Sheeloghe Yeesey Creest, Mac Ghavid. "));
+    }
+
+    /// <summary>"19 ¶ " - the KJV pilcrow rides with the number, and the English
+    /// column repeats the marker: both cells come out clean</summary>
+    [Test]
+    public void APilcrowRidesWithTheVerseNumberInBothColumns()
+    {
+        var line = Prepared(ReferenceManifest("leading-number"), new DocumentLine
+        {
+            Manx = "19 ¶ Eisht Joseph e sheshey, va dooinney cairagh",
+            English = "19 ¶ Then Joseph her husband, being a just man",
+        });
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(line.Reference, Is.EqualTo("19"));
+            Assert.That(line.Manx, Is.EqualTo("Eisht Joseph e sheshey, va dooinney cairagh"));
+            Assert.That(line.English, Is.EqualTo("Then Joseph her husband, being a just man"));
+        });
+    }
+
     /// <summary>Genesis:1:1. Text... - the P Kelly Bible import's verse markers</summary>
     [Test]
     public void AColonVerseMarkerBecomesTheReference()
