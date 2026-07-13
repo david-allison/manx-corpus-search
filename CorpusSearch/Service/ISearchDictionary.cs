@@ -22,6 +22,9 @@ public interface ISearchDictionary
     /// <summary>Whether the word appears in an entry's word list (exact,
     /// case-insensitive): the fast containment test behind GetSummaries</summary>
     bool ContainsWord(string word);
+
+    /// <summary>Every word an entry answers for: the near-match suggestion pool</summary>
+    IEnumerable<string> AllWords { get; }
 }
 
 /// <summary>When a query is made, provide a short summary of the result</summary>
@@ -37,4 +40,8 @@ public class DictionarySummary
     /// ('gheiney' -> 'deiney'), 2 for the root's root ('deiney' -> 'dooinney').
     /// The client nests each level under the previous one</summary>
     public int RootDepth { get; set; }
+
+    /// <summary>Set on "did you mean" fallback entries only: the near spelling
+    /// the entry was reached through, when nothing matched the selection itself</summary>
+    public string? NearMatchOf { get; set; }
 }

@@ -61,6 +61,11 @@ public class LemmaTable
     public string? DisplayLemmaOf(string lemmaId) =>
         displayLemmaById.TryGetValue(lemmaId, out var lemma) ? lemma : null;
 
+    /// <summary>The names supplement's display lemmas: near-match suggestion pool
+    /// material — their popup content is the proper-noun metadata</summary>
+    public IEnumerable<string> NameDisplayLemmas =>
+        nameTypeById.Keys.Select(id => displayLemmaById.GetValueOrDefault(id)).OfType<string>();
+
     /// <summary>The display lemmas of <paramref name="form"/> ("daase" -> "aase"): the
     /// radical, particle-free headwords a reader would look up in a dictionary</summary>
     public IReadOnlyList<string> DisplayLemmasFor(string form)

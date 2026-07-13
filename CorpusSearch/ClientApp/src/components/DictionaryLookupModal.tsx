@@ -174,6 +174,13 @@ export const DictionaryLookupModal = (props: DictionaryLookupState) => {
 
     const multidictWord = getMultidictLookupWord(word)
 
+    // the suggestion tier only fires on a total miss, so a response is either
+    // all near-matches or none
+    const nearMatchOnly =
+        summaries != null &&
+        summaries.length > 0 &&
+        summaries.every((x) => x.nearMatchOf)
+
     return (
         <Modal
             open={open}
@@ -208,7 +215,44 @@ export const DictionaryLookupModal = (props: DictionaryLookupState) => {
                         </div>
                     )}
 
+                    {nearMatchOnly && summaries != null && (
+                        // "did you mean" fallback: a suggestion box, styled so
+                        // it can never read as an entry for the tapped word
+                        <div className="dict-popup-suggestions">
+                            <p className="dict-popup-suggestions-note">
+                                Nothing found for “{word}” — near spellings:
+                            </p>
+                            {groupByDictionary(summaries).map(
+                                ([dictionaryName, entries]) => (
+                                    <div
+                                        className="dict-popup-group"
+                                        key={dictionaryName}
+                                    >
+                                        <h3 className="dict-popup-dictionary">
+                                            {dictionaryName}
+                                        </h3>
+                                        {entries.map((summary, index) => (
+                                            // flat, un-nested: a suggestion is
+                                            // not the selection's root chain
+                                            <div
+                                                className="dict-popup-entry"
+                                                key={index}
+                                            >
+                                                <strong>
+                                                    {summary.primaryWord}
+                                                </strong>
+                                                {": "}
+                                                {summary.summary}
+                                            </div>
+                                        ))}
+                                    </div>
+                                ),
+                            )}
+                        </div>
+                    )}
+
                     {summaries != null &&
+                        !nearMatchOnly &&
                         groupByDictionary(summaries).map(
                             ([dictionaryName, entries]) => {
                                 const { own, derived } = classifyEntries(
