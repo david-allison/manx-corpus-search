@@ -54,24 +54,22 @@ export const classifyEntries = (
         headsSelection(x.primaryWord) &&
         supportedByContext(x.primaryWord)
     let own = entries.filter(isOwn)
-    if (own.length == 0) {
-        // nothing heads the selection in-context: an out-of-context phrase
-        // entry ('my yinnagh' for yinnagh) is better shown plainly than as
-        // an orphaned arrow under a definition-less anchor
-        own = entries.filter(
-            (x) => !x.rootDepth && headsSelection(x.primaryWord),
-        )
-    }
     // the context rule applies down the chain too: a phrase entry is noise
     // unless the line says it, whether it rode in on a root's word list
     // ('cur mow' via vow ↳ mow, 'dy olk' via smessey ↳ olk) or on the
     // selection's own ('ro veg'/'thie veg' under veg)
-    let derived = entries.filter((x) => !own.includes(x))
+    const derived = entries.filter((x) => !own.includes(x))
     const inContext = derived.filter((x) => supportedByContext(x.primaryWord))
     if (own.length > 0 || inContext.length > 0) {
-        derived = inContext
+        return { own, derived: inContext }
     }
-    return { own, derived }
+    // nothing heads the selection in-context and no chain survives the
+    // context rule: an out-of-context phrase entry ('my yinnagh' with no
+    // roots beneath) is better shown plainly than nothing at all. When a
+    // chain did survive ('Chreest' ↳ Creest), it anchors the popup instead
+    // and out-of-context phrases stay dropped.
+    own = entries.filter((x) => !x.rootDepth && headsSelection(x.primaryWord))
+    return { own, derived: own.length > 0 ? [] : derived }
 }
 
 /** Groups the popup's entries under the dictionary defining them (#51) */

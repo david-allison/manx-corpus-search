@@ -22,17 +22,48 @@ describe("classifyEntries", () => {
         expect(derived.map((x) => x.primaryWord)).toEqual(["geddyn"])
     })
 
-    it("keeps an out-of-context phrase when nothing else heads the selection", () => {
+    it("an out-of-context phrase gives way to the root chain", () => {
         // tapping 'yinnagh' where the line doesn't say 'my yinnagh': the
-        // phrase entry is all Cregeen has, so it stays own, roots beneath it
+        // chain answers the tap, so the phrase is noise - the popup anchors
+        // on the selection with the root beneath
         const { own, derived } = classifyEntries(
             "yinnagh",
             "cha yinnagh eh shen",
             [entry("my yinnagh"), entry("jean", 1)],
         )
 
-        expect(own.map((x) => x.primaryWord)).toEqual(["my yinnagh"])
+        expect(own).toEqual([])
         expect(derived.map((x) => x.primaryWord)).toEqual(["jean"])
+    })
+
+    it("keeps an out-of-context phrase when there is no chain beneath", () => {
+        // with no roots at all, the phrase entry is all Cregeen has: shown
+        // plainly rather than nothing
+        const { own, derived } = classifyEntries(
+            "yinnagh",
+            "cha yinnagh eh shen",
+            [entry("my yinnagh")],
+        )
+
+        expect(own.map((x) => x.primaryWord)).toEqual(["my yinnagh"])
+        expect(derived).toEqual([])
+    })
+
+    it("the Chreest shape: phrases sharing the word never outrank the name", () => {
+        // tapping 'Chreest' in a line saying neither phrase: only the bridge's
+        // root entry answers the tap
+        const { own, derived } = classifyEntries(
+            "Chreest",
+            "ayns ennym Chreest y Chiarn",
+            [
+                entry("fuill Chreest"),
+                entry("moylley Chreest"),
+                entry("Creest", 1),
+            ],
+        )
+
+        expect(own).toEqual([])
+        expect(derived.map((x) => x.primaryWord)).toEqual(["Creest"])
     })
 
     it("keeps phrase entries when no context is known", () => {
