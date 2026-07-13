@@ -1,3 +1,4 @@
+using System.IO;
 using System.Linq;
 using CorpusSearch.Dependencies.Lucene;
 using CorpusSearch.Model;
@@ -71,5 +72,47 @@ public class LemmaIndexTest : QueryBase
         });
 
         Assert.That(SearchLemma("aase.v").Lines, Is.Empty);
+    }
+
+    // ---- the resolution layers, end to end (LemmaResolver; vendored table:
+    // 'veg' is ambiguous across veg.x / beg.a / meg.n) ----
+
+    /// <summary>A form-level override narrows what the index holds: the demutation
+    /// reading no longer matches anywhere</summary>
+    [Test]
+    public void AnOverrideNarrowsTheIndexedCandidates()
+    {
+        var resolver = LemmaResolver.Load(
+            new StringReader("form\tlemmaIds\nveg\tveg.x\n"), null, LemmaTable.Instance);
+        luceneIndex = LuceneIndex.GetInstance(resolver);
+        AddLines(new DocumentLine { Manx = "Cha nel veg aym", English = "", CsvLineNumber = 2 });
+
+        Assert.That(SearchLemma("veg.x").Lines, Has.Count.EqualTo(1));
+        Assert.That(SearchLemma("beg.a").Lines, Is.Empty);
+    }
+
+    /// <summary>A sidecar row narrows its own line only, and the surviving id still
+    /// highlights the surface word</summary>
+    [Test]
+    public void ASidecarRowNarrowsItsLineOnly()
+    {
+        const string resolved = "Cha nel veg aym";
+        // the line key the exporter computed: over the normalized cell's token stream
+        var key = LemmaResolver.LineKey(LemmaResolver.TokenizeManx(DocumentLine.NormalizeManx(resolved)));
+        var sidecar = "docId\tkey\tenglishHash\ttokenIndex\tform\tlemmaIds\ttier\thumanVerified\n"
+                      + $"doc\t{key}\tx\t2\tveg\tveg.x\tindex\t0\n";
+        var resolver = LemmaResolver.Load(null, new StringReader(sidecar), LemmaTable.Instance);
+        luceneIndex = LuceneIndex.GetInstance(resolver);
+        AddLines(
+            new DocumentLine { Manx = resolved, English = "", CsvLineNumber = 2 },
+            new DocumentLine { Manx = "Ta veg ayn", English = "", CsvLineNumber = 3 });
+
+        // the demutation reading now only matches the unresolved line
+        Assert.That(SearchLemma("beg.a").Lines.Single().Manx, Is.EqualTo("Ta veg ayn"));
+        var lines = SearchLemma("veg.x").Lines;
+        Assert.That(lines, Has.Count.EqualTo(2));
+        var hit = lines.Single(x => x.Manx == resolved);
+        var highlighted = hit.ManxHighlights!.Select(x => hit.Manx![x.Start..x.End]);
+        Assert.That(highlighted, Is.EqualTo(new[] { "veg" }));
     }
 }

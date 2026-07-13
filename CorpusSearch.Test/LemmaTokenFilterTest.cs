@@ -27,10 +27,10 @@ public class LemmaTokenFilterTest
 
     private static string Row(string form, string lemmaId) => $"{form}\t{lemmaId}\tx\tself\tx\t{form}\t";
 
-    private static List<Token> Tokens(string text, LemmaTable table)
+    private static List<Token> Tokens(string text, LemmaTable table, LemmaResolver? resolver = null)
     {
         var tokenizer = new ManxTokenizer(LuceneVersion.LUCENE_48, new StringReader(text));
-        using var stream = new LemmaTokenFilter(new ManxTokenFilter(tokenizer), table);
+        using var stream = new LemmaTokenFilter(new ManxTokenFilter(tokenizer), table, resolver);
         var term = stream.GetAttribute<ICharTermAttribute>();
         var posIncr = stream.GetAttribute<IPositionIncrementAttribute>();
         var offset = stream.GetAttribute<IOffsetAttribute>();
@@ -141,5 +141,90 @@ public class LemmaTokenFilterTest
         // 'yn'n' is contrived: both halves resolve to yn.d, emitted once
         var terms = Tokens("yn'n", table).Select(x => x.Term);
         Assert.That(terms, Is.EqualTo(new[] { "yn'n", "yn.d" }));
+    }
+
+    // ---- the resolution layers (LemmaResolver) ----
+
+    private static LemmaResolver Resolver(LemmaTable table, string? overrides = null, string? sidecar = null)
+    {
+        return LemmaResolver.Load(
+            overrides == null ? null : new StringReader(overrides),
+            sidecar == null ? null : new StringReader(sidecar),
+            table);
+    }
+
+    /// <summary>A sidecar row for the line <paramref name="text"/> tokenizes to</summary>
+    private static string SidecarRow(string text, int tokenIndex, string form, string lemmaIds,
+        string tier = "index")
+    {
+        var key = LemmaResolver.LineKey(LemmaResolver.TokenizeManx(text));
+        return "docId\tkey\tenglishHash\ttokenIndex\tform\tlemmaIds\ttier\thumanVerified\n"
+               + $"doc\t{key}\tx\t{tokenIndex}\t{form}\t{lemmaIds}\t{tier}\t0\n";
+    }
+
+    [Test]
+    public void AFormLevelOverrideNarrowsTheEmission()
+    {
+        var table = Table(Row("veg", "veg.x"), Row("veg", "beg.a"));
+        var resolver = Resolver(table, overrides: "form\tlemmaIds\nveg\tveg.x\n");
+
+        var tokens = Tokens("veg", table, resolver);
+        Assert.That(tokens.Select(x => (x.Term, x.PosIncr)), Is.EqualTo(new[] { ("veg.x", 1) }));
+    }
+
+    [Test]
+    public void ASidecarRowNarrowsOnlyItsOwnLine()
+    {
+        var table = Table(Row("veg", "veg.x"), Row("veg", "beg.a"), Row("moddey", "moddey.n"));
+        var resolver = Resolver(table, sidecar: SidecarRow("veg moddey", tokenIndex: 0, "veg", "veg.x"));
+
+        Assert.That(Tokens("veg moddey", table, resolver).Select(x => (x.Term, x.PosIncr)), Is.EqualTo(new[]
+        {
+            ("veg.x", 1),
+            ("moddey.n", 1),
+        }));
+        // a different line: its key misses, and every candidate is emitted
+        Assert.That(Tokens("veg cabbyl", table, resolver).Select(x => (x.Term, x.PosIncr)), Is.EqualTo(new[]
+        {
+            ("veg.x", 1),
+            ("beg.a", 0),
+            ("cabbyl", 1),
+        }));
+    }
+
+    [Test]
+    public void APopupTierRowDoesNotNarrowTheIndex()
+    {
+        var table = Table(Row("veg", "veg.x"), Row("veg", "beg.a"));
+        var resolver = Resolver(table, sidecar: SidecarRow("veg", tokenIndex: 0, "veg", "veg.x", tier: "popup"));
+
+        Assert.That(Tokens("veg", table, resolver).Select(x => x.Term), Is.EqualTo(new[] { "veg.x", "beg.a" }));
+    }
+
+    [Test]
+    public void ARowPointingAtADifferentTokenIsIgnored()
+    {
+        // the row's index lands on 'moddey', not the 'veg' it claims: no narrowing
+        var table = Table(Row("veg", "veg.x"), Row("veg", "beg.a"), Row("moddey", "moddey.n"));
+        var resolver = Resolver(table, sidecar: SidecarRow("veg moddey", tokenIndex: 1, "veg", "veg.x"));
+
+        Assert.That(Tokens("veg moddey", table, resolver).Select(x => x.Term),
+            Is.EqualTo(new[] { "veg.x", "beg.a", "moddey.n" }));
+    }
+
+    /// <summary>The buffered (sidecar-active) path keeps the streaming contract:
+    /// surface offsets on the injected ids, and the clitic fallback</summary>
+    [Test]
+    public void TheBufferedPathKeepsOffsetsAndClitics()
+    {
+        var table = Table(Row("daase", "aase.n"), Row("daase", "aase.v"), Row("ta", "bee.v"), Row("ayn", "ayn.x"));
+        // an unrelated row, so the buffered path runs without narrowing anything
+        var resolver = Resolver(table, sidecar: SidecarRow("nagh vel", tokenIndex: 0, "daase", "aase.n"));
+
+        var lemmas = Tokens("my daase", table, resolver).Where(x => x.Term.StartsWith("aase.")).ToList();
+        Assert.That(lemmas.Select(x => (x.Start, x.End)), Is.EqualTo(new[] { (3, 8), (3, 8) }));
+
+        Assert.That(Tokens("t'ayn", table, resolver).Select(x => x.Term),
+            Is.EqualTo(new[] { "t'ayn", "bee.v", "ayn.x" }));
     }
 }

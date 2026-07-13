@@ -70,7 +70,7 @@ public class LuceneIndex(IndexWriter indexWriter)
 
     private IndexReader UseReader() => indexWriter.GetReader(applyAllDeletes: true);
 
-    public static LuceneIndex GetInstance()
+    public static LuceneIndex GetInstance(LemmaResolver? lemmaResolver = null)
     {
         // Ensures index backward compatibility
         const LuceneVersion appLuceneVersion = LuceneVersion.LUCENE_48;
@@ -79,7 +79,7 @@ public class LuceneIndex(IndexWriter indexWriter)
         var dir = new RAMDirectory();// FSDirectory.Open(indexPath);
 
         // Create an analyzer to process the text
-        var analyzer = new ManxAnalyzer();
+        var analyzer = new ManxAnalyzer(lemmaResolver);
 
         // Create an index writer
         var indexConfig = new IndexWriterConfig(appLuceneVersion, analyzer)

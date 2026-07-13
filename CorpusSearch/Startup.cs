@@ -72,6 +72,8 @@ public class Startup(IConfiguration configuration)
         services.AddSingleton<ISearchDictionary>(provider => provider.GetRequiredService<KellyManxToEnglishDictionaryService>());
         // eager: the lemma table is also the analyzer's, best loaded before indexing
         services.AddSingleton(LemmaTable.Instance);
+        // eager for the same reason: the resolution layers narrow the lemma field
+        services.AddSingleton(LemmaResolver.Instance);
         services.AddSingleton<DictionaryLookupService>();
         services.AddSingleton<WorkService>();
         services.AddSingleton<DocumentSearchService>();
