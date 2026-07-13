@@ -26,6 +26,16 @@ public class DictionaryController(DictionaryLookupService lookupService)
     }
 
     /// <summary>
+    /// The teanglann-style full page for a word (experimental): per-dictionary
+    /// groups, the word's own recording, near-match suggestions as a tier.
+    /// </summary>
+    [HttpGet("page")]
+    public DictionaryPage Page([FromQuery] string lang, [FromQuery] string word)
+    {
+        return lookupService.Page(lang, word);
+    }
+
+    /// <summary>
     /// The dictionary-coverage debug view: per-token dictionary/lemma status
     /// for each posted line (the client's dictionary debug mode).
     /// </summary>

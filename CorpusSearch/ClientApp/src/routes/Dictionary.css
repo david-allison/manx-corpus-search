@@ -1,0 +1,162 @@
+/* the experimental teanglann-style dictionary page: one word, every source */
+.dict-page {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 16px 12px 48px;
+}
+
+.dict-page-search {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+}
+
+.dict-page-search input {
+    flex: 1;
+    padding: 8px 12px;
+    font-size: 16px;
+    border: 1px solid var(--c-border-meta);
+    border-radius: 4px;
+}
+
+.dict-page-search button {
+    padding: 8px 16px;
+    border: 1px solid var(--c-accent);
+    border-radius: 4px;
+    background: none;
+    color: var(--c-accent);
+    cursor: pointer;
+}
+
+.dict-page-search button:hover {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+.dict-page-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.dict-page-word {
+    font-family: Georgia, serif;
+    color: #33454d;
+    margin: 0 0 16px;
+}
+
+.dict-page-loading {
+    display: flex;
+    justify-content: center;
+    margin-top: 40px;
+}
+
+.dict-page-group {
+    margin-top: 20px;
+}
+
+.dict-page-dictionary {
+    font-size: 11px;
+    letter-spacing: 2.5px;
+    color: var(--c-accent);
+    font-weight: 600;
+    margin: 0 0 8px;
+    border-bottom: 1px solid var(--c-border-meta);
+    padding-bottom: 6px;
+    text-transform: uppercase;
+}
+
+.dict-page-dictionary a {
+    color: inherit;
+}
+
+.dict-page-entry + .dict-page-entry {
+    margin-top: 12px;
+}
+
+/* the root-lemma chain: indented with a hanging indent past the connector */
+.dict-page-root-entry {
+    padding-left: 18px;
+    text-indent: -18px;
+}
+
+.dict-page-root-connector {
+    color: var(--c-accent);
+}
+
+.dict-page-plural {
+    color: var(--c-accent);
+    font-style: italic;
+    font-size: 0.9em;
+}
+
+/* near-spelling suggestions: tinted apart from real entries, as in the popup */
+.dict-page-suggestions {
+    background: #fff8e1;
+    border: 1px solid #ecdfae;
+    border-radius: 6px;
+    padding: 10px 14px;
+}
+
+.dict-page-suggestions-note {
+    margin: 4px 0 0;
+    color: #6b5a1e;
+    font-weight: 600;
+}
+
+.dict-page-audio,
+.dict-page-audio-main {
+    border: 1px solid var(--c-accent);
+    background: none;
+    color: var(--c-accent);
+    cursor: pointer;
+}
+
+.dict-page-audio {
+    margin-left: 8px;
+    padding: 0 7px;
+    border-color: var(--c-border-meta);
+    border-radius: 10px;
+    font-size: 10px;
+    line-height: 16px;
+    vertical-align: 1px;
+}
+
+.dict-page-audio:hover {
+    border-color: var(--c-accent);
+}
+
+.dict-page-audio-corner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+}
+
+.dict-page-audio-main {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    font-size: 15px;
+    line-height: 1;
+}
+
+.dict-page-audio-main:hover {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+.dict-page-audio-credit {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    line-height: 1.35;
+    font-size: 9px;
+    letter-spacing: 0.5px;
+    color: var(--c-accent);
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.dict-page-corpus-link {
+    margin-top: 28px;
+}

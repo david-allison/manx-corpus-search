@@ -3,6 +3,7 @@ import { Route, Routes, useLocation } from "react-router-dom"
 import { Layout } from "./components/Layout"
 import { ErrorBoundary } from "./components/ErrorBoundary"
 import { Home } from "./routes/Home"
+import { Dictionary } from "./routes/Dictionary"
 import { DocumentView } from "./routes/DocumentView"
 import { BitPlayer } from "./routes/BitPlayer"
 import { Contributions } from "./routes/Contributions"
@@ -19,6 +20,8 @@ export const App = () => {
             <ErrorBoundary key={location.pathname}>
                 <Routes>
                     <Route path="/" element={<Home key={k} />} />
+                    {/*experimental: the teanglann-style dictionary page*/}
+                    <Route path="/dictionary/:word?" element={<Dictionary />} />
                     <Route path="/docs/:docId" element={<DocumentView />} />
                     <Route path={"/tools/youtube"} element={<BitPlayer />} />
                     <Route path="/contributions" element={<Contributions />} />

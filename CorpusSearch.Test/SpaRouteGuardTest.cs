@@ -31,6 +31,9 @@ public class SpaRouteGuardTest
     [TestCase("/Contributions/")]
     [TestCase("/docs/PargeiysCaillit")]
     [TestCase("/docs/PargeiysCaillit/")]
+    [TestCase("/dictionary")]
+    [TestCase("/dictionary/billey")]
+    [TestCase("/Dictionary/Billey/")]
     public void SpaPagesFallThroughToTheShell(string path)
     {
         Assert.That(SpaRouteGuard.IsSpaPage(path, workService), Is.True);
@@ -45,6 +48,7 @@ public class SpaRouteGuardTest
     [TestCase("/api/NoSuchEndpoint")]
     [TestCase("/tools")]
     [TestCase("/tools/youtube/extra")]
+    [TestCase("/dictionary/billey/extra")]
     public void UnknownPagesAre404(string path)
     {
         Assert.That(SpaRouteGuard.IsSpaPage(path, workService), Is.False);
