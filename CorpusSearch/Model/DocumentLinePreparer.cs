@@ -55,6 +55,16 @@ public static class DocumentLinePreparer
                     line.Reference = match.Groups["ref"].Value.Trim();
                 }
                 line.Manx = line.Manx[match.Length..].TrimStart();
+                // the translation column repeats the marker ("19 ¶ Then Joseph..."):
+                // strip it there too, but the Manx side owns the Reference
+                if (line.English != null)
+                {
+                    var english = format.Match(line.English);
+                    if (english.Success)
+                    {
+                        line.English = line.English[english.Length..].TrimStart();
+                    }
+                }
                 break;
             }
         }
@@ -113,6 +123,13 @@ public static class DocumentLinePreparer
                 case "bracketed-number":
                     // [3] Text...
                     result.Add(new Regex(@"^\s*\[(?<ref>\d+)\]\s*", options));
+                    break;
+                case "leading-number":
+                    // 1 Lioar Sheeloghe... (Mian 1748, Acocrypha): a bare verse
+                    // number opens the cell, optionally with a KJV-style pilcrow
+                    // ("19 ¶ "); digits never tokenized as Manx, so this is
+                    // display/metadata cleanliness
+                    result.Add(new Regex(@"^\s*(?<ref>\d+)(?:\s*¶)?\s+(?=\S)", options));
                     break;
                 case "colon-verse":
                     // Genesis:1:1. Ayns y toshiaght... (the P Kelly Bible import);
