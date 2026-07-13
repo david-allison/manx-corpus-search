@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 
 namespace CorpusSearch.Dependencies.Lucene;
@@ -18,6 +19,7 @@ public class LemmaTable
     private readonly Dictionary<string, string[]> displayLemmasByForm;
     private readonly Dictionary<string, string[]> rootDisplayLemmasByForm;
     private readonly HashSet<string> lemmaIds;
+    private readonly Dictionary<string, string> displayLemmaById;
 
     // read once, shared by the index-time analyzer and the query path
     private static readonly Lazy<LemmaTable> Lazy = new(LoadVendored);
@@ -25,12 +27,14 @@ public class LemmaTable
 
     private LemmaTable(Dictionary<string, string[]> candidatesByForm,
         Dictionary<string, string[]> displayLemmasByForm,
-        Dictionary<string, string[]> rootDisplayLemmasByForm, HashSet<string> lemmaIds)
+        Dictionary<string, string[]> rootDisplayLemmasByForm, HashSet<string> lemmaIds,
+        Dictionary<string, string> displayLemmaById)
     {
         this.candidatesByForm = candidatesByForm;
         this.displayLemmasByForm = displayLemmasByForm;
         this.rootDisplayLemmasByForm = rootDisplayLemmasByForm;
         this.lemmaIds = lemmaIds;
+        this.displayLemmaById = displayLemmaById;
     }
 
     public int FormCount => candidatesByForm.Count;
@@ -50,6 +54,15 @@ public class LemmaTable
     public IReadOnlyList<string> DisplayLemmasFor(string form)
     {
         return displayLemmasByForm.TryGetValue(NormalizeForm(form), out var lemmas) ? lemmas : [];
+    }
+
+    /// <summary><see cref="DisplayLemmasFor(string)"/> restricted to the readings of
+    /// <paramref name="lemmaIds"/>: how a resolution layer narrows the popup's root chain</summary>
+    public IReadOnlyList<string> DisplayLemmasFor(string form, IReadOnlyCollection<string> lemmaIds)
+    {
+        return DisplayLemmasFor(form)
+            .Where(display => lemmaIds.Any(id => displayLemmaById.GetValueOrDefault(id) == display))
+            .ToList();
     }
 
     /// <summary>The display lemmas <paramref name="form"/> belongs to as part of
@@ -175,6 +188,7 @@ public class LemmaTable
         var displayListsByForm = new Dictionary<string, List<string>>();
         var rootListsByForm = new Dictionary<string, List<string>>();
         var lemmaIds = new HashSet<string>();
+        var displayLemmaById = new Dictionary<string, string>();
 
         reader.ReadLine(); // header
         while (reader.ReadLine() is { } line)
@@ -186,6 +200,7 @@ public class LemmaTable
             }
             var (form, lemmaId, displayLemma) = (columns[0], columns[1], columns[2]);
             lemmaIds.Add(lemmaId);
+            displayLemmaById.TryAdd(lemmaId, displayLemma);
             if (!listsByForm.TryGetValue(form, out var candidates))
             {
                 listsByForm[form] = candidates = [];
@@ -229,7 +244,8 @@ public class LemmaTable
         {
             rootDisplayLemmasByForm[form] = [.. roots];
         }
-        return new LemmaTable(candidatesByForm, displayLemmasByForm, rootDisplayLemmasByForm, lemmaIds);
+        return new LemmaTable(candidatesByForm, displayLemmasByForm, rootDisplayLemmasByForm, lemmaIds,
+            displayLemmaById);
     }
 
     private static LemmaTable LoadVendored()
@@ -240,7 +256,7 @@ public class LemmaTable
             // an uninitialised submodule shouldn't take the whole server down:
             // lemma search just finds nothing
             Serilog.Log.Warning("{Path} not found (is the submodule initialised?): lemma search disabled", path);
-            return new LemmaTable([], [], [], []);
+            return new LemmaTable([], [], [], [], []);
         }
         using var reader = new StreamReader(path);
         return Load(reader);
