@@ -8,23 +8,42 @@ namespace CorpusSearch.Dependencies.Lucene;
 /// Maps each token to its candidate lemma ids at the same position, offsets
 /// untouched — so a hit on manx_lemma:aase.v highlights 'daase' in the raw line
 /// (ComputeHighlights reads the term vector offsets). Ambiguity is intentional:
-/// every candidate of a form is indexed, extras at a position increment of 0.
+/// every candidate of a form is indexed, extras at a position increment of 0 —
+/// unless a resolution layer (<see cref="LemmaResolver"/>) narrows the set:
+/// a form-level override first, then the line's sidecar row, then all
+/// candidates. Queries expand a form to all candidates, and the resolved ids
+/// are a subset, so narrowing sharpens precision without a query-side change.
 ///
 /// A token the table covers directly is *replaced* by its ids (queries resolve
 /// such tokens the same way, so the surface term is never needed and the field
 /// stays ~40% smaller). Uncovered tokens — including productive clitics, whose
 /// parts' ids are injected alongside — keep their surface token, so phrase
 /// positions and the unknown-term query fallback hold.
+///
+/// Sidecar rows are keyed by a hash of the whole line's token stream, so when
+/// any exist the line is buffered before the first token is emitted; with no
+/// sidecar (or none loaded) the filter streams token by token as before.
 /// </summary>
-public sealed class LemmaTokenFilter(TokenStream input, LemmaTable table) : TokenFilter(input)
+public sealed class LemmaTokenFilter(TokenStream input, LemmaTable table, LemmaResolver? resolver = null)
+    : TokenFilter(input)
 {
     private readonly ICharTermAttribute termAtt = input.AddAttribute<ICharTermAttribute>();
     private readonly IPositionIncrementAttribute posIncrAtt = input.AddAttribute<IPositionIncrementAttribute>();
+    private readonly LemmaResolver resolver = resolver ?? LemmaResolver.Empty;
 
     private readonly Queue<string> pending = new();
     private State? current;
 
+    // the buffered (sidecar) path: every token's attributes captured up front
+    private readonly Queue<(State State, string Term, bool AtPreviousPosition)> buffer = new();
+    private bool buffered;
+
     public override bool IncrementToken()
+    {
+        return resolver.HasSidecarRows ? BufferedIncrement() : StreamingIncrement();
+    }
+
+    private bool StreamingIncrement()
     {
         if (pending.Count > 0)
         {
@@ -44,15 +63,16 @@ public sealed class LemmaTokenFilter(TokenStream input, LemmaTable table) : Toke
         var direct = table.CandidatesFor(token);
         if (direct.Count > 0)
         {
-            for (var i = 1; i < direct.Count; i++)
+            var ids = resolver.OverrideFor(token) ?? direct;
+            for (var i = 1; i < ids.Count; i++)
             {
-                pending.Enqueue(direct[i]);
+                pending.Enqueue(ids[i]);
             }
             if (pending.Count > 0)
             {
                 current = CaptureState();
             }
-            termAtt.SetEmpty().Append(direct[0]);
+            termAtt.SetEmpty().Append(ids[0]);
             return true;
         }
 
@@ -69,10 +89,68 @@ public sealed class LemmaTokenFilter(TokenStream input, LemmaTable table) : Toke
         return true;
     }
 
+    private bool BufferedIncrement()
+    {
+        if (!buffered)
+        {
+            BufferLine();
+            buffered = true;
+        }
+        if (buffer.Count == 0)
+        {
+            return false;
+        }
+        var (state, term, atPreviousPosition) = buffer.Dequeue();
+        RestoreState(state);
+        termAtt.SetEmpty().Append(term);
+        if (atPreviousPosition)
+        {
+            posIncrAtt.PositionIncrement = 0;
+        }
+        return true;
+    }
+
+    private void BufferLine()
+    {
+        var states = new List<State>();
+        var tokens = new List<string>();
+        while (m_input.IncrementToken())
+        {
+            states.Add(CaptureState());
+            tokens.Add(termAtt.ToString());
+        }
+
+        var lineKey = LemmaResolver.LineKey(tokens);
+        for (var i = 0; i < tokens.Count; i++)
+        {
+            var token = tokens[i];
+            var direct = table.CandidatesFor(token);
+            if (direct.Count > 0)
+            {
+                var ids = resolver.OverrideFor(token)
+                          ?? resolver.SidecarFor(lineKey, i, token, includePopupTier: false)
+                          ?? direct;
+                buffer.Enqueue((states[i], ids[0], false));
+                for (var j = 1; j < ids.Count; j++)
+                {
+                    buffer.Enqueue((states[i], ids[j], true));
+                }
+                continue;
+            }
+            buffer.Enqueue((states[i], token, false));
+            foreach (var lemmaId in table.CliticCandidatesFor(token))
+            {
+                buffer.Enqueue((states[i], lemmaId, true));
+            }
+        }
+    }
+
     public override void Reset()
     {
         base.Reset();
         pending.Clear();
         current = null;
+        buffer.Clear();
+        buffered = false;
     }
 }

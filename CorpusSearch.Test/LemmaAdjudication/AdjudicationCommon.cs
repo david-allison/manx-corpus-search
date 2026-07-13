@@ -2,12 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Security.Cryptography;
 using System.Text;
 using CorpusSearch.Dependencies.Lucene;
 using CorpusSearch.Services;
-using Lucene.Net.Analysis.TokenAttributes;
-using Lucene.Net.Util;
 using Newtonsoft.Json;
 using NUnit.Framework;
 
@@ -264,9 +261,11 @@ public static class AdjudicationCommon
         return result;
     }
 
+    /// <summary>The artifacts' hash: delegates to the consumer's implementation
+    /// (<see cref="LemmaResolver.Hash"/>), so the two can't drift apart</summary>
     public static string Hash(string text)
     {
-        return Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(text)))[..16];
+        return LemmaResolver.Hash(text);
     }
 
     /// <summary>The sidecar line key: a hash of the normalized token stream, so
@@ -274,23 +273,13 @@ public static class AdjudicationCommon
     /// while any token change correctly invalidates them.</summary>
     public static string LineKey(string manxCell)
     {
-        return Hash(string.Join(" ", Tokenize(manxCell)));
+        return LemmaResolver.LineKey(Tokenize(manxCell));
     }
 
     /// <summary>The manx_lemma pipeline's tokens: uncased ManxTokenizer + ManxTokenFilter</summary>
     public static List<string> Tokenize(string text)
     {
-        var result = new List<string>();
-        var tokenizer = new ManxTokenizer(LuceneVersion.LUCENE_48, new StringReader(text));
-        using var stream = new ManxTokenFilter(tokenizer);
-        var term = stream.GetAttribute<ICharTermAttribute>();
-        stream.Reset();
-        while (stream.IncrementToken())
-        {
-            result.Add(term.ToString());
-        }
-        stream.End();
-        return result;
+        return LemmaResolver.TokenizeManx(text);
     }
 
     /// <summary>Reads the lemma-equivalence layer (lemma.equivalences[.seed].tsv:
