@@ -114,6 +114,11 @@ public static class DocumentLinePreparer
                     // [3] Text...
                     result.Add(new Regex(@"^\s*\[(?<ref>\d+)\]\s*", options));
                     break;
+                case "colon-verse":
+                    // Genesis:1:1. Ayns y toshiaght... (the P Kelly Bible import);
+                    // book names are Manx and may contain spaces (Arrane Solomon)
+                    result.Add(new Regex(@"^\s*(?<ref>[^:\s][^:]{0,40}:\d+:\d+)\.?\s*", options));
+                    break;
                 case "heading-line":
                     // the whole cell is a chapter/psalm heading: CAB. II. / Psalm 23 / CHAPTER V
                     result.Add(new Regex(@"^\s*(?<ref>(?:cab\.?|cabdil|chapter|psalm)\s+[ivxlcdm\d]+\.?)\s*$", options));

@@ -202,6 +202,27 @@ public class DocumentLinePreparerTest
         Assert.That(line.Manx, Is.EqualTo("[laughs] as eisht"));
     }
 
+    /// <summary>Genesis:1:1. Text... - the P Kelly Bible import's verse markers</summary>
+    [Test]
+    public void AColonVerseMarkerBecomesTheReference()
+    {
+        var line = Prepared(ReferenceManifest("colon-verse"),
+            new DocumentLine { Manx = "Genesis:1:1. Ayns y toshiaght chroo Jee niau as thalloo." });
+
+        Assert.That(line.Reference, Is.EqualTo("Genesis:1:1"));
+        Assert.That(line.Manx, Is.EqualTo("Ayns y toshiaght chroo Jee niau as thalloo."));
+    }
+
+    [Test]
+    public void AColonVerseBookNameMayContainSpaces()
+    {
+        var line = Prepared(ReferenceManifest("colon-verse"),
+            new DocumentLine { Manx = "Arrane Solomon:2:3. Myr y billey-ooyl" });
+
+        Assert.That(line.Reference, Is.EqualTo("Arrane Solomon:2:3"));
+        Assert.That(line.Manx, Is.EqualTo("Myr y billey-ooyl"));
+    }
+
     /// <summary>A whole-cell chapter heading becomes a reference-only row</summary>
     [Test]
     public void AHeadingLineBecomesAReferenceOnlyRow()
