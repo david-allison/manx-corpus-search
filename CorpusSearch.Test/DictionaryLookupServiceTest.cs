@@ -317,6 +317,51 @@ public class DictionaryLookupServiceTest
         Assert.That(Lookup(service, "er", context), Is.EqualTo(new[] { "er" }));
     }
 
+    private static LemmaTable Names()
+    {
+        return LemmaTable.Load(new StringReader(
+            "form\tlemmaId\tlemma\tlinkType\tpos\n"
+            + "solomon\tsolomon.np\tSolomon\tself\tnp. personal\n"
+            + "yudah\tjudah.np\tJudah\tmutation\tnp. personal\n"
+            + "judah\tjudah.np\tJudah\tself\tnp. personal\n"
+            + "doolish\tdoolish.np\tDoolish\tself\tnp. place\n"));
+    }
+
+    /// <summary>No dictionary lists Bible names: the names supplement's metadata
+    /// still identifies the tapped word</summary>
+    [Test]
+    public void AnEntrylessNameShowsAsAProperNoun()
+    {
+        var service = new DictionaryLookupService([new FakeDictionary(Array.Empty<string>())], Names(), LemmaResolver.Empty);
+
+        var results = service.Lookup("gv", "Solomon");
+        Assert.That(results.Select(x => (x.PrimaryWord, x.Summary, x.DictionaryName, x.RootDepth)),
+            Is.EqualTo(new[] { ("Solomon", "personal name", "Proper nouns", 0) }));
+    }
+
+    /// <summary>A mutated spelling identifies the name it belongs to, nested like
+    /// a root entry</summary>
+    [Test]
+    public void AMutatedEntrylessNameIdentifiesItsName()
+    {
+        var service = new DictionaryLookupService([new FakeDictionary(Array.Empty<string>())], Names(), LemmaResolver.Empty);
+
+        var results = service.Lookup("gv", "Yudah");
+        Assert.That(results.Select(x => (x.PrimaryWord, x.Summary, x.RootDepth)),
+            Is.EqualTo(new[] { ("Judah", "personal name", 1) }));
+    }
+
+    /// <summary>A real dictionary entry wins: the synthesized name is only a
+    /// fallback for an otherwise empty popup</summary>
+    [Test]
+    public void ADictionaryEntrySuppressesTheProperNounFallback()
+    {
+        var service = new DictionaryLookupService([new FakeDictionary("doolish")], Names(), LemmaResolver.Empty);
+
+        var results = service.Lookup("gv", "Doolish");
+        Assert.That(results.Select(x => x.DictionaryName), Is.EqualTo(new[] { "Fake" }));
+    }
+
     /// <summary>The selection appearing twice with only one occurrence resolved:
     /// the unresolved occurrence keeps every reading in play</summary>
     [Test]
