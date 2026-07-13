@@ -362,6 +362,46 @@ public class DictionaryLookupServiceTest
         Assert.That(results.Select(x => x.DictionaryName), Is.EqualTo(new[] { "Fake" }));
     }
 
+    /// <summary>A total miss falls back to entries for near spellings, tagged as
+    /// suggestions ("did you mean")</summary>
+    [Test]
+    public void AMissSuggestsNearSpellings()
+    {
+        var service = Service("moddey", "cabbyl");
+
+        var results = service.Lookup("gv", "modey");
+        Assert.That(results.Select(x => (x.PrimaryWord, x.NearMatchOf)),
+            Is.EqualTo(new[] { ("moddey", "moddey") }));
+    }
+
+    /// <summary>A misspelled name suggests the name: its entry is the proper-noun
+    /// metadata, since no dictionary lists it</summary>
+    [Test]
+    public void AMisspelledNameSuggestsTheName()
+    {
+        var service = new DictionaryLookupService([new FakeDictionary(Array.Empty<string>())], Names(),
+            LemmaResolver.Empty);
+
+        var results = service.Lookup("gv", "Soloman");
+        Assert.That(results.Select(x => (x.PrimaryWord, x.Summary, x.NearMatchOf)),
+            Is.EqualTo(new[] { ("Solomon", "personal name", "Solomon") }));
+    }
+
+    /// <summary>Distance-2 guesses on short words are noise: up to five letters
+    /// only one edit is tolerated, and tiny selections never guess</summary>
+    [Test]
+    public void ShortWordsBarelyGuess()
+    {
+        var service = Service("moddey");
+        Assert.That(Lookup(service, "moey"), Is.Empty); // two edits on four letters
+        Assert.That(Lookup(service, "mod"), Is.Empty); // too short to guess against
+
+        // exact and part matches never reach the suggestion tier
+        var parts = Service("goll", "mygeayrt");
+        Assert.That(parts.Lookup("gv", "goll-mygeayrt").Select(x => x.NearMatchOf),
+            Is.All.Null);
+    }
+
     /// <summary>The selection appearing twice with only one occurrence resolved:
     /// the unresolved occurrence keeps every reading in play</summary>
     [Test]
@@ -451,6 +491,8 @@ public class DictionaryLookupServiceTest
                 yield return new DictionarySummary { PrimaryWord = primaryWord, Summary = $"definition of {primaryWord}" };
             }
         }
+
+        public IEnumerable<string> AllWords => entries.SelectMany(e => e.Words);
 
         public bool ContainsWord(string word) =>
             entries.Any(e => e.Words.Contains(word, StringComparer.InvariantCultureIgnoreCase));

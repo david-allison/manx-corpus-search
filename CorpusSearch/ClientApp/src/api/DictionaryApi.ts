@@ -7,6 +7,9 @@ type Summary = {
      * 1 = its root ('gheiney' -> 'deiney'), 2 = the root's root ('dooinney');
      * each level nests under the previous one */
     rootDepth: number
+    /** set on "did you mean" fallback entries only: the near spelling the
+     * entry was reached through, when nothing matched the selection itself */
+    nearMatchOf?: string | null
 }
 export type DictionaryResponse = Summary[]
 

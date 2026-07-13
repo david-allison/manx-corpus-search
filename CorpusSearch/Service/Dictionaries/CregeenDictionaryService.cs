@@ -144,6 +144,8 @@ public class CregeenDictionaryService(ISet<string> allWords, IList<CregeenEntry>
         return ContainsWordExact(word);
     }
 
+    public IEnumerable<string> AllWords => allWords;
+
     public IEnumerable<DictionarySummary> GetSummaries(string query, bool basic)
     {
         if (!ContainsWordExact(query)) { yield break; }

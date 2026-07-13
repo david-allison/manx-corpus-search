@@ -29,3 +29,19 @@
 .dict-popup-root-connector {
     color: var(--c-accent);
 }
+
+/* the "did you mean" fallback: a tinted suggestion box, visually apart from
+   real entries - these words are guesses, not what the text says */
+.dict-popup-suggestions {
+    background: #fff8e1;
+    border: 1px solid #ecdfae;
+    border-radius: 6px;
+    padding: 10px 14px;
+    margin-top: 4px;
+}
+
+.dict-popup-suggestions-note {
+    margin: 0 0 12px;
+    color: #6b5a1e;
+    font-weight: 600;
+}

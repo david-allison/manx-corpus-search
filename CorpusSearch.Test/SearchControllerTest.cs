@@ -140,5 +140,7 @@ public class SearchControllerTest
             [new DictionarySummary { Summary = $"definition of {query}", PrimaryWord = query }];
 
         public bool ContainsWord(string word) => true;
+
+        public IEnumerable<string> AllWords => [];
     }
 }

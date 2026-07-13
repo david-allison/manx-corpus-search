@@ -91,7 +91,132 @@ public class DictionaryLookupService(IEnumerable<ISearchDictionary> dictionarySe
             results = GetSummaries(GetParts(selection));
         }
 
+        if (results.Count == 0 && lang == "gv")
+        {
+            // last resort: entries for near spellings ("did you mean"), tagged
+            // so the client presents them as suggestions, never as matches
+            foreach (var suggestion in NearMatches(selection))
+            {
+                var entries = GetSummaries([suggestion]);
+                if (entries.Count == 0)
+                {
+                    entries = NameSummaries(suggestion);
+                }
+                foreach (var entry in entries)
+                {
+                    entry.NearMatchOf = suggestion;
+                }
+                results.AddRange(entries);
+            }
+        }
+
         return Deduplicate(results);
+    }
+
+    /// <summary>Words a dictionary (or the names metadata) can answer for, within
+    /// a length-scaled edit distance of the selection: distance 1 up to five
+    /// letters, 2 above — distance-2 guesses on short Manx words are noise.
+    /// Runs only when every other tier came back empty.</summary>
+    private List<string> NearMatches(string selection)
+    {
+        var norm = LemmaTable.NormalizeForm(selection);
+        if (norm.Length < 4 || norm.Contains(' '))
+        {
+            // too short to guess against; phrases have their own fallbacks
+            return [];
+        }
+        var max = norm.Length <= 5 ? 1 : 2;
+        var pool = nearMatchPool ??= BuildNearMatchPool();
+        var scored = new List<(int Distance, bool DifferentInitial, string Word)>();
+        for (var length = norm.Length - max; length <= norm.Length + max; length++)
+        {
+            if (!pool.TryGetValue(length, out var bucket))
+            {
+                continue;
+            }
+            foreach (var (candidate, word) in bucket)
+            {
+                var distance = BoundedEditDistance(norm, candidate, max);
+                if (distance >= 1 && distance <= max)
+                {
+                    scored.Add((distance, candidate[0] != norm[0], word));
+                }
+            }
+        }
+        return scored
+            .OrderBy(x => x.Distance)
+            .ThenBy(x => x.DifferentInitial) // a wrong first letter is the rarer slip
+            .ThenBy(x => x.Word, StringComparer.InvariantCultureIgnoreCase)
+            .Select(x => x.Word)
+            .Take(4)
+            .ToList();
+    }
+
+    /// <summary>normalized length -> (normalized word, display word): every single
+    /// word the Manx dictionaries answer for, plus the names supplement's display
+    /// lemmas. Built on the first total-miss lookup.</summary>
+    private Dictionary<int, List<(string Norm, string Word)>>? nearMatchPool;
+
+    private Dictionary<int, List<(string Norm, string Word)>> BuildNearMatchPool()
+    {
+        var pool = new Dictionary<int, List<(string, string)>>();
+        var seen = new HashSet<string>();
+        var words = dictionaryServices
+            .Where(d => d.QueryLanguages.Contains("gv"))
+            .SelectMany(d => d.AllWords)
+            .Concat(lemmaTable.NameDisplayLemmas);
+        foreach (var word in words)
+        {
+            var norm = LemmaTable.NormalizeForm(word);
+            if (norm.Length < 3 || norm.Contains(' ') || !seen.Add(norm))
+            {
+                continue;
+            }
+            if (!pool.TryGetValue(norm.Length, out var bucket))
+            {
+                pool[norm.Length] = bucket = [];
+            }
+            bucket.Add((norm, word));
+        }
+        return pool;
+    }
+
+    /// <summary>Damerau-Levenshtein (adjacent transposition = 1 edit), giving up
+    /// past <paramref name="max"/>: returns max + 1 when the words are further apart</summary>
+    private static int BoundedEditDistance(string a, string b, int max)
+    {
+        if (Math.Abs(a.Length - b.Length) > max)
+        {
+            return max + 1;
+        }
+        var prevPrev = new int[b.Length + 1];
+        var prev = new int[b.Length + 1];
+        var current = new int[b.Length + 1];
+        for (var j = 0; j <= b.Length; j++)
+        {
+            prev[j] = j;
+        }
+        for (var i = 1; i <= a.Length; i++)
+        {
+            current[0] = i;
+            var rowBest = current[0];
+            for (var j = 1; j <= b.Length; j++)
+            {
+                var cost = a[i - 1] == b[j - 1] ? 0 : 1;
+                current[j] = Math.Min(Math.Min(current[j - 1] + 1, prev[j] + 1), prev[j - 1] + cost);
+                if (i > 1 && j > 1 && a[i - 1] == b[j - 2] && a[i - 2] == b[j - 1])
+                {
+                    current[j] = Math.Min(current[j], prevPrev[j - 2] + 1);
+                }
+                rowBest = Math.Min(rowBest, current[j]);
+            }
+            if (rowBest > max)
+            {
+                return max + 1;
+            }
+            (prevPrev, prev, current) = (prev, current, prevPrev);
+        }
+        return prev[b.Length];
     }
 
     /// <summary>Entries synthesized from the lemma table's name metadata (the
