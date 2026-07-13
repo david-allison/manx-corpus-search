@@ -293,6 +293,44 @@ public static class AdjudicationCommon
         return result;
     }
 
+    /// <summary>Reads the lemma-equivalence layer (lemma.equivalences[.seed].tsv:
+    /// idA, idB, verdict, note) and returns a union-find over ids: pairs
+    /// classified "same" are one lexeme. Ids not mentioned map to themselves.</summary>
+    public static Func<string, string> EquivalenceGroups(string path)
+    {
+        var parent = new Dictionary<string, string>();
+
+        string Find(string id)
+        {
+            if (!parent.TryGetValue(id, out var p) || p == id)
+            {
+                return id;
+            }
+            var root = Find(p);
+            parent[id] = root;
+            return root;
+        }
+
+        foreach (var line in File.ReadLines(path))
+        {
+            if (line.StartsWith('#') || string.IsNullOrWhiteSpace(line) || line.StartsWith("idA\t"))
+            {
+                continue;
+            }
+            var columns = line.Split('\t');
+            if (columns.Length < 3 || columns[2] != "same")
+            {
+                continue;
+            }
+            var (a, b) = (Find(columns[0]), Find(columns[1]));
+            if (a != b)
+            {
+                parent[a] = b;
+            }
+        }
+        return Find;
+    }
+
     /// <summary>Reads a form-level overrides file (lemma.overrides[.seed].tsv):
     /// form -> resolved lemma ids. Comment lines (#) and the header are skipped.</summary>
     public static Dictionary<string, string[]> LoadOverrides(string path)

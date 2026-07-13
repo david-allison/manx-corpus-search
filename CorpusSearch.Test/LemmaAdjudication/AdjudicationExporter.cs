@@ -65,38 +65,82 @@ public class AdjudicationExporter
         var linkTypes = AdjudicationCommon.LinkTypesByFormId();
         var overrides = AdjudicationCommon.LoadOverrides(overridesPath!);
 
+        // the equivalence layer over Cregeen: ids classified as one lexeme
+        // collapse into a group; ids sharing a display headword always do.
+        // Adjudication chooses between groups, so within-lexeme direction
+        // (aarkey/faarkey, jeeg/jeeig) never reaches a per-line verdict
+        var equivalencesPath = Environment.GetEnvironmentVariable("LEMMA_EQUIVALENCES_TSV");
+        var equivalenceRoot = equivalencesPath != null
+            ? AdjudicationCommon.EquivalenceGroups(equivalencesPath)
+            : id => id;
+
+        var groupCache = new Dictionary<string, (object[] Candidates, int Groups)>();
+        (object[] Candidates, int Groups) Grouped(string form)
+        {
+            if (groupCache.TryGetValue(form, out var cached))
+            {
+                return cached;
+            }
+            var ids = table.CandidatesFor(form);
+            var groupByKey = new Dictionary<string, string>();
+            var displayAlias = new Dictionary<string, string>();
+            var labels = new List<string>();
+            var candidates = ids.Select(id =>
+            {
+                var lemma = displayById.GetValueOrDefault(id, id);
+                var rootKey = equivalenceRoot(id);
+                var displayKey = AdjudicationCommon.DisplayKey(lemma);
+                // same display headword => same lexeme group, regardless of ids
+                if (displayAlias.TryGetValue(displayKey, out var aliased))
+                {
+                    rootKey = aliased;
+                }
+                else
+                {
+                    displayAlias[displayKey] = rootKey;
+                }
+                if (!groupByKey.TryGetValue(rootKey, out var label))
+                {
+                    label = $"g{groupByKey.Count + 1}";
+                    groupByKey[rootKey] = label;
+                    labels.Add(label);
+                }
+                var glossKey = LemmaTable.NormalizeForm(lemma);
+                var gloss = glossTexts.TryGetValue(glossKey, out var texts)
+                    ? string.Join("; ", texts.Take(3))
+                    : "";
+                return (object)new
+                {
+                    id,
+                    lemma,
+                    gloss = gloss.Length > 200 ? gloss[..200] : gloss,
+                    link = linkTypes.GetValueOrDefault((form, id), "self"),
+                    group = label,
+                };
+            }).ToArray();
+            var result = (candidates, labels.Count);
+            groupCache[form] = result;
+            return result;
+        }
+
         object[] Candidates(string form)
         {
-            return table.CandidatesFor(form)
-                .Select(id =>
-                {
-                    var lemma = displayById.GetValueOrDefault(id, id);
-                    var glossKey = LemmaTable.NormalizeForm(lemma);
-                    var gloss = glossTexts.TryGetValue(glossKey, out var texts)
-                        ? string.Join("; ", texts.Take(3))
-                        : "";
-                    return (object)new
-                    {
-                        id,
-                        lemma,
-                        gloss = gloss.Length > 200 ? gloss[..200] : gloss,
-                        link = linkTypes.GetValueOrDefault((form, id), "self"),
-                    };
-                })
-                .ToArray();
+            return Grouped(form).Candidates;
         }
 
         var sentences = AdjudicationCommon.TreebankSentences();
         var attestedCounts = AdjudicationCommon.AttestedCounts(sentences);
         var unAdjudicableForms = new HashSet<string>();
 
-        // an adjudicable token: ambiguous in the table, not already resolved by
-        // the overrides layer, and gradeable - forms whose candidates miss a
-        // UD-attested reading are table gaps, and forms UD itself lemmatizes
-        // inconsistently are convention calls; both stay fully ambiguous
+        // an adjudicable token: ambiguous across >=2 lexeme groups, not already
+        // resolved by the overrides layer, and gradeable - forms whose
+        // candidates miss a UD-attested reading are table gaps, and forms UD
+        // itself lemmatizes inconsistently are convention calls; both stay
+        // fully ambiguous
         bool Adjudicable(string form)
         {
-            if (table.CandidatesFor(form).Count < 2 || overrides.ContainsKey(form))
+            if (table.CandidatesFor(form).Count < 2 || overrides.ContainsKey(form)
+                || Grouped(form).Groups < 2)
             {
                 return false;
             }
