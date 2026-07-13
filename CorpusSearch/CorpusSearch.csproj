@@ -68,6 +68,13 @@
         <Link>Resources\cregeen.tsv</Link>
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <!-- The proper-nouns supplement (generated from cregeen-nvh names.nvh):
+    loaded beside cregeen.tsv when present -->
+    <Content Include="external\manx-lemma-data\names.tsv"
+             Condition="Exists('external\manx-lemma-data\names.tsv')">
+        <Link>Resources\names.tsv</Link>
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <!-- The disambiguation layers ride beside the table (LemmaResolver);
     optional until the data repo adopts the generated artifacts -->
     <Content Include="external\manx-lemma-data\lemma.overrides.tsv"
