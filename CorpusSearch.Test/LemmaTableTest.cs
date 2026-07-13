@@ -28,6 +28,9 @@ public class LemmaTableTest
     [TestCase("jee.", "jee")]
     [TestCase("'sy", "sy")]
     [TestCase("aase.v", "aase.v")] // an internal dot survives: lemma ids pass through
+    [TestCase("Benreïn", "benrein")] // combining marks are display conventions
+    [TestCase("mârish", "marish")]
+    [TestCase("bleïn", "blein")]
     public void NormalizeFormMirrorsTheFormColumn(string input, string expected)
     {
         Assert.That(LemmaTable.NormalizeForm(input), Is.EqualTo(expected));

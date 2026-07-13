@@ -22,13 +22,14 @@ namespace CorpusSearch.Test;
 public class UdLemmaAgreementTest
 {
     // Floors sit just below the values measured at the pinned treebank commit
-    // (9069716) and table version: 89.60% coverage, 97.50% agreement with the
-    // names.tsv supplement loaded (88.91/97.43 before it) — matching
-    // cregeen-nvh's generation-side eval (89.6/97.5) exactly, so the C# lookup
-    // reimplementation has no divergence from the F# one. The metric is
-    // deterministic; the small slack only tolerates deliberate trade-offs.
-    private const double CoverageFloor = 0.8950;
-    private const double AgreementFloor = 0.9740;
+    // (9069716) and table version: 89.77% coverage, 97.51% agreement with the
+    // names.tsv supplement and the combining-mark fold (89.60/97.50 before the
+    // fold; 88.91/97.43 before the supplement) — matching cregeen-nvh's
+    // generation-side eval exactly, so the C# lookup reimplementation has no
+    // divergence from the F# one. The metric is deterministic; the small
+    // slack only tolerates deliberate trade-offs.
+    private const double CoverageFloor = 0.8965;
+    private const double AgreementFloor = 0.9745;
 
     /// <summary>Not evaluated: punctuation and numerals aren't dictionary material,
     /// X marks foreign/unanalysable words</summary>
