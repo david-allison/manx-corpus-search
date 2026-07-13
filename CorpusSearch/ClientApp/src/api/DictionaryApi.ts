@@ -16,6 +16,10 @@ type Summary = {
     sourceUrl?: string | null
     /** compact display credit for the corner control ("Spoken Dictionary") */
     sourceCredit?: string | null
+    /** the entry's full headword list where it goes beyond primaryWord
+     * (Kelly's 'BILL, BILLEY'): a homograph headed by another spelling is
+     * the selection's own entry, not a root */
+    words?: string[] | null
 }
 export type DictionaryResponse = Summary[]
 

@@ -59,4 +59,10 @@ public class DictionarySummary
     /// dictionary knows them: lets the root chain keep only the senses the lemma id
     /// means (row -> bee.v offers the verb 'bee', not the food)</summary>
     public List<string>? PartsOfSpeech { get; set; }
+
+    /// <summary>The entry's full headword list where it goes beyond
+    /// <see cref="PrimaryWord"/> (Kelly's 'BILL, BILLEY'): lets the client
+    /// recognise a homograph headed by another spelling as the selection's own
+    /// entry rather than nesting it like a root</summary>
+    public List<string>? Words { get; set; }
 }

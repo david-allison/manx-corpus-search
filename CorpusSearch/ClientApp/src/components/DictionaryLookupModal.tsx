@@ -49,10 +49,17 @@ export const classifyEntries = (
         p.toLowerCase() == wordLc ||
         context == "" ||
         foldHyphens(context).includes(foldHyphens(p))
-    const isOwn = (x: DictionaryResponse[number]) =>
-        !x.rootDepth &&
-        headsSelection(x.primaryWord) &&
-        supportedByContext(x.primaryWord)
+    // a homograph headed by another spelling ('BILL, BILLEY') is still the
+    // selection's own entry when its word list carries the tapped word - it
+    // must not nest like a root
+    const ownVia = (x: DictionaryResponse[number]) => {
+        if (headsSelection(x.primaryWord)) {
+            return supportedByContext(x.primaryWord)
+        }
+        const listed = (x.words ?? []).find(headsSelection)
+        return listed != null && supportedByContext(listed)
+    }
+    const isOwn = (x: DictionaryResponse[number]) => !x.rootDepth && ownVia(x)
     let own = entries.filter(isOwn)
     // the context rule applies down the chain too: a phrase entry is noise
     // unless the line says it, whether it rode in on a root's word list
@@ -68,8 +75,33 @@ export const classifyEntries = (
     // roots beneath) is better shown plainly than nothing at all. When a
     // chain did survive ('Chreest' ↳ Creest), it anchors the popup instead
     // and out-of-context phrases stay dropped.
-    own = entries.filter((x) => !x.rootDepth && headsSelection(x.primaryWord))
+    own = entries.filter(
+        (x) =>
+            !x.rootDepth &&
+            (headsSelection(x.primaryWord) ||
+                (x.words ?? []).some(headsSelection)),
+    )
     return { own, derived: own.length > 0 ? [] : derived }
+}
+
+/** The heading for an own entry: "BILL, BILLEY" when the entry is headed by
+ * another spelling but lists the tapped one - the reader sees both the
+ * canonical head and the spelling they tapped. A ç/c respelling is the same
+ * word, not another spelling. */
+export const headingFor = (
+    word: string,
+    summary: { primaryWord: string; words?: string[] | null },
+): string => {
+    const fold = (s: string) =>
+        trimPunctuation(s.toLowerCase()).replace(/ç/g, "c")
+    const tapped = fold(word)
+    if (fold(summary.primaryWord) == tapped) {
+        return summary.primaryWord
+    }
+    const listed = (summary.words ?? []).find(
+        (w) => fold(w) == tapped && fold(w) != fold(summary.primaryWord),
+    )
+    return listed ? `${summary.primaryWord}, ${listed}` : summary.primaryWord
 }
 
 /** Groups the popup's entries under the dictionary defining them (#51) */
@@ -372,7 +404,7 @@ export const DictionaryLookupModal = (props: DictionaryLookupState) => {
                                                 key={index}
                                             >
                                                 <strong>
-                                                    {summary.primaryWord}
+                                                    {headingFor(word, summary)}
                                                 </strong>
                                                 {": "}
                                                 {summary.summary}

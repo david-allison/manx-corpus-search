@@ -128,6 +128,7 @@ public class KellyManxToEnglishDictionaryService(ISet<string> allWords, IList<Ke
                 PrimaryWord = entry.Words.First(),
                 Summary = entry.Definition,
                 PartsOfSpeech = PartsOfSpeechOf(entry.Definition),
+                Words = entry.Words.Count > 1 ? entry.Words : null,
             };
         }
     }
