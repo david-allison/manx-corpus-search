@@ -88,6 +88,25 @@ public class KellyManxToEnglishDictionaryService(ISet<string> allWords, IList<Ke
 
     public IEnumerable<string> AllWords => allWords;
 
+    /// <summary>Kelly's 1866 definitions open with the printed word-class
+    /// abbreviation ("s. pl. EE. a dog."): recovered for sense filtering.
+    /// Null when the definition doesn't declare one.</summary>
+    internal static List<string>? PartsOfSpeechOf(string definition)
+    {
+        var match = System.Text.RegularExpressions.Regex.Match(
+            definition ?? "", @"^\s*(adv|pron|s|v|a)\.");
+        return match.Success
+            ? [match.Groups[1].Value switch
+            {
+                "s" => "Noun",
+                "v" => "Verb",
+                "a" => "Adjective",
+                "adv" => "Adverb",
+                _ => "Pronoun",
+            }]
+            : null;
+    }
+
     public IEnumerable<DictionarySummary> GetSummaries(string query, bool basic)
     {
         if (!ContainsWordExact(query)) { yield break; }
@@ -107,7 +126,8 @@ public class KellyManxToEnglishDictionaryService(ISet<string> allWords, IList<Ke
             return new DictionarySummary
             {
                 PrimaryWord = entry.Words.First(),
-                Summary = entry.Definition
+                Summary = entry.Definition,
+                PartsOfSpeech = PartsOfSpeechOf(entry.Definition),
             };
         }
     }

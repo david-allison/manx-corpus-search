@@ -415,6 +415,56 @@ public class DictionaryLookupServiceTest
         Assert.That(Lookup(service, "er", context), Is.EqualTo(new[] { "er", "fer" }));
     }
 
+    private static LemmaTable BeeTable()
+    {
+        return LemmaTable.Load(new StringReader(
+            "form\tlemmaId\tlemma\tlinkType\n"
+            + "row\trow.v\trow\tself\n"
+            + "row\tbee.v\tbee\tirregular\n"
+            + "bee\tbee.v\tbee\tself\n"
+            + "bee\tbee.n\tbee\tself\n"));
+    }
+
+    /// <summary>row belongs to bee the verb: the chain drops the food sense</summary>
+    [Test]
+    public void TheRootChainKeepsOnlyTheMeantSense()
+    {
+        var service = new DictionaryLookupService([new FakeDictionary(
+            ("row", "Verb", "wast thou"), ("bee", "Verb", "be, will be"), ("bee", "Noun", "meat, food"))],
+            BeeTable(), LemmaResolver.Empty);
+
+        var results = service.Lookup("gv", "row");
+        Assert.That(results.Select(x => (x.PrimaryWord, x.Summary)), Is.EqualTo(new[]
+        {
+            ("row", "wast thou"),
+            ("bee", "be, will be"),
+        }));
+    }
+
+    /// <summary>Entries without a declared class survive the sense filter</summary>
+    [Test]
+    public void UndeclaredWordClassesAreNeverFiltered()
+    {
+        var service = new DictionaryLookupService([new FakeDictionary(
+            ("row", "Verb", "wast thou"), ("bee", "", "be, will be"), ("bee", "", "meat, food"))],
+            BeeTable(), LemmaResolver.Empty);
+
+        Assert.That(service.Lookup("gv", "row"), Has.Count.EqualTo(3));
+    }
+
+    /// <summary>A filter that would empty the list loses: everything stays</summary>
+    [Test]
+    public void AnEmptyingSenseFilterIsAbandoned()
+    {
+        var service = new DictionaryLookupService([new FakeDictionary(
+            ("row", "Verb", "wast thou"), ("bee", "Noun", "meat, food"))],
+            BeeTable(), LemmaResolver.Empty);
+
+        // the only 'bee' entry is the noun: better than showing nothing
+        Assert.That(service.Lookup("gv", "row").Select(x => x.Summary),
+            Is.EqualTo(new[] { "wast thou", "meat, food" }));
+    }
+
     /// <summary>The popup labels each entry with the dictionary it came from (#51)</summary>
     [Test]
     public void SummariesNameTheirDictionary()
@@ -480,12 +530,35 @@ public class DictionaryLookupServiceTest
             entries = wordToPrimaryWord.Select(x => (new List<string> { x.Key }, x.Value)).ToList();
         }
 
+        /// <summary>Entries with declared word classes, for sense filtering</summary>
+        public FakeDictionary(params (string Word, string Pos, string Gloss)[] posEntries)
+        {
+            entries = posEntries.Select(x => (new List<string> { x.Word }, x.Word)).ToList();
+            this.posEntries = posEntries.ToList();
+        }
+
+        private readonly List<(string Word, string Pos, string Gloss)>? posEntries;
+
         public string Identifier => "Fake";
         public List<string> QueryLanguages => ["gv"];
         public bool LinkToDictionary => false;
 
         public IEnumerable<DictionarySummary> GetSummaries(string query, bool basic = false)
         {
+            if (posEntries != null)
+            {
+                foreach (var (word, pos, gloss) in posEntries.Where(e =>
+                             string.Equals(e.Word, query, StringComparison.InvariantCultureIgnoreCase)))
+                {
+                    yield return new DictionarySummary
+                    {
+                        PrimaryWord = word,
+                        Summary = gloss,
+                        PartsOfSpeech = pos.Length > 0 ? [pos] : null,
+                    };
+                }
+                yield break;
+            }
             foreach (var (_, primaryWord) in entries.Where(e => e.Words.Contains(query, StringComparer.InvariantCultureIgnoreCase)))
             {
                 yield return new DictionarySummary { PrimaryWord = primaryWord, Summary = $"definition of {primaryWord}" };

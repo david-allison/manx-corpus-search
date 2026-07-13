@@ -24,6 +24,7 @@ public class CultureVanninSpokenDictionaryService(CultureVanninSpokenDictionaryS
         public string Translation { get; set; } = "";
         public string AudioUrl { get; set; } = "";
         public string Topic { get; set; } = "";
+        public List<string>? PartsOfSpeech { get; set; }
     }
 
     public class SpokenArtifact
@@ -96,6 +97,7 @@ public class CultureVanninSpokenDictionaryService(CultureVanninSpokenDictionaryS
                     : null,
                 SourceUrl = sourceUrl.Length > 0 ? sourceUrl : null,
                 SourceCredit = sourceCredit.Length > 0 ? sourceCredit : null,
+                PartsOfSpeech = entry.PartsOfSpeech is { Count: > 0 } ? entry.PartsOfSpeech : null,
             };
         }
     }
