@@ -513,6 +513,63 @@ public class DictionaryLookupServiceTest
         Assert.That(coverage[0].Select(x => x.Status), Is.EqualTo(new[] { "root" }));
     }
 
+    [Test]
+    public void PageGroupsEntriesByDictionary()
+    {
+        var service = Service("goll", "mygeayrt");
+
+        var page = service.Page("gv", "goll");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(page.Word, Is.EqualTo("goll"));
+            Assert.That(page.IsSuggestionTier, Is.False);
+            Assert.That(page.Audio, Is.Null);
+            Assert.That(page.Groups, Has.Count.EqualTo(1));
+            Assert.That(page.Groups[0].Dictionary, Is.EqualTo("Fake"));
+            Assert.That(page.Groups[0].Entries.Single().PrimaryWord, Is.EqualTo("goll"));
+        });
+    }
+
+    /// <summary>The page looks up a headword without context: 'ass' (out)
+    /// must not offer the demutation guess fass; a word that is not a
+    /// headword itself keeps its guesses (they are all the reader has)</summary>
+    [Test]
+    public void PageDropsDemutationGuessesForAHeadword()
+    {
+        var table = LemmaTable.Load(new StringReader(
+            "form\tlemmaId\tlemma\tlinkType\n" +
+            "ass\tass.x\tass\tself\n" +
+            "ass\tfass.v\tfass\tdemutated\n" +
+            "vow\tfow.v\tfow\tdemutated\n"));
+        var service = new DictionaryLookupService([new FakeDictionary("ass", "fass", "fow")],
+            table, LemmaResolver.Empty);
+
+        var assPage = service.Page("gv", "ass");
+        Assert.That(assPage.Groups.SelectMany(g => g.Entries).Select(x => x.PrimaryWord),
+            Is.EqualTo(new[] { "ass" }));
+
+        var vowPage = service.Page("gv", "vow");
+        Assert.That(vowPage.Groups.SelectMany(g => g.Entries).Select(x => x.PrimaryWord),
+            Does.Contain("fow"));
+    }
+
+    [Test]
+    public void PageMarksTheSuggestionTier()
+    {
+        // 'golla' matches nothing; 'golly' is one edit away
+        var service = Service("golly");
+
+        var page = service.Page("gv", "golla");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(page.IsSuggestionTier, Is.True);
+            Assert.That(page.Groups.SelectMany(x => x.Entries),
+                Has.All.Property(nameof(DictionarySummary.NearMatchOf)).Not.Null);
+        });
+    }
+
     private class FakeDictionary : ISearchDictionary
     {
         private readonly List<(List<string> Words, string PrimaryWord)> entries;

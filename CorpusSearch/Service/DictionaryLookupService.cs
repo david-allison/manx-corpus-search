@@ -134,6 +134,63 @@ public class DictionaryLookupService(IEnumerable<ISearchDictionary> dictionarySe
         return Deduplicate(results);
     }
 
+    /// <summary>The teanglann-style full page for a word (experimental): the
+    /// lookup re-shaped into per-dictionary groups, the word's own recording
+    /// pulled out as the page control, near-match suggestions marked as a tier</summary>
+    public DictionaryPage Page(string lang, string word)
+    {
+        var summaries = WithoutDemutationGuesses(word, Lookup(lang, word));
+        var audio = summaries.FirstOrDefault(x =>
+            x.AudioUrl != null && x.NearMatchOf == null
+            && string.Equals(x.PrimaryWord, word, StringComparison.InvariantCultureIgnoreCase));
+        return new DictionaryPage
+        {
+            Word = word,
+            IsSuggestionTier = summaries.Count > 0 && summaries.All(x => x.NearMatchOf != null),
+            Audio = audio == null
+                ? null
+                : new DictionaryPageAudio
+                {
+                    Url = audio.AudioUrl!,
+                    Credit = audio.SourceCredit ?? audio.DictionaryName,
+                    SourceUrl = audio.SourceUrl,
+                },
+            Groups = summaries
+                .GroupBy(x => x.DictionaryName ?? "")
+                .Select(g => new DictionaryPageGroup
+                {
+                    Dictionary = g.Key,
+                    SourceUrl = g.Select(x => x.SourceUrl).FirstOrDefault(x => x != null),
+                    Entries = g.ToList(),
+                })
+                .ToList(),
+        };
+    }
+
+    /// <summary>The dictionary page looks up a headword with no sentence
+    /// context: when the word is a headword itself, demutation guesses stay
+    /// in the tap popup - where the surrounding line makes 'ass, or maybe
+    /// lenited fass' worth offering - and off the ass page. Paradigm roots
+    /// (smessey -> olk) are not guesses and stay.</summary>
+    private List<DictionarySummary> WithoutDemutationGuesses(string word, List<DictionarySummary> summaries)
+    {
+        var displays = lemmaTable.DisplayLemmasFor(word);
+        var self = LemmaTable.NormalizeForm(word);
+        if (!displays.Any(d => LemmaTable.NormalizeForm(d) == self))
+        {
+            return summaries;
+        }
+        var paradigmRoots = lemmaTable.RootDisplayLemmasFor(word)
+            .Select(LemmaTable.NormalizeForm).ToHashSet();
+        var guesses = displays
+            .Select(LemmaTable.NormalizeForm)
+            .Where(d => d != self && !paradigmRoots.Contains(d))
+            .ToHashSet();
+        return summaries
+            .Where(x => x.RootDepth == 0 || !guesses.Contains(LemmaTable.NormalizeForm(x.PrimaryWord)))
+            .ToList();
+    }
+
     /// <summary>Words a dictionary (or the names metadata) can answer for, within
     /// a length-scaled edit distance of the selection: distance 1 up to five
     /// letters, 2 above — distance-2 guesses on short Manx words are noise.

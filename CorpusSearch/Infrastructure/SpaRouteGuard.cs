@@ -55,6 +55,15 @@ internal static class SpaRouteGuard
             return true;
         }
 
+        // the dictionary page: /dictionary and /dictionary/<any word>
+        const string dictionary = "/dictionary";
+        if (value.Equals(dictionary, StringComparison.OrdinalIgnoreCase)
+            || (value.StartsWith(dictionary + "/", StringComparison.OrdinalIgnoreCase)
+                && !value[(dictionary.Length + 1)..].Contains('/')))
+        {
+            return true;
+        }
+
         const string docs = "/docs/";
         if (!value.StartsWith(docs, StringComparison.OrdinalIgnoreCase))
         {

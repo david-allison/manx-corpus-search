@@ -1,4 +1,4 @@
-type Summary = {
+export type Summary = {
     summary: string
     primaryWord: string
     /** the dictionary defining the entry, e.g. 'Cregeen' (#51) */
@@ -61,6 +61,38 @@ export const manxDictionaryLookup = async (
     })
     // TODO: Validation
     return (await response.json()) as DictionaryResponse
+}
+
+/** The teanglann-style full page for a word (experimental): per-dictionary
+ * groups, the word's own recording, near-match suggestions as a tier */
+export type DictionaryPageResponse = {
+    word: string
+    /** nothing matched the word itself: every group is a near spelling */
+    isSuggestionTier: boolean
+    audio?: {
+        url: string
+        credit?: string | null
+        sourceUrl?: string | null
+    } | null
+    groups: {
+        dictionary: string
+        sourceUrl?: string | null
+        entries: Summary[]
+    }[]
+}
+
+export const dictionaryPage = async (
+    word: string,
+    signal?: AbortSignal,
+): Promise<DictionaryPageResponse> => {
+    const params = new URLSearchParams({ lang: "gv", word })
+    const response = await fetch(`/api/Dictionary/page?${params.toString()}`, {
+        signal,
+    })
+    if (!response.ok) {
+        throw new Error(`dictionary page failed: ${response.status}`)
+    }
+    return (await response.json()) as DictionaryPageResponse
 }
 
 /** One token of a line in the dictionary-coverage debug view: how a tap on it
