@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using CorpusSearch.Dependencies.Lucene;
+using CorpusSearch.Model;
 using Lucene.Net.Analysis.TokenAttributes;
 using Lucene.Net.Util;
 
@@ -14,7 +15,8 @@ namespace CorpusSearch.Service;
 /// The selection alone is often not enough (#135): the surrounding text lets us expand a word to a
 /// known phrase/idiom, and a compound such as 'goll-mygeayrt' can be broken into its parts.
 /// </summary>
-public class DictionaryLookupService(IEnumerable<ISearchDictionary> dictionaryServices, LemmaTable lemmaTable)
+public class DictionaryLookupService(IEnumerable<ISearchDictionary> dictionaryServices, LemmaTable lemmaTable,
+    LemmaResolver lemmaResolver)
 {
     /// <summary>The longest dictionary phrase (in words) we attempt to match around a selection</summary>
     private const int MaxPhraseWords = 4;
@@ -57,7 +59,7 @@ public class DictionaryLookupService(IEnumerable<ISearchDictionary> dictionarySe
             // headwords a dictionary actually lists, without them posing as
             // entries for the selection
             var seen = new HashSet<string>(candidates, StringComparer.InvariantCultureIgnoreCase);
-            var frontier = lemmaTable.DisplayLemmasFor(selection).Where(x => !seen.Contains(x)).ToList();
+            var frontier = ResolvedDisplayLemmas(selection, context).Where(x => !seen.Contains(x)).ToList();
             for (var depth = 1; frontier.Count > 0 && depth <= 3; depth++)
             {
                 seen.UnionWith(frontier);
@@ -83,6 +85,63 @@ public class DictionaryLookupService(IEnumerable<ISearchDictionary> dictionarySe
         }
 
         return Deduplicate(results);
+    }
+
+    /// <summary>
+    /// The selection's display lemmas, narrowed by the resolution layers when they
+    /// resolve it (<see cref="LemmaResolver"/>): a reading rejected for this line —
+    /// 'fer' under a prepositional 'er' — no longer seeds the root chain. Unresolved
+    /// selections keep every reading, so nothing the table offers is ever lost.
+    /// </summary>
+    private IEnumerable<string> ResolvedDisplayLemmas(string selection, string? context)
+    {
+        var allowedIds = ResolvedLemmaIds(selection, context);
+        return allowedIds == null
+            ? lemmaTable.DisplayLemmasFor(selection)
+            : lemmaTable.DisplayLemmasFor(selection, allowedIds);
+    }
+
+    /// <summary>The resolved candidate ids of the selection: the form-level override
+    /// first, then the context line's sidecar rows; null when unresolved</summary>
+    private IReadOnlyCollection<string>? ResolvedLemmaIds(string selection, string? context)
+    {
+        if (lemmaTable.CandidatesFor(selection).Count < 2)
+        {
+            return null;
+        }
+        if (lemmaResolver.OverrideFor(selection) is { } overridden)
+        {
+            return overridden;
+        }
+        if (string.IsNullOrWhiteSpace(context) || !lemmaResolver.HasSidecarRows)
+        {
+            return null;
+        }
+        // the client sends the displayed line: normalizing it re-derives the exact
+        // token stream the sidecar's line key was computed over at generation time
+        var selectionTokens = LemmaResolver.TokenizeManx(DocumentLine.NormalizeManx(selection));
+        if (selectionTokens.Count != 1)
+        {
+            return null;
+        }
+        var tokens = LemmaResolver.TokenizeManx(DocumentLine.NormalizeManx(context));
+        var lineKey = LemmaResolver.LineKey(tokens);
+        HashSet<string>? allowed = null;
+        for (var i = 0; i < tokens.Count; i++)
+        {
+            if (tokens[i] != selectionTokens[0])
+            {
+                continue;
+            }
+            var ids = lemmaResolver.SidecarFor(lineKey, i, tokens[i], includePopupTier: true);
+            if (ids == null)
+            {
+                // an unresolved occurrence keeps every reading in play
+                return null;
+            }
+            (allowed ??= []).UnionWith(ids);
+        }
+        return allowed;
     }
 
     /// <summary>

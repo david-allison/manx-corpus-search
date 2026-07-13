@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using CorpusSearch.Dependencies.Lucene;
+using CorpusSearch.Model;
 using CorpusSearch.Service;
 using NUnit.Framework;
 
@@ -14,7 +15,7 @@ public class DictionaryLookupServiceTest
 
     private static DictionaryLookupService Service(params string[] words)
     {
-        return new DictionaryLookupService([new FakeDictionary(words)], NoLemmas);
+        return new DictionaryLookupService([new FakeDictionary(words)], NoLemmas, LemmaResolver.Empty);
     }
 
     private static List<string> Lookup(DictionaryLookupService service, string selection, string? context = null)
@@ -167,7 +168,8 @@ public class DictionaryLookupServiceTest
     [Test]
     public void EntriesHeadedByTheQueryAreReturnedFirst()
     {
-        var service = new DictionaryLookupService([new FakeDictionary(["EEN", "YN"], ["YN"])], NoLemmas);
+        var service = new DictionaryLookupService([new FakeDictionary(["EEN", "YN"], ["YN"])], NoLemmas,
+            LemmaResolver.Empty);
         Assert.That(Lookup(service, "yn"), Is.EqualTo(new[] { "YN", "EEN" }));
     }
 
@@ -175,7 +177,8 @@ public class DictionaryLookupServiceTest
     public void PhrasesFromTheContextStillOutrankTheHeadedEntry()
     {
         // specificity wins over the headword: the phrase match is more useful than the exact entry
-        var service = new DictionaryLookupService([new FakeDictionary(["goll mygeayrt"], ["goll", "gholl"])], NoLemmas);
+        var service = new DictionaryLookupService([new FakeDictionary(["goll mygeayrt"], ["goll", "gholl"])], NoLemmas,
+            LemmaResolver.Empty);
         var result = Lookup(service, "goll", context: "v'eh goll mygeayrt y valley");
         Assert.That(result, Is.EqualTo(new[] { "goll mygeayrt", "goll" }));
     }
@@ -188,7 +191,7 @@ public class DictionaryLookupServiceTest
         {
             ["goll-mygeayrt"] = "goll mygeayrt",
             ["goll mygeayrt"] = "goll mygeayrt",
-        })], lemmaTable: NoLemmas);
+        })], lemmaTable: NoLemmas, lemmaResolver: LemmaResolver.Empty);
         Assert.That(Lookup(service, "goll-mygeayrt"), Is.EqualTo(new[] { "goll mygeayrt" }));
     }
 
@@ -211,7 +214,7 @@ public class DictionaryLookupServiceTest
     {
         // 'daase' has no entry of its own: the reader gets the root's entry
         var service = new DictionaryLookupService([new FakeDictionary(["aase"])],
-            Lemmas(("daase", "aase")));
+            Lemmas(("daase", "aase")), LemmaResolver.Empty);
 
         Assert.That(Lookup(service, "daase"), Is.EqualTo(new[] { "aase" }));
     }
@@ -220,7 +223,7 @@ public class DictionaryLookupServiceTest
     public void TheExactEntryStaysAheadOfTheRoot()
     {
         var service = new DictionaryLookupService([new FakeDictionary(["daase", "aase"])],
-            Lemmas(("daase", "aase")));
+            Lemmas(("daase", "aase")), LemmaResolver.Empty);
 
         Assert.That(Lookup(service, "daase"), Is.EqualTo(new[] { "daase", "aase" }));
     }
@@ -231,7 +234,7 @@ public class DictionaryLookupServiceTest
     public void RootEntriesCarryTheirDepth()
     {
         var service = new DictionaryLookupService([new FakeDictionary(["daase", "aase"])],
-            Lemmas(("daase", "aase")));
+            Lemmas(("daase", "aase")), LemmaResolver.Empty);
 
         var results = service.Lookup("gv", "daase");
         Assert.That(results.Select(x => (x.PrimaryWord, x.RootDepth)),
@@ -244,11 +247,87 @@ public class DictionaryLookupServiceTest
     public void TheRootChainIsWalked()
     {
         var service = new DictionaryLookupService([new FakeDictionary(["deiney", "dooinney"])],
-            Lemmas(("gheiney", "deiney"), ("deiney", "dooinney")));
+            Lemmas(("gheiney", "deiney"), ("deiney", "dooinney")), LemmaResolver.Empty);
 
         var results = service.Lookup("gv", "gheiney");
         Assert.That(results.Select(x => (x.PrimaryWord, x.RootDepth)),
             Is.EqualTo(new[] { ("deiney", 1), ("dooinney", 2) }));
+    }
+
+    private static LemmaResolver Resolver(LemmaTable table, string? overrides = null, string? sidecar = null)
+    {
+        return LemmaResolver.Load(
+            overrides == null ? null : new StringReader(overrides),
+            sidecar == null ? null : new StringReader(sidecar),
+            table);
+    }
+
+    /// <summary>The sidecar line key of a displayed line, as the popup recomputes it</summary>
+    private static string KeyOf(string context)
+    {
+        return LemmaResolver.LineKey(LemmaResolver.TokenizeManx(DocumentLine.NormalizeManx(context)));
+    }
+
+    private static string SidecarRow(string context, int tokenIndex, string form, string lemmaIds,
+        string tier = "index")
+    {
+        return "docId\tkey\tenglishHash\ttokenIndex\tform\tlemmaIds\ttier\thumanVerified\n"
+               + $"doc\t{KeyOf(context)}\tx\t{tokenIndex}\t{form}\t{lemmaIds}\t{tier}\t0\n";
+    }
+
+    /// <summary>A form-level override suppresses the rejected reading's root entry:
+    /// 'er' resolved to the preposition no longer offers 'fer' (man)</summary>
+    [Test]
+    public void AnOverrideDropsTheRejectedRootReading()
+    {
+        var table = Lemmas(("er", "er"), ("er", "fer"));
+        var unresolved = new DictionaryLookupService([new FakeDictionary(["er", "fer"])], table, LemmaResolver.Empty);
+        Assert.That(Lookup(unresolved, "er"), Is.EqualTo(new[] { "er", "fer" }));
+
+        var resolver = Resolver(table, overrides: "form\tlemmaIds\tudEvidence\ner\ter.x\t12/12\n");
+        var service = new DictionaryLookupService([new FakeDictionary(["er", "fer"])], table, resolver);
+        Assert.That(Lookup(service, "er"), Is.EqualTo(new[] { "er" }));
+    }
+
+    /// <summary>A sidecar resolution demotes readings on its own line only: the
+    /// line's key is recomputed from the context the client sends</summary>
+    [Test]
+    public void ASidecarRowDemotesTheReadingOnItsLineOnly()
+    {
+        var table = Lemmas(("er", "er"), ("er", "fer"));
+        const string context = "Moddey er y dreeym.";
+        var resolver = Resolver(table, sidecar: SidecarRow(context, tokenIndex: 1, "er", "er.x"));
+        var service = new DictionaryLookupService([new FakeDictionary(["er", "fer"])], table, resolver);
+
+        Assert.That(Lookup(service, "er", context), Is.EqualTo(new[] { "er" }));
+        // a different line, and no context at all: the row does not apply
+        Assert.That(Lookup(service, "er", "Cabbyl er y clieau."), Is.EqualTo(new[] { "er", "fer" }));
+        Assert.That(Lookup(service, "er"), Is.EqualTo(new[] { "er", "fer" }));
+    }
+
+    /// <summary>tier=popup rows are display-only, but the popup is display</summary>
+    [Test]
+    public void APopupTierRowAlsoDemotes()
+    {
+        var table = Lemmas(("er", "er"), ("er", "fer"));
+        const string context = "Moddey er y dreeym.";
+        var resolver = Resolver(table, sidecar: SidecarRow(context, tokenIndex: 1, "er", "er.x", tier: "popup"));
+        var service = new DictionaryLookupService([new FakeDictionary(["er", "fer"])], table, resolver);
+
+        Assert.That(Lookup(service, "er", context), Is.EqualTo(new[] { "er" }));
+    }
+
+    /// <summary>The selection appearing twice with only one occurrence resolved:
+    /// the unresolved occurrence keeps every reading in play</summary>
+    [Test]
+    public void AnUnresolvedOccurrenceKeepsEveryReading()
+    {
+        var table = Lemmas(("er", "er"), ("er", "fer"));
+        const string context = "Er my hie er y dreeym.";
+        var resolver = Resolver(table, sidecar: SidecarRow(context, tokenIndex: 0, "er", "er.x"));
+        var service = new DictionaryLookupService([new FakeDictionary(["er", "fer"])], table, resolver);
+
+        Assert.That(Lookup(service, "er", context), Is.EqualTo(new[] { "er", "fer" }));
     }
 
     /// <summary>The popup labels each entry with the dictionary it came from (#51)</summary>
@@ -275,7 +354,7 @@ public class DictionaryLookupServiceTest
             + "daase\taase.v\taase\tinflected\n"
             + "aase\taase.v\taase\tself\n"
             + "ghow\tgow.v\tgow\tinflected\n"));
-        var service = new DictionaryLookupService([new FakeDictionary("moddey", "aase")], table);
+        var service = new DictionaryLookupService([new FakeDictionary("moddey", "aase")], table, LemmaResolver.Empty);
 
         var coverage = service.Coverage("gv", ["Moddey, daase ghow xyzzy"]);
 
@@ -292,7 +371,7 @@ public class DictionaryLookupServiceTest
     {
         var table = LemmaTable.Load(new StringReader(
             "form\tlemmaId\tlemma\tlinkType\naase\taase.v\taase\tself\n"));
-        var service = new DictionaryLookupService([new FakeDictionary("aase")], table);
+        var service = new DictionaryLookupService([new FakeDictionary("aase")], table, LemmaResolver.Empty);
 
         var coverage = service.Coverage("gv", ["T'aase"]);
 
