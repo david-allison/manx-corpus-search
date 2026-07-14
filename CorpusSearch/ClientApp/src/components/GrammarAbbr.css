@@ -17,3 +17,20 @@
     font-size: 0.9em;
     margin-left: 6px;
 }
+
+/* a scripture citation the entry quotes ("Jud. xii. 6"): a link to the verse
+   in the corpus, kept typographically part of the definition text */
+.dict-citation-link {
+    background: none;
+    border: none;
+    padding: 0;
+    font: inherit;
+    color: var(--c-link);
+    text-decoration: underline dotted;
+    text-underline-offset: 2px;
+    cursor: pointer;
+}
+
+.dict-citation-link:hover {
+    color: var(--c-link-hover);
+}

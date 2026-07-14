@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Web;
+using CorpusSearch.Model;
 using CorpusSearch.Model.Dictionary;
 using HtmlAgilityPack;
 using Microsoft.Extensions.Logging;
@@ -191,6 +192,7 @@ public class CregeenDictionaryService(ISet<string> allWords, IList<CregeenEntry>
                 PrimaryWord = entry.Words.First(),
                 Summary = summary,
                 GrammarLabel = label,
+                Citations = VerseCitations.FindAll(summary),
             };
         }
     }

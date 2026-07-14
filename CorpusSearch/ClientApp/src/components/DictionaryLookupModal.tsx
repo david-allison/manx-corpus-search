@@ -8,6 +8,7 @@ import { Box, CircularProgress, Modal } from "@mui/material"
 import Typography from "@mui/material/Typography"
 import { DictionaryResponse, manxDictionaryLookup } from "../api/DictionaryApi"
 import { DefinitionText, GrammarLabel } from "./GrammarAbbr"
+import { VerseVersionsModal } from "./VerseVersionsModal"
 import { getMultidictLookupWord, MultidictLink } from "./MultidictLink"
 import { getSelectedWordOrPhrase, getWordAtPoint } from "../utils/Selection"
 import "./DictionaryLookupModal.css"
@@ -281,6 +282,10 @@ export const DictionaryLookupModal = (props: DictionaryLookupState) => {
 
     const [summaries, setSummaries] = useState<DictionaryResponse | null>(null)
 
+    // a tapped scripture citation ("Jud. xii. 6"): the verse's other-versions
+    // popup opens over the dictionary popup; following a version link closes both
+    const [citationKey, setCitationKey] = useState<string | null>(null)
+
     useEffect(() => {
         setSummaries(null)
         if (!word) return
@@ -404,6 +409,12 @@ export const DictionaryLookupModal = (props: DictionaryLookupState) => {
                                                 {": "}
                                                 <DefinitionText
                                                     text={summary.summary}
+                                                    citations={
+                                                        summary.citations
+                                                    }
+                                                    onCitationClick={
+                                                        setCitationKey
+                                                    }
                                                 />
                                                 {summary != cornerAudio && (
                                                     <AudioButton
@@ -456,6 +467,12 @@ export const DictionaryLookupModal = (props: DictionaryLookupState) => {
                                                 {": "}
                                                 <DefinitionText
                                                     text={summary.summary}
+                                                    citations={
+                                                        summary.citations
+                                                    }
+                                                    onCitationClick={
+                                                        setCitationKey
+                                                    }
                                                 />
                                                 <PluralNote summary={summary} />
                                                 {summary != cornerAudio && (
@@ -504,6 +521,12 @@ export const DictionaryLookupModal = (props: DictionaryLookupState) => {
                                                 {": "}
                                                 <DefinitionText
                                                     text={summary.summary}
+                                                    citations={
+                                                        summary.citations
+                                                    }
+                                                    onCitationClick={
+                                                        setCitationKey
+                                                    }
                                                 />
                                                 <PluralNote summary={summary} />
                                                 {summary != cornerAudio && (
@@ -532,6 +555,11 @@ export const DictionaryLookupModal = (props: DictionaryLookupState) => {
                         </span>
                     )}
                 </Typography>
+                <VerseVersionsModal
+                    refKey={citationKey}
+                    onClose={() => setCitationKey(null)}
+                    onNavigate={() => onClose(undefined, "citation-navigate")}
+                />
             </Box>
         </Modal>
     )
