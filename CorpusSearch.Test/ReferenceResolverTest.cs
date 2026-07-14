@@ -274,4 +274,38 @@ public class VerseCitationsTest
         var found = VerseCitations.FindAll("H[a]b. ii. 11 makes the stones cry out");
         Assert.That(found?.Single().Key, Is.EqualTo("habakkuk.2.11"));
     }
+
+    /// <summary>The Homilies' parenthesized asides leave the statistics text:
+    /// citations with verse lists, ranges and trailing periods included</summary>
+    [TestCase("son e vyghin (Rom. ii. 4) as e ghrayse", "son e vyghin   as e ghrayse")]
+    [TestCase("goo yn Chiarn (Isa. xlv. 24, 25.)", "goo yn Chiarn  ")]
+    [TestCase("myr te scruit (Heb. x.25.) ayns shen", "myr te scruit   ayns shen")]
+    [TestCase("(Ps. cxxxix. 1–12.) Ta'n Chiarn toiggal", "  Ta'n Chiarn toiggal")]
+    [TestCase("blein ny ghaa (Mian xxii. 37) roish shen", "blein ny ghaa   roish shen")]
+    public void AParenthesizedCitationLeavesTheStatsText(string manx, string expected)
+    {
+        Assert.That(VerseCitations.Strip(manx), Is.EqualTo(expected));
+    }
+
+    /// <summary>Coyrle Sodjey's bare mid-text citations leave the stats text too</summary>
+    [TestCase("son Pardoon son ooilley nyn beccaghyn, Rom. v. 10. as bee eh",
+        "son Pardoon son ooilley nyn beccaghyn,   as bee eh")]
+    [TestCase("Yn Screeuyn: Rom. xii. 1-5.", "Yn Screeuyn:  ")]
+    [TestCase("Veih Rom. viii. 15. Ta shin er gheddyn", "Veih   Ta shin er gheddyn")]
+    public void ABareCitationLeavesTheStatsText(string manx, string expected)
+    {
+        Assert.That(VerseCitations.Strip(manx), Is.EqualTo(expected));
+    }
+
+    /// <summary>Ordinary parentheticals are prose, not citations</summary>
+    [TestCase("v'eh er ny ruggey (myr shen) ayns Sostyn")]
+    [TestCase("yn vlein (1745) haink eh")]
+    [TestCase("gyn parentheses erbee")]
+    [TestCase("va Job 7 laa as 7 oie ny host")]
+    [TestCase("")]
+    [TestCase(null)]
+    public void ProseParentheticalsStayInTheStatsText(string? manx)
+    {
+        Assert.That(VerseCitations.Strip(manx), Is.Null);
+    }
 }

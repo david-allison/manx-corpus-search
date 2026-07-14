@@ -185,4 +185,32 @@ public class ReferenceSearchTest : QueryBase
         var (lines, _) = luceneIndex.GetLines("metrical", 1, 5, 5, fromEnd: false, getTranscript: false);
         Assert.That(lines.Select(x => x.Reference), Does.Contain("PSALM 23"));
     }
+
+    /// <summary>A mid-text citation stays displayed and searchable, but its
+    /// abbreviations never count as Manx words</summary>
+    [Test]
+    public void AMidTextCitationStaysOutOfStatisticsButInSearch()
+    {
+        var line = new DocumentLine
+        {
+            Manx = "son e vyghin (Rom. ii. 4) as e ghrayse",
+            English = "",
+            CsvLineNumber = 2,
+        };
+        DocumentLinePreparer.Prepare(
+            new CorpusSearch.Services.OpenSourceDocument { Name = DOC, Ident = DOC }, [line]);
+        luceneIndex.Add(new TestDocument(DOC, DOC_DATE), [line]);
+
+        var terms = luceneIndex.GetTermFrequencyList().Select(x => x.Item1).ToList();
+        Assert.Multiple(() =>
+        {
+            Assert.That(terms, Does.Contain("vyghin"));
+            Assert.That(terms, Does.Not.Contain("rom"));
+            Assert.That(terms, Does.Not.Contain("ii"));
+        });
+
+        // the searchable text keeps the citation: "rom" still finds the line
+        var result = NewSearcher().SearchWork(DOC, "rom", SearchOptions.Default, false);
+        Assert.That(result.Lines, Has.Count.EqualTo(1));
+    }
 }

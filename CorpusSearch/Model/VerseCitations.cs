@@ -20,9 +20,49 @@ public static class VerseCitations
     // Jud. xii. 6 / Job xxxix, 19 / 2 Sam. xxiv. 4 / Ps. 45, 12 (Kelly): the book
     // capitalized as printed (brackets restore elisions: Ecclesiast[es]), the
     // chapter roman or arabic, the verse arabic, an optional range
-    private static readonly Regex CitationSpan = new(
-        @"\b(?:[1-3]\s+|I{1,3}\.?\s+)?\p{Lu}[\p{L}\[\]]{1,20}\.?\s+(?:[ivxlc]+|[IVXLC]+|\d{1,3})[.,:]?\s*\d{1,3}(?:\s?[-–]\s?\d{1,3})?",
+    private const string SpanPattern =
+        @"\b(?:[1-3]\s+|I{1,3}\.?\s+)?\p{Lu}[\p{L}\[\]]{1,20}\.?\s+(?:[ivxlc]+|[IVXLC]+|\d{1,3})[.,:]?\s*\d{1,3}(?:\s?[-–]\s?\d{1,3})?";
+
+    private const RegexOptions SpanOptions = RegexOptions.Compiled | RegexOptions.CultureInvariant;
+
+    private static readonly Regex CitationSpan = new(SpanPattern, SpanOptions);
+
+    // the same span with its closing period, for whole-citation removal
+    // ("Rom. v. 10. as bee eh" must not leave a stray period behind)
+    private static readonly Regex BareCitation = new(SpanPattern + @"\.?", SpanOptions);
+
+    // (Rom. ii. 4) / (Isa. xlv. 24, 25.) — a parenthesized aside short enough to
+    // be a citation; the citation grammar decides whether it actually is one
+    private static readonly Regex ParenthesizedAside = new(
+        @"\(\s*(?<inner>[^()]{4,60}?)\s*\)",
         RegexOptions.Compiled | RegexOptions.CultureInvariant);
+
+    /// <summary>
+    /// <paramref name="text"/> with its mid-text scripture citations removed -
+    /// parenthesized asides ("(Rom. ii. 4)" in the Homilies) and bare citations
+    /// ("Rom. v. 10." in Coyrle Sodjey) alike - for the Manx-language statistics
+    /// stream: the abbreviations stop counting as Manx words while the displayed
+    /// and searched text keep them. Null when nothing was stripped. Ordinary
+    /// parentheticals ("(myr shen)") and prose are untouched: only spans the
+    /// citation grammar resolves against the canon leave.
+    /// </summary>
+    public static string? Strip(string? text)
+    {
+        if (string.IsNullOrEmpty(text))
+        {
+            return null;
+        }
+
+        // parenthesized asides first (their inner text is the citation), then any
+        // bare citation spans left in the prose
+        var stripped = text.Contains('(')
+            ? ParenthesizedAside.Replace(text,
+                m => ReferenceResolver.TryParseCitation(m.Groups["inner"].Value) != null ? " " : m.Value)
+            : text;
+        stripped = BareCitation.Replace(stripped,
+            m => ReferenceResolver.TryParseCitation(m.Value) != null ? " " : m.Value);
+        return stripped == text ? null : stripped;
+    }
 
     /// <summary>The citations in <paramref name="text"/>, one entry per distinct
     /// printed form; null when there are none (the common case, kept off the wire)</summary>

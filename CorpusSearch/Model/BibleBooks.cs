@@ -69,7 +69,7 @@ public static class BibleBooks
         ("proverbs", "Proverbs", ["prov", "pro", "raaghyn creeney"]),
         ("ecclesiastes", "Ecclesiastes", ["eccles", "eccl", "ecc"]),
         ("song-of-solomon", "Song of Solomon", ["song of songs", "canticles", "cant", "arrane solomon"]),
-        ("isaiah", "Isaiah", ["isa"]),
+        ("isaiah", "Isaiah", ["isa", "is"]),
         ("jeremiah", "Jeremiah", ["jer"]),
         ("lamentations", "Lamentations", ["lam", "dobberan"]),
         ("ezekiel", "Ezekiel", ["ezek", "ezk", "ez"]),

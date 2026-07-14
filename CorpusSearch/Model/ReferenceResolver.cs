@@ -39,10 +39,10 @@ public static class ReferenceResolver
     private static readonly Regex PsalmIncipit =
         new(@"(?:^psal\.?\s*(?<n>\d{1,3})\b|\bpsal\.?\s*(?<n>\d{1,3})$)", Options);
 
-    // jud xii 6 / ms 1 thessalonians 2 16 / luke xiii 16 24 — after normalization;
-    // an optional verse range keeps its first verse
+    // jud xii 6 / ms 1 thessalonians 2 16 / isa xlv 24 25 — after normalization;
+    // a verse range or list (24, 25 / 9–21) keeps its first verse
     private static readonly Regex CitationShape =
-        new(@"^(?<head>.+?) (?<ch>\d{1,3}|[ivxlcdm]{1,9}) (?<v>\d{1,3})(?: ?[-–] ?\d{1,3})?$", Options);
+        new(@"^(?<head>.+?) (?<ch>\d{1,3}|[ivxlcdm]{1,9}) (?<v>\d{1,3})(?: ?[-– ] ?\d{1,3})*$", Options);
 
     public static void Resolve(Document document, IEnumerable<DocumentLine> lines)
     {

@@ -167,7 +167,9 @@ public class LuceneIndex(IndexWriter indexWriter)
             // feed the Manx statistics and the lemma field
             if (line.IsManxLanguage)
             {
-                doc.Add(new Field(DOCUMENT_MANX_GV, line.NormalizedManx, statsFieldType));
+                // the stats text drops mid-text scripture citations; the searchable
+                // fields above keep them (display/analysed identity for highlights)
+                doc.Add(new Field(DOCUMENT_MANX_GV, line.NormalizedStatsManx, statsFieldType));
                 // same text as the manx field: the analyzer injects the lemma ids
                 doc.Add(new Field(DOCUMENT_LEMMA_MANX, line.NormalizedManx, casedFieldType));
             }
