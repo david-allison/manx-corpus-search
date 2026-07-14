@@ -169,7 +169,7 @@ export const Dictionary = () => {
                     .find((x) => x.phillipsSpellingOf)?.phillipsSpellingOf
                 return target ? (
                     <p className="dict-page-bridge">
-                        <strong>{page!.word}</strong>
+                        <strong>{page.word}</strong>
                         {" is a c. 1610 spelling (Phillips) of "}
                         <Link to={`/dictionary/${encodeURIComponent(target)}`}>
                             {target}
