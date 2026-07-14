@@ -410,4 +410,59 @@ public class DocumentLinePreparerTest
         Assert.That(line.StatsManx, Is.Null);
         Assert.That(line.NormalizedStatsManx, Is.EqualTo(line.NormalizedManx));
     }
+
+    /// <summary>The manifest's recording events ("[laughs]" in the UOSH video
+    /// transcriptions) leave the statistics text; the displayed Manx keeps them</summary>
+    [Test]
+    public void ADeclaredRecordingEventLeavesTheStatisticsText()
+    {
+        var document = Manifest();
+        document.InlineRecordingEvents = ["laughs", "clock chimes"];
+        var line = Prepared(document,
+            new DocumentLine { Manx = "va shen mie [laughs] as eisht [clock chimes]" });
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(line.Manx, Is.EqualTo("va shen mie [laughs] as eisht [clock chimes]"));
+            Assert.That(line.StatsManx, Is.EqualTo("va shen mie   as eisht  "));
+        });
+    }
+
+    /// <summary>An undeclared bracket is not a recording event: editorial
+    /// insertions ([dy bee]) are genuine Manx and keep counting</summary>
+    [Test]
+    public void AnUndeclaredBracketKeepsItsWords()
+    {
+        var document = Manifest();
+        document.InlineRecordingEvents = ["laughs"];
+        var line = Prepared(document, new DocumentLine { Manx = "as [dy bee] eh ayn" });
+
+        Assert.That(line.StatsManx, Is.Null);
+    }
+
+    /// <summary>[sic] is editorial Latin in every document - no manifest needed.
+    /// The shapes vary by printing: (sic), and Aght Giare's correction form
+    /// [sic: shoh], which goes entirely - the printed word counts once, as printed</summary>
+    [TestCase("yn ven ainle [sic] dy row", "yn ven ainle   dy row")]
+    [TestCase("er hoilshaghey (sic) da sheelnaue", "er hoilshaghey   da sheelnaue")]
+    [TestCase("urrym choh [sic: shoh] cha nee", "urrym choh   cha nee")]
+    public void SicLeavesTheStatisticsTextEverywhere(string manx, string expected)
+    {
+        var line = Prepared(Manifest(), new DocumentLine { Manx = manx });
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(line.Manx, Is.EqualTo(manx));
+            Assert.That(line.StatsManx, Is.EqualTo(expected));
+        });
+    }
+
+    /// <summary>"sick" must not read as a sic marker</summary>
+    [Test]
+    public void AWordStartingWithSicIsNotAMarker()
+    {
+        var line = Prepared(Manifest(), new DocumentLine { Manx = "the [sick] man" });
+
+        Assert.That(line.StatsManx, Is.Null);
+    }
 }

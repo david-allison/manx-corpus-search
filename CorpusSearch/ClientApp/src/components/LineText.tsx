@@ -14,6 +14,12 @@ const NOTE_MARKER = /\[\d+\]/
 const NOTE_MARKER_SPLIT = /(\[\d+\])/
 const isNoteMarker = (part: string) => /^\[\d+\]$/.test(part)
 
+/** A bracketed editorial aside: a recording event ("[laughs]"), "[sic]", or a
+ * supplied word ("[dy bee]") — never body prose, so it renders in the
+ * apparatus style. Digit-led markers are note toggles, not asides. */
+const EDITORIAL_SPLIT = /(\[[^\][\d][^\][]{0,40}\])/
+const isEditorial = (part: string) => /^\[[^\][\d][^\][]{0,40}\]$/.test(part)
+
 /**
  * Shifts server highlight ranges (offsets into the full line) into offsets local to one
  * newline-separated segment of it, clipping ranges which cross the boundary.
@@ -115,8 +121,14 @@ const SegmentText = (props: {
     noteToggle?: NoteToggle
 }) => {
     const { text, segmentStart, highlights, searchWords, noteToggle } = props
-    // note markers split the segment and become the note row's toggle
-    const parts = noteToggle ? text.split(NOTE_MARKER_SPLIT) : [text]
+    // note markers split the segment and become the note row's toggle;
+    // editorial asides split it too, keeping their own display style
+    const parts = (noteToggle ? text.split(NOTE_MARKER_SPLIT) : [text]).flatMap(
+        (part) =>
+            noteToggle && isNoteMarker(part)
+                ? [part]
+                : part.split(EDITORIAL_SPLIT),
+    )
     let partStart = segmentStart
     return (
         <>
@@ -138,7 +150,7 @@ const SegmentText = (props: {
                 const chunks = highlights
                     ? segmentChunks(highlights, start, part.length)
                     : null
-                return (
+                const highlighted = (
                     <Highlighter
                         key={key}
                         highlightClassName={
@@ -151,6 +163,13 @@ const SegmentText = (props: {
                         findChunks={chunks ? () => chunks : undefined}
                         textToHighlight={part}
                     />
+                )
+                return isEditorial(part) ? (
+                    <span className="doc-editorial" key={key}>
+                        {highlighted}
+                    </span>
+                ) : (
+                    highlighted
                 )
             })}
         </>

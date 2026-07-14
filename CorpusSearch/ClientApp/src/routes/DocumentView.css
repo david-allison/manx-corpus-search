@@ -253,6 +253,13 @@
 /* a "[1]" marker linking a line to its note (#132): clicking toggles the note row.
    An outlined chip in a warm parchment tone - visible while reading, but lighter
    than the text and distinct from the search-match marks */
+/* a bracketed editorial aside in the text - a recording event ("[laughs]"),
+   "[sic]", or a supplied word ("[dy bee]"): apparatus, not body prose */
+.doc-editorial {
+    font-style: italic;
+    color: var(--c-secondary);
+}
+
 .doc-note-marker {
     border: none;
     cursor: pointer;
