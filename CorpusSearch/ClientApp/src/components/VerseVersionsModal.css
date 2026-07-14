@@ -1,0 +1,52 @@
+.verse-versions-title {
+    margin: 0 0 12px;
+    font-size: 1.15rem;
+}
+
+.verse-versions-loading {
+    display: flex;
+    justify-content: center;
+    padding: 16px 0;
+}
+
+.verse-versions-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.verse-versions-list > li {
+    padding: 8px 0;
+    border-top: 1px solid var(--c-border-input, #e0e0e0);
+}
+
+.verse-versions-name {
+    font-weight: 600;
+}
+
+.verse-versions-year {
+    margin-left: 8px;
+    color: var(--c-secondary, #5a6b72);
+    font-size: 0.85em;
+}
+
+.verse-versions-here {
+    margin-left: 8px;
+    color: var(--c-secondary, #5a6b72);
+    font-size: 0.85em;
+    font-style: italic;
+}
+
+.verse-versions-text {
+    margin-top: 2px;
+    color: var(--c-secondary, #5a6b72);
+    /* one verse is plenty: clamp long prose translations */
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.verse-versions-none {
+    color: var(--c-secondary, #5a6b72);
+}

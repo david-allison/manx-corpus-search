@@ -7,6 +7,7 @@ import {
     screen,
     waitFor,
 } from "@testing-library/react"
+import { MemoryRouter } from "react-router-dom"
 import { ComparisonTable } from "./ComparisonTable"
 import { segmentChunks } from "./LineText"
 import { SearchWorkResponse, SearchWorkResult } from "../api/SearchWorkApi"
@@ -38,6 +39,12 @@ const mockDictionaryLookup = vi.hoisted(() => vi.fn())
 
 vi.mock("../api/DictionaryApi", () => ({
     manxDictionaryLookup: mockDictionaryLookup,
+}))
+
+const mockVerseAlignment = vi.hoisted(() => vi.fn())
+
+vi.mock("../api/VerseAlignmentApi", () => ({
+    fetchVerseAlignment: mockVerseAlignment,
 }))
 
 const mockGetSelectedWordOrPhrase = vi.hoisted(() => vi.fn())
@@ -784,6 +791,107 @@ describe("segmentChunks", () => {
         expect(segmentChunks([{ start: 2, end: 6 }], 4, 3)).toEqual([
             { start: 0, end: 2 },
         ])
+    })
+})
+
+describe("reference column (verse references)", () => {
+    beforeEach(() => {
+        mockVerseAlignment.mockReset()
+    })
+
+    it("renders an unresolved reference as plain text", () => {
+        const { container, getByText } = renderTable([
+            line({ manx: "Ta fys aym", reference: "[12]" }),
+        ])
+        getByText("Ref")
+        getByText("[12]")
+        expect(container.querySelector(".doc-ref-link")).toBeNull()
+    })
+
+    it("renders a reference-only row as a section heading", () => {
+        const { container } = renderTable([
+            line({
+                reference: "PSALM 23",
+                canonicalReference: "psalms.23",
+                csvLineNumber: 2,
+            }),
+            line({ manx: "Ta'n Chiarn my vochilley", csvLineNumber: 3 }),
+        ])
+        const band = container.querySelector(
+            ".doc-row-heading .doc-heading-band",
+        )
+        expect(band?.textContent).toBe("PSALM 23")
+    })
+
+    it("opens the other-versions popup from a resolved reference", async () => {
+        mockVerseAlignment.mockResolvedValue({
+            key: "psalms.23.1",
+            display: "Psalms 23:1",
+            documents: [
+                {
+                    ident: "doc",
+                    name: "This Psalter",
+                    csvLineNumber: 2,
+                },
+                {
+                    ident: "bible",
+                    name: "Yn Vible Casherick",
+                    year: 1819,
+                    csvLineNumber: 15234,
+                    manx: "Ta'n Chiarn my vochilley",
+                },
+            ],
+        })
+        const verse = line({
+            manx: "Yn Chiarn hene my vochilley mie",
+            reference: "1",
+            canonicalReference: "psalms.23.1",
+        })
+        const { getByTitle } = render(
+            <MemoryRouter>
+                <ComparisonTable
+                    response={response([verse])}
+                    value=""
+                    highlightManx={false}
+                    highlightEnglish={false}
+                    manxVisible={true}
+                    englishVisible={true}
+                    docIdent="doc"
+                />
+            </MemoryRouter>,
+        )
+
+        fireEvent.click(getByTitle("This verse in other versions"))
+
+        expect(mockVerseAlignment).toHaveBeenCalledWith(
+            "psalms.23.1",
+            expect.anything(),
+        )
+        await screen.findByText("Psalms 23:1")
+        // the other version links into its document at the verse...
+        const link = screen.getByRole("link", {
+            name: /Yn Vible Casherick/,
+        })
+        expect(link.getAttribute("href")).toBe("/docs/bible?ref=psalms.23.1")
+        // ...while the document the reader is in is listed without a link
+        screen.getByText("this document")
+        expect(screen.queryByRole("link", { name: /This Psalter/ })).toBeNull()
+    })
+
+    it("flashes the deep link's target row", () => {
+        const { container } = renderTable(
+            [
+                line({
+                    manx: "Ta'n Chiarn my vochilley",
+                    reference: "1",
+                    canonicalReference: "psalms.23.1",
+                    csvLineNumber: 7,
+                }),
+            ],
+            { targetLine: 7 },
+        )
+        const row = container.querySelector("#line-7")
+        expect(row?.classList.contains("doc-row-target")).toBe(true)
     })
 })
 

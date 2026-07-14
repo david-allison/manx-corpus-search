@@ -185,6 +185,8 @@ export const DocumentView = () => {
 
     // the 'q' parameter from the querystring
     const q = new URLSearchParams(location.search).get("q")
+    // a verse deep link: the canonical key ("psalms.23.1") of a line to land on
+    const refParam = new URLSearchParams(location.search).get("ref")
 
     const [value, setValue] = useState(q ?? "*")
     // initially set when following a result of a corpus search with options enabled
@@ -212,6 +214,10 @@ export const DocumentView = () => {
 
     const [searchWorkResponse, setSearchWorkResponse] =
         useState<SearchWorkResponse | null>(null)
+    // which document the response belongs to: navigating between documents keeps
+    // this component mounted, so the previous document's lines linger while the
+    // next loads - scrolling must not act on them
+    const responseForDoc = useRef<string>(undefined)
 
     // which language column is displayed (the "Show" toggle)
     const languageVisibility = useLanguageVisibility()
@@ -247,6 +253,7 @@ export const DocumentView = () => {
                     ...options,
                 })
                 setSearchWorkResponse(data)
+                responseForDoc.current = docIdent
                 setTitle(data.title)
             } catch (e) {
                 console.error(e)
@@ -254,25 +261,53 @@ export const DocumentView = () => {
         })
     }, [value, searchEnglish, searchManx, docIdent, options])
 
+    // a ?ref= deep link's target row: the verse itself, or (crossing between a
+    // verse-level and a chapter-level version) the first line of its chapter
+    const targetLine = (() => {
+        if (refParam == null || searchWorkResponse == null) {
+            return undefined
+        }
+        const lines = searchWorkResponse.results
+        const chapterKey = refParam.split(".").slice(0, 2).join(".")
+        const target =
+            lines.find((x) => x.canonicalReference == refParam) ??
+            lines.find((x) =>
+                x.canonicalReference?.startsWith(refParam + "."),
+            ) ??
+            lines.find((x) => x.canonicalReference == chapterKey)
+        return target?.csvLineNumber
+    })()
+
     // selecting a document should start with its title at the top, above the
     // search bar; wait for the first response, as until the lines render the
-    // page is too short to scroll (and re-searching in-page must not re-scroll)
+    // page is too short to scroll (and re-searching in-page must not re-scroll).
+    // A verse deep link scrolls to its row instead.
     const headerRef = useRef<HTMLDivElement>(null)
     const scrolledToDoc = useRef<string>(undefined)
     useLayoutEffect(() => {
-        if (searchWorkResponse == null || docIdent == null) {
+        if (
+            searchWorkResponse == null ||
+            docIdent == null ||
+            responseForDoc.current != docIdent
+        ) {
             return
         }
         if (scrolledToDoc.current != docIdent) {
             scrolledToDoc.current = docIdent
-            headerRef.current?.scrollIntoView({
-                behavior: window.matchMedia("(prefers-reduced-motion: reduce)")
-                    .matches
-                    ? "auto"
-                    : "smooth",
-            })
+            const behavior = window.matchMedia(
+                "(prefers-reduced-motion: reduce)",
+            ).matches
+                ? ("auto" as const)
+                : ("smooth" as const)
+            if (targetLine != null) {
+                document
+                    .getElementById(`line-${targetLine.toString()}`)
+                    ?.scrollIntoView({ behavior, block: "center" })
+            } else {
+                headerRef.current?.scrollIntoView({ behavior })
+            }
         }
-    }, [searchWorkResponse, docIdent])
+    }, [searchWorkResponse, docIdent, targetLine])
 
     // The dictionary debug mode (#dict-debug): colour-codes every Manx token
     // by whether a dictionary tap would find it. Toggled by Ctrl+Alt+D, or by
@@ -600,6 +635,7 @@ export const DocumentView = () => {
                     <ComparisonTable
                         response={searchWorkResponse}
                         dictCoverage={dictDebug ? dictCoverage : null}
+                        targetLine={targetLine}
                         docIdent={docIdent}
                         expandContext={contextEnabled}
                         showNotes={notesEnabled}

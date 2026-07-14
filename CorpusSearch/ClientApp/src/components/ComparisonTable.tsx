@@ -14,6 +14,7 @@ import { ExpanderRow } from "./ExpanderRow"
 import { LineLinkCell } from "./LineLinks"
 import { CoverageText } from "./CoverageText"
 import { TokenCoverage } from "../api/DictionaryApi"
+import { VerseVersionsModal } from "./VerseVersionsModal"
 import "./ComparisonTable.css"
 
 export const ComparisonTable = (props: {
@@ -34,6 +35,8 @@ export const ComparisonTable = (props: {
     /** dictionary debug mode: per-token coverage keyed by the line's Manx
      * text; when set, Manx cells render colour-coded tokens instead */
     dictCoverage?: Map<string, TokenCoverage[]> | null
+    /** csvLineNumber of a ?ref= deep link's verse: the row is flashed */
+    targetLine?: number
 }) => {
     const {
         response,
@@ -47,6 +50,7 @@ export const ComparisonTable = (props: {
         expandContext,
         showNotes,
         dictCoverage,
+        targetLine,
     } = props
 
     const dictionary = useDictionaryLookup()
@@ -97,8 +101,35 @@ export const ComparisonTable = (props: {
         if (isContext) {
             classes.push("doc-row-context")
         }
+        if (line.csvLineNumber == targetLine) {
+            classes.push("doc-row-target")
+        }
         return classes.length > 0 ? classes.join(" ") : undefined
     }
+
+    // the Ref column's "other versions" popup: canonical key of the tapped verse
+    const [versionsKey, setVersionsKey] = useState<string | null>(null)
+
+    /** The Ref cell: a verse with a cross-version identity links to its other
+     * versions; an unresolved reference is plain text */
+    const referenceCell = (line: SearchWorkResult) =>
+        line.canonicalReference ? (
+            <button
+                type="button"
+                className="doc-ref-link"
+                title="This verse in other versions"
+                onClick={() => setVersionsKey(line.canonicalReference ?? null)}
+            >
+                {line.reference}
+            </button>
+        ) : (
+            line.reference
+        )
+
+    /** A reference-only row (chapter heading): no text of its own, so it renders
+     * as a section heading across the language columns */
+    const isHeadingRow = (line: SearchWorkResult) =>
+        Boolean(line.reference) && !line.manx && !line.english
 
     const { entries, expand } = useContextExpansion(
         response,
@@ -207,6 +238,35 @@ export const ComparisonTable = (props: {
                                     )
                                 }
                                 const { line, index, isContext } = entry
+                                if (isHeadingRow(line)) {
+                                    return (
+                                        <tr
+                                            key={
+                                                response.title +
+                                                line.csvLineNumber.toString()
+                                            }
+                                            id={`line-${line.csvLineNumber.toString()}`}
+                                            className={
+                                                "doc-row-heading" +
+                                                (line.csvLineNumber ==
+                                                targetLine
+                                                    ? " doc-row-target"
+                                                    : "")
+                                            }
+                                        >
+                                            {isVideo && <td />}
+                                            {hasSpeakerColumn && <td />}
+                                            {hasReferenceColumn && <td />}
+                                            <td
+                                                className="doc-heading-band"
+                                                colSpan={languageColSpan}
+                                            >
+                                                {referenceCell(line)}
+                                            </td>
+                                            {linkVisible && <td />}
+                                        </tr>
+                                    )
+                                }
                                 const noteLinked = isNoteLinked(
                                     line,
                                     manxVisible,
@@ -277,6 +337,7 @@ export const ComparisonTable = (props: {
                                     >
                                         <tr
                                             key={line.date}
+                                            id={`line-${line.csvLineNumber.toString()}`}
                                             ref={(element) => {
                                                 if (element == null) {
                                                     rowElements.current.delete(
@@ -339,7 +400,7 @@ export const ComparisonTable = (props: {
                                             )}
                                             {hasReferenceColumn && (
                                                 <td className="doc-td-reference">
-                                                    {line.reference}
+                                                    {referenceCell(line)}
                                                 </td>
                                             )}
                                             {leftVisible && (
@@ -389,6 +450,11 @@ export const ComparisonTable = (props: {
             </div>
 
             <DictionaryLookupModal {...dictionary.modal} />
+            <VerseVersionsModal
+                refKey={versionsKey}
+                docIdent={docIdent}
+                onClose={() => setVersionsKey(null)}
+            />
         </>
     )
 }

@@ -579,11 +579,14 @@ public class LuceneIndex(IndexWriter indexWriter)
             { NumericRangeQuery.NewInt32Range(DOCUMENT_LINE_NUMBER, start, end, minInclusive: true, maxInclusive: true), Occur.MUST },
         };
 
-        var probeFields = new HashSet<string> { DOCUMENT_LINE_NUMBER, DOCUMENT_REAL_MANX, DOCUMENT_REAL_ENGLISH };
+        var probeFields = new HashSet<string>
+            { DOCUMENT_LINE_NUMBER, DOCUMENT_REAL_MANX, DOCUMENT_REAL_ENGLISH, DOCUMENT_REFERENCE };
         var candidates = searcher.Search(query, int.MaxValue).ScoreDocs
             .Select(x => (x.Doc, Probe: searcher.Doc(x.Doc, probeFields)))
+            // reference-only rows (chapter headings) count as content
             .Where(x => !string.IsNullOrEmpty(x.Probe.GetField(DOCUMENT_REAL_MANX)?.GetStringValue())
-                        || !string.IsNullOrEmpty(x.Probe.GetField(DOCUMENT_REAL_ENGLISH)?.GetStringValue()))
+                        || !string.IsNullOrEmpty(x.Probe.GetField(DOCUMENT_REAL_ENGLISH)?.GetStringValue())
+                        || !string.IsNullOrEmpty(x.Probe.GetField(DOCUMENT_REFERENCE)?.GetStringValue()))
             .OrderBy(x => x.Probe.GetField(DOCUMENT_LINE_NUMBER)?.GetInt32Value() ?? -1)
             .ToList();
 
@@ -612,6 +615,48 @@ public class LuceneIndex(IndexWriter indexWriter)
         }
 
         return first == null || last == null ? null : (first.Value, last.Value);
+    }
+
+    /// <summary>A line of some document carrying a canonical reference the
+    /// verse-alignment lookup asked for: the same verse, in another translation.</summary>
+    public sealed record VerseAlignmentLine(string DocumentIdent, string DocumentName, DateTime? Created,
+        DocumentLine Line);
+
+    /// <summary>
+    /// Every line in the corpus whose canonical reference is one of
+    /// <paramref name="keys"/> — or, when <paramref name="chapterPrefix"/> is given,
+    /// any verse under it ("psalms.23." finds psalms.23.1..6). Exact terms on the
+    /// untokenized <see cref="DOCUMENT_CANONICAL_REFERENCE"/> field.
+    /// </summary>
+    public List<VerseAlignmentLine> GetVerseAlignment(IReadOnlyCollection<string> keys, string? chapterPrefix)
+    {
+        var query = new BooleanQuery();
+        foreach (var key in keys)
+        {
+            query.Add(new TermQuery(new Term(DOCUMENT_CANONICAL_REFERENCE, key)), Occur.SHOULD);
+        }
+        if (chapterPrefix != null)
+        {
+            query.Add(new PrefixQuery(new Term(DOCUMENT_CANONICAL_REFERENCE, chapterPrefix)), Occur.SHOULD);
+        }
+
+        var fieldsToLoad = LineFields(getTranscript: false);
+        fieldsToLoad.Add(DOCUMENT_NAME);
+        fieldsToLoad.Add(DOCUMENT_IDENT);
+        fieldsToLoad.Add(DOCUMENT_CREATED_START);
+
+        using var reader = UseReader();
+        var searcher = new IndexSearcher(reader);
+        return searcher.Search(query, int.MaxValue).ScoreDocs
+            .Select(x => searcher.Doc(x.Doc, fieldsToLoad))
+            .Select(x => new VerseAlignmentLine(
+                x.GetField(DOCUMENT_IDENT)?.GetStringValue() ?? "",
+                x.GetField(DOCUMENT_NAME)?.GetStringValue() ?? "",
+                DateTime.TryParse(x.GetField(DOCUMENT_CREATED_START)?.GetStringValue(), out var created)
+                    ? created
+                    : null,
+                ToDocumentLine(x, getTranscript: false)))
+            .ToList();
     }
 
     private static HashSet<string> LineFields(bool getTranscript)

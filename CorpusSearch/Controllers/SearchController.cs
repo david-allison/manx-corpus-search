@@ -175,6 +175,22 @@ public partial class SearchController(
         return new WorkLinesResult { Lines = lines, TotalInRange = totalInRange };
     }
 
+    /// <summary>
+    /// The verse with canonical key <paramref name="key"/> ("psalms.23.1") in every
+    /// document that has it: the cross-version alignment behind the Ref column's
+    /// "other versions" popup and /docs/{ident}?ref= deep links.
+    /// </summary>
+    [HttpGet("VerseAlignment/{key}")]
+    public ActionResult<VerseAlignmentResult> GetVerseAlignment(string key)
+    {
+        var result = documentSearchService.GetVerseAlignment(key);
+        if (result == null)
+        {
+            return BadRequest("not a canonical reference key");
+        }
+        return result;
+    }
+
     [HttpGet("Search/{query}")]
     public async Task<ActionResult<QueryDocumentSearchResult>> SearchCorpus(string query, bool manx = true, bool english = true, int minDate = 1600, int maxDate = 2100, [FromQuery] SearchOptions? options = null)
     {

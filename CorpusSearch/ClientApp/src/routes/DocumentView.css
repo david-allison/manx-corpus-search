@@ -177,6 +177,45 @@
     font-size: 0.85em;
 }
 
+/* the Ref cell's "other versions" affordance: a verse with a cross-version
+   identity is tappable, but stays visually a reference, not a link */
+.doc-ref-link {
+    background: none;
+    border: none;
+    padding: 0;
+    font: inherit;
+    color: inherit;
+    text-decoration: underline dotted;
+    text-underline-offset: 2px;
+    cursor: pointer;
+}
+
+.doc-ref-link:hover {
+    color: var(--c-link);
+}
+
+/* a reference-only row: a chapter heading between the verses */
+.doc-row-heading .doc-heading-band {
+    text-align: center;
+    font-weight: 600;
+    color: var(--c-secondary);
+    padding-top: 14px;
+}
+
+/* the row a ?ref= deep link landed on: flash, then fade back in place */
+.doc-row-target td {
+    animation: doc-target-flash 2.5s ease-out 1;
+}
+
+@keyframes doc-target-flash {
+    from {
+        background-color: rgba(255, 213, 79, 0.45);
+    }
+    to {
+        background-color: transparent;
+    }
+}
+
 .doc-th-link {
     width: 70px;
 }
