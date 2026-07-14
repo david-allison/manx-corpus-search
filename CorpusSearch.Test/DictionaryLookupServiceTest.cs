@@ -531,6 +531,28 @@ public class DictionaryLookupServiceTest
         });
     }
 
+    /// <summary>A Phillips 1610 spelling reaches its entries through the
+    /// spelling link: every summary says so, so the client can explain the
+    /// hop instead of implying a dictionary lists the 1610 form</summary>
+    [Test]
+    public void APhillipsSpellingIsExplained()
+    {
+        var table = LemmaTable.Load(new StringReader(
+            "form\tlemmaId\tlemma\tlinkType\tpos\tvia\tnote\n" +
+            "dooinney\tdooinney.n\tdooinney\tself\ts. m.\tdooinney\t\n" +
+            "dwyne\tdooinney.n\tdooinney\tphillips\ts. m.\tdooinney\tphillips-1610\n"));
+        var service = new DictionaryLookupService([new FakeDictionary("dooinney")],
+            table, LemmaResolver.Empty);
+
+        var viaPhillips = service.Lookup("gv", "dwyne");
+        Assert.That(viaPhillips, Is.Not.Empty);
+        Assert.That(viaPhillips, Has.All.Property(nameof(DictionarySummary.PhillipsSpellingOf))
+            .EqualTo("dooinney"));
+
+        var direct = service.Lookup("gv", "dooinney");
+        Assert.That(direct, Has.All.Property(nameof(DictionarySummary.PhillipsSpellingOf)).Null);
+    }
+
     /// <summary>The page looks up a headword without context: 'ass' (out)
     /// must not offer the demutation guess fass; a word that is not a
     /// headword itself keeps its guesses (they are all the reader has)</summary>

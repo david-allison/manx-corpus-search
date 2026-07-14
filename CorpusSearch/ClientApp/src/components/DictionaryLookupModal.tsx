@@ -217,6 +217,29 @@ const DictionaryHeading = ({
     </h3>
 )
 
+/** Tapping a Phillips 1610 spelling (dwyne) reaches its entries through the
+ * spelling link: say so up front, so the groups below read as the classical
+ * word's entries rather than dictionaries knowing the 1610 form */
+const PhillipsBridge = ({
+    word,
+    summaries,
+}: {
+    word: string
+    summaries: DictionaryResponse
+}) => {
+    const target = summaries.find(
+        (x) => x.phillipsSpellingOf,
+    )?.phillipsSpellingOf
+    return target ? (
+        <p className="dict-popup-bridge">
+            <strong>{trimPunctuation(word)}</strong>
+            {" is a c. 1610 spelling (Phillips) of "}
+            <strong>{target}</strong>
+            {":"}
+        </p>
+    ) : null
+}
+
 /** The entry's declared plural, split out of the definition text */
 const PluralNote = ({ summary }: { summary: DictionaryResponse[number] }) =>
     summary.plurals?.length ? (
@@ -395,6 +418,9 @@ export const DictionaryLookupModal = (props: DictionaryLookupState) => {
                         </div>
                     )}
 
+                    {summaries != null && !nearMatchOnly && (
+                        <PhillipsBridge word={word} summaries={summaries} />
+                    )}
                     {summaries != null &&
                         !nearMatchOnly &&
                         groupByDictionary(summaries).map(

@@ -21,6 +21,7 @@ public class LemmaTable
     private readonly HashSet<string> lemmaIds;
     private readonly Dictionary<string, string> displayLemmaById;
     private readonly Dictionary<string, string> nameTypeById;
+    private readonly Dictionary<string, string[]> phillipsViaByForm;
     // built on first use: the history view walks lemma -> forms, the reverse
     // of every other lookup
     private readonly Lazy<Dictionary<string, string[]>> formsByDisplay;
@@ -32,7 +33,8 @@ public class LemmaTable
     private LemmaTable(Dictionary<string, string[]> candidatesByForm,
         Dictionary<string, string[]> displayLemmasByForm,
         Dictionary<string, string[]> rootDisplayLemmasByForm, HashSet<string> lemmaIds,
-        Dictionary<string, string> displayLemmaById, Dictionary<string, string> nameTypeById)
+        Dictionary<string, string> displayLemmaById, Dictionary<string, string> nameTypeById,
+        Dictionary<string, string[]> phillipsViaByForm)
     {
         this.candidatesByForm = candidatesByForm;
         this.displayLemmasByForm = displayLemmasByForm;
@@ -40,6 +42,7 @@ public class LemmaTable
         this.lemmaIds = lemmaIds;
         this.displayLemmaById = displayLemmaById;
         this.nameTypeById = nameTypeById;
+        this.phillipsViaByForm = phillipsViaByForm;
         formsByDisplay = new Lazy<Dictionary<string, string[]>>(() =>
             this.displayLemmasByForm
                 .SelectMany(kv => kv.Value.Select(display => (Display: NormalizeForm(display), Form: kv.Key)))
@@ -88,6 +91,15 @@ public class LemmaTable
         return DisplayLemmasFor(form)
             .Where(display => lemmaIds.Any(id => displayLemmaById.GetValueOrDefault(id) == display))
             .ToList();
+    }
+
+    /// <summary>The classical spellings a Phillips 1610 form stands for
+    /// ("dwyne" -> "dooinney"), from the phillips supplement's via column:
+    /// the UI explains the hop instead of implying a dictionary lists the
+    /// 1610 spelling. Empty for every other form.</summary>
+    public IReadOnlyList<string> PhillipsSpellingsOf(string form)
+    {
+        return phillipsViaByForm.TryGetValue(NormalizeForm(form), out var vias) ? vias : [];
     }
 
     /// <summary>Every form the table links to <paramref name="displayLemma"/>
@@ -266,6 +278,7 @@ public class LemmaTable
         var lemmaIds = new HashSet<string>();
         var displayLemmaById = new Dictionary<string, string>();
         var nameTypeById = new Dictionary<string, string>();
+        var phillipsViaLists = new Dictionary<string, List<string>>();
 
         foreach (var reader in readers)
         {
@@ -303,6 +316,19 @@ public class LemmaTable
                 // paradigm links (see RootDisplayLemmasFor): not the form's own entry,
                 // not a demutation guess
                 var linkType = columns.Length > 3 ? columns[3] : "self";
+                // the Phillips supplement's via column: the classical spelling
+                // the 1610 form stands for
+                if (linkType == "phillips" && columns.Length > 5 && columns[5].Length > 0)
+                {
+                    if (!phillipsViaLists.TryGetValue(form, out var vias))
+                    {
+                        phillipsViaLists[form] = vias = [];
+                    }
+                    if (!vias.Contains(columns[5]))
+                    {
+                        vias.Add(columns[5]);
+                    }
+                }
                 if (linkType is not ("self" or "demutated"))
                 {
                     if (!rootListsByForm.TryGetValue(form, out var roots))
@@ -330,7 +356,8 @@ public class LemmaTable
             rootDisplayLemmasByForm[form] = [.. roots];
         }
         return new LemmaTable(candidatesByForm, displayLemmasByForm, rootDisplayLemmasByForm, lemmaIds,
-            displayLemmaById, nameTypeById);
+            displayLemmaById, nameTypeById,
+            phillipsViaLists.ToDictionary(kv => kv.Key, kv => kv.Value.ToArray()));
     }
 
     private static LemmaTable LoadVendored()
@@ -341,16 +368,26 @@ public class LemmaTable
             // an uninitialised submodule shouldn't take the whole server down:
             // lemma search just finds nothing
             Serilog.Log.Warning("{Path} not found (is the submodule initialised?): lemma search disabled", path);
-            return new LemmaTable([], [], [], [], [], []);
+            return new LemmaTable([], [], [], [], [], [], []);
         }
-        using var reader = new StreamReader(path);
-        // the proper-nouns supplement rides beside the table when vendored
-        var namesPath = Startup.GetLocalFile("Resources", "names.tsv");
-        if (!File.Exists(namesPath))
+        // the supplements ride beside the table when vendored: proper nouns,
+        // and the Phillips 1610 spelling links
+        var readers = new List<TextReader> { new StreamReader(path) };
+        foreach (var supplement in new[] { "names.tsv", "phillips.tsv" })
         {
-            return Load(reader);
+            var supplementPath = Startup.GetLocalFile("Resources", supplement);
+            if (File.Exists(supplementPath))
+            {
+                readers.Add(new StreamReader(supplementPath));
+            }
         }
-        using var names = new StreamReader(namesPath);
-        return Load([reader, names]);
+        try
+        {
+            return Load(readers);
+        }
+        finally
+        {
+            readers.ForEach(r => r.Dispose());
+        }
     }
 }

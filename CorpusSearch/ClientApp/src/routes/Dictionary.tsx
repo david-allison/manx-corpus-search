@@ -163,6 +163,24 @@ export const Dictionary = () => {
             )}
             {failed && <p>Something went wrong — try again.</p>}
 
+            {(() => {
+                const target = page?.groups
+                    .flatMap((g) => g.entries)
+                    .find((x) => x.phillipsSpellingOf)?.phillipsSpellingOf
+                return target ? (
+                    <p className="dict-page-bridge">
+                        <strong>{page!.word}</strong>
+                        {" is a c. 1610 spelling (Phillips) of "}
+                        <Link to={`/dictionary/${encodeURIComponent(target)}`}>
+                            {target}
+                        </Link>
+                        {" — the entries below are for "}
+                        <strong>{target}</strong>
+                        {":"}
+                    </p>
+                ) : null
+            })()}
+
             {page?.isSuggestionTier && (
                 <p className="dict-page-suggestions-note">
                     Nothing found for “{page.word}” — near spellings:
