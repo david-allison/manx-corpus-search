@@ -30,10 +30,13 @@ const respondWith = (page: DictionaryPageResponse) =>
             ok: true,
             json: () =>
                 Promise.resolve(
-                    String(url).includes("/history") ? emptyHistory : page,
+                    hrefOf(url).includes("/history") ? emptyHistory : page,
                 ),
         } as Response),
     )
+
+const hrefOf = (url: string | URL | Request): string =>
+    typeof url === "string" ? url : url instanceof URL ? url.href : url.url
 
 const renderAt = (path: string) =>
     render(
