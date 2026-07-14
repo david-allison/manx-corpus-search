@@ -531,6 +531,34 @@ public class DictionaryLookupServiceTest
         });
     }
 
+    /// <summary>Phil Kelly merges homograph senses into one gloss list, so when
+    /// the chain knows which sense it means (row -> bee.v, the verb), the
+    /// sense-blind entry stands aside for the sense-capable dictionaries</summary>
+    [Test]
+    public void PhilKellyStandsAsideWhenTheChainKnowsTheSense()
+    {
+        var table = LemmaTable.Load(new StringReader(
+            "form\tlemmaId\tlemma\tlinkType\tpos\n" +
+            "row\tbee.v\tbee\tirregular\tv.\n" +
+            "bee\tbee.v\tbee\tself\tv.\n" +
+            "bee\tbee.n\tbee\tself\ts.\n"));
+        var service = new DictionaryLookupService(
+            [
+                new FakeDictionary("Fake", ["bee"]),
+                new FakeDictionary(CorpusSearch.Service.Dictionaries.PhilKellyDictionaryService.Name, ["bee"]),
+            ],
+            table, LemmaResolver.Empty);
+
+        var chain = service.Lookup("gv", "row").Where(x => x.RootDepth == 1).ToList();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(chain.Select(x => x.DictionaryName), Does.Contain("Fake"));
+            Assert.That(chain.Select(x => x.DictionaryName),
+                Does.Not.Contain(CorpusSearch.Service.Dictionaries.PhilKellyDictionaryService.Name));
+        });
+    }
+
     /// <summary>A Phillips 1610 spelling reaches its entries through the
     /// spelling link: every summary says so, so the client can explain the
     /// hop instead of implying a dictionary lists the 1610 form</summary>
@@ -595,8 +623,16 @@ public class DictionaryLookupServiceTest
     private class FakeDictionary : ISearchDictionary
     {
         private readonly List<(List<string> Words, string PrimaryWord)> entries;
+        private readonly string identifier = "Fake";
 
         public FakeDictionary(params string[] words) : this(words.Select(x => new[] { x }).ToArray()) { }
+
+        /// <summary>A named dictionary: identifier-sensitive rules (the Phil
+        /// Kelly sense-blind demotion) need more than one</summary>
+        public FakeDictionary(string identifier, string[] words) : this(words)
+        {
+            this.identifier = identifier;
+        }
 
         /// <summary>Each entry is its word list, headed by the primary word: ["EEN", "YN"] is the entry 'EEN, YN'</summary>
         public FakeDictionary(params string[][] entryWords)
@@ -618,7 +654,7 @@ public class DictionaryLookupServiceTest
 
         private readonly List<(string Word, string Pos, string Gloss)>? posEntries;
 
-        public string Identifier => "Fake";
+        public string Identifier => identifier;
         public List<string> QueryLanguages => ["gv"];
         public bool LinkToDictionary => false;
 

@@ -35,6 +35,7 @@ public class DictionaryHistoryService(
         ["Cregeen"] = "traditional (1835)",
         ["J Kelly Manx to English"] = "traditional (1866)",
         ["LearnManx Spoken Dictionary"] = "revived",
+        ["Phil Kelly Manx to English"] = "revived",
     };
 
     /// <summary>Kelly's parenthesised cognates: "(Ir. bile; S.G. bil.)"</summary>
