@@ -67,6 +67,11 @@ public static class DocumentLinePreparer
                 }
                 break;
             }
+
+            // mid-text citations ("(Rom. ii. 4)", "Rom. v. 10.") stay displayed and
+            // searchable, but leave the statistics stream: rom/eph/ii are not Manx.
+            // Registry-validated, so ordinary parentheticals and prose are untouched
+            line.StatsManx = VerseCitations.Strip(line.Manx);
         }
 
         // with every line's Reference settled, read the structured identity out of them

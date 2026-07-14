@@ -384,4 +384,30 @@ public class DocumentLinePreparerTest
         Assert.That(line.Speaker, Is.EqualTo("SATAN"));
         Assert.That(line.Manx, Is.EqualTo("Cre'n ynnyd shoh"));
     }
+
+    /// <summary>A mid-text citation ("(Rom. ii. 4)" in the Homilies) leaves the
+    /// statistics text on every document - no manifest needed, the book registry
+    /// is the disambiguator - while the displayed Manx keeps it</summary>
+    [Test]
+    public void AMidTextCitationLeavesTheStatisticsText()
+    {
+        var line = Prepared(Manifest(),
+            new DocumentLine { Manx = "son e vyghin (Rom. ii. 4) as e ghrayse" });
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(line.Manx, Is.EqualTo("son e vyghin (Rom. ii. 4) as e ghrayse"));
+            Assert.That(line.StatsManx, Is.EqualTo("son e vyghin   as e ghrayse"));
+            Assert.That(line.NormalizedStatsManx, Does.Not.Contain("rom"));
+        });
+    }
+
+    [Test]
+    public void AnOrdinaryLineHasNoSeparateStatsText()
+    {
+        var line = Prepared(Manifest(), new DocumentLine { Manx = "Ta fys aym (dy jarroo)" });
+
+        Assert.That(line.StatsManx, Is.Null);
+        Assert.That(line.NormalizedStatsManx, Is.EqualTo(line.NormalizedManx));
+    }
 }

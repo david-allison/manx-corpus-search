@@ -37,6 +37,20 @@ public class DocumentLine
     /// See <see cref="ReferenceResolver"/>.</summary>
     public string? CanonicalReference { get; set; }
 
+    /// <summary><see cref="Manx"/> with mid-text scripture citations removed
+    /// ("(Rom. ii. 4)", "Rom. v. 10."): what the Manx-language statistics count,
+    /// so citation abbreviations (rom, eph, ii) never pollute the frequency lists.
+    /// Null when the line has none; display and search text are untouched.
+    /// See <see cref="VerseCitations.Strip"/>.</summary>
+    [JsonIgnore]
+    public string? StatsManx { get; set; }
+
+    /// <summary><see cref="NormalizedManx"/> over <see cref="StatsManx"/>: the
+    /// Manx-statistics field text</summary>
+    [JsonIgnore]
+    public string NormalizedStatsManx =>
+        StatsManx == null ? NormalizedManx : " " + NormalizeManx(StatsManx) + " ";
+
     public long? MatchesInLine { get; set; }
 
     /// <summary>The language of the Manx column: "gv" unless the row is untranslated
