@@ -213,6 +213,36 @@ public class DocumentLinePreparerTest
         Assert.That(line.Manx, Is.EqualTo("Lioar Sheeloghe Yeesey Creest, Mac Ghavid. "));
     }
 
+    /// <summary>8. Baniít ta yn dwyne... - the Phillips psalter's verse
+    /// numbers carry a period</summary>
+    [Test]
+    public void AVerseNumberWithAPeriodBecomesTheReference()
+    {
+        var line = Prepared(ReferenceManifest("leading-number"),
+            new DocumentLine { Manx = "8. Baniít ta yn dwyne" });
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(line.Reference, Is.EqualTo("8"));
+            Assert.That(line.Manx, Is.EqualTo("Baniít ta yn dwyne"));
+        });
+    }
+
+    /// <summary>Beatus vir qui non abiit. psal. 1. - the whole cell is a Latin
+    /// incipit heading: reference-only, so the Latin leaves the Manx stream</summary>
+    [Test]
+    public void ALatinIncipitHeadingBecomesAReferenceOnlyRow()
+    {
+        var line = Prepared(ReferenceManifest("incipit-psalm-heading"),
+            new DocumentLine { Manx = "Beatus vir qui non abiit. psal. 1." });
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(line.Reference, Is.EqualTo("Beatus vir qui non abiit. psal. 1"));
+            Assert.That(line.Manx, Is.Empty);
+        });
+    }
+
     /// <summary>"19 ¶ " - the KJV pilcrow rides with the number, and the English
     /// column repeats the marker: both cells come out clean</summary>
     [Test]
