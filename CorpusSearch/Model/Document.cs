@@ -54,6 +54,14 @@ public abstract class Document : IDocument
     public List<string>? InlineReferences { get; set; }
 
     /// <summary>
+    /// The scripture book the document's bare chapter headings belong to ("Matthew"
+    /// for Mian 1748, whose "CAB. I." headings never name it). Seeds the book
+    /// context <see cref="ReferenceResolver"/> resolves chapter and verse numbers
+    /// under; unnecessary when the markers name their book (colon-verse, PSALM 23).
+    /// </summary>
+    public string? ReferenceBook { get; set; }
+
+    /// <summary>
     /// The language of Manx-column cells without a line-level Language value:
     /// "gv" if absent. A knowingly mixed collection declares "mixed" and relies on
     /// the line-level column.

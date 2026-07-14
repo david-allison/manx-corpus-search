@@ -136,11 +136,13 @@ public class DocumentLinePreparerTest
     {
         const string json = """
             {"name": "n", "ident": "i", "translated": "Rob Teare 2021",
-             "inlineSpeakerCodes": ["NM", "Q"], "manxColumnLanguage": "mixed"}
+             "inlineSpeakerCodes": ["NM", "Q"], "manxColumnLanguage": "mixed",
+             "referenceBook": "Matthew"}
             """;
         var document = JsonConvert.DeserializeObject<OpenSourceDocument>(json)!;
         Assert.That(document.InlineSpeakerCodes, Is.EqualTo(new[] { "NM", "Q" }));
         Assert.That(document.ManxColumnLanguage, Is.EqualTo("mixed"));
+        Assert.That(document.ReferenceBook, Is.EqualTo("Matthew"));
         // the new fields bind to properties, not the extension data shown to users
         Assert.That(document.ExtensionData.Keys, Is.EquivalentTo(new[] { "translated" }));
     }
@@ -269,6 +271,24 @@ public class DocumentLinePreparerTest
         {
             Assert.That(line.Reference, Is.EqualTo("2"));
             Assert.That(line.Manx, Is.EqualTo("Agh ta e yeearree ayns leigh yn Chiarn"));
+        });
+    }
+
+    /// <summary>End to end through Prepare: extraction hands the resolver its
+    /// Reference strings, and the canonical keys come out the other side</summary>
+    [Test]
+    public void PreparedLinesCarryCanonicalReferences()
+    {
+        var document = ReferenceManifest("heading-line", "leading-number");
+        document.ReferenceBook = "Matthew";
+        var heading = new DocumentLine { Manx = "CAB. II." };
+        var verse = new DocumentLine { Manx = "1 As tra rug Yeesey ayns Bethlehem" };
+        DocumentLinePreparer.Prepare(document, [heading, verse]);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(heading.CanonicalReference, Is.EqualTo("matthew.2"));
+            Assert.That(verse.CanonicalReference, Is.EqualTo("matthew.2.1"));
         });
     }
 
