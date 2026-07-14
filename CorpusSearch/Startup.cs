@@ -74,6 +74,9 @@ public class Startup(IConfiguration configuration)
         services.AddSingleton<ISearchDictionary>(provider => provider.GetRequiredService<KellyManxToEnglishDictionaryService>());
         services.AddSingleton(provider => CultureVanninSpokenDictionaryService.Init(provider.GetRequiredService<ILogger<CultureVanninSpokenDictionaryService>>()));
         services.AddSingleton<ISearchDictionary>(provider => provider.GetRequiredService<CultureVanninSpokenDictionaryService>());
+        // resolves lazily on first lookup, after SetupDictionaries has loaded manx.json
+        services.AddSingleton(provider => PhilKellyDictionaryService.Init());
+        services.AddSingleton<ISearchDictionary>(provider => provider.GetRequiredService<PhilKellyDictionaryService>());
         // eager: the lemma table is also the analyzer's, best loaded before indexing
         services.AddSingleton(LemmaTable.Instance);
         // eager for the same reason: the resolution layers narrow the lemma field

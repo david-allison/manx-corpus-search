@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using CorpusSearch.Dependencies.Lucene;
+using CorpusSearch.Service.Dictionaries;
 using CorpusSearch.Model;
 using Lucene.Net.Analysis.TokenAttributes;
 using Lucene.Net.Util;
@@ -72,6 +73,17 @@ public class DictionaryLookupService(IEnumerable<ISearchDictionary> dictionarySe
                     var summaries = GetSummaries([display]);
                     if (depth == 1 && expectedPos.TryGetValue(display, out var expected))
                     {
+                        // Phil Kelly merges homograph senses into one gloss list
+                        // ('bee': food and be together): when the chain knows which
+                        // sense it means, the sense-blind entry only muddies it -
+                        // unless it is all there is
+                        var senseCapable = summaries
+                            .Where(x => x.DictionaryName != PhilKellyDictionaryService.Name)
+                            .ToList();
+                        if (senseCapable.Count > 0)
+                        {
+                            summaries = senseCapable;
+                        }
                         // entries without a declared class are kept; if the filter
                         // would empty the list, the guess loses and everything stays
                         var filtered = summaries
