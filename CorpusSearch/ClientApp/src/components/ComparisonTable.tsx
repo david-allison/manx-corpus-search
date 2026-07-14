@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useState } from "react"
+import { Fragment, memo, useEffect, useState } from "react"
 import { useMediaQuery } from "@mui/material"
 import { SearchWorkResponse, SearchWorkResult } from "../api/SearchWorkApi"
 import { Translations } from "../api/SearchApi"
@@ -17,7 +17,10 @@ import { TokenCoverage } from "../api/DictionaryApi"
 import { VerseVersionsModal } from "./VerseVersionsModal"
 import "./ComparisonTable.css"
 
-export const ComparisonTable = (props: {
+/** memoized: a keystroke in the document search box re-renders the page
+ * shell, but none of these props change until its results arrive — the
+ * table (up to thousands of rows) must not re-render per letter */
+export const ComparisonTable = memo(function ComparisonTableInner(props: {
     response: SearchWorkResponse
     value: string
     highlightManx: boolean
@@ -37,7 +40,7 @@ export const ComparisonTable = (props: {
     dictCoverage?: Map<string, TokenCoverage[]> | null
     /** csvLineNumber of a ?ref= deep link's verse: the row is flashed */
     targetLine?: number
-}) => {
+}) {
     const {
         response,
         value,
@@ -457,4 +460,4 @@ export const ComparisonTable = (props: {
             />
         </>
     )
-}
+})
