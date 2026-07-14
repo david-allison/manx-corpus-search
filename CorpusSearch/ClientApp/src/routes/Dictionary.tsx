@@ -12,6 +12,7 @@ import {
     getMultidictLookupWord,
     MultidictLink,
 } from "../components/MultidictLink"
+import { WordHistory } from "../components/WordHistory"
 import "./Dictionary.css"
 
 /** "learnmanx.com" from the source URL, for the audio credit's second line */
@@ -195,6 +196,10 @@ export const Dictionary = () => {
                     ))}
                 </section>
             ))}
+
+            {word && page != null && !page.isSuggestionTier && (
+                <WordHistory word={word} />
+            )}
 
             {page != null && page.groups.length === 0 && (
                 <p>

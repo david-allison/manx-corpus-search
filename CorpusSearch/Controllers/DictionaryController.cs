@@ -10,7 +10,8 @@ namespace CorpusSearch.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/[controller]")]
-public class DictionaryController(DictionaryLookupService lookupService)
+public class DictionaryController(
+    DictionaryLookupService lookupService, DictionaryHistoryService historyService)
 {
     /// <summary>
     /// Returns diction
@@ -33,6 +34,16 @@ public class DictionaryController(DictionaryLookupService lookupService)
     public DictionaryPage Page([FromQuery] string lang, [FromQuery] string word)
     {
         return lookupService.Page(lang, word);
+    }
+
+    /// <summary>
+    /// The lexeme's corpus history (experimental): earliest attestation, the
+    /// spelling cluster, use by decade, traditional/revived split, cognates.
+    /// </summary>
+    [HttpGet("history")]
+    public DictionaryHistory History([FromQuery] string lang, [FromQuery] string word)
+    {
+        return historyService.History(lang, word);
     }
 
     /// <summary>

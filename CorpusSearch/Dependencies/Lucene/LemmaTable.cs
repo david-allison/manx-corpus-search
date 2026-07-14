@@ -21,6 +21,9 @@ public class LemmaTable
     private readonly HashSet<string> lemmaIds;
     private readonly Dictionary<string, string> displayLemmaById;
     private readonly Dictionary<string, string> nameTypeById;
+    // built on first use: the history view walks lemma -> forms, the reverse
+    // of every other lookup
+    private readonly Lazy<Dictionary<string, string[]>> formsByDisplay;
 
     // read once, shared by the index-time analyzer and the query path
     private static readonly Lazy<LemmaTable> Lazy = new(LoadVendored);
@@ -37,6 +40,11 @@ public class LemmaTable
         this.lemmaIds = lemmaIds;
         this.displayLemmaById = displayLemmaById;
         this.nameTypeById = nameTypeById;
+        formsByDisplay = new Lazy<Dictionary<string, string[]>>(() =>
+            this.displayLemmasByForm
+                .SelectMany(kv => kv.Value.Select(display => (Display: NormalizeForm(display), Form: kv.Key)))
+                .GroupBy(x => x.Display, x => x.Form)
+                .ToDictionary(g => g.Key, g => g.Distinct().Order().ToArray()));
     }
 
     public int FormCount => candidatesByForm.Count;
@@ -80,6 +88,16 @@ public class LemmaTable
         return DisplayLemmasFor(form)
             .Where(display => lemmaIds.Any(id => displayLemmaById.GetValueOrDefault(id) == display))
             .ToList();
+    }
+
+    /// <summary>Every form the table links to <paramref name="displayLemma"/>
+    /// ("billey" -> billey, villey, biljyn...): the lexeme's attested-spelling
+    /// cluster, for the history view. A form may belong to several lemmas
+    /// (mutation ambiguity); pair with <see cref="DisplayLemmasFor(string)"/>
+    /// to mark the shared ones.</summary>
+    public IReadOnlyList<string> FormsOf(string displayLemma)
+    {
+        return formsByDisplay.Value.TryGetValue(NormalizeForm(displayLemma), out var forms) ? forms : [];
     }
 
     /// <summary>The display lemmas <paramref name="form"/> belongs to as part of

@@ -10,11 +10,30 @@ vi.stubGlobal("fetch", fetchMock)
 beforeEach(() => fetchMock.mockReset())
 afterEach(cleanup)
 
+const emptyHistory = {
+    word: "",
+    lemmas: [],
+    revivalBoundaryYear: 1900,
+    truncatedForms: 0,
+    forms: [],
+    decades: [],
+    traditionalCount: 0,
+    revivedCount: 0,
+    undatedCount: 0,
+    dictionaries: [],
+    cognates: [],
+}
+
 const respondWith = (page: DictionaryPageResponse) =>
-    fetchMock.mockResolvedValue({
-        ok: true,
-        json: () => Promise.resolve(page),
-    } as Response)
+    fetchMock.mockImplementation((url) =>
+        Promise.resolve({
+            ok: true,
+            json: () =>
+                Promise.resolve(
+                    String(url).includes("/history") ? emptyHistory : page,
+                ),
+        } as Response),
+    )
 
 const renderAt = (path: string) =>
     render(
