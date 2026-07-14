@@ -26,6 +26,10 @@ export type Summary = {
     /** the printed grammar label ("s. m.", "s. f."): word class and gender
      * as the dictionary abbreviates them, expanded on hover */
     grammarLabel?: string | null
+    /** the classical spelling a Phillips 1610 form stands for ("dooinney"
+     * when tapping dwyne): shown as a bridge line so the entries never
+     * imply a dictionary lists the 1610 spelling */
+    phillipsSpellingOf?: string | null
 }
 export type DictionaryResponse = Summary[]
 

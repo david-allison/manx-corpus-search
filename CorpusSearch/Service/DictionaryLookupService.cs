@@ -131,7 +131,18 @@ public class DictionaryLookupService(IEnumerable<ISearchDictionary> dictionarySe
             }
         }
 
-        return Deduplicate(results);
+        var deduplicated = Deduplicate(results);
+        // a Phillips 1610 spelling has no entries of its own: every result
+        // arrived through the spelling link, and the client says so up front
+        var phillips = lemmaTable.PhillipsSpellingsOf(selection);
+        if (phillips.Count > 0)
+        {
+            foreach (var summary in deduplicated)
+            {
+                summary.PhillipsSpellingOf ??= phillips[0];
+            }
+        }
+        return deduplicated;
     }
 
     /// <summary>The teanglann-style full page for a word (experimental): the

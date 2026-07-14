@@ -84,6 +84,13 @@
         <Link>Resources\names.tsv</Link>
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <!-- The Phillips 1610 spelling supplement (generated from cregeen-nvh
+    phillips.nvh): loaded beside cregeen.tsv when present -->
+    <Content Include="external\manx-lemma-data\phillips.tsv"
+             Condition="Exists('external\manx-lemma-data\phillips.tsv')">
+        <Link>Resources\phillips.tsv</Link>
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <!-- The disambiguation layers ride beside the table (LemmaResolver);
     optional until the data repo adopts the generated artifacts -->
     <Content Include="external\manx-lemma-data\lemma.overrides.tsv"

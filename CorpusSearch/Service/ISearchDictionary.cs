@@ -75,4 +75,10 @@ public class DictionarySummary
     /// "v."): word class and gender as the dictionary abbreviates them, for
     /// display beside the headword with the expansion on hover</summary>
     public string? GrammarLabel { get; set; }
+
+    /// <summary>Set when the looked-up word reached its entries through a
+    /// Phillips 1610 spelling link: the classical spelling it stands for
+    /// ("dooinney" when tapping dwyne). The client explains the hop up front
+    /// so the entries never imply a dictionary lists the 1610 spelling.</summary>
+    public string? PhillipsSpellingOf { get; set; }
 }

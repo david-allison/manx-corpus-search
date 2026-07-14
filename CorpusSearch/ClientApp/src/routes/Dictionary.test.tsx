@@ -83,6 +83,32 @@ describe("Dictionary page", () => {
         expect(screen.getByText(/Search the corpus for/)).toBeTruthy()
     })
 
+    it("a Phillips spelling gets a bridge line, not implied dictionary entries", async () => {
+        respondWith({
+            word: "dwyne",
+            isSuggestionTier: false,
+            groups: [
+                {
+                    dictionary: "Cregeen",
+                    entries: [
+                        {
+                            primaryWord: "dooinney",
+                            summary: "a man;",
+                            dictionaryName: "Cregeen",
+                            rootDepth: 1,
+                            phillipsSpellingOf: "dooinney",
+                        },
+                    ],
+                },
+            ],
+        })
+        renderAt("/dictionary/dwyne")
+
+        expect(
+            await screen.findByText(/is a c\. 1610 spelling \(Phillips\) of/),
+        ).toBeTruthy()
+    })
+
     it("marks the near-spelling tier as suggestions", async () => {
         respondWith({
             word: "costlagh",

@@ -30,6 +30,18 @@
     color: var(--c-accent);
 }
 
+/* the Phillips 1610 bridge: the tapped spelling belongs to the manuscript
+   era, the entries below to the classical word */
+.dict-popup-bridge {
+    margin: 0 0 14px;
+    padding: 6px 10px;
+    font-size: 13px;
+    color: #6b5a1e;
+    background: #fff8e1;
+    border: 1px solid #ecdfae;
+    border-radius: 6px;
+}
+
 /* a dictionary's declared plural, split out of the definition text */
 .dict-popup-plural {
     color: var(--c-accent);
