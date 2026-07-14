@@ -79,6 +79,7 @@ public class Startup(IConfiguration configuration)
         // eager for the same reason: the resolution layers narrow the lemma field
         services.AddSingleton(LemmaResolver.Instance);
         services.AddSingleton<DictionaryLookupService>();
+        services.AddSingleton<DictionaryHistoryService>();
         services.AddSingleton<WorkService>();
         services.AddSingleton<DocumentSearchService>();
         services.AddSingleton<NewspaperSourceEnricher>();

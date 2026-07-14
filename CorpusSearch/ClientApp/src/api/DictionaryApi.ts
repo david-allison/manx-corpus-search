@@ -98,6 +98,50 @@ export const dictionaryPage = async (
     return (await response.json()) as DictionaryPageResponse
 }
 
+/** The lexeme's corpus history (experimental): earliest attestation, the
+ * spelling cluster, use by decade, the traditional/revived split, cognates */
+export type DictionaryHistoryResponse = {
+    word: string
+    lemmas: string[]
+    revivalBoundaryYear: number
+    forms: HistoryForm[]
+    truncatedForms: number
+    earliest?: HistoryForm | null
+    decades: { decade: number; count: number }[]
+    traditionalCount: number
+    revivedCount: number
+    undatedCount: number
+    dictionaries: { name: string; era?: string | null }[]
+    cognates: string[]
+}
+
+export type HistoryForm = {
+    form: string
+    total: number
+    documents: number
+    /** the spelling also belongs to another lexeme (mutation ambiguity) */
+    sharedWithOtherLemmas: boolean
+    earliestYear?: number | null
+    earliestIdent?: string | null
+    earliestTitle?: string | null
+    sample?: string | null
+}
+
+export const dictionaryHistory = async (
+    word: string,
+    signal?: AbortSignal,
+): Promise<DictionaryHistoryResponse> => {
+    const params = new URLSearchParams({ lang: "gv", word })
+    const response = await fetch(
+        `/api/Dictionary/history?${params.toString()}`,
+        { signal },
+    )
+    if (!response.ok) {
+        throw new Error(`dictionary history failed: ${response.status}`)
+    }
+    return (await response.json()) as DictionaryHistoryResponse
+}
+
 /** One token of a line in the dictionary-coverage debug view: how a tap on it
  * would resolve. "entry" = a dictionary lists the token; "root" = reached
  * through the lemma table's root chain; "lemma" = the table knows it but no
