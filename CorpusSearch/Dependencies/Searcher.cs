@@ -24,8 +24,11 @@ public class Searcher(LuceneIndex luceneIndex, SearchParser parser)
         {
             return new SearchResult
             {
+                // reference-only rows (chapter headings) count as content: they render
+                // as section headings even though both text cells are empty
                 Lines = luceneIndex.GetAllLines(ident, returnTranscriptData)
-                    .Where(x => !string.IsNullOrEmpty(x.Manx) || !string.IsNullOrEmpty(x.English)).ToList(),
+                    .Where(x => !string.IsNullOrEmpty(x.Manx) || !string.IsNullOrEmpty(x.English)
+                                || !string.IsNullOrEmpty(x.Reference)).ToList(),
                 TotalMatches = null,
             };
         }
@@ -126,6 +129,15 @@ public class Searcher(LuceneIndex luceneIndex, SearchParser parser)
     internal (int First, int Last)? GetLineNumberRange(string ident)
     {
         return luceneIndex.GetLineNumberRange(ident);
+    }
+
+    /// <summary>Corpus-wide lines carrying one of the canonical reference
+    /// <paramref name="keys"/>, or any verse under <paramref name="chapterPrefix"/>:
+    /// the verse-alignment lookup.</summary>
+    internal List<LuceneIndex.VerseAlignmentLine> GetVerseAlignment(
+        IReadOnlyCollection<string> keys, string? chapterPrefix)
+    {
+        return luceneIndex.GetVerseAlignment(keys, chapterPrefix);
     }
 
     public ScanResult Scan(string query)
