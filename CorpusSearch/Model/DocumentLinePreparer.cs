@@ -68,6 +68,9 @@ public static class DocumentLinePreparer
                 break;
             }
         }
+
+        // with every line's Reference settled, read the structured identity out of them
+        ReferenceResolver.Resolve(document, lines);
     }
 
     /// <summary>"gv", "en", ... - or null for a blank value, so `??` can apply the default</summary>

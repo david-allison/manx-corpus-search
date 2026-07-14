@@ -59,6 +59,11 @@ public class LuceneIndex(IndexWriter indexWriter)
     /// references stay searchable without polluting the Manx token stream.</summary>
     public const string DOCUMENT_REFERENCE = "reference";
 
+    /// <summary>The line's canonical "book.chapter[.verse]" reference key ("psalms.23.1"):
+    /// the cross-version identity of a verse, exact-matched (a single untokenized term)
+    /// by the verse-alignment lookups. See <see cref="Model.CanonicalReference"/>.</summary>
+    public const string DOCUMENT_CANONICAL_REFERENCE = "canonical_reference";
+
     public const string SUBTITLE_START = "subtitle_start";
     public const string SUBTITLE_END = "subtitle_end";
 
@@ -156,6 +161,7 @@ public class LuceneIndex(IndexWriter indexWriter)
                 // tokenized and stored: searchable via its own analyzer, returned for display
                 doc.Add(new TextField(DOCUMENT_REFERENCE, line.Reference, Field.Store.YES));
             }
+            AddField(DOCUMENT_CANONICAL_REFERENCE, line.CanonicalReference);
 
             // non-Manx lines stay searchable (the manx field above), but only Manx lines
             // feed the Manx statistics and the lemma field
@@ -290,6 +296,7 @@ public class LuceneIndex(IndexWriter indexWriter)
                 SubEnd = getTranscriptData ? document.GetField(SUBTITLE_END)?.GetDoubleValue() : null,
                 Speaker = document.GetField(DOCUMENT_SPEAKER)?.GetStringValue(),
                 Reference = document.GetField(DOCUMENT_REFERENCE)?.GetStringValue(),
+                CanonicalReference = document.GetField(DOCUMENT_CANONICAL_REFERENCE)?.GetStringValue(),
                 Language = document.GetField(DOCUMENT_LANGUAGE)?.GetStringValue(),
                 MatchesInLine = countInDoc
             };
@@ -612,7 +619,7 @@ public class LuceneIndex(IndexWriter indexWriter)
         var fieldsToLoad = new HashSet<string> { DOCUMENT_REAL_MANX, DOCUMENT_REAL_ENGLISH, DOCUMENT_NOTES,
             DOCUMENT_PAGE,
             DOCUMENT_LINE_NUMBER, DOCUMENT_ORIGINAL_MANX, DOCUMENT_ORIGINAL_ENGLISH,
-            DOCUMENT_SPEAKER, DOCUMENT_REFERENCE, DOCUMENT_LANGUAGE };
+            DOCUMENT_SPEAKER, DOCUMENT_REFERENCE, DOCUMENT_CANONICAL_REFERENCE, DOCUMENT_LANGUAGE };
         if (getTranscript)
         {
             fieldsToLoad.Add(SUBTITLE_END);
@@ -635,6 +642,7 @@ public class LuceneIndex(IndexWriter indexWriter)
         SubEnd = getTranscript ? document.GetField(SUBTITLE_END)?.GetDoubleValue() : null,
         Speaker = document.GetField(DOCUMENT_SPEAKER)?.GetStringValue(),
         Reference = document.GetField(DOCUMENT_REFERENCE)?.GetStringValue(),
+        CanonicalReference = document.GetField(DOCUMENT_CANONICAL_REFERENCE)?.GetStringValue(),
         Language = document.GetField(DOCUMENT_LANGUAGE)?.GetStringValue()
     };
 

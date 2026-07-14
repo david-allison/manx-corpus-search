@@ -30,6 +30,13 @@ public class DocumentLine
     /// token stream but searchable through its own index field</summary>
     public string? Reference { get; set; }
 
+    /// <summary>Canonical "book.chapter[.verse]" key derived from
+    /// <see cref="Reference"/> ("1-thessalonians.2.16"; "psalms.23" for a chapter
+    /// heading row): the cross-version identity of the verse, shared by every
+    /// translation of it. Null when the reference doesn't resolve to the canon.
+    /// See <see cref="ReferenceResolver"/>.</summary>
+    public string? CanonicalReference { get; set; }
+
     public long? MatchesInLine { get; set; }
 
     /// <summary>The language of the Manx column: "gv" unless the row is untranslated

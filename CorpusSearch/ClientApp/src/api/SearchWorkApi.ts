@@ -20,6 +20,10 @@ export type SearchWorkResult = {
     speaker?: string
     /** verse/chapter reference ("MS 1 Thessalonians 2.16"): line metadata */
     reference?: string
+    /** canonical "book.chapter[.verse]" key of `reference` ("psalms.23.1"): the
+     * cross-version identity of the verse. Absent when the reference doesn't
+     * resolve to the canon */
+    canonicalReference?: string
     /** The line's language when its Manx column is not Manx, e.g. "en" for an
      * untranslated row. Absent on Manx lines */
     language?: string
