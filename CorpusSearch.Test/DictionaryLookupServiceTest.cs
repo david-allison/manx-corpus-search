@@ -513,6 +513,20 @@ public class DictionaryLookupServiceTest
         Assert.That(coverage[0].Select(x => x.Status), Is.EqualTo(new[] { "root" }));
     }
 
+    /// <summary>The corpus writes 'dy-reiltagh' where the dictionary lists
+    /// 'dy reiltagh'; a tap resolves it through the hyphen variants, so the
+    /// coverage prediction must agree</summary>
+    [Test]
+    public void CoverageTriesTheTapPathsHyphenVariants()
+    {
+        var service = new DictionaryLookupService([new FakeDictionary("dy reiltagh")], NoLemmas,
+            LemmaResolver.Empty);
+
+        var coverage = service.Coverage("gv", ["dy-reiltagh"]);
+
+        Assert.That(coverage[0].Select(x => x.Status), Is.EqualTo(new[] { "entry" }));
+    }
+
     [Test]
     public void PageGroupsEntriesByDictionary()
     {

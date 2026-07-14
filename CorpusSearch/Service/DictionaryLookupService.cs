@@ -468,6 +468,12 @@ public class DictionaryLookupService(IEnumerable<ISearchDictionary> dictionarySe
     {
         var dictionaries = dictionaryServices.Where(x => x.QueryLanguages.Contains(lang)).ToList();
         bool InDictionary(string word) => dictionaries.Any(d => d.ContainsWord(word));
+        // a tap tries hyphen/apostrophe variants of the selection (GetCandidates),
+        // so the prediction must too: 'dy-reiltagh' is listed as 'dy reiltagh'
+        bool HasEntry(string word) => HyphenVariants(word)
+            .SelectMany(ApostropheVariants)
+            .Distinct(StringComparer.InvariantCultureIgnoreCase)
+            .Any(InDictionary);
 
         var result = new List<List<TokenCoverage>>(lines.Count);
         foreach (var line in lines)
@@ -482,12 +488,12 @@ public class DictionaryLookupService(IEnumerable<ISearchDictionary> dictionarySe
             {
                 var token = term.ToString();
                 string status;
-                if (InDictionary(token))
+                if (HasEntry(token))
                 {
                     status = "entry";
                 }
                 else if (lemmaTable.DisplayLemmasFor(token).Concat(lemmaTable.CliticDisplayLemmasFor(token))
-                         .Any(InDictionary))
+                         .Any(HasEntry))
                 {
                     status = "root";
                 }
