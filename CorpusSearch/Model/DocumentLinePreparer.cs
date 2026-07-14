@@ -127,9 +127,16 @@ public static class DocumentLinePreparer
                 case "leading-number":
                     // 1 Lioar Sheeloghe... (Mian 1748, Acocrypha): a bare verse
                     // number opens the cell, optionally with a KJV-style pilcrow
-                    // ("19 ¶ "); digits never tokenized as Manx, so this is
-                    // display/metadata cleanliness
-                    result.Add(new Regex(@"^\s*(?<ref>\d+)(?:\s*¶)?\s+(?=\S)", options));
+                    // ("19 ¶ ") or a period ("8. ", the Phillips psalter); digits
+                    // never tokenized as Manx, so this is display/metadata
+                    // cleanliness
+                    result.Add(new Regex(@"^\s*(?<ref>\d+)\.?(?:\s*¶)?\s+(?=\S)", options));
+                    break;
+                case "incipit-psalm-heading":
+                    // Beatus vir qui non abiit. psal. 1. (the Phillips psalter):
+                    // the whole cell is a Latin incipit heading - as reference it
+                    // stays searchable while the Latin leaves the Manx stream
+                    result.Add(new Regex(@"^\s*(?<ref>\S.{0,80}?\bpsal\.\s*\d+)\.?\s*$", options));
                     break;
                 case "colon-verse":
                     // Genesis:1:1. Ayns y toshiaght... (the P Kelly Bible import);
