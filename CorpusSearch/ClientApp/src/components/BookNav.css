@@ -1,0 +1,50 @@
+/* The long-document book picker (BookNav.tsx) */
+.doc-book-nav {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin: 10px 0;
+}
+
+.doc-book-nav select {
+    border: 1px solid var(--c-border-input);
+    background: var(--c-surface);
+    border-radius: 6px;
+    padding: 4px 8px;
+    font-size: 13px;
+    color: var(--c-ink);
+}
+
+.doc-book-nav button {
+    border: 1px solid var(--c-border-input);
+    background: var(--c-surface);
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 13px;
+    color: var(--c-link);
+    cursor: pointer;
+    /* the neighbours' names vary wildly in length: keep the row from jumping */
+    min-width: 90px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.doc-book-nav button:disabled {
+    color: var(--c-muted);
+    cursor: default;
+    visibility: hidden;
+}
+
+.doc-book-nav button:focus-visible,
+.doc-book-nav select:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring) inset;
+}
+
+@media (max-width: 600px) {
+    .doc-book-nav button {
+        min-width: 44px;
+    }
+}

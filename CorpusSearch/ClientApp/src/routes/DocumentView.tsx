@@ -7,6 +7,7 @@ import {
     ReactNode,
     useEffect,
     useLayoutEffect,
+    useMemo,
     useRef,
     useState,
     useTransition,
@@ -30,6 +31,12 @@ import { SeeMore } from "../components/SeeMore"
 import { BackChevron } from "../components/BackChevron"
 import { OptionCheckbox } from "../components/AdvancedOptions"
 import { parseSearchOptions } from "../api/SearchOptions"
+import { BookNav } from "../components/BookNav"
+import {
+    BOOK_SEGMENT_MIN_LINES,
+    bookSegments,
+    segmentRange,
+} from "../utils/BookSegments"
 import { useDocumentHeadElements } from "../hooks/useDocumentHeadElements"
 import { useLanguageVisibility } from "../hooks/useLanguageVisibility"
 import { usePersistedState } from "../hooks/usePersistedState"
@@ -278,6 +285,46 @@ export const DocumentView = () => {
         return target?.csvLineNumber
     })()
 
+    const hasQuery = value.trim() != "" && value != "*"
+
+    // Browsing a whole scripture (the Bible is 31k lines) renders one book at
+    // a time: the canonical references mark the boundaries. A query is exempt
+    // (its matches are sparse), as are short documents (1 & 2 Thessalonians).
+    const results = searchWorkResponse?.results
+    const segments = useMemo(
+        () => (results ? bookSegments(results) : []),
+        [results],
+    )
+    const [selectedBook, setSelectedBook] = useState<string | null>(null)
+    useEffect(() => setSelectedBook(null), [docIdent])
+    const segmented =
+        !hasQuery &&
+        segments.length > 1 &&
+        (results?.length ?? 0) >= BOOK_SEGMENT_MIN_LINES
+    // a ?ref= deep link opens on its own book
+    const refBook = refParam?.split(".")[0]
+    const activeBook = !segmented
+        ? null
+        : (selectedBook ??
+          (segments.some((x) => x.book == refBook)
+              ? refBook!
+              : segments[0].book))
+    const visibleResponse = useMemo(() => {
+        if (activeBook == null || searchWorkResponse == null) {
+            return searchWorkResponse
+        }
+        const [start, end] = segmentRange(
+            segments,
+            activeBook,
+            searchWorkResponse.results.length,
+        )
+        return {
+            ...searchWorkResponse,
+            results: searchWorkResponse.results.slice(start, end),
+        }
+    }, [activeBook, searchWorkResponse, segments])
+    const activeBookLabel = segments.find((x) => x.book == activeBook)?.label
+
     // selecting a document should start with its title at the top, above the
     // search bar; wait for the first response, as until the lines render the
     // page is too short to scroll (and re-searching in-page must not re-scroll).
@@ -308,6 +355,12 @@ export const DocumentView = () => {
             }
         }
     }, [searchWorkResponse, docIdent, targetLine])
+
+    const selectBook = (book: string) => {
+        setSelectedBook(book)
+        // start the new book from its top, like turning to it
+        headerRef.current?.scrollIntoView()
+    }
 
     // The dictionary debug mode (#dict-debug): colour-codes every Manx token
     // by whether a dictionary tap would find it. Toggled by Ctrl+Alt+D, or by
@@ -341,12 +394,13 @@ export const DocumentView = () => {
         return () => window.removeEventListener("keydown", onKey)
     }, [])
     useEffect(() => {
-        if (!dictDebug || searchWorkResponse == null) {
+        if (!dictDebug || visibleResponse == null) {
             return
         }
+        // only the displayed lines: a whole scripture would be 31k of them
         const lines = [
             ...new Set(
-                searchWorkResponse.results
+                visibleResponse.results
                     .filter((x) => x.language == null && x.manx)
                     .map((x) => x.manx),
             ),
@@ -365,7 +419,7 @@ export const DocumentView = () => {
         return () => {
             abort.abort()
         }
-    }, [dictDebug, searchWorkResponse])
+    }, [dictDebug, visibleResponse])
 
     const [metadata, setMetadata] = useState<Metadata | null>(null)
     const [showAllMeta, setShowAllMeta] = useState(false)
@@ -400,11 +454,15 @@ export const DocumentView = () => {
         ? csvLink.replace("document.csv", "manifest.json.txt")
         : undefined
 
-    const hasQuery = value.trim() != "" && value != "*"
-    const matchLabel = (response: SearchWorkResponse) =>
-        hasQuery
-            ? `${(response.totalMatches ?? 0).toLocaleString()} matches for “${value}” · ${response.numberOfResults.toLocaleString()} lines`
-            : `${response.numberOfResults.toLocaleString()} lines`
+    const matchLabel = (response: SearchWorkResponse) => {
+        if (hasQuery) {
+            return `${(response.totalMatches ?? 0).toLocaleString()} matches for “${value}” · ${response.numberOfResults.toLocaleString()} lines`
+        }
+        const lines = `${response.numberOfResults.toLocaleString()} lines`
+        return activeBookLabel != null
+            ? `${lines} · showing ${activeBookLabel}`
+            : lines
+    }
 
     useDocumentHeadElements(docIdent, title, yearLabel)
 
@@ -632,8 +690,15 @@ export const DocumentView = () => {
                         </div>
                     )}
 
+                    {activeBook != null && (
+                        <BookNav
+                            segments={segments}
+                            activeBook={activeBook}
+                            onSelect={selectBook}
+                        />
+                    )}
                     <ComparisonTable
-                        response={searchWorkResponse}
+                        response={visibleResponse ?? searchWorkResponse}
                         dictCoverage={dictDebug ? dictCoverage : null}
                         targetLine={targetLine}
                         docIdent={docIdent}
@@ -646,6 +711,13 @@ export const DocumentView = () => {
                         englishVisible={languageVisibility.englishVisible}
                         translations={searchWorkResponse.translations}
                     />
+                    {activeBook != null && (
+                        <BookNav
+                            segments={segments}
+                            activeBook={activeBook}
+                            onSelect={selectBook}
+                        />
+                    )}
                 </div>
             )}
         </div>
