@@ -243,6 +243,35 @@ public class DocumentLinePreparerTest
         });
     }
 
+    /// <summary>Psal. 1. Beatus vir, qui non abiit. - the 1765 psalter puts the
+    /// psalm number before the incipit instead of after it</summary>
+    [Test]
+    public void AnIncipitHeadingMayLeadWithThePsalmNumber()
+    {
+        var line = Prepared(ReferenceManifest("incipit-psalm-heading"),
+            new DocumentLine { Manx = "Psal. 1. Beatus vir, qui non abiit." });
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(line.Reference, Is.EqualTo("Psal. 1. Beatus vir, qui non abiit"));
+            Assert.That(line.Manx, Is.Empty);
+        });
+    }
+
+    /// <summary>An ordinary verse cell must not read as a leading incipit</summary>
+    [Test]
+    public void AnIncipitFormatLeavesVerseCellsAlone()
+    {
+        var line = Prepared(ReferenceManifest("incipit-psalm-heading", "leading-number"),
+            new DocumentLine { Manx = "2. Agh ta e yeearree ayns leigh yn Chiarn" });
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(line.Reference, Is.EqualTo("2"));
+            Assert.That(line.Manx, Is.EqualTo("Agh ta e yeearree ayns leigh yn Chiarn"));
+        });
+    }
+
     /// <summary>"19 ¶ " - the KJV pilcrow rides with the number, and the English
     /// column repeats the marker: both cells come out clean</summary>
     [Test]

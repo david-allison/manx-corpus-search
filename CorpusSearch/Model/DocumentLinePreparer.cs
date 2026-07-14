@@ -133,10 +133,12 @@ public static class DocumentLinePreparer
                     result.Add(new Regex(@"^\s*(?<ref>\d+)\.?(?:\s*¶)?\s+(?=\S)", options));
                     break;
                 case "incipit-psalm-heading":
-                    // Beatus vir qui non abiit. psal. 1. (the Phillips psalter):
-                    // the whole cell is a Latin incipit heading - as reference it
+                    // Beatus vir qui non abiit. psal. 1. (the Phillips psalter) /
+                    // Psal. 1. Beatus vir, qui non abiit. (the 1765 psalter): the
+                    // whole cell is a Latin incipit heading - as reference it
                     // stays searchable while the Latin leaves the Manx stream
-                    result.Add(new Regex(@"^\s*(?<ref>\S.{0,80}?\bpsal\.\s*\d+)\.?\s*$", options));
+                    result.Add(new Regex(
+                        @"^\s*(?<ref>\S.{0,80}?\bpsal\.\s*\d+|psal\.?\s*\d+\.?\s+\S.{0,80}?)\.?\s*$", options));
                     break;
                 case "colon-verse":
                     // Genesis:1:1. Ayns y toshiaght... (the P Kelly Bible import);
