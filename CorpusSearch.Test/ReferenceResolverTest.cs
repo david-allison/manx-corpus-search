@@ -101,6 +101,22 @@ public class ReferenceResolverTest
         Assert.That(ReferenceResolver.TryParseCitation("Rom. i. 29-30")?.Key, Is.EqualTo("romans.1.29"));
     }
 
+    /// <summary>Cregeen's house abbreviations (Psl., Pro., Ez.) and his prefixed
+    /// citations (See Exod. ...) resolve; his OED/EDD references and Apocrypha
+    /// citations must not</summary>
+    [TestCase("Psl. xlv. 5", "psalms.45.5")]
+    [TestCase("Pro. xxi. 15", "proverbs.21.15")]
+    [TestCase("Ez. xiii. 2", "ezekiel.13.2")]
+    [TestCase("See Exod. iii. 14", "exodus.3.14")]
+    [TestCase("Cf. Acts xxvii. 29", "acts.27.29")]
+    [TestCase("2 King xi. 2", "2-kings.11.2")]
+    [TestCase("OED squat 1725, 4", null)]
+    [TestCase("Ecclesiasticus xliv. 9", null)]
+    public void CregeensCitationStylesResolve(string citation, string? expected)
+    {
+        Assert.That(ReferenceResolver.TryParseCitation(citation)?.Key, Is.EqualTo(expected));
+    }
+
     // --- headings and the context they open ---
 
     [Test]
@@ -206,5 +222,56 @@ public class ReferenceResolverTest
     public void MalformedKeysDoNotParse(string? key)
     {
         Assert.That(CanonicalReference.TryParseKey(key), Is.Null);
+    }
+}
+
+/// <summary>Scripture citations found inside dictionary definition text, for the
+/// corpus links the client renders (see <see cref="VerseCitations"/>).</summary>
+[TestFixture]
+public class VerseCitationsTest
+{
+    [Test]
+    public void FindsTheCitationsInRunningProse()
+    {
+        var found = VerseCitations.FindAll(
+            "beeal ny giattey, the entering of the gate; Jud. xii. 6. See also Hos. x. 4.");
+        Assert.That(found?.Select(x => (x.Text, x.Key)), Is.EqualTo(new[]
+        {
+            ("Jud. xii. 6", "judges.12.6"),
+            ("Hos. x. 4", "hosea.10.4"),
+        }));
+    }
+
+    /// <summary>Kelly writes arabic chapters with a comma: Ps. 45, 12</summary>
+    [Test]
+    public void KellyStyleArabicChaptersResolve()
+    {
+        var found = VerseCitations.FindAll("as in Ps. 45, 12 it is written");
+        Assert.That(found?.Single().Key, Is.EqualTo("psalms.45.12"));
+    }
+
+    [Test]
+    public void ARepeatedCitationIsListedOnce()
+    {
+        var found = VerseCitations.FindAll("Jud. xii. 6; and again Jud. xii. 6.");
+        Assert.That(found, Has.Count.EqualTo(1));
+    }
+
+    /// <summary>OED/EDD references and Apocrypha citations are not corpus verses</summary>
+    [TestCase("OED squat 1725, 4")]
+    [TestCase("Ecclesiasticus xliv. 9")]
+    [TestCase("no citations here at all")]
+    [TestCase("")]
+    [TestCase(null)]
+    public void NonScriptureTextYieldsNothing(string? text)
+    {
+        Assert.That(VerseCitations.FindAll(text), Is.Null);
+    }
+
+    [Test]
+    public void EditorialBracketsResolve()
+    {
+        var found = VerseCitations.FindAll("H[a]b. ii. 11 makes the stones cry out");
+        Assert.That(found?.Single().Key, Is.EqualTo("habakkuk.2.11"));
     }
 }

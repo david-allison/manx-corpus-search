@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using CorpusSearch.Model;
 using CorpusSearch.Model.Dictionary;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
@@ -144,6 +145,7 @@ public class KellyManxToEnglishDictionaryService(ISet<string> allWords, IList<Ke
                 PartsOfSpeech = PartsOfSpeechOf(entry.Definition),
                 Words = entry.Words.Count > 1 ? entry.Words : null,
                 Plurals = entry.Plurals is { Count: > 0 } ? entry.Plurals : null,
+                Citations = VerseCitations.FindAll(entry.Definition),
             };
         }
     }

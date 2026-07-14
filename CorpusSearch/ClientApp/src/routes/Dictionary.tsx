@@ -12,6 +12,7 @@ import {
     getMultidictLookupWord,
     MultidictLink,
 } from "../components/MultidictLink"
+import { VerseVersionsModal } from "../components/VerseVersionsModal"
 import { WordHistory } from "../components/WordHistory"
 import "./Dictionary.css"
 
@@ -24,7 +25,15 @@ const hostOf = (url: string): string => {
     }
 }
 
-const Entry = ({ word, summary }: { word: string; summary: Summary }) => (
+const Entry = ({
+    word,
+    summary,
+    onCitationClick,
+}: {
+    word: string
+    summary: Summary
+    onCitationClick: (key: string) => void
+}) => (
     <div
         className={
             summary.rootDepth
@@ -49,7 +58,11 @@ const Entry = ({ word, summary }: { word: string; summary: Summary }) => (
         </strong>
         <GrammarLabel label={summary.grammarLabel} />
         {": "}
-        <DefinitionText text={summary.summary} />
+        <DefinitionText
+            text={summary.summary}
+            citations={summary.citations}
+            onCitationClick={onCitationClick}
+        />
         {summary.plurals?.length ? (
             <span className="dict-page-plural">
                 {" — "}
@@ -83,6 +96,8 @@ export const Dictionary = () => {
     const [query, setQuery] = useState(word ?? "")
     const [page, setPage] = useState<DictionaryPageResponse | null>(null)
     const [failed, setFailed] = useState(false)
+    // a tapped scripture citation: the verse's other-versions popup
+    const [citationKey, setCitationKey] = useState<string | null>(null)
 
     useEffect(() => {
         setQuery(word ?? "")
@@ -210,7 +225,12 @@ export const Dictionary = () => {
                         )}
                     </h3>
                     {group.entries.map((summary, index) => (
-                        <Entry word={page.word} summary={summary} key={index} />
+                        <Entry
+                            word={page.word}
+                            summary={summary}
+                            onCitationClick={setCitationKey}
+                            key={index}
+                        />
                     ))}
                 </section>
             ))}
@@ -241,6 +261,11 @@ export const Dictionary = () => {
                     </Link>
                 </p>
             )}
+
+            <VerseVersionsModal
+                refKey={citationKey}
+                onClose={() => setCitationKey(null)}
+            />
         </div>
     )
 }

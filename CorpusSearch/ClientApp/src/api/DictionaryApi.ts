@@ -30,6 +30,10 @@ export type Summary = {
      * when tapping dwyne): shown as a bridge line so the entries never
      * imply a dictionary lists the 1610 spelling */
     phillipsSpellingOf?: string | null
+    /** scripture citations quoted in `summary` ("Jud. xii. 6") with their
+     * canonical verse keys ("judges.12.6"): each occurrence renders as a
+     * link to the verse in the corpus */
+    citations?: { text: string; key: string }[] | null
 }
 export type DictionaryResponse = Summary[]
 

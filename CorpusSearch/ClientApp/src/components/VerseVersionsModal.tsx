@@ -32,8 +32,11 @@ export const VerseVersionsModal = (props: {
     /** the document the reader is already in: listed, but not linked */
     docIdent?: string
     onClose: () => void
+    /** fired when a version link is followed, on top of onClose: lets a host
+     * modal (the dictionary popup) close itself too */
+    onNavigate?: () => void
 }) => {
-    const { refKey, docIdent, onClose } = props
+    const { refKey, docIdent, onClose, onNavigate } = props
 
     const [alignment, setAlignment] = useState<VerseAlignmentResponse | null>(
         null,
@@ -97,7 +100,10 @@ export const VerseVersionsModal = (props: {
                                     ) : (
                                         <Link
                                             to={`/docs/${doc.ident}?ref=${encodeURIComponent(alignment.key)}`}
-                                            onClick={onClose}
+                                            onClick={() => {
+                                                onClose()
+                                                onNavigate?.()
+                                            }}
                                         >
                                             {heading}
                                         </Link>

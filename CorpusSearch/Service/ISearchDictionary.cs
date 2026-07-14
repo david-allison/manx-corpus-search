@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using CorpusSearch.Model;
 
 namespace CorpusSearch.Service;
 
@@ -81,4 +82,9 @@ public class DictionarySummary
     /// ("dooinney" when tapping dwyne). The client explains the hop up front
     /// so the entries never imply a dictionary lists the 1610 spelling.</summary>
     public string? PhillipsSpellingOf { get; set; }
+
+    /// <summary>Scripture citations quoted in <see cref="Summary"/> ("Jud. xii. 6")
+    /// with their canonical verse keys ("judges.12.6"): the client turns each
+    /// occurrence into a link to the verse in the corpus</summary>
+    public List<VerseCitation>? Citations { get; set; }
 }

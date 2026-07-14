@@ -113,18 +113,59 @@ export const GrammarLabel = ({ label }: { label?: string | null }) => {
     )
 }
 
+const withAbbreviations = (text: string) =>
+    text.split(pattern).map((piece, index) =>
+        index % 2 ? (
+            <abbr className="dict-abbr" title={GLOSSARY[piece]} key={index}>
+                {piece}
+            </abbr>
+        ) : (
+            <Fragment key={index}>{piece}</Fragment>
+        ),
+    )
+
+/** A scripture citation the definition quotes, with its canonical verse key */
+export type CitationLink = { text: string; key: string }
+
 /** Definition text with the printed abbreviations explained on hover:
- * "s. pl. YN. a covering. (Ir. cuid.)" gets tooltips on s., pl. and Ir. */
-export const DefinitionText = ({ text }: { text: string }) => (
-    <>
-        {text.split(pattern).map((piece, index) =>
-            index % 2 ? (
-                <abbr className="dict-abbr" title={GLOSSARY[piece]} key={index}>
-                    {piece}
-                </abbr>
-            ) : (
-                <Fragment key={index}>{piece}</Fragment>
-            ),
-        )}
-    </>
-)
+ * "s. pl. YN. a covering. (Ir. cuid.)" gets tooltips on s., pl. and Ir.
+ * Scripture citations the entry quotes ("Jud. xii. 6") become links to the
+ * verse in the corpus when `citations` and `onCitationClick` are given. */
+export const DefinitionText = ({
+    text,
+    citations,
+    onCitationClick,
+}: {
+    text: string
+    citations?: CitationLink[] | null
+    onCitationClick?: (key: string) => void
+}) => {
+    if (!citations?.length || onCitationClick == null) {
+        return <>{withAbbreviations(text)}</>
+    }
+    const keyOf = new Map(citations.map((x) => [x.text, x.key]))
+    const splitter = new RegExp(
+        "(" + citations.map((x) => escape(x.text)).join("|") + ")",
+        "g",
+    )
+    return (
+        <>
+            {text.split(splitter).map((piece, index) => {
+                const verseKey = index % 2 ? keyOf.get(piece) : undefined
+                return verseKey != null ? (
+                    <button
+                        type="button"
+                        className="dict-citation-link"
+                        title="This verse in the corpus"
+                        key={index}
+                        onClick={() => onCitationClick(verseKey)}
+                    >
+                        {piece}
+                    </button>
+                ) : (
+                    <Fragment key={index}>{withAbbreviations(piece)}</Fragment>
+                )
+            })}
+        </>
+    )
+}

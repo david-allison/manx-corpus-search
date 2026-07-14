@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest"
-import { cleanup, render, screen } from "@testing-library/react"
+import { describe, expect, it, vi } from "vitest"
+import { cleanup, fireEvent, render, screen } from "@testing-library/react"
 import { afterEach } from "vitest"
 import { DefinitionText, expandGrammarLabel, GrammarLabel } from "./GrammarAbbr"
 
@@ -68,5 +68,56 @@ describe("DefinitionText", () => {
         render(<DefinitionText text="the state he was in." />)
 
         expect(document.querySelectorAll("abbr")).toHaveLength(0)
+    })
+})
+
+describe("DefinitionText citations", () => {
+    const text = "cow's milk; 1 Sam. vi. 7. See also Jud. v. 17."
+    const citations = [
+        { text: "1 Sam. vi. 7", key: "1-samuel.6.7" },
+        { text: "Jud. v. 17", key: "judges.5.17" },
+    ]
+
+    it("turns each citation into a link and keeps the rest as text", () => {
+        const onCitationClick = vi.fn()
+        const { container } = render(
+            <DefinitionText
+                text={text}
+                citations={citations}
+                onCitationClick={onCitationClick}
+            />,
+        )
+        const links = container.querySelectorAll(".dict-citation-link")
+        expect(Array.from(links).map((x) => x.textContent)).toEqual([
+            "1 Sam. vi. 7",
+            "Jud. v. 17",
+        ])
+
+        fireEvent.click(links[1])
+        expect(onCitationClick).toHaveBeenCalledWith("judges.5.17")
+    })
+
+    it("renders plain text when there are no citations", () => {
+        const { container } = render(
+            <DefinitionText text={text} onCitationClick={vi.fn()} />,
+        )
+        expect(container.querySelector(".dict-citation-link")).toBeNull()
+        expect(container.textContent).toContain("1 Sam. vi. 7")
+    })
+
+    it("still explains abbreviations around a citation", () => {
+        // "lit." carries a hover expansion; the citation must not break it
+        const { container } = render(
+            <DefinitionText
+                text="lit. the same; Jud. v. 17"
+                citations={[{ text: "Jud. v. 17", key: "judges.5.17" }]}
+                onCitationClick={vi.fn()}
+            />,
+        )
+        const abbr = container.querySelector("abbr.dict-abbr")
+        expect(abbr?.textContent).toBe("lit.")
+        expect(
+            container.querySelector(".dict-citation-link")?.textContent,
+        ).toBe("Jud. v. 17")
     })
 })
