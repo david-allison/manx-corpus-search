@@ -18,6 +18,7 @@ public static class DocumentLinePreparer
         var defaultLanguage = NormalizeLanguage(document.ManxColumnLanguage) ?? DocumentLine.ManxLanguageCode;
         var speakerCode = BuildSpeakerCodeRegex(document.InlineSpeakerCodes);
         var referenceFormats = BuildReferenceRegexes(document.InlineReferences);
+        var recordingEvents = BuildRecordingEventRegex(document.InlineRecordingEvents);
 
         foreach (var line in lines)
         {
@@ -68,14 +69,45 @@ public static class DocumentLinePreparer
                 break;
             }
 
-            // mid-text citations ("(Rom. ii. 4)", "Rom. v. 10.") stay displayed and
-            // searchable, but leave the statistics stream: rom/eph/ii are not Manx.
-            // Registry-validated, so ordinary parentheticals and prose are untouched
-            line.StatsManx = VerseCitations.Strip(line.Manx);
+            // mid-text citations ("(Rom. ii. 4)", "Rom. v. 10."), the manifest's
+            // recording events ("[laughs]") and editorial [sic] stay displayed and
+            // searchable, but leave the statistics stream: none of them are Manx
+            var statsText = VerseCitations.Strip(line.Manx) ?? line.Manx;
+            statsText = SicMarker.Replace(statsText, " ");
+            if (recordingEvents != null)
+            {
+                statsText = recordingEvents.Replace(statsText, " ");
+            }
+            line.StatsManx = statsText == line.Manx ? null : statsText;
         }
 
         // with every line's Reference settled, read the structured identity out of them
         ReferenceResolver.Resolve(document, lines);
+    }
+
+    /// <summary>[sic] / (sic) / [sic: shoh] is editorial apparatus in every
+    /// document - never Manx tokens. A correction form ([sic: shoh] in Aght
+    /// Giare) goes entirely: the stats count the printed word once, as printed</summary>
+    private static readonly Regex SicMarker = new(@"[\[(]\s*sic\b[.:]?[^\])]*[\])]",
+        RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.CultureInvariant);
+
+    /// <summary>
+    /// The manifest's bracketed recording events ("[laughs]", "[clock chimes]") as
+    /// one regex; null when it declares none. Closed per-document list: the same
+    /// bracket syntax marks editorial insertions of genuine Manx elsewhere.
+    /// </summary>
+    internal static Regex? BuildRecordingEventRegex(IReadOnlyCollection<string>? directions)
+    {
+        var patterns = (directions ?? [])
+            .Where(direction => !string.IsNullOrWhiteSpace(direction))
+            .Select(direction => Regex.Escape(direction.Trim()))
+            .ToList();
+        if (patterns.Count == 0)
+        {
+            return null;
+        }
+        return new Regex(@"\[\s*(?:" + string.Join("|", patterns) + @")\s*\]",
+            RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.CultureInvariant);
     }
 
     /// <summary>"gv", "en", ... - or null for a blank value, so `??` can apply the default</summary>

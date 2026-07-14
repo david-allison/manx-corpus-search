@@ -62,6 +62,15 @@ public abstract class Document : IDocument
     public string? ReferenceBook { get; set; }
 
     /// <summary>
+    /// Bracketed recording events in the collection's Manx cells ("laughs",
+    /// "coughs" in video transcriptions): [laughs] stays displayed, but leaves the
+    /// Manx statistics stream at load time. A closed per-document list, never a
+    /// bracket heuristic — the same syntax marks editorial insertions ([dy bee])
+    /// which are genuine Manx. See <see cref="DocumentLinePreparer"/>.
+    /// </summary>
+    public List<string>? InlineRecordingEvents { get; set; }
+
+    /// <summary>
     /// The language of Manx-column cells without a line-level Language value:
     /// "gv" if absent. A knowingly mixed collection declares "mixed" and relies on
     /// the line-level column.

@@ -895,6 +895,38 @@ describe("reference column (verse references)", () => {
     })
 })
 
+describe("editorial asides", () => {
+    it("styles a recording event as apparatus, not body prose", () => {
+        const { container } = renderTable([
+            line({ manx: "va shen mie [laughs] as eisht" }),
+        ])
+        const aside = container.querySelector(".doc-editorial")
+        expect(aside?.textContent).toBe("[laughs]")
+    })
+
+    it("keeps highlight offsets correct around an aside", () => {
+        // offsets are into the full cell, including the bracketed aside
+        const { container } = renderTable([
+            line({
+                manx: "abc [laughs] cre def",
+                manxHighlights: [{ start: 13, end: 16 }],
+            }),
+        ])
+        const marks = container.querySelectorAll("mark.textHighlight")
+        expect(Array.from(marks).map((x) => x.textContent)).toEqual(["cre"])
+    })
+
+    it("does not restyle numeric note markers", () => {
+        const noted = line({
+            manx: "Geaylin yn Cholloo. [1]",
+            notes: "[1] a note",
+        })
+        const { container } = renderTable([noted])
+        expect(container.querySelector(".doc-editorial")).toBeNull()
+        expect(container.querySelector(".doc-note-marker")).not.toBeNull()
+    })
+})
+
 describe("speaker column", () => {
     it("shows the speakers of a non-video document", () => {
         // e.g. an interview transcription: speakers are not a video-only concept
