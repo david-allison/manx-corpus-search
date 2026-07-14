@@ -219,8 +219,15 @@ export const DocumentView = () => {
     const searchManx = searchLanguage == "Manx"
     const searchEnglish = searchLanguage == "English"
 
-    const [searchWorkResponse, setSearchWorkResponse] =
-        useState<SearchWorkResponse | null>(null)
+    // the response together with the query that produced it: everything about
+    // the displayed lines (highlights, match label, book segmentation) follows
+    // this query, not the live input — a keystroke must not restyle stale lines
+    const [displayed, setDisplayed] = useState<{
+        response: SearchWorkResponse
+        query: string
+    } | null>(null)
+    const searchWorkResponse = displayed?.response ?? null
+    const displayedQuery = displayed?.query ?? "*"
     // which document the response belongs to: navigating between documents keeps
     // this component mounted, so the previous document's lines linger while the
     // next loads - scrolling must not act on them
@@ -245,27 +252,39 @@ export const DocumentView = () => {
     )
 
     // load the data
+    const lastRequestedValue = useRef(value)
     useEffect(() => {
         if (!docIdent) {
             return
         }
 
-        startTransition(async () => {
-            try {
-                const data = await searchWork({
-                    docIdent,
-                    value,
-                    searchEnglish,
-                    searchManx,
-                    ...options,
-                })
-                setSearchWorkResponse(data)
-                responseForDoc.current = docIdent
-                setTitle(data.title)
-            } catch (e) {
-                console.error(e)
-            }
-        })
+        const run = () =>
+            startTransition(async () => {
+                try {
+                    const data = await searchWork({
+                        docIdent,
+                        value,
+                        searchEnglish,
+                        searchManx,
+                        ...options,
+                    })
+                    setDisplayed({ response: data, query: value })
+                    responseForDoc.current = docIdent
+                    setTitle(data.title)
+                } catch (e) {
+                    console.error(e)
+                }
+            })
+        // a keystroke waits for the typing to settle (searching a 31k-line
+        // document per letter is wasted work); anything else — opening a
+        // document, switching language, toggling an option — runs at once
+        if (value == lastRequestedValue.current) {
+            run()
+            return
+        }
+        lastRequestedValue.current = value
+        const timer = setTimeout(run, 250)
+        return () => clearTimeout(timer)
     }, [value, searchEnglish, searchManx, docIdent, options])
 
     // a ?ref= deep link's target row: the verse itself, or (crossing between a
@@ -285,7 +304,7 @@ export const DocumentView = () => {
         return target?.csvLineNumber
     })()
 
-    const hasQuery = value.trim() != "" && value != "*"
+    const hasQuery = displayedQuery.trim() != "" && displayedQuery != "*"
 
     // Browsing a whole scripture (the Bible is 31k lines) renders one book at
     // a time: the canonical references mark the boundaries. A query is exempt
@@ -456,7 +475,7 @@ export const DocumentView = () => {
 
     const matchLabel = (response: SearchWorkResponse) => {
         if (hasQuery) {
-            return `${(response.totalMatches ?? 0).toLocaleString()} matches for “${value}” · ${response.numberOfResults.toLocaleString()} lines`
+            return `${(response.totalMatches ?? 0).toLocaleString()} matches for “${displayedQuery}” · ${response.numberOfResults.toLocaleString()} lines`
         }
         const lines = `${response.numberOfResults.toLocaleString()} lines`
         return activeBookLabel != null
@@ -704,7 +723,7 @@ export const DocumentView = () => {
                         docIdent={docIdent}
                         expandContext={contextEnabled}
                         showNotes={notesEnabled}
-                        value={value}
+                        value={displayedQuery}
                         highlightManx={searchManx}
                         highlightEnglish={searchEnglish}
                         manxVisible={languageVisibility.manxVisible}
