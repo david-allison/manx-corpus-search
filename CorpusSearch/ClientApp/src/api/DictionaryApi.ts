@@ -23,6 +23,9 @@ export type Summary = {
     /** plural forms the dictionary declares ('BILJIN' under BILLEY),
      * shown as structured metadata after the definition */
     plurals?: string[] | null
+    /** the printed grammar label ("s. m.", "s. f."): word class and gender
+     * as the dictionary abbreviates them, expanded on hover */
+    grammarLabel?: string | null
 }
 export type DictionaryResponse = Summary[]
 

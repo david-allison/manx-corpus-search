@@ -57,7 +57,10 @@ describe("Dictionary page", () => {
         expect(await screen.findByText("J Kelly Manx to English")).toBeTruthy()
         // the homograph heading carries both spellings; the plural is metadata
         expect(screen.getByText("BILL, BILLEY")).toBeTruthy()
-        expect(screen.getByText(/pl\. BILJIN/)).toBeTruthy()
+        expect(screen.getByText(/BILJIN/)).toBeTruthy()
+        expect(screen.getAllByTitle("plural")).not.toHaveLength(0)
+        // the printed abbreviations explain themselves on hover
+        expect(screen.getAllByTitle("noun (substantive)")).not.toHaveLength(0)
         expect(screen.getByText(/Search the corpus for/)).toBeTruthy()
     })
 

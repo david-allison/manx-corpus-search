@@ -70,4 +70,9 @@ public class DictionarySummary
     /// under BILLEY), rendered as structured metadata rather than definition
     /// text</summary>
     public List<string>? Plurals { get; set; }
+
+    /// <summary>The printed grammar label of the entry ("s. m.", "s. f.",
+    /// "v."): word class and gender as the dictionary abbreviates them, for
+    /// display beside the headword with the expansion on hover</summary>
+    public string? GrammarLabel { get; set; }
 }

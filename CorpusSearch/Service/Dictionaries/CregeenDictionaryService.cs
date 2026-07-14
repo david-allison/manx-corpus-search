@@ -176,13 +176,34 @@ public class CregeenDictionaryService(ISet<string> allWords, IList<CregeenEntry>
 
         DictionarySummary GetDictionarySummary(CregeenEntry entry)
         {
+            var summary = GetSummary(entry);
+            var label = GrammarLabelOf(entry.EntryHtml);
+            // entries without a plain Definition fall back to the entry text,
+            // which opens with the printed label ("a. id. Aashagh..."): the
+            // label rides beside the headword, so it leaves the text
+            if (label != null && summary.TrimStart().StartsWith(label, StringComparison.Ordinal))
+            {
+                summary = summary.TrimStart()[label.Length..].TrimStart();
+            }
             return new DictionarySummary
             {
                 PartsOfSpeech = entry.PartsOfSpeech,
                 PrimaryWord = entry.Words.First(),
-                Summary = GetSummary(entry),
+                Summary = summary,
+                GrammarLabel = label,
             };
         }
+    }
+
+    /// <summary>Cregeen's printed grammar label - the entry's leading italic
+    /// run ("s. m.", "s. f.", "v."): word class and gender, absent from the
+    /// basic summary text, surfaced so the client can show it beside the
+    /// headword with the expansion on hover</summary>
+    internal static string? GrammarLabelOf(string? entryHtml)
+    {
+        var match = System.Text.RegularExpressions.Regex.Match(
+            entryHtml ?? "", @"^\s*<i>\s*([^<]{1,30}?)\s*</i>");
+        return match.Success ? match.Groups[1].Value : null;
     }
 
     private class CaseInsensitiveCharComparer : IEqualityComparer<char>

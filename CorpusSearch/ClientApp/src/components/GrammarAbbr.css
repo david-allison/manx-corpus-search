@@ -1,0 +1,19 @@
+/* printed dictionary abbreviations, expanded on hover teanglann-style */
+.dict-abbr {
+    text-decoration: underline dotted;
+    text-decoration-color: var(--c-border-meta);
+    text-underline-offset: 2px;
+    cursor: help;
+}
+
+.dict-abbr:hover {
+    text-decoration-color: var(--c-accent);
+}
+
+/* the grammar label beside a headword: "s. f." */
+.dict-grammar-label {
+    font-style: italic;
+    color: var(--c-accent);
+    font-size: 0.9em;
+    margin-left: 6px;
+}
