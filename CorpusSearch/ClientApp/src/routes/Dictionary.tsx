@@ -7,6 +7,7 @@ import {
     Summary,
 } from "../api/DictionaryApi"
 import { headingFor } from "../components/DictionaryLookupModal"
+import { DefinitionText, GrammarLabel } from "../components/GrammarAbbr"
 import {
     getMultidictLookupWord,
     MultidictLink,
@@ -45,11 +46,15 @@ const Entry = ({ word, summary }: { word: string; summary: Summary }) => (
                 ? summary.primaryWord
                 : headingFor(word, summary)}
         </strong>
+        <GrammarLabel label={summary.grammarLabel} />
         {": "}
-        {summary.summary}
+        <DefinitionText text={summary.summary} />
         {summary.plurals?.length ? (
             <span className="dict-page-plural">
-                {" — pl. "}
+                {" — "}
+                <abbr className="dict-abbr" title="plural">
+                    pl.
+                </abbr>{" "}
                 {summary.plurals.join(", ")}
             </span>
         ) : null}

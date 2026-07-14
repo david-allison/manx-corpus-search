@@ -7,6 +7,7 @@ import {
 import { Box, CircularProgress, Modal } from "@mui/material"
 import Typography from "@mui/material/Typography"
 import { DictionaryResponse, manxDictionaryLookup } from "../api/DictionaryApi"
+import { DefinitionText, GrammarLabel } from "./GrammarAbbr"
 import { getMultidictLookupWord, MultidictLink } from "./MultidictLink"
 import { getSelectedWordOrPhrase, getWordAtPoint } from "../utils/Selection"
 import "./DictionaryLookupModal.css"
@@ -220,7 +221,10 @@ const DictionaryHeading = ({
 const PluralNote = ({ summary }: { summary: DictionaryResponse[number] }) =>
     summary.plurals?.length ? (
         <span className="dict-popup-plural">
-            {" — pl. "}
+            {" — "}
+            <abbr className="dict-abbr" title="plural">
+                pl.
+            </abbr>{" "}
             {summary.plurals.join(", ")}
         </span>
     ) : null
@@ -371,8 +375,13 @@ export const DictionaryLookupModal = (props: DictionaryLookupState) => {
                                                 <strong>
                                                     {summary.primaryWord}
                                                 </strong>
+                                                <GrammarLabel
+                                                    label={summary.grammarLabel}
+                                                />
                                                 {": "}
-                                                {summary.summary}
+                                                <DefinitionText
+                                                    text={summary.summary}
+                                                />
                                                 {summary != cornerAudio && (
                                                     <AudioButton
                                                         summary={summary}
@@ -415,8 +424,13 @@ export const DictionaryLookupModal = (props: DictionaryLookupState) => {
                                                 <strong>
                                                     {headingFor(word, summary)}
                                                 </strong>
+                                                <GrammarLabel
+                                                    label={summary.grammarLabel}
+                                                />
                                                 {": "}
-                                                {summary.summary}
+                                                <DefinitionText
+                                                    text={summary.summary}
+                                                />
                                                 <PluralNote summary={summary} />
                                                 {summary != cornerAudio && (
                                                     <AudioButton
@@ -458,8 +472,13 @@ export const DictionaryLookupModal = (props: DictionaryLookupState) => {
                                                 <strong>
                                                     {summary.primaryWord}
                                                 </strong>
+                                                <GrammarLabel
+                                                    label={summary.grammarLabel}
+                                                />
                                                 {": "}
-                                                {summary.summary}
+                                                <DefinitionText
+                                                    text={summary.summary}
+                                                />
                                                 <PluralNote summary={summary} />
                                                 {summary != cornerAudio && (
                                                     <AudioButton
