@@ -87,6 +87,8 @@ public class Startup(IConfiguration configuration)
         services.AddSingleton<DictionaryLookupService>();
         services.AddSingleton<DictionaryHistoryService>();
         services.AddSingleton<DictionaryAttestationService>();
+        // filled from the index's term list in Configure, once the corpus is loaded
+        services.AddSingleton<CorpusVocabulary>();
         services.AddSingleton<DictionaryBrowseService>();
         services.AddSingleton<WorkService>();
         services.AddSingleton<DocumentSearchService>();
@@ -109,7 +111,8 @@ public class Startup(IConfiguration configuration)
         ILogger<Startup> logger,
         Searcher searcher,
         RecentDocumentsService recentDocumentsService,
-        ContributionsService contributionsService)
+        ContributionsService contributionsService,
+        CorpusVocabulary vocabulary)
     {
         log = logger;
         if (env.IsDevelopment())
@@ -134,6 +137,9 @@ public class Startup(IConfiguration configuration)
         var databaseCount = SetupDatabase(workService, searcher, lConfig);
         var termFrequency = searcher.QueryTermFrequency();
         StatisticsController.Init(databaseCount, termFrequency, log);
+        // the same list the statistics page counts: what the corpus actually says,
+        // which is what tells a used word from a proposed one
+        vocabulary.Init(termFrequency);
         SetupDictionaries();
 
         try
