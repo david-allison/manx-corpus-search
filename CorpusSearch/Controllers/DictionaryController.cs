@@ -13,7 +13,8 @@ namespace CorpusSearch.Controllers;
 [Route("api/[controller]")]
 public class DictionaryController(
     DictionaryLookupService lookupService, DictionaryHistoryService historyService,
-    DictionaryAttestationService attestationService, DictionaryBrowseService browseService)
+    DictionaryAttestationService attestationService, DictionaryBrowseService browseService,
+    CorpusVocabulary vocabulary)
 {
     /// <summary>
     /// Returns diction
@@ -37,7 +38,11 @@ public class DictionaryController(
     [HttpGet("page")]
     public DictionaryPage Page([FromQuery] string lang, [FromQuery] string word, [FromQuery] string? dict = null)
     {
-        return lookupService.Page(lang, word, dict);
+        var page = lookupService.Page(lang, word, dict);
+        // the lookup is about the books; whether a text ever says the word is the
+        // corpus's business, and the page only carries the answer
+        page.Attested = vocabulary.IsAttested(word);
+        return page;
     }
 
     /// <summary>
