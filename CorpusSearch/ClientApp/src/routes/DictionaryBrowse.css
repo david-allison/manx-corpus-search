@@ -1,5 +1,5 @@
-/* the dictionary's index: letters, then prefixes, then headwords.
-   The bars wear the Razor Cregeen browser's look (site-design.css
+/* the dictionary's index: the letters, then the whole letter in its chapters.
+   The bar wears the Razor Cregeen browser's look (site-design.css
    .dict-letters), which only the server-rendered pages load. */
 .dict-browse-bar {
     display: flex;
@@ -25,29 +25,42 @@
     border-bottom-color: var(--c-accent);
 }
 
-/* headword against the opening of its entry: a glance, not the entry */
-.dict-browse-list {
+/* the letter, chapter by chapter: the key in the margin and its words running on
+   beside it, so the keys read as a column the eye can drop down */
+.dict-browse-chapters {
     margin: 18px 0 0;
 }
 
-.dict-browse-row {
-    display: grid;
-    grid-template-columns: minmax(120px, max-content) 1fr;
-    gap: 0 16px;
-    align-items: baseline;
-    padding: 5px 0;
-    border-top: 1px solid var(--c-border-meta);
+.dict-browse-chapter {
+    position: relative;
+    padding-left: 56px;
+    margin: 10px 0;
 }
 
-.dict-browse-row dt {
+.dict-browse-key {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 44px;
+    box-sizing: border-box;
+    padding: 2px 5px;
+    border-radius: 2px;
+    background-color: var(--c-border-meta);
     font-family: Georgia, serif;
+    font-size: 13px;
+    font-weight: bold;
+    letter-spacing: 0.5px;
 }
 
-.dict-browse-row dd {
+.dict-browse-words {
     margin: 0;
+    font-family: Georgia, serif;
+    line-height: 1.7;
+}
+
+.dict-browse-sep {
     color: var(--c-accent);
-    font-size: 13px;
-    min-width: 0;
+    padding: 0 2px;
 }
 
 .dict-browse-empty {
@@ -56,9 +69,15 @@
 }
 
 @media (max-width: 600px) {
-    /* no room for two columns: the gloss goes under its headword */
-    .dict-browse-row {
-        grid-template-columns: 1fr;
-        gap: 2px;
+    /* no margin to keep the key in: it sits above its words instead */
+    .dict-browse-chapter {
+        padding-left: 0;
+        margin: 14px 0;
+    }
+
+    .dict-browse-key {
+        position: static;
+        display: inline-block;
+        margin-bottom: 3px;
     }
 }

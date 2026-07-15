@@ -2,6 +2,7 @@ import { useEffect, useState } from "react"
 import { Link, useParams } from "react-router-dom"
 import { CircularProgress } from "@mui/material"
 import {
+    dictionariesAlreadyKnown,
     dictionaryBrowse,
     DictionaryBrowseResponse,
     DictionaryInfo,
@@ -15,9 +16,8 @@ const browseUrl = (dict: string, at?: string) =>
         ? `/dictionary/browse/${encodeURIComponent(dict)}/${encodeURIComponent(at)}`
         : `/dictionary/browse/${encodeURIComponent(dict)}`
 
-/** A row of links with the current one marked: the letters, and the prefixes
- * under a letter. Wears the Razor Cregeen browser's look (site-design.css
- * .dict-letters), which only the server-rendered pages load. */
+/** The letters, with the open one marked. Wears the Razor Cregeen browser's look
+ * (site-design.css .dict-letters), which only the server-rendered pages load. */
 const Bar = ({
     items,
     active,
@@ -43,15 +43,20 @@ const Bar = ({
     </nav>
 )
 
-/** The dictionary as a book you can open at a letter.
+/** The dictionary as a book you can open at a letter: the whole letter, its
+ * headwords under the three-letter prefixes they file under.
  *
- * The prefix bar is as deep as each letter needs: Cregeen's 'a' is 19 two-letter
- * groups, its 'c' 57 three-letter ones. See DictionaryBrowse.DepthFor.
+ * A chapter key can come round twice, and a word can repeat, because both follow
+ * the book rather than a sort. See DictionaryBrowse.Chapters.
  */
 export const DictionaryBrowse = () => {
     const { dict = "", at } = useParams()
     const [page, setPage] = useState<DictionaryBrowseResponse | null>(null)
-    const [dictionaries, setDictionaries] = useState<DictionaryInfo[]>([])
+    // already known on every step after the first: the picker paints with the
+    // page rather than blinking in after it
+    const [dictionaries, setDictionaries] = useState<DictionaryInfo[]>(
+        () => dictionariesAlreadyKnown() ?? [],
+    )
     const [failed, setFailed] = useState(false)
 
     useEffect(() => {
@@ -124,34 +129,56 @@ export const DictionaryBrowse = () => {
                             This dictionary has no entries loaded.
                         </p>
                     )}
-                    {page.prefixes.length > 1 && (
-                        <Bar
-                            items={page.prefixes}
-                            active={page.prefix}
-                            dict={page.slug}
-                            ariaLabel={`Words under ${page.letter}`}
-                        />
-                    )}
-                    <dl className="dict-browse-list">
-                        {page.headwords.map((entry, index) => (
+                    <div
+                        className="dict-browse-chapters"
+                        aria-label={`Words under ${page.letter}`}
+                    >
+                        {/* the key repeats where the book doubles back, and a
+                            word where the book prints it twice: neither is an
+                            identity, so both are keyed by where they sit */}
+                        {page.chapters.map((chapter, index) => (
                             <div
-                                className="dict-browse-row"
-                                key={`${entry.word}-${index}`}
+                                className="dict-browse-chapter"
+                                key={`${chapter.key}-${index}`}
                             >
-                                <dt>
-                                    <Link
-                                        to={dictionaryWordUrl(
-                                            entry.word,
-                                            page.slug,
-                                        )}
-                                    >
-                                        {entry.word}
-                                    </Link>
-                                </dt>
-                                <dd>{entry.gloss}</dd>
+                                <span className="dict-browse-key">
+                                    {chapter.key}
+                                </span>
+                                <p className="dict-browse-words">
+                                    {chapter.words.map((entry, position) => (
+                                        <span key={`${entry.word}-${position}`}>
+                                            {position > 0 && (
+                                                <span
+                                                    className="dict-browse-sep"
+                                                    aria-hidden="true"
+                                                >
+                                                    {" · "}
+                                                </span>
+                                            )}
+                                            <Link
+                                                className={
+                                                    entry.attested
+                                                        ? undefined
+                                                        : "dict-unattested"
+                                                }
+                                                title={
+                                                    entry.attested
+                                                        ? undefined
+                                                        : `${entry.word} — in no text in the corpus`
+                                                }
+                                                to={dictionaryWordUrl(
+                                                    entry.word,
+                                                    page.slug,
+                                                )}
+                                            >
+                                                {entry.word}
+                                            </Link>
+                                        </span>
+                                    ))}
+                                </p>
                             </div>
                         ))}
-                    </dl>
+                    </div>
                 </>
             )}
         </div>
