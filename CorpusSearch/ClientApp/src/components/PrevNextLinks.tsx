@@ -25,7 +25,6 @@ export type PrevNextTarget = {
 export const PrevNextLinks = ({
     previous,
     next,
-    up,
     farPrevious,
     farNext,
     children,
@@ -33,8 +32,6 @@ export const PrevNextLinks = ({
 }: {
     previous: PrevNextTarget | null
     next: PrevNextTarget | null
-    /** out of the walk and back to what it is a walk through */
-    up?: PrevNextTarget | null
     /** omit entirely for a walk without skip steps: passing null keeps the slot
      * (and the row's width) while there is nowhere to skip to */
     farPrevious?: PrevNextTarget | null
@@ -43,7 +40,6 @@ export const PrevNextLinks = ({
     ariaLabel: string
 }) => (
     <nav className="prev-next" aria-label={ariaLabel}>
-        {up !== undefined && <Skip target={up} arrow="⌃" />}
         {farPrevious !== undefined && <Skip target={farPrevious} arrow="«" />}
         {previous ? (
             <Link

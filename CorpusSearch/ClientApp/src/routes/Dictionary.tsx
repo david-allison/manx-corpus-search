@@ -8,6 +8,7 @@ import {
 } from "../api/DictionaryApi"
 import {
     declaredClassesIn,
+    dictionaryIndexUrl,
     dictionaryWordUrl,
     headingFor,
     senseGroupsIn,
@@ -234,6 +235,20 @@ export const Dictionary = () => {
     return (
         <div className="dict-page">
             <form className="dict-page-search" onSubmit={onSubmit}>
+                {/* the way out of the word and back to the index it is filed
+                    in. A page-level control, so it keeps the page's own top
+                    row rather than the headword walk's: that row is the walk,
+                    and stepping out of it is not a step in it. */}
+                {word && (
+                    <Link
+                        className="dict-page-index"
+                        to={dictionaryIndexUrl(word, dict)}
+                        title="Back to the index"
+                        aria-label="Back to the index"
+                    >
+                        {"⌃"}
+                    </Link>
+                )}
                 <input
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}

@@ -11,6 +11,25 @@
     margin-bottom: 24px;
 }
 
+/* back to the index the word is filed in. Sized to the input beside it rather
+   than to the walk's arrows: it is a control on the page's top row now, and a
+   row of controls should look like one. */
+.dict-page-index {
+    display: flex;
+    align-items: center;
+    padding: 8px 12px;
+    border: 1px solid var(--c-border-input);
+    border-radius: 4px;
+    background: var(--c-surface);
+    color: var(--c-link);
+    text-decoration: none;
+    line-height: 1;
+}
+
+.dict-page-index:hover {
+    border-color: var(--c-accent);
+}
+
 .dict-page-search input {
     flex: 1;
     padding: 8px 12px;

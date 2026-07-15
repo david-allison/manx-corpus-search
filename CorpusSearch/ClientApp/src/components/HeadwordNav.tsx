@@ -6,17 +6,15 @@ import {
 import { dictionaryWordUrl } from "../utils/DictionaryEntries"
 import { PrevNextLinks } from "./PrevNextLinks"
 
-/** The index a word with no scope goes back to. A page of every dictionary at
- * once has no one index behind it, and Cregeen is the one that browses as a
- * book: it is what /dictionary opens too. See DictionaryLetters. */
-const INDEX_DICT = "cregeen"
-
 /** The headwords either side of this one: the dictionary as a book you turn a
  * page in.
  *
  * Scoped to one dictionary the order is that book's own. Across all of them it
  * is the union in collation order — nobody's printed order, but the only one
  * several books can share.
+ *
+ * The way out of the walk and back to the index is not here: it belongs to the
+ * page rather than to the walk, and sits by the search box.
  */
 export const HeadwordNav = ({
     word,
@@ -32,7 +30,12 @@ export const HeadwordNav = ({
     const [near, setNear] = useState<DictionaryNeighboursResponse | null>(null)
 
     useEffect(() => {
-        setNear(null)
+        // the step you just took must not blank this row first. This row *is*
+        // what you clicked: dropping it to nothing and growing it back a moment
+        // later takes the arrows out from under the cursor and slides the page
+        // up into the gap, and the walk is meant to be clicked through. The
+        // neighbours you stepped from ride the beat until the new ones land —
+        // they are about to be replaced by their own neighbours anyway.
         const abort = new AbortController()
         dictionaryNeighbours(word, dict, abort.signal)
             .then(setNear)
@@ -68,19 +71,9 @@ export const HeadwordNav = ({
               }
             : null
 
-    // the letter this word is filed under, without having to work out which:
-    // browse takes a whole word for its 'at' and opens the letter it starts,
-    // folding ç to c the way the books do
-    const index = {
-        to: `/dictionary/browse/${encodeURIComponent(dict ?? INDEX_DICT)}/${encodeURIComponent(word)}`,
-        label: "Index",
-        title: "Back to the index",
-    }
-
     return (
         <PrevNextLinks
             ariaLabel="Headwords"
-            up={index}
             previous={step(near.previous, near.previousAttested)}
             next={step(near.next, near.nextAttested)}
             farPrevious={skip(near.previousUsed)}

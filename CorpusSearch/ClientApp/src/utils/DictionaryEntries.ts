@@ -144,6 +144,16 @@ export const dictionaryWordUrl = (word: string, dict?: string): string =>
         ? `/dictionary/in/${encodeURIComponent(dict)}/${encodeURIComponent(word)}`
         : `/dictionary/${encodeURIComponent(word)}`
 
+/** The index a word is filed in, without the caller having to work out where:
+ * browse takes a whole word for its `at` and opens the letter it starts,
+ * folding ç to c the way the books do.
+ *
+ * A page of every dictionary at once has no one index behind it, and Cregeen is
+ * the one that browses as a book: it is what /dictionary opens too. See
+ * DictionaryLetters. */
+export const dictionaryIndexUrl = (word: string, dict?: string): string =>
+    `/dictionary/browse/${encodeURIComponent(dict ?? "cregeen")}/${encodeURIComponent(word)}`
+
 /** Trims punctuation (but never letters/digits, so internal apostrophes and
  * hyphens survive) from the edges of a tapped word: 'meenid,' -> 'meenid' */
 export const trimPunctuation = (s: string): string =>
