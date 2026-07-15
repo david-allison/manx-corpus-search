@@ -72,8 +72,11 @@ public class Startup(IConfiguration configuration)
         services.AddSingleton<ISearchDictionary>(provider => provider.GetRequiredService<CregeenDictionaryService>());
         services.AddSingleton(provider => KellyManxToEnglishDictionaryService.Init(provider.GetRequiredService<ILogger<KellyManxToEnglishDictionaryService>>()));
         services.AddSingleton<ISearchDictionary>(provider => provider.GetRequiredService<KellyManxToEnglishDictionaryService>());
-        services.AddSingleton(provider => CultureVanninSpokenDictionaryService.Init(provider.GetRequiredService<ILogger<CultureVanninSpokenDictionaryService>>()));
-        services.AddSingleton<ISearchDictionary>(provider => provider.GetRequiredService<CultureVanninSpokenDictionaryService>());
+        if (CultureVanninSpokenDictionaryService.Enabled)
+        {
+            services.AddSingleton(provider => CultureVanninSpokenDictionaryService.Init(provider.GetRequiredService<ILogger<CultureVanninSpokenDictionaryService>>()));
+            services.AddSingleton<ISearchDictionary>(provider => provider.GetRequiredService<CultureVanninSpokenDictionaryService>());
+        }
         // resolves lazily on first lookup, after SetupDictionaries has loaded manx.json
         services.AddSingleton(provider => PhilKellyDictionaryService.Init());
         services.AddSingleton<ISearchDictionary>(provider => provider.GetRequiredService<PhilKellyDictionaryService>());

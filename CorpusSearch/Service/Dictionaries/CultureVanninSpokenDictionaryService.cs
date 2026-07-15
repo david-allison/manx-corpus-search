@@ -18,6 +18,15 @@ namespace CorpusSearch.Service.Dictionaries;
 public class CultureVanninSpokenDictionaryService(CultureVanninSpokenDictionaryService.SpokenArtifact artifact)
     : ISearchDictionary
 {
+    /// <summary>
+    /// While false the service is never registered as a lookup
+    /// source and the relay (AudioController) serves nothing, so no entry and
+    /// no recording reaches the UI.
+    /// </summary>
+    // not const: constant folding would make the call sites' dropped branches
+    // unreachable code, which TreatWarningsAsErrors turns into build errors
+    public static readonly bool Enabled = false;
+
     public class SpokenEntry
     {
         public string Word { get; set; } = "";
