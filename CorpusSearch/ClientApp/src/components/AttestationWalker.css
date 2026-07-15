@@ -73,6 +73,15 @@
     color: #33454d;
 }
 
+/* the reading's word class ("n. or v."), where the lemma alone does not name it.
+   Italic and accented like every other printed class on the site (.dict-abbr),
+   so it reads as the word's label rather than as part of the count. */
+.attest-group-class {
+    font-style: italic;
+    color: var(--c-accent);
+    font-size: 12px;
+}
+
 .attest-group-count {
     color: var(--c-accent);
     font-size: 12px;
