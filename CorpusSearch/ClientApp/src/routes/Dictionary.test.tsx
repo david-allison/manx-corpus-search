@@ -142,32 +142,34 @@ describe("Dictionary page", () => {
         expect(document.querySelectorAll(".dict-page-credit")).toHaveLength(2)
     })
 
+    /** One word of one book, with the picker's answer as the caller likes it */
+    const caag = (answering: string[]): PageFixture => ({
+        word: "caag",
+        isSuggestionTier: false,
+        attested: true,
+        answering,
+        groups: [
+            {
+                dictionary: "Cregeen",
+                entries: [
+                    {
+                        primaryWord: "caag",
+                        summary: "a forelock",
+                        dictionaryName: "Cregeen",
+                        rootDepth: 0,
+                    },
+                ],
+            },
+        ],
+    })
+
     /** The offer is only worth making where there is something to find. The
      * browse page's cheap guess meets a phrase one word at a time and would call
      * 'geinnagh vane' attested for using 'geinnagh' and 'vane' apart; the history
      * really scanned, so the link asks it instead. */
     describe("the corpus link", () => {
-        const page: PageFixture = {
-            word: "caag",
-            isSuggestionTier: false,
-            attested: true,
-            groups: [
-                {
-                    dictionary: "Cregeen",
-                    entries: [
-                        {
-                            primaryWord: "caag",
-                            summary: "a forelock",
-                            dictionaryName: "Cregeen",
-                            rootDepth: 0,
-                        },
-                    ],
-                },
-            ],
-        }
-
         it("is offered for a word the corpus uses", async () => {
-            respondWith(page, usedOnce)
+            respondWith(caag(["cregeen"]), usedOnce)
             renderAt("/dictionary/caag")
 
             expect(
@@ -176,11 +178,46 @@ describe("Dictionary page", () => {
         })
 
         it("is withheld where no text uses the word", async () => {
-            respondWith(page, emptyHistory)
+            respondWith(caag(["cregeen"]), emptyHistory)
             renderAt("/dictionary/caag")
 
             expect(await screen.findByText(/a forelock/)).toBeTruthy()
             expect(screen.queryByText(/Search the corpus for/)).toBeNull()
+        })
+    })
+
+    /** Out of the word and back to the index it is filed in. A control on the
+     * page's own top row rather than a step in the headword walk: stepping out
+     * of the walk is not a step in it. */
+    describe("the way back to the index", () => {
+        it("sits with the search box, on the word's own letter", async () => {
+            respondWith(caag(["cregeen"]))
+            renderAt("/dictionary/caag")
+
+            const index = await screen.findByLabelText("Back to the index")
+            expect(index.getAttribute("href")).toBe(
+                "/dictionary/browse/cregeen/caag",
+            )
+            expect(index.closest("form.dict-page-search")).toBeTruthy()
+        })
+
+        it("keeps the book you are reading in", async () => {
+            respondWith(caag(["kelly-m2e"]))
+            renderAt("/dictionary/in/kelly-m2e/caag")
+
+            expect(
+                (
+                    await screen.findByLabelText("Back to the index")
+                ).getAttribute("href"),
+            ).toBe("/dictionary/browse/kelly-m2e/caag")
+        })
+
+        it("is not offered where there is no word to be filed", () => {
+            respondWith(caag([]))
+            renderAt("/dictionary")
+
+            // /dictionary is the index: there is nowhere up from it
+            expect(screen.queryByLabelText("Back to the index")).toBeNull()
         })
     })
 
@@ -190,26 +227,6 @@ describe("Dictionary page", () => {
     describe("the scope picker", () => {
         const scope = () =>
             screen.getByRole("navigation", { name: "Dictionary" })
-
-        const caag = (answering: string[]): PageFixture => ({
-            word: "caag",
-            isSuggestionTier: false,
-            attested: true,
-            answering,
-            groups: [
-                {
-                    dictionary: "Cregeen",
-                    entries: [
-                        {
-                            primaryWord: "caag",
-                            summary: "a forelock",
-                            dictionaryName: "Cregeen",
-                            rootDepth: 0,
-                        },
-                    ],
-                },
-            ],
-        })
 
         it("greys the dictionaries with nothing for the word", async () => {
             respondWith(caag(["cregeen"]))
