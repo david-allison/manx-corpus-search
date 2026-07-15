@@ -637,6 +637,12 @@ public class DictionaryLookupService(IEnumerable<ISearchDictionary> dictionarySe
             .OrderByDescending(x => x.Count)
             .Append(selectionWords)
             .Select(words => string.Join(" ", words))
+            // the selection as it came, when trimming changed it. A tap sends a
+            // word with the line's punctuation stuck to it ('meenid,'), so the
+            // trimmed form has to be tried - but a headword can end in a full
+            // stop of its own ('a.r.e.', 'St.'), and trimming is all that stood
+            // between the browse index listing those and the page finding them.
+            .Append(selection.Trim())
             .SelectMany(HyphenVariants)
             .SelectMany(ApostropheVariants);
 

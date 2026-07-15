@@ -629,6 +629,28 @@ public class DictionaryLookupServiceTest
         });
     }
 
+    /// <summary>A headword can end in a full stop of its own ('a.r.e.', 'St.').
+    /// Trimming the selection is what a tap needs and what those cannot survive,
+    /// so the word is tried as it came too: the browse index lists them, and the
+    /// page has to be able to open what the index lists.</summary>
+    [Test]
+    public void AHeadwordEndingInAFullStopIsFound()
+    {
+        var service = Service("a.r.e.");
+
+        Assert.That(Lookup(service, "a.r.e."), Is.EqualTo(new[] { "a.r.e." }));
+    }
+
+    /// <summary>...and the tap still gets what it needs: a word arrives with the
+    /// line's punctuation stuck to it</summary>
+    [Test]
+    public void ATappedWordStillLosesTheLinesPunctuation()
+    {
+        var service = Service("meenid");
+
+        Assert.That(Lookup(service, "meenid,"), Is.EqualTo(new[] { "meenid" }));
+    }
+
     [Test]
     public void PageGroupsCarryTheDictionarySlug()
     {
