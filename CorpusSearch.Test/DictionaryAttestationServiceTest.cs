@@ -58,6 +58,33 @@ public class DictionaryAttestationServiceTest : QueryBase
         Assert.That(walk.Documents[0].Year, Is.EqualTo(1748));
     }
 
+    /// <summary>The walk shows each step's use count as you arrive, so it must
+    /// come with the document list rather than a query later</summary>
+    [Test]
+    public void ALoneReadingIsCountedWithTheDocumentList()
+    {
+        AddDated("Doc", 1748, "Ta mee aase", "Daase eh");
+
+        // 'daase' has one reading, so its scan is one term: each use matched once
+        var walk = Service().Attestations("daase");
+
+        Assert.That(walk.Documents.Single().Uses, Is.EqualTo(2));
+    }
+
+    /// <summary>...but an ambiguous word's readings are OR'd, and a token that
+    /// several of them claim is matched once per reading: 'vee' would read four
+    /// times too high, so the walk says nothing rather than something wrong
+    /// (AttestationLines.UseCount counts those from the offsets instead)</summary>
+    [Test]
+    public void AnAmbiguousWordIsNotCountedFromTheScan()
+    {
+        AddDated("Doc", 1748, "Ta mee vee ayn");
+
+        var walk = Service().Attestations("vee");
+
+        Assert.That(walk.Documents.Single().Uses, Is.Null);
+    }
+
     /// <summary>The whole point of walking the lemma field rather than the
     /// spelling: an inflected form is the same word as its headword</summary>
     [Test]
