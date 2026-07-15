@@ -71,6 +71,32 @@ public class LemmaTableTest
         Assert.That(Table().CandidatesFor("xyzzy"), Is.Empty);
     }
 
+    /// <summary>An affix is not a word: the books print 'an-' and '-ys' as
+    /// headwords, and each is only ever part of a longer word. It is read off the
+    /// spelling because nothing else survives NormalizeForm, which folds the
+    /// hyphen to a space and trims it — 'an-' and 'an' key the same row.</summary>
+    [Test]
+    public void AnAffixIsToldByItsHyphen()
+    {
+        Assert.Multiple(() =>
+        {
+            Assert.That(LemmaTable.IsAffix("an-"), Is.True);
+            Assert.That(LemmaTable.IsAffix("-ys"), Is.True);
+            // the books print the non-breaking hyphen too, and mean the same
+            Assert.That(LemmaTable.IsAffix("‑YS"), Is.True);
+            Assert.That(LemmaTable.IsAffix("aa- "), Is.True);
+
+            Assert.That(LemmaTable.IsAffix("an"), Is.False);
+            // a hyphen inside a word joins it, it does not cut it loose
+            Assert.That(LemmaTable.IsAffix("aa-aase"), Is.False);
+            Assert.That(LemmaTable.IsAffix("-"), Is.False);
+            Assert.That(LemmaTable.IsAffix(""), Is.False);
+
+            // and the fold really does lose it, which is why the above exists
+            Assert.That(LemmaTable.NormalizeForm("an-"), Is.EqualTo("an"));
+        });
+    }
+
     [Test]
     public void LemmaIdsAreRecognised()
     {

@@ -46,18 +46,9 @@ public class DictionaryHistoryService(
 
     public DictionaryHistory History(string lang, string word)
     {
-        // the lexeme the word belongs to; the surface word is its own cluster
-        // seed when the table doesn't know it
+        // the lexeme the word belongs to
         var lemmas = LemmaReadingsFor(lemmaTable, word);
-        var forms = lemmas
-            .SelectMany(lemmaTable.FormsOf)
-            .Distinct(StringComparer.InvariantCultureIgnoreCase)
-            .Order()
-            .ToList();
-        if (forms.Count == 0)
-        {
-            forms = [LemmaTable.NormalizeForm(word)];
-        }
+        var forms = FormsToScan(word, lemmas);
         var truncated = Math.Max(0, forms.Count - MaxForms);
         forms = forms.Take(MaxForms).ToList();
 
@@ -128,6 +119,28 @@ public class DictionaryHistoryService(
                 .Take(8)
                 .ToList(),
         };
+    }
+
+    /// <summary>The spellings whose uses make up the word's history: its lexeme's
+    /// forms, or the surface word itself where the table does not know it.
+    ///
+    /// None at all for an affix. 'an-' is only ever the front of a longer word, so
+    /// no text says it — but <see cref="LemmaTable.NormalizeForm"/> folds 'an-' to
+    /// 'an', so both the cluster and the fall-back would go looking for the
+    /// standalone word instead, and come back with all 252 of its uses and a first
+    /// attestation of 1610. The hyphen has to be read before it is folded away.</summary>
+    private List<string> FormsToScan(string word, IReadOnlyList<string> lemmas)
+    {
+        if (LemmaTable.IsAffix(word))
+        {
+            return [];
+        }
+        var forms = lemmas
+            .SelectMany(lemmaTable.FormsOf)
+            .Distinct(StringComparer.InvariantCultureIgnoreCase)
+            .Order()
+            .ToList();
+        return forms.Count > 0 ? forms : [LemmaTable.NormalizeForm(word)];
     }
 
     /// <summary>The cognates a definition cites: "(Ir. bile; S.G. bil.)" ->

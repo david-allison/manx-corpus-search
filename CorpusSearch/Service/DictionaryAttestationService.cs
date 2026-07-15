@@ -24,9 +24,16 @@ public class DictionaryAttestationService(
     /// headword itself keeps only its own lexeme: walking 'ass' (out) must not step
     /// through the demutation guess fass, the way
     /// <see cref="DictionaryHistoryService.LemmaReadingsFor"/> keeps their timelines
-    /// apart.</summary>
+    /// apart.
+    ///
+    /// None at all for an affix (<see cref="LemmaTable.IsAffix"/>): there is no
+    /// walking a prefix through the texts, because no text says one.</summary>
     internal static IReadOnlyList<string> LemmaIdsFor(LemmaTable table, string word)
     {
+        if (LemmaTable.IsAffix(word))
+        {
+            return [];
+        }
         var candidates = table.CandidatesFor(word);
         var self = LemmaTable.NormalizeForm(word);
         var own = candidates

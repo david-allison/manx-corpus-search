@@ -292,4 +292,25 @@ public class DictionaryAttestationServiceTest : QueryBase
         Assert.That(ids, Does.Contain("bee.v"));
         Assert.That(ids, Does.Contain("mee.n"));
     }
+
+    /// <summary>There is no walking a prefix through the texts, because no text
+    /// says one: 'an-' is only ever the front of a longer word. The lemma table
+    /// cannot refuse it — NormalizeForm folds 'an-' to 'an', so the prefix is
+    /// keyed by the standalone word and answers for all 252 of its uses.</summary>
+    [Test]
+    public void AnAffixHasNoLexemeToWalk()
+    {
+        AddDated("Psalms", 1610, "ta ern’ ’an seiaghy heyn");
+
+        var walk = Service().Attestations("an-");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(DictionaryAttestationService.LemmaIdsFor(LemmaTable.Instance, "an-"),
+                Is.Empty);
+            Assert.That(walk.Documents, Is.Empty);
+            // ...though the table does know the prefix's lexeme by that key
+            Assert.That(LemmaTable.Instance.CandidatesFor("an-"), Is.Not.Empty);
+        });
+    }
 }
