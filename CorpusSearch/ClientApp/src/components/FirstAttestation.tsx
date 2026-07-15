@@ -119,8 +119,12 @@ const EarlierShared = ({ claim }: { claim: AttestationClaim }) => (
  * origin. */
 export const FirstAttestation = ({
     history,
+    classes = [],
 }: {
     history: DictionaryHistoryResponse | null
+    /** the word classes the entries declare: more than one and the date below
+     * belongs to whichever of them came first */
+    classes?: string[]
 }) => {
     // the claim whose line is open in the dialog; null while closed
     const [reading, setReading] = useState<AttestationClaim | null>(null)
@@ -187,6 +191,24 @@ export const FirstAttestation = ({
                         )}
                     </dd>
                 </dl>
+            )}
+            {classes.length > 1 && (
+                // the entries below are more than one word sharing a spelling,
+                // and neither the lemma table nor the corpus separates them:
+                // the date above is whichever of them was written down first
+                <p className="first-seen-warning" role="note">
+                    <span
+                        className="first-seen-warning-mark"
+                        aria-hidden="true"
+                    >
+                        !
+                    </span>
+                    {`“${history.word}” covers more than one sense (${classes
+                        .map((x) => x.toLowerCase())
+                        .join(
+                            ", ",
+                        )}): this date is the earliest of any of them.`}
+                </p>
             )}
             {history.truncatedForms > 0 && (
                 <p className="first-seen-caveat">

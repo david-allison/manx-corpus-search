@@ -137,9 +137,11 @@ const LemmaGroup = ({
 export const AttestationWalker = ({
     word,
     history,
+    classes,
 }: {
     word: string
     history: DictionaryHistoryResponse | null
+    classes: string[]
 }) => {
     const { pathname } = useLocation()
     const [params] = useSearchParams()
@@ -246,7 +248,7 @@ export const AttestationWalker = ({
                 </span>
             </h3>
 
-            <FirstAttestation history={history} />
+            <FirstAttestation history={history} classes={classes} />
 
             {!hasWalk ? null : (
                 <>

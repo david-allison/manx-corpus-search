@@ -74,7 +74,7 @@ const respond = () =>
 const renderWalker = () =>
     render(
         <MemoryRouter initialEntries={["/dictionary/aase"]}>
-            <AttestationWalker word="aase" history={null} />
+            <AttestationWalker word="aase" history={null} classes={[]} />
         </MemoryRouter>,
     )
 
