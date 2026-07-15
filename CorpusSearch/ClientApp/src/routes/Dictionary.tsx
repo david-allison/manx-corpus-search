@@ -15,6 +15,7 @@ import {
 import { DefinitionText, GrammarLabel } from "../components/GrammarAbbr"
 import { UnverifiedMark } from "../components/UnverifiedMark"
 import { DictionaryScope } from "../components/DictionaryScope"
+import { DictionaryLetters } from "../components/DictionaryLetters"
 import { HeadwordNav } from "../components/HeadwordNav"
 import {
     getMultidictLookupWord,
@@ -179,6 +180,8 @@ export const Dictionary = () => {
                 />
                 <button type="submit">Look up</button>
             </form>
+
+            {!word && <DictionaryLetters />}
 
             {word && <DictionaryScope word={word} dict={dict} />}
 
