@@ -7,6 +7,10 @@ export type Summary = {
      * 1 = its root ('gheiney' -> 'deiney'), 2 = the root's root ('dooinney');
      * each level nests under the previous one */
     rootDepth: number
+    /** set on a root the lemma table only reaches by rule — a generated
+     * mutation, an unvalidated demutation — with no dictionary page attesting
+     * the link. Marked in the popup: a derivation is not documentation */
+    unverifiedLink?: boolean | null
     /** set on "did you mean" fallback entries only: the near spelling the
      * entry was reached through, when nothing matched the selection itself */
     nearMatchOf?: string | null
