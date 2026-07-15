@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using CorpusSearch.Dependencies;
 using CorpusSearch.Dependencies.Lucene;
+using CorpusSearch.Model;
 
 namespace CorpusSearch.Service;
 
@@ -176,6 +177,7 @@ public class DictionaryHistoryService(
             EarliestIdent = earliest?.Ident,
             EarliestTitle = earliest?.DocumentName,
             Sample = earliest?.Sample,
+            SampleHighlights = earliest?.SampleHighlights,
             TraditionalCount = dated.Where(x => x.StartDate!.Value.Year < RevivalBoundaryYear).Sum(x => x.Count),
             RevivedCount = dated.Where(x => x.StartDate!.Value.Year >= RevivalBoundaryYear).Sum(x => x.Count),
             UndatedCount = scan.DocumentResults.Where(x => x.StartDate == null).Sum(x => x.Count),
@@ -219,6 +221,9 @@ public class HistoryForm
     public string? EarliestIdent { get; set; }
     public string? EarliestTitle { get; set; }
     public string? Sample { get; set; }
+    /// <summary>Where the form sits in <see cref="Sample"/>: lets the page quote a
+    /// few words around the word rather than the head of a long verse</summary>
+    public IReadOnlyList<HighlightRange>? SampleHighlights { get; set; }
     public int TraditionalCount { get; set; }
     public int RevivedCount { get; set; }
     public int UndatedCount { get; set; }
