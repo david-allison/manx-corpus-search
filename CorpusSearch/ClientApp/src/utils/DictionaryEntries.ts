@@ -1,4 +1,138 @@
-import { DictionaryResponse } from "../api/DictionaryApi"
+import {
+    DictionaryPageResponse,
+    DictionaryResponse,
+    Summary,
+} from "../api/DictionaryApi"
+
+/** The word classes the page's own entries declare.
+ *
+ * More than one means a single spelling is carrying more than one word ('ass'
+ * is both a weasel and 'out'), and nothing downstream can tell them apart: the
+ * lemma table gives 'ass' one id, and the corpus indexes the spelling, not the
+ * sense. Any claim made about the word as a whole — first attestation above
+ * all — is then a claim about whichever of them came first.
+ *
+ * A lower bound, not a census: Phil Kelly declares no classes at all, ~20% of
+ * Kelly's entries print none, and one class can still hold several senses (a
+ * verb with three meanings looks like one word here). One class means "no
+ * evidence of a split", never "only one sense".
+ */
+export const declaredClassesIn = (page: DictionaryPageResponse): string[] =>
+    [
+        ...new Set(
+            page.groups
+                .flatMap((g) => g.entries)
+                .filter((e) => !e.rootDepth && !e.nearMatchOf)
+                .flatMap((e) => e.partsOfSpeech ?? []),
+        ),
+    ].sort()
+
+/** The printed abbreviation for a class, for a sense's title. The entries keep
+ * whatever their own dictionary printed ('s.' for a noun, in both Cregeen and
+ * Kelly): if a sense here is put together wrongly, the evidence for that is
+ * still on the page underneath it. */
+const ABBREVIATION: Record<string, string> = {
+    Noun: "n.",
+    Verb: "v.",
+    Adjective: "a.",
+    Adverb: "adv.",
+    Preposition: "prep.",
+    Conjunction: "conj.",
+    Interjection: "interj.",
+    Pronoun: "pron.",
+}
+
+/** Which classes are the same sense wearing different labels.
+ *
+ * Cregeen calls 'ass' an adverb and Kelly calls it a preposition, but it is one
+ * word doing one job in both: the split a reader wants is 'out' against the
+ * weasel, not adverb against preposition. Noun, verb and adjective stay apart —
+ * those distinctions are real.
+ *
+ * This is a rule of thumb, not something the data says, and it will be wrong
+ * for some words. That is why the sense's title names every class it merged and
+ * the entries keep their printed labels.
+ */
+const SENSE_OF: Record<string, string> = {
+    Noun: "noun",
+    Verb: "verb",
+    Adjective: "adjective",
+    Adverb: "particle",
+    Preposition: "particle",
+    Conjunction: "particle",
+    Interjection: "particle",
+    Pronoun: "particle",
+}
+
+/** dictionary order, so a word's senses do not shuffle between pages */
+const SENSE_ORDER = ["noun", "verb", "adjective", "particle"]
+
+export type SenseGroup = {
+    /** the sense's key ("noun"); "" when nothing declared a class */
+    key: string
+    /** the classes it gathered, as the dictionaries abbreviate them ("adv., prep.");
+     * empty when nothing declared a class */
+    label: string
+    entries: DictionaryResponse
+}
+
+/** The word's own entries, split into the senses they declare.
+ *
+ * An entry whose dictionary declares no class (all of Phil Kelly, ~20% of
+ * Kelly) appears under **every** sense rather than in a bucket of its own: it
+ * could belong to any of them, and putting it beside one would be a guess where
+ * showing it beside each is only an admission.
+ *
+ * Roots and near-spellings are left out: they are other words, not senses of
+ * this one. A word nothing declares a class for comes back as a single
+ * unlabelled group — the page it has today.
+ */
+export const senseGroupsIn = (page: DictionaryPageResponse): SenseGroup[] => {
+    const own = page.groups
+        .flatMap((g) => g.entries)
+        .filter((e) => !e.rootDepth && !e.nearMatchOf)
+    const unplaceable = own.filter((e) => !e.partsOfSpeech?.length)
+    const placed = own.filter((e) => e.partsOfSpeech?.length)
+    if (placed.length === 0) {
+        return [{ key: "", label: "", entries: own }]
+    }
+
+    const byKey = new Map<
+        string,
+        { classes: Set<string>; entries: Summary[] }
+    >()
+    for (const entry of placed) {
+        // an entry declaring two classes belongs to both senses
+        for (const declared of new Set(
+            (entry.partsOfSpeech ?? []).map((c) => SENSE_OF[c] ?? "particle"),
+        )) {
+            const sense = byKey.get(declared) ?? {
+                classes: new Set<string>(),
+                entries: [],
+            }
+            for (const c of entry.partsOfSpeech ?? []) {
+                if ((SENSE_OF[c] ?? "particle") === declared) {
+                    sense.classes.add(c)
+                }
+            }
+            sense.entries.push(entry)
+            byKey.set(declared, sense)
+        }
+    }
+
+    return SENSE_ORDER.filter((key) => byKey.has(key)).map((key) => {
+        const sense = byKey.get(key)!
+        return {
+            key,
+            label: [...sense.classes]
+                .sort()
+                .map((c) => ABBREVIATION[c] ?? c.toLowerCase())
+                .join(", "),
+            // the unplaceable ride along with each: they may be any of them
+            entries: [...sense.entries, ...unplaceable],
+        }
+    })
+}
 
 /** A word's page, keeping the dictionary scope the reader is already in:
  * /dictionary/billey, or /dictionary/in/cregeen/billey under a scope.

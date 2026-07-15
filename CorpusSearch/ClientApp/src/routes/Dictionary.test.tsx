@@ -55,7 +55,8 @@ const respondWith = (page: DictionaryPageResponse) =>
     })
 
 /** Not every call through the stubbed global arrives with a string url, so the
- * routing above must not assume one */
+ * routing below must not assume one: an unrecognised call falls through to the
+ * page body, as it did when every response was the page. */
 const hrefOf = (url: unknown): string =>
     typeof url === "string"
         ? url
@@ -79,7 +80,7 @@ const renderAt = (path: string) =>
     )
 
 describe("Dictionary page", () => {
-    it("renders per-dictionary groups with the root chain nested", async () => {
+    it("renders the entries, crediting each to its dictionary", async () => {
         respondWith({
             word: "billey",
             isSuggestionTier: false,
@@ -107,19 +108,66 @@ describe("Dictionary page", () => {
         })
         renderAt("/dictionary/billey")
 
-        // by role: the scope picker also names every dictionary
-        expect(
-            await screen.findByRole("heading", {
-                name: "J Kelly Manx to English",
-            }),
-        ).toBeTruthy()
         // the homograph heading carries both spellings; the plural is metadata
-        expect(screen.getByText("BILL, BILLEY")).toBeTruthy()
+        expect(await screen.findByText("BILL, BILLEY")).toBeTruthy()
         expect(screen.getByText(/BILJIN/)).toBeTruthy()
         expect(screen.getAllByTitle("plural")).not.toHaveLength(0)
         // the printed abbreviations explain themselves on hover
         expect(screen.getAllByTitle("noun (substantive)")).not.toHaveLength(0)
+        // the sense heading gathers several dictionaries, so each entry says
+        // which one it came from
+        expect(document.querySelectorAll(".dict-page-credit")).toHaveLength(2)
         expect(screen.getByText(/Search the corpus for/)).toBeTruthy()
+    })
+
+    it("splits the entries into the senses they declare", async () => {
+        // 'ass' is a weasel and 'out': Cregeen's adverb and Kelly's preposition
+        // are the same sense, so they head one group and the weasel another
+        respondWith({
+            word: "ass",
+            isSuggestionTier: false,
+            groups: [
+                {
+                    dictionary: "Cregeen",
+                    entries: [
+                        {
+                            primaryWord: "ass",
+                            summary: "out; out of him",
+                            dictionaryName: "Cregeen",
+                            rootDepth: 0,
+                            partsOfSpeech: ["Adverb"],
+                        },
+                    ],
+                },
+                {
+                    dictionary: "J Kelly Manx to English",
+                    entries: [
+                        {
+                            primaryWord: "ASS",
+                            summary: "a weasel",
+                            dictionaryName: "J Kelly Manx to English",
+                            rootDepth: 0,
+                            partsOfSpeech: ["Noun"],
+                        },
+                        {
+                            primaryWord: "ASS",
+                            summary: "out, without",
+                            dictionaryName: "J Kelly Manx to English",
+                            rootDepth: 0,
+                            partsOfSpeech: ["Preposition"],
+                        },
+                    ],
+                },
+            ],
+        })
+        renderAt("/dictionary/ass")
+
+        expect(await screen.findByText("n.")).toBeTruthy()
+        // the merged sense names both classes, so a wrong merge is visible
+        expect(screen.getByText("adv., prep.")).toBeTruthy()
+        expect(
+            screen.getAllByText("ass", { selector: ".dict-page-sense-word" }),
+        ).toHaveLength(2)
     })
 
     it("a Phillips spelling gets a bridge line, not implied dictionary entries", async () => {
@@ -146,6 +194,55 @@ describe("Dictionary page", () => {
         expect(
             await screen.findByText(/is a c\. 1610 spelling \(Phillips\) of/),
         ).toBeTruthy()
+    })
+
+    it("marks a root the lemma table only reached by rule", async () => {
+        respondWith({
+            word: "gheiney",
+            isSuggestionTier: false,
+            groups: [
+                {
+                    dictionary: "Cregeen",
+                    entries: [
+                        {
+                            primaryWord: "dooinney",
+                            summary: "a man;",
+                            dictionaryName: "Cregeen",
+                            rootDepth: 1,
+                            unverifiedLink: true,
+                        },
+                    ],
+                },
+            ],
+        })
+        renderAt("/dictionary/gheiney")
+
+        // the page must not present a rule-derived guess as documentation
+        expect(await screen.findByText("unverified")).toBeTruthy()
+    })
+
+    it("leaves a documented root unmarked", async () => {
+        respondWith({
+            word: "deiney",
+            isSuggestionTier: false,
+            groups: [
+                {
+                    dictionary: "Cregeen",
+                    entries: [
+                        {
+                            primaryWord: "dooinney",
+                            summary: "a man;",
+                            dictionaryName: "Cregeen",
+                            rootDepth: 1,
+                        },
+                    ],
+                },
+            ],
+        })
+        renderAt("/dictionary/deiney")
+
+        expect(await screen.findByText("dooinney")).toBeTruthy()
+        expect(screen.queryByText("unverified")).toBeNull()
     })
 
     it("marks the near-spelling tier as suggestions", async () => {

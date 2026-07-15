@@ -6,7 +6,12 @@ import {
     DictionaryPageResponse,
     Summary,
 } from "../api/DictionaryApi"
-import { dictionaryWordUrl, headingFor } from "../utils/DictionaryEntries"
+import {
+    declaredClassesIn,
+    dictionaryWordUrl,
+    headingFor,
+    senseGroupsIn,
+} from "../utils/DictionaryEntries"
 import { DefinitionText, GrammarLabel } from "../components/GrammarAbbr"
 import { UnverifiedMark } from "../components/UnverifiedMark"
 import { DictionaryScope } from "../components/DictionaryScope"
@@ -31,18 +36,28 @@ const hostOf = (url: string): string => {
 const Entry = ({
     word,
     summary,
+    credit,
+    unplaced,
     onCitationClick,
 }: {
     word: string
     summary: Summary
+    /** name the dictionary on the entry: under a sense heading the entries come
+     * from several at once, so the group can no longer say who said what */
+    credit?: boolean
+    /** this entry's source records no word class, so it is repeated under every
+     * sense: it may belong to another one */
+    unplaced?: boolean
     onCitationClick: (key: string) => void
 }) => (
     <div
-        className={
-            summary.rootDepth
-                ? "dict-page-entry dict-page-root-entry"
-                : "dict-page-entry"
-        }
+        className={[
+            "dict-page-entry",
+            summary.rootDepth ? "dict-page-root-entry" : "",
+            unplaced ? "dict-page-entry-unplaced" : "",
+        ]
+            .filter(Boolean)
+            .join(" ")}
         style={
             summary.rootDepth
                 ? { marginLeft: 20 * summary.rootDepth }
@@ -69,13 +84,25 @@ const Entry = ({
         />
         {summary.plurals?.length ? (
             <span className="dict-page-plural">
-                {" — "}
+                {", "}
                 <abbr className="dict-abbr" title="plural">
                     pl.
                 </abbr>{" "}
                 {summary.plurals.join(", ")}
             </span>
         ) : null}
+        {credit && (
+            <span
+                className="dict-page-credit"
+                title={
+                    unplaced
+                        ? `${summary.dictionaryName} does not record word classes, so this entry may belong to another sense`
+                        : undefined
+                }
+            >
+                {summary.dictionaryName}
+            </span>
+        )}
         {summary.audioUrl && (
             <button
                 className="dict-page-audio"
@@ -135,6 +162,10 @@ export const Dictionary = () => {
     }
 
     const multidictWord = word ? getMultidictLookupWord(word) : null
+    const rootEntries =
+        page == null || page.isSuggestionTier
+            ? []
+            : page.groups.flatMap((g) => g.entries).filter((e) => e.rootDepth)
 
     return (
         <div className="dict-page">
@@ -214,41 +245,81 @@ export const Dictionary = () => {
                 </p>
             )}
 
-            {page?.groups.map((group) => (
-                <section
-                    className={
-                        page.isSuggestionTier
-                            ? "dict-page-group dict-page-suggestions"
-                            : "dict-page-group"
-                    }
-                    key={group.dictionary}
-                >
-                    <h3 className="dict-page-dictionary">
-                        {group.sourceUrl ? (
-                            <a
-                                href={group.sourceUrl}
-                                target="_blank"
-                                rel="noreferrer"
-                            >
-                                {group.dictionary}
-                            </a>
-                        ) : (
-                            group.dictionary
-                        )}
-                    </h3>
-                    {group.entries.map((summary, index) => (
+            {/* near spellings are not senses of the word: they stay grouped
+                under the dictionary that suggested them */}
+            {page?.isSuggestionTier &&
+                page.groups.map((group) => (
+                    <section
+                        className="dict-page-group dict-page-suggestions"
+                        key={group.dictionary}
+                    >
+                        <h3 className="dict-page-dictionary">
+                            {group.dictionary}
+                        </h3>
+                        {group.entries.map((summary, index) => (
+                            <Entry
+                                word={page.word}
+                                summary={summary}
+                                onCitationClick={setCitationKey}
+                                key={index}
+                            />
+                        ))}
+                    </section>
+                ))}
+
+            {page != null &&
+                !page.isSuggestionTier &&
+                senseGroupsIn(page).map((sense, _i, senses) => (
+                    <section className="dict-page-group" key={sense.key}>
+                        <h3 className="dict-page-sense">
+                            <span className="dict-page-sense-word">
+                                {page.word}
+                            </span>
+                            {sense.label && (
+                                <span className="dict-page-sense-label">
+                                    {sense.label}
+                                </span>
+                            )}
+                        </h3>
+                        {sense.entries.map((summary, index) => (
+                            <Entry
+                                word={page.word}
+                                summary={summary}
+                                credit
+                                unplaced={
+                                    senses.length > 1 &&
+                                    !summary.partsOfSpeech?.length
+                                }
+                                onCitationClick={setCitationKey}
+                                key={index}
+                            />
+                        ))}
+                    </section>
+                ))}
+
+            {/* the roots are other words this one is built from, not senses of
+                it: they follow the senses rather than sitting among them */}
+            {rootEntries.length > 0 && (
+                <section className="dict-page-group">
+                    <h3 className="dict-page-dictionary">Built from</h3>
+                    {rootEntries.map((summary, index) => (
                         <Entry
-                            word={page.word}
+                            word={page!.word}
                             summary={summary}
+                            credit
                             onCitationClick={setCitationKey}
                             key={index}
                         />
                     ))}
                 </section>
-            ))}
+            )}
 
             {word && page != null && !page.isSuggestionTier && (
-                <AttestationWalker word={word} history={history} />
+                <AttestationWalker
+                    word={word}
+                    history={history}
+                    classes={declaredClassesIn(page)}
+                />
             )}
 
             {page != null && page.groups.length === 0 && (

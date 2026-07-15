@@ -30,6 +30,10 @@ export type Summary = {
     /** the printed grammar label ("s. m.", "s. f."): word class and gender
      * as the dictionary abbreviates them, expanded on hover */
     grammarLabel?: string | null
+    /** the entry's word classes ("Noun", "Verb", …) where the dictionary
+     * declares them. Absent for Phil Kelly, which merges senses, and for the
+     * entries whose printed definition names no class */
+    partsOfSpeech?: string[] | null
     /** the classical spelling a Phillips 1610 form stands for ("dooinney"
      * when tapping dwyne): shown as a bridge line so the entries never
      * imply a dictionary lists the 1610 spelling */

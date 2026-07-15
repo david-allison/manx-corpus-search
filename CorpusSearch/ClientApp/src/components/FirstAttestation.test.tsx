@@ -57,10 +57,13 @@ const billeyHistory: DictionaryHistoryResponse = {
     cognates: ["Ir. bile"],
 }
 
-const renderBand = (history: DictionaryHistoryResponse | null) =>
+const renderBand = (
+    history: DictionaryHistoryResponse | null,
+    classes: string[] = [],
+) =>
     render(
         <MemoryRouter>
-            <FirstAttestation history={history} />
+            <FirstAttestation history={history} classes={classes} />
         </MemoryRouter>,
     )
 
@@ -298,6 +301,34 @@ describe("FirstAttestation", () => {
         expect(
             screen.getByText(/Open in the corpus/).getAttribute("href"),
         ).toBe("/docs/MatthewGospel1748?q=billey")
+    })
+
+    it("warns when one spelling is carrying more than one sense", () => {
+        // 'ass' is a weasel (noun) and 'out' (adverb/preposition): the corpus
+        // indexes the spelling, so its 1610 belongs to whichever came first
+        renderBand({ ...billeyHistory, word: "ass" }, [
+            "Adverb",
+            "Noun",
+            "Preposition",
+        ])
+
+        const warning = screen.getByText(/covers more than one sense/)
+        expect(warning.textContent).toContain("“ass”")
+        expect(warning.textContent).toContain("adverb, noun, preposition")
+        expect(warning.textContent).toMatch(/earliest of any of them/)
+    })
+
+    it("says nothing when the entries agree on one class", () => {
+        renderBand(billeyHistory, ["Noun"])
+
+        expect(screen.queryByText(/covers more than one sense/)).toBeNull()
+    })
+
+    it("says nothing when no entry declares a class", () => {
+        // silence is "no evidence of a split", not "only one sense"
+        renderBand(billeyHistory, [])
+
+        expect(screen.queryByText(/covers more than one sense/)).toBeNull()
     })
 
     it("renders nothing while loading or with no attestations", () => {
