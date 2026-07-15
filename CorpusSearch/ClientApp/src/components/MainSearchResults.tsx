@@ -1,7 +1,8 @@
 import { useMemo, ReactNode } from "react"
 import { Link } from "react-router-dom"
 import "./MainSearchResults.css"
-import { HighlightRange, SearchResultEntry } from "../api/SearchApi"
+import { SearchResultEntry } from "../api/SearchApi"
+import { buildKwic } from "../utils/Kwic"
 import { SearchOptions, searchOptionsLinkQuery } from "../api/SearchOptions"
 import { useLazyLoader } from "../hooks/useLazyLoader"
 
@@ -55,59 +56,6 @@ function getFullYear(date: string, edate: string) {
     }
 
     return `${new Date(date).getFullYear()}-${new Date(edate).getFullYear()}`
-}
-
-/**
- * Splits a sample line around the first highlighted match (server-computed offsets, see #40),
- * keeping up to 5 words of context on each side.
- *
- * @returns null when the server provided no highlights (e.g. English searches):
- * the caller shows the sample unhighlighted
- */
-export function buildKwic(
-    sample: string,
-    highlights: HighlightRange[],
-): { pre: string; match: string; post: string } | null {
-    if (highlights.length === 0) {
-        return null
-    }
-    const match = highlights[0]
-
-    let startIndex = match.start
-    let count = 0
-    let lastSpace = false
-    while (startIndex > 0 && count < 5) {
-        startIndex--
-        if (sample[startIndex] === " ") {
-            if (!lastSpace) {
-                count++
-            }
-            lastSpace = true
-        } else {
-            lastSpace = false
-        }
-    }
-
-    let endIndex = match.end
-    count = 0
-    lastSpace = false
-    while (endIndex < sample.length && count < 5) {
-        endIndex++
-        if (sample[endIndex] === " ") {
-            if (!lastSpace) {
-                count++
-            }
-            lastSpace = true
-        } else {
-            lastSpace = false
-        }
-    }
-
-    return {
-        pre: sample.substring(startIndex, match.start),
-        match: sample.substring(match.start, match.end),
-        post: sample.substring(match.end, endIndex),
-    }
 }
 
 export default function MainSearchResults(props: {
