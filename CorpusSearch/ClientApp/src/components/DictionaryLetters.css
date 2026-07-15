@@ -1,0 +1,23 @@
+/* the way into the dictionary with no word looked up: bigger than the browse
+   page's own bar, because here it is the page rather than a control on it */
+.dict-letters-home {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin: 8px 0 24px;
+}
+
+.dict-letters-home a {
+    font-family: Georgia, serif;
+    font-size: 22px;
+    text-decoration: none;
+    padding: 2px 9px;
+    color: var(--c-link);
+    border-bottom: 2px solid transparent;
+}
+
+.dict-letters-home a:hover {
+    color: var(--c-accent);
+    border-bottom-color: var(--c-accent);
+}

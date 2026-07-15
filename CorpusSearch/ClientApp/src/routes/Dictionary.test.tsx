@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
-import { cleanup, render, screen } from "@testing-library/react"
+import { cleanup, render, screen, waitFor } from "@testing-library/react"
 import { MemoryRouter, Route, Routes } from "react-router-dom"
 import { Dictionary } from "./Dictionary"
 import { DictionaryPageResponse } from "../api/DictionaryApi"
@@ -269,11 +269,18 @@ describe("Dictionary page", () => {
         expect(await screen.findByText(/Near spellings/)).toBeTruthy()
     })
 
-    it("shows the search box without a word", () => {
+    it("shows the search box and the letters without a word", async () => {
+        respondWith({ word: "", isSuggestionTier: false, groups: [] })
         renderAt("/dictionary")
 
         expect(screen.getByLabelText("Look up a Manx word")).toBeTruthy()
-        expect(fetchMock).not.toHaveBeenCalled()
+        // the letters are fetched, but no word is looked up: there is none
+        await waitFor(() => expect(fetchMock).toHaveBeenCalled())
+        expect(
+            fetchMock.mock.calls
+                .map(([url]) => hrefOf(url))
+                .filter((href) => href.includes("/page")),
+        ).toHaveLength(0)
     })
 
     it("offers every dictionary as a scope, alongside all-at-once", async () => {
