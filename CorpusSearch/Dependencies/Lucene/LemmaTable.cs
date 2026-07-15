@@ -203,6 +203,31 @@ public class LemmaTable
 
     private static readonly char[] TrimChars = [' ', '.', ',', ';', ':', '\''];
 
+    /// <summary>The hyphen an affix is marked with: the books print the plain one
+    /// and the non-breaking one interchangeably (Kelly's "‑YS"), and neither is a
+    /// different claim</summary>
+    private static bool IsHyphen(char c) => c is '-' or '‑';
+
+    /// <summary>
+    /// Whether the headword is an affix rather than a word. Cregeen prints 'an-',
+    /// 'neu-', 'aa-' and '-agh' as headwords, and each is only ever the front or
+    /// the tail of a longer word: no text says one on its own, so nothing in the
+    /// corpus can attest it. What is built from an affix is its own headword.
+    ///
+    /// Asked of the spelling, and it has to be: the hyphen is the only thing
+    /// marking the morpheme bound, and <see cref="NormalizeForm"/> drops it —
+    /// 'an-' and 'an' arrive as one key. So by the time a form reaches this table
+    /// the question can no longer be asked, which is how the prefix 'an-' came to
+    /// answer for all 252 uses of the standalone word, and for the 130 lines of
+    /// Phillips's Psalms writing "’an" for *their*.
+    /// </summary>
+    public static bool IsAffix(string word)
+    {
+        var trimmed = word.Trim();
+        // a lone hyphen is not an affix; it is not anything
+        return trimmed.Length > 1 && (IsHyphen(trimmed[0]) || IsHyphen(trimmed[^1]));
+    }
+
     /// <summary>
     /// Mirrors the `form` column's normalization exactly (the cregeen.tsv contract):
     /// lowercase; `‑`→`-`; `’`→`'`; combining marks stripped after NFD decomposition

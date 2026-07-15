@@ -1,6 +1,9 @@
+using System;
 using System.IO;
 using System.Linq;
+using CorpusSearch.Dependencies;
 using CorpusSearch.Dependencies.Lucene;
+using CorpusSearch.Model;
 using CorpusSearch.Service;
 using NUnit.Framework;
 
@@ -57,5 +60,57 @@ public class DictionaryHistoryServiceTest
             Assert.That(table.FormsOf("mair"), Is.EqualTo(new[] { "meir" }));
             Assert.That(table.FormsOf("unknown"), Is.Empty);
         });
+    }
+}
+
+/// <summary>The history against a real index: what it scans, and what it must
+/// refuse to scan.</summary>
+[TestFixture]
+public class DictionaryHistoryScanTest : QueryBase
+{
+    private DictionaryHistoryService Service()
+    {
+        return new DictionaryHistoryService(
+            new Searcher(luceneIndex, parser), LemmaTable.Instance,
+            new DictionaryLookupService([], LemmaTable.Instance, LemmaResolver.Empty));
+    }
+
+    private void Add(string ident, int year, params string[] manxLines)
+    {
+        var document = new TestDocument(ident, new DateTime(year, 1, 1));
+        luceneIndex.Add(document, manxLines.Select((manx, i) =>
+            new DocumentLine { Manx = manx, English = "", CsvLineNumber = i + 2 }));
+    }
+
+    /// <summary>Cregeen prints 'an-' as a headword: a prefix, only ever the front
+    /// of a longer word, so no text says one. But the corpus says 'an' 252 times,
+    /// and the hyphen is the only thing telling the two apart — NormalizeForm
+    /// folds it away, so a history that normalizes first goes and finds all 252
+    /// and reports the prefix as attested since 1610.</summary>
+    [Test]
+    public void AnAffixIsScannedForNothing()
+    {
+        Add("Psalms", 1610, "ta an dooinney");
+
+        var history = Service().History("gv", "an-");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(history.Forms, Is.Empty);
+            Assert.That(history.Earliest, Is.Null);
+            Assert.That(history.TraditionalCount, Is.Zero);
+            Assert.That(history.Decades, Is.Empty);
+        });
+    }
+
+    /// <summary>...and the word the prefix is spelled like is still a word</summary>
+    [Test]
+    public void TheWordAnAffixIsSpelledLikeIsStillScanned()
+    {
+        Add("Psalms", 1610, "ta an dooinney");
+
+        var history = Service().History("gv", "an");
+
+        Assert.That(history.TraditionalCount, Is.EqualTo(1));
     }
 }

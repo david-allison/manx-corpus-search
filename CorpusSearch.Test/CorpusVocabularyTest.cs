@@ -70,4 +70,42 @@ public class CorpusVocabularyTest
 
         Assert.That(vocabulary.IsAttested("jaagheyder"), Is.True);
     }
+
+    /// <summary>Cregeen prints 'an-' as a headword, and it is only ever the front
+    /// of a longer word: no text says one. The corpus does say 'an' — Phillips
+    /// writes "’an" for *their* — and every path through here drops the hyphen
+    /// that tells the two apart, so the prefix must be caught before they do.</summary>
+    [Test]
+    public void AnAffixIsNotAttestedByTheWordItIsTheFrontOf()
+    {
+        var vocabulary = Loaded("an", "aa", "ys");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(vocabulary.IsAttested("an-"), Is.False);
+            Assert.That(vocabulary.IsAttested("aa-"), Is.False);
+            // and a suffix, which the books print the other way round
+            Assert.That(vocabulary.IsAttested("-ys"), Is.False);
+            // the word itself is still a word
+            Assert.That(vocabulary.IsAttested("an"), Is.True);
+        });
+    }
+
+    /// <summary>An affix is unattested whether or not the index ever loaded: that
+    /// is a fact about the headword, not a guess the evidence could overturn</summary>
+    [Test]
+    public void AnAffixIsGreyedEvenBeforeTheIndexLoads()
+    {
+        var vocabulary = new CorpusVocabulary(LemmaTable.Instance);
+
+        Assert.That(vocabulary.IsAttested("an-"), Is.False);
+    }
+
+    /// <summary>A hyphen inside a word is not an affix marker: 'aa-aase' is a word
+    /// the corpus can perfectly well say</summary>
+    [Test]
+    public void AWordWithAHyphenInsideItIsNotAnAffix()
+    {
+        Assert.That(Loaded("aa-aase").IsAttested("aa-aase"), Is.True);
+    }
 }

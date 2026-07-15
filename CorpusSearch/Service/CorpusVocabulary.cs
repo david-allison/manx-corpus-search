@@ -59,6 +59,15 @@ public class CorpusVocabulary(LemmaTable lemmaTable)
     /// </summary>
     public bool IsAttested(string word)
     {
+        // an affix is not a word a text can say, whatever the index holds: 'an-'
+        // is only ever the front of a longer word, and what is built from it is
+        // its own headword. Asked before anything below, because everything below
+        // drops the hyphen that says it is bound — and would then answer for the
+        // standalone 'an' the corpus really does say.
+        if (LemmaTable.IsAffix(word))
+        {
+            return false;
+        }
         // an index that never loaded would grey out the whole language
         if (!loaded)
         {
