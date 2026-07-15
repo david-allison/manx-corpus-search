@@ -88,6 +88,8 @@ export type DictionaryPageResponse = {
     word: string
     /** nothing matched the word itself: every group is a near spelling */
     isSuggestionTier: boolean
+    /** whether the corpus says the word: false where only a dictionary knows it */
+    attested: boolean
     audio?: {
         url: string
         credit?: string | null
@@ -128,16 +130,30 @@ export const dictionaryPage = async (
 }
 
 /** The dictionaries answering Manx, for the page's scope picker */
+/** Which dictionaries the site has is fixed when it deploys, so the answer is
+ * kept once it arrives. App.tsx keys its tree on the path, so every step from
+ * one headword to the next is a fresh mount: without this the picker re-asks,
+ * and blinks out of the page and back while it waits. */
+let known: DictionaryInfo[] | null = null
+
+/** The dictionaries if they have already been fetched, for a first paint that
+ * does not have to wait for them */
+export const dictionariesAlreadyKnown = (): DictionaryInfo[] | null => known
+
 export const dictionaryList = async (
     signal?: AbortSignal,
 ): Promise<DictionaryInfo[]> => {
+    if (known != null) {
+        return known
+    }
     const response = await fetch("/api/Dictionary/dictionaries?lang=gv", {
         signal,
     })
     if (!response.ok) {
         throw new Error(`dictionary list failed: ${response.status}`)
     }
-    return (await response.json()) as DictionaryInfo[]
+    known = (await response.json()) as DictionaryInfo[]
+    return known
 }
 
 /** The lexeme's corpus history (experimental): earliest attestation, the
@@ -302,21 +318,38 @@ export const dictionaryCoverage = async (
     return result
 }
 
-/** One page of a dictionary's index: the letters, one letter's prefix bar, and
- * the headwords under a prefix */
+/** One page of a dictionary's index: the letters, and one letter's headwords in
+ * the chapters they file under */
 export type DictionaryBrowseResponse = {
     dictionary: string
     slug: string
+    /** in capitals, as a printed index has them */
     letters: string[]
     /** null when the dictionary is empty (its JSON is downloaded on deployment) */
     letter?: string | null
-    prefixes: string[]
-    prefix?: string | null
-    headwords: { word: string; gloss?: string | null }[]
+    chapters: BrowseChapter[]
 }
 
-/** @param at a letter ("a") or a prefix ("aal"); the dictionary's first letter
- * when it names neither */
+/** One prefix and the headwords filed under it */
+export type BrowseChapter = {
+    /** the prefix in capitals: "AAL", or "AD" where the word is shorter than the
+     * chapter is deep */
+    key: string
+    /** in the book's order. A key can repeat where the book doubles back, and so
+     * can a word — Kelly prints five headwords 'A' */
+    words: BrowseWord[]
+}
+
+/** A headword in the index, and whether the corpus ever says it */
+export type BrowseWord = {
+    /** as the dictionary prints it: Kelly capitalises, Cregeen does not */
+    word: string
+    /** false where no text we hold uses the word */
+    attested: boolean
+}
+
+/** @param at a letter ("a"), or a prefix ("aal") from a link made when a prefix
+ * was a page of its own; the dictionary's first letter when it names neither */
 export const dictionaryBrowse = async (
     dict: string,
     at?: string,
@@ -343,6 +376,14 @@ export type DictionaryNeighboursResponse = {
     word: string
     previous?: string | null
     next?: string | null
+    /** whether the corpus uses the word itself */
+    attested: boolean
+    previousAttested: boolean
+    nextAttested: boolean
+    /** the nearest headword either side the corpus actually uses, which is rarely
+     * the one next door: half of Phil Kelly is unattested */
+    previousUsed?: string | null
+    nextUsed?: string | null
 }
 
 /** @param dict optional slug: one book's own order. Without it, the union

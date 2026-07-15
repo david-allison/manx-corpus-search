@@ -110,3 +110,14 @@ html {
 .error-boundary-reload:hover {
     background: var(--c-audio-bar);
 }
+
+/* A word no text in the corpus says. A dictionary lists what the language can
+   say; the greyed words are the ones nobody has been recorded saying — half of
+   Phil Kelly, which is a revival vocabulary rather than a record of use.
+
+   Shared by the browse index and the headword walk, so it lives here rather than
+   with either of them. */
+a.dict-unattested,
+.dict-unattested {
+    color: var(--c-muted);
+}

@@ -3,10 +3,12 @@ import { Link } from "react-router-dom"
 import { dictionaryBrowse } from "../api/DictionaryApi"
 import "./DictionaryLetters.css"
 
-/** The dictionary the letters open. Phil Kelly is the fullest word list the
- * site has — 66,000 headwords against Cregeen's 3,396 — so it is the one worth
- * offering to someone who has not asked for a word yet. */
-const BROWSE_DICT = "phil-kelly"
+/** The dictionary the letters open. Cregeen is a book with an index and browses
+ * as one: its longest letter is 465 headwords, a page you can read down. Phil
+ * Kelly is fuller — 66,000 headwords — but it is a translation list rather than
+ * a book, and its 'c' alone is 10,773, which is no page at all. The reader who
+ * has not asked for a word yet is better met by the one they can browse. */
+const BROWSE_DICT = "cregeen"
 
 /** A|B|C with no word looked up: the way into the dictionary for a reader who
  * came to browse rather than to search. */
