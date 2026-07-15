@@ -337,3 +337,31 @@ export const dictionaryBrowse = async (
     }
     return (await response.json()) as DictionaryBrowseResponse
 }
+
+/** The headwords either side of a word, for stepping through a dictionary */
+export type DictionaryNeighboursResponse = {
+    word: string
+    previous?: string | null
+    next?: string | null
+}
+
+/** @param dict optional slug: one book's own order. Without it, the union
+ * across every dictionary in collation order */
+export const dictionaryNeighbours = async (
+    word: string,
+    dict?: string,
+    signal?: AbortSignal,
+): Promise<DictionaryNeighboursResponse> => {
+    const params = new URLSearchParams({ word })
+    if (dict) {
+        params.set("dict", dict)
+    }
+    const response = await fetch(
+        `/api/Dictionary/neighbours?${params.toString()}`,
+        { signal },
+    )
+    if (!response.ok) {
+        throw new Error(`dictionary neighbours failed: ${response.status}`)
+    }
+    return (await response.json()) as DictionaryNeighboursResponse
+}

@@ -125,6 +125,85 @@ public class DictionaryBrowseServiceTest
         Assert.That(page.Headwords.Single().Gloss, Is.EqualTo("what aalin means"));
     }
 
+    // ---- stepping through, headword by headword ----
+
+    [Test]
+    public void AHeadwordStepsToTheOnesBesideIt()
+    {
+        var n = Service(new FakeDictionary("d", "aa", "ab", "ac")).Neighbours("d", "ab");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(n.Previous, Is.EqualTo("aa"));
+            Assert.That(n.Next, Is.EqualTo("ac"));
+        });
+    }
+
+    [Test]
+    public void TheEndsOfTheBookStepOnlyInwards()
+    {
+        var service = Service(new FakeDictionary("d", "aa", "ab"));
+
+        Assert.That(service.Neighbours("d", "aa").Previous, Is.Null);
+        Assert.That(service.Neighbours("d", "ab").Next, Is.Null);
+    }
+
+    /// <summary>The steps follow the book, not the alphabet: Cregeen prints
+    /// 'aghin' before 'agh-markiagh', and a sort would not</summary>
+    [Test]
+    public void SteppingFollowsTheBooksOrder()
+    {
+        var n = Service(new FakeDictionary("d", "aghin", "agh-markiagh", "aker"))
+            .Neighbours("d", "agh-markiagh");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(n.Previous, Is.EqualTo("aghin"));
+            Assert.That(n.Next, Is.EqualTo("aker"));
+        });
+    }
+
+    /// <summary>An inflection is no headword, but it still has a place: it steps
+    /// from where it would be filed</summary>
+    [Test]
+    public void AWordThatIsNoHeadwordStepsFromWhereItWouldBeFiled()
+    {
+        var n = Service(new FakeDictionary("d", "aa", "am", "az")).Neighbours("d", "ap");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(n.Previous, Is.EqualTo("am"));
+            Assert.That(n.Next, Is.EqualTo("az"));
+        });
+    }
+
+    /// <summary>No book's order can be kept across books, so the union takes the
+    /// reader's; a word in two dictionaries is one step, not two</summary>
+    [Test]
+    public void AcrossEveryDictionaryTheStepsAreTheUnion()
+    {
+        var service = Service(
+            new FakeDictionary("cregeen", "aa", "billey", "coo"),
+            new FakeDictionary("kelly", "BILLEY", "baa"));
+
+        var n = service.Neighbours(null, "baa");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(n.Previous, Is.EqualTo("aa"));
+            Assert.That(n.Next, Is.EqualTo("billey"), "the two BILLEYs are one word");
+        });
+    }
+
+    [Test]
+    public void AnUnknownDictionaryStepsNowhere()
+    {
+        var n = Service(new FakeDictionary("d", "aa", "ab")).Neighbours("nope", "aa");
+
+        Assert.That(n.Previous, Is.Null);
+        Assert.That(n.Next, Is.Null);
+    }
+
     /// <summary>The dictionary JSON is downloaded on deployment: without it the
     /// dictionary is empty rather than broken, and so is its index</summary>
     [Test]
