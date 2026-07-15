@@ -90,6 +90,9 @@ export type DictionaryPageResponse = {
     isSuggestionTier: boolean
     /** whether the corpus says the word: false where only a dictionary knows it */
     attested: boolean
+    /** the slug of every dictionary with something to say about the word,
+     * whatever scope the page was asked for: the picker greys the rest */
+    answering: string[]
     audio?: {
         url: string
         credit?: string | null

@@ -196,6 +196,9 @@ public class DictionaryLookupService(IEnumerable<ISearchDictionary> dictionarySe
     public DictionaryPage Page(string lang, string word, string? dict = null)
     {
         var summaries = WithoutDemutationGuesses(word, Lookup(lang, word));
+        // read before the scoping below, and deliberately: the picker shows every
+        // dictionary, so it has to be told about the ones this page is hiding
+        var answering = summaries.Select(SlugOf).OfType<string>().Distinct().ToList();
         if (dict != null)
         {
             // filtered before anything else is derived: a scoped page's audio and
@@ -209,6 +212,7 @@ public class DictionaryLookupService(IEnumerable<ISearchDictionary> dictionarySe
         return new DictionaryPage
         {
             Word = word,
+            Answering = answering,
             IsSuggestionTier = summaries.Count > 0 && summaries.All(x => x.NearMatchOf != null),
             Audio = audio == null
                 ? null

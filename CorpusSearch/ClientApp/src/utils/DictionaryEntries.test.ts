@@ -14,6 +14,7 @@ const page = (entries: Summary[]): DictionaryPageResponse => ({
     word: "ass",
     isSuggestionTier: false,
     attested: true,
+    answering: ["cregeen"],
     groups: [{ dictionary: "Cregeen", entries }],
 })
 

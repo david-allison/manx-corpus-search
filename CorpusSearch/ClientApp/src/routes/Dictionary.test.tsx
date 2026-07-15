@@ -1,5 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
-import { cleanup, render, screen, waitFor } from "@testing-library/react"
+import {
+    cleanup,
+    render,
+    screen,
+    waitFor,
+    within,
+} from "@testing-library/react"
 import { MemoryRouter, Route, Routes } from "react-router-dom"
 import { Dictionary } from "./Dictionary"
 import { DictionaryPageResponse } from "../api/DictionaryApi"
@@ -41,8 +47,15 @@ const emptyAttestations = {
 /** A word one text uses: what the history's scan reports for an attested word */
 const usedOnce = { ...emptyHistory, traditionalCount: 1 }
 
+/** A page fixture. `answering` — which dictionaries the picker leaves un-greyed
+ * — is only the picker's business, so it is optional here and defaults to every
+ * dictionary: a test about plurals should not have to answer for the tabs. */
+type PageFixture = Omit<DictionaryPageResponse, "answering"> & {
+    answering?: string[]
+}
+
 const respondWith = (
-    page: DictionaryPageResponse,
+    page: PageFixture,
     history: typeof emptyHistory = emptyHistory,
 ) =>
     fetchMock.mockImplementation((url) => {
@@ -53,7 +66,10 @@ const respondWith = (
               ? dictionaries
               : href.includes("/attestations")
                 ? emptyAttestations
-                : page
+                : {
+                      answering: dictionaries.map((d) => d.slug),
+                      ...page,
+                  }
         return Promise.resolve({
             ok: true,
             json: () => Promise.resolve(body),
@@ -131,7 +147,7 @@ describe("Dictionary page", () => {
      * 'geinnagh vane' attested for using 'geinnagh' and 'vane' apart; the history
      * really scanned, so the link asks it instead. */
     describe("the corpus link", () => {
-        const page: DictionaryPageResponse = {
+        const page: PageFixture = {
             word: "caag",
             isSuggestionTier: false,
             attested: true,
@@ -165,6 +181,92 @@ describe("Dictionary page", () => {
 
             expect(await screen.findByText(/a forelock/)).toBeTruthy()
             expect(screen.queryByText(/Search the corpus for/)).toBeNull()
+        })
+    })
+
+    /** The picker lists every dictionary, because "Cregeen has no entry for it"
+     * is itself worth being able to find out — but a reader should not have to
+     * click each in turn to find it out. */
+    describe("the scope picker", () => {
+        const scope = () =>
+            screen.getByRole("navigation", { name: "Dictionary" })
+
+        const caag = (answering: string[]): PageFixture => ({
+            word: "caag",
+            isSuggestionTier: false,
+            attested: true,
+            answering,
+            groups: [
+                {
+                    dictionary: "Cregeen",
+                    entries: [
+                        {
+                            primaryWord: "caag",
+                            summary: "a forelock",
+                            dictionaryName: "Cregeen",
+                            rootDepth: 0,
+                        },
+                    ],
+                },
+            ],
+        })
+
+        it("greys the dictionaries with nothing for the word", async () => {
+            respondWith(caag(["cregeen"]))
+            renderAt("/dictionary/caag")
+            await screen.findByText(/a forelock/)
+
+            const kelly = within(scope()).getByText("J Kelly Manx to English")
+            expect(kelly.className).toContain("dict-scope-empty")
+            // the grey is a colour, and not every reader gets one
+            expect(kelly.getAttribute("title")).toBe(
+                "Nothing for “caag” in J Kelly Manx to English",
+            )
+            expect(
+                within(scope()).getByText("Cregeen").className,
+            ).not.toContain("dict-scope-empty")
+        })
+
+        it("still lets you go and see the empty page", async () => {
+            respondWith(caag(["cregeen"]))
+            renderAt("/dictionary/caag")
+            await screen.findByText(/a forelock/)
+
+            // greyed, not disabled: the answer is "not in this book", and a
+            // reader is entitled to see that for themselves
+            expect(
+                within(scope())
+                    .getByText("J Kelly Manx to English")
+                    .getAttribute("href"),
+            ).toBe("/dictionary/in/kelly-m2e/caag")
+        })
+
+        it("greys All dictionaries only when none of them answer", async () => {
+            respondWith(caag(["cregeen"]))
+            renderAt("/dictionary/caag")
+            await screen.findByText(/a forelock/)
+
+            expect(
+                within(scope()).getByText("All dictionaries").className,
+            ).not.toContain("dict-scope-empty")
+        })
+
+        it("greys every link where the word is in no dictionary at all", async () => {
+            respondWith({
+                word: "xyzzy",
+                isSuggestionTier: false,
+                attested: false,
+                answering: [],
+                groups: [],
+            })
+            renderAt("/dictionary/xyzzy")
+            await screen.findByText(/Could not find a definition/)
+
+            const links = within(scope()).getAllByRole("link")
+            expect(links).toHaveLength(3)
+            expect(
+                links.every((x) => x.className.includes("dict-scope-empty")),
+            ).toBe(true)
         })
     })
 

@@ -31,6 +31,21 @@
     font-weight: 600;
 }
 
+/* a book with nothing to say about this word. Its own grey rather than
+   .dict-unattested's: "not in this book" and "no text says this word" are
+   different claims, and the picker's is the smaller one — one source shrugging,
+   not the corpus. Still a link, and still legible: a reader is entitled to go
+   and see the empty page, and the shrug is the answer they came for. */
+.dict-scope-empty {
+    color: var(--c-muted-2);
+}
+
+/* except while you are reading it: the scope you chose is never the greyed one,
+   whatever it holds */
+.dict-scope-link.dict-scope-empty.active {
+    color: var(--c-accent);
+}
+
 /* the row before the dictionaries are known. Holds exactly the height the links
    will take (13px text on 2px padding, over the rule), so the page below it does
    not jump when they arrive. */
