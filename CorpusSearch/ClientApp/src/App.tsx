@@ -20,8 +20,14 @@ export const App = () => {
             <ErrorBoundary key={location.pathname}>
                 <Routes>
                     <Route path="/" element={<Home key={k} />} />
-                    {/*experimental: the teanglann-style dictionary page*/}
+                    {/*experimental: the teanglann-style dictionary page. Any
+                       sub-route added here must also be added to
+                       Infrastructure/SpaRouteGuard.cs, or it 404s in production*/}
                     <Route path="/dictionary/:word?" element={<Dictionary />} />
+                    <Route
+                        path="/dictionary/in/:dict/:word"
+                        element={<Dictionary />}
+                    />
                     <Route path="/docs/:docId" element={<DocumentView />} />
                     <Route path={"/tools/youtube"} element={<BitPlayer />} />
                     <Route path="/contributions" element={<Contributions />} />

@@ -91,16 +91,29 @@ export type DictionaryPageResponse = {
     } | null
     groups: {
         dictionary: string
+        /** the dictionary's URL slug ('cregeen'): what /dictionary/in/ scopes on */
+        slug?: string | null
         sourceUrl?: string | null
         entries: Summary[]
     }[]
 }
 
+/** A dictionary the page can be scoped to */
+export type DictionaryInfo = {
+    slug: string
+    name: string
+}
+
+/** @param dict optional dictionary slug: scopes the page to one dictionary */
 export const dictionaryPage = async (
     word: string,
+    dict?: string,
     signal?: AbortSignal,
 ): Promise<DictionaryPageResponse> => {
     const params = new URLSearchParams({ lang: "gv", word })
+    if (dict) {
+        params.set("dict", dict)
+    }
     const response = await fetch(`/api/Dictionary/page?${params.toString()}`, {
         signal,
     })
@@ -108,6 +121,19 @@ export const dictionaryPage = async (
         throw new Error(`dictionary page failed: ${response.status}`)
     }
     return (await response.json()) as DictionaryPageResponse
+}
+
+/** The dictionaries answering Manx, for the page's scope picker */
+export const dictionaryList = async (
+    signal?: AbortSignal,
+): Promise<DictionaryInfo[]> => {
+    const response = await fetch("/api/Dictionary/dictionaries?lang=gv", {
+        signal,
+    })
+    if (!response.ok) {
+        throw new Error(`dictionary list failed: ${response.status}`)
+    }
+    return (await response.json()) as DictionaryInfo[]
 }
 
 /** The lexeme's corpus history (experimental): earliest attestation, the

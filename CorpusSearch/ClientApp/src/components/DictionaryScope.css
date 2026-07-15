@@ -1,0 +1,32 @@
+/* which dictionary the page is scoped to. Wears the Razor letter-nav's idiom
+   (site-design.css .dict-letters): a flat row of links, the current one
+   underlined in the accent. That sheet is only loaded by the server-rendered
+   pages, so the rules are restated rather than shared. */
+.dict-scope {
+    display: flex;
+    gap: 2px 14px;
+    flex-wrap: wrap;
+    align-items: baseline;
+    margin: 0 0 18px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--c-border-meta);
+}
+
+.dict-scope-link {
+    font-size: 13px;
+    text-decoration: none;
+    color: var(--c-link);
+    padding: 2px 0;
+    border-bottom: 2px solid transparent;
+    white-space: nowrap;
+}
+
+.dict-scope-link:hover {
+    border-bottom-color: var(--c-border-meta);
+}
+
+.dict-scope-link.active {
+    color: var(--c-accent);
+    border-bottom-color: var(--c-accent);
+    font-weight: 600;
+}

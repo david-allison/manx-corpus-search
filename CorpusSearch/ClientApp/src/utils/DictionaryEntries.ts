@@ -1,5 +1,15 @@
 import { DictionaryResponse } from "../api/DictionaryApi"
 
+/** A word's page, keeping the dictionary scope the reader is already in:
+ * /dictionary/billey, or /dictionary/in/cregeen/billey under a scope.
+ *
+ * The scoped form is a nested path, so SpaRouteGuard must know it: an
+ * unlisted sub-route 404s in production while working in development. */
+export const dictionaryWordUrl = (word: string, dict?: string): string =>
+    dict
+        ? `/dictionary/in/${encodeURIComponent(dict)}/${encodeURIComponent(word)}`
+        : `/dictionary/${encodeURIComponent(word)}`
+
 /** Trims punctuation (but never letters/digits, so internal apostrophes and
  * hyphens survive) from the edges of a tapped word: 'meenid,' -> 'meenid' */
 export const trimPunctuation = (s: string): string =>
