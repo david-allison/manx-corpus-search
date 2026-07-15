@@ -58,6 +58,11 @@ public class DictionaryAttestationService(
                     Ident = x.Ident,
                     Title = x.DocumentName,
                     Year = x.StartDate!.Value.Year,
+                    // the scan counts span matches, and an OR over several
+                    // readings scores one token once per reading claiming it:
+                    // only a lone reading can be counted from here without
+                    // reading four uses of 'vee' where there is one
+                    Uses = lemmaIds.Count == 1 ? x.Count : null,
                 })
                 .ToList(),
             UndatedDocuments = undated.Count,
@@ -140,17 +145,24 @@ public class DictionaryAttestations
     public int UndatedDocuments { get; set; }
 }
 
-/// <summary>
-/// A step in the walk. Deliberately carries no use count: the scan's per-document
-/// figure counts span matches, and an ambiguous token carries several of the
-/// queried lemma ids at one position, so a single 'vee' would score four. The
-/// current document's honest total is <see cref="AttestationLines.UseCount"/>.
-/// </summary>
+/// <summary>A step in the walk</summary>
 public class AttestationDocument
 {
     public required string Ident { get; set; }
     public required string Title { get; set; }
     public int Year { get; set; }
+
+    /// <summary>
+    /// Uses of the lexeme, where the scan can be trusted to count them: a word
+    /// with one reading is one query term, so each use is matched once.
+    ///
+    /// Null for an ambiguous word, whose readings are OR'd — a token carrying
+    /// several of them is matched once per reading, and 'vee' (four readings)
+    /// would read four times too high. Those are counted from the highlight
+    /// offsets instead, one document at a time, as
+    /// <see cref="AttestationLines.UseCount"/>.
+    /// </summary>
+    public int? Uses { get; set; }
 }
 
 public class AttestationLines

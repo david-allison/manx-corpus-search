@@ -198,13 +198,15 @@ export type DictionaryAttestationsResponse = {
     undatedUses: number
 }
 
-/** A step in the walk. Carries no use count on purpose: see AttestationDocument
- * on the server — the scan's per-document figure counts span matches, which an
- * ambiguous token inflates. `lineCount` below is the honest total. */
+/** A step in the walk */
 export type AttestationDocument = {
     ident: string
     title: string
     year: number
+    /** uses of the lexeme, where the scan can be trusted to count them (see
+     * AttestationDocument on the server). Absent for an ambiguous word, whose
+     * uses are counted a document at a time as `useCount` */
+    uses?: number | null
 }
 
 /** The lexeme's uses inside one document, split by the reading each line

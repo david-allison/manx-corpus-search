@@ -275,7 +275,7 @@ export const AttestationWalker = ({
                                 previous
                                     ? {
                                           to: stepTo(previous.ident),
-                                          label: `${previous.year}`,
+                                          label: `${previous.year} · ${previous.title}`,
                                           title: `${previous.title} (${previous.year})`,
                                       }
                                     : null
@@ -284,7 +284,7 @@ export const AttestationWalker = ({
                                 next
                                     ? {
                                           to: stepTo(next.ident),
-                                          label: `${next.year}`,
+                                          label: `${next.year} · ${next.title}`,
                                           title: `${next.title} (${next.year})`,
                                       }
                                     : null
@@ -299,10 +299,19 @@ export const AttestationWalker = ({
                             >
                                 {current.title}
                             </Link>
-                            {fresh && (
+                            {/* the walk's own count where it has one, so it
+                                is there as you arrive; otherwise the document's
+                                own, once counted from the offsets */}
+                            {current.uses != null ? (
                                 <span className="attest-count">
-                                    {` · ${plural(lines.useCount, "use", "uses")}`}
+                                    {` · ${plural(current.uses, "use", "uses")}`}
                                 </span>
+                            ) : (
+                                fresh && (
+                                    <span className="attest-count">
+                                        {` · ${plural(lines.useCount, "use", "uses")}`}
+                                    </span>
+                                )
                             )}
                         </PrevNextLinks>
 
