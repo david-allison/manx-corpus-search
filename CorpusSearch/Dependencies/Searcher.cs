@@ -140,6 +140,45 @@ public class Searcher(LuceneIndex luceneIndex, SearchParser parser)
         return luceneIndex.GetVerseAlignment(keys, chapterPrefix);
     }
 
+    /// <summary>
+    /// Every corpus line whose token resolves to one of <paramref name="lemmaIds"/>,
+    /// as one query against <see cref="LuceneIndex.DOCUMENT_LEMMA_MANX"/> rather than a
+    /// scan per surface spelling. The field carries the lemma ids the resolver settled on
+    /// at each token's position, so 'aase.v' matches 'daase' and highlights the surface
+    /// word: the cluster is neither truncated by a form budget nor widened by spellings
+    /// the resolver already ruled out on that line.
+    /// </summary>
+    /// <remarks>The query grammar has no field syntax, so the field is reachable only
+    /// from here — see CorpusSearch.Test/LemmaIndexTest for what it matches</remarks>
+    private static SpanQuery? LemmaQuery(IReadOnlyCollection<string> lemmaIds)
+    {
+        var terms = lemmaIds
+            .Select(id => (SpanQuery)new SpanTermQuery(new Term(LuceneIndex.DOCUMENT_LEMMA_MANX, id)))
+            .ToArray();
+        // an ambiguous word means every reading it could be: 'veg' is veg.x or beg.a
+        return terms.Length switch
+        {
+            0 => null,
+            1 => terms[0],
+            _ => new SpanOrQuery(terms),
+        };
+    }
+
+    /// <summary>The corpus documents attesting a lexeme, with their dates and counts.
+    /// Empty when the word has no lemma reading to search for.</summary>
+    public ScanResult ScanLemma(IReadOnlyCollection<string> lemmaIds)
+    {
+        var query = LemmaQuery(lemmaIds);
+        return query == null ? new ScanResult() : luceneIndex.Scan(query);
+    }
+
+    /// <summary>Every use of a lexeme within one document, surface words highlighted</summary>
+    internal SearchResult? SearchLemma(string ident, IReadOnlyCollection<string> lemmaIds)
+    {
+        var query = LemmaQuery(lemmaIds);
+        return query == null ? null : luceneIndex.Search(ident, query, getTranscriptData: false);
+    }
+
     public ScanResult Scan(string query)
     {
         return Scan(query, SearchOptions.Default);

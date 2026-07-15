@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using CorpusSearch.Service;
 using Microsoft.AspNetCore.Mvc;
 
@@ -11,7 +12,8 @@ namespace CorpusSearch.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 public class DictionaryController(
-    DictionaryLookupService lookupService, DictionaryHistoryService historyService)
+    DictionaryLookupService lookupService, DictionaryHistoryService historyService,
+    DictionaryAttestationService attestationService)
 {
     /// <summary>
     /// Returns diction
@@ -30,10 +32,21 @@ public class DictionaryController(
     /// The teanglann-style full page for a word (experimental): per-dictionary
     /// groups, the word's own recording, near-match suggestions as a tier.
     /// </summary>
+    /// <param name="dict">optional dictionary slug ("cregeen"): scopes the page
+    /// to one dictionary, as /dictionary/in/{dict}/{word} does</param>
     [HttpGet("page")]
-    public DictionaryPage Page([FromQuery] string lang, [FromQuery] string word)
+    public DictionaryPage Page([FromQuery] string lang, [FromQuery] string word, [FromQuery] string? dict = null)
     {
-        return lookupService.Page(lang, word);
+        return lookupService.Page(lang, word, dict);
+    }
+
+    /// <summary>
+    /// The dictionaries answering a query language, for the page's scope picker.
+    /// </summary>
+    [HttpGet("dictionaries")]
+    public IEnumerable<DictionaryInfo> Dictionaries([FromQuery] string lang)
+    {
+        return lookupService.Dictionaries(lang);
     }
 
     /// <summary>
@@ -44,6 +57,27 @@ public class DictionaryController(
     public DictionaryHistory History([FromQuery] string lang, [FromQuery] string word)
     {
         return historyService.History(lang, word);
+    }
+
+    /// <summary>
+    /// The corpus documents attesting a word's lexeme, oldest first: the word
+    /// page's attestation walk (experimental).
+    /// </summary>
+    [HttpGet("attestations")]
+    public DictionaryAttestations Attestations([FromQuery] string word)
+    {
+        return attestationService.Attestations(word);
+    }
+
+    /// <summary>
+    /// Every use of a word's lexeme within one document, for the walk's current step.
+    /// </summary>
+    [HttpGet("attestations/{ident}")]
+    public async Task<ActionResult<AttestationLines>> AttestationsInDocument(
+        string ident, [FromQuery] string word)
+    {
+        var lines = await attestationService.InDocument(word, ident);
+        return lines == null ? new NotFoundResult() : lines;
     }
 
     /// <summary>

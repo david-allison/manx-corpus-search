@@ -86,6 +86,7 @@ public class Startup(IConfiguration configuration)
         services.AddSingleton(LemmaResolver.Instance);
         services.AddSingleton<DictionaryLookupService>();
         services.AddSingleton<DictionaryHistoryService>();
+        services.AddSingleton<DictionaryAttestationService>();
         services.AddSingleton<WorkService>();
         services.AddSingleton<DocumentSearchService>();
         services.AddSingleton<NewspaperSourceEnricher>();
