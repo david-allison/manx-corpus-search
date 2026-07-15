@@ -30,3 +30,10 @@
     border-bottom-color: var(--c-accent);
     font-weight: 600;
 }
+
+/* the row before the dictionaries are known. Holds exactly the height the links
+   will take (13px text on 2px padding, over the rule), so the page below it does
+   not jump when they arrive. */
+.dict-scope-waiting {
+    min-height: 21px;
+}

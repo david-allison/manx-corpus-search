@@ -1,6 +1,10 @@
 import { useEffect, useState } from "react"
 import { Link } from "react-router-dom"
-import { DictionaryInfo, dictionaryList } from "../api/DictionaryApi"
+import {
+    dictionariesAlreadyKnown,
+    DictionaryInfo,
+    dictionaryList,
+} from "../api/DictionaryApi"
 import { dictionaryWordUrl } from "../utils/DictionaryEntries"
 import "./DictionaryScope.css"
 
@@ -14,11 +18,16 @@ export const DictionaryScope = ({
     word: string
     dict?: string
 }) => {
+    // already known on every step after the first: the picker paints with the
+    // page rather than arriving after it
     const [dictionaries, setDictionaries] = useState<DictionaryInfo[] | null>(
-        null,
+        dictionariesAlreadyKnown,
     )
 
     useEffect(() => {
+        if (dictionaries != null) {
+            return
+        }
         const abort = new AbortController()
         dictionaryList(abort.signal)
             .then(setDictionaries)
@@ -26,10 +35,16 @@ export const DictionaryScope = ({
                 if (!abort.signal.aborted) console.warn(e)
             })
         return () => abort.abort()
-    }, [])
+    }, [dictionaries])
 
-    // the picker offers nothing until it knows what there is to pick
-    if (dictionaries == null || dictionaries.length === 0) {
+    // the picker offers nothing until it knows what there is to pick, but it
+    // holds its row: coming back with a height would shove the page down
+    if (dictionaries == null) {
+        return (
+            <nav className="dict-scope dict-scope-waiting" aria-hidden="true" />
+        )
+    }
+    if (dictionaries.length === 0) {
         return null
     }
 
