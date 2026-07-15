@@ -22,6 +22,7 @@ public class LemmaTable
     private readonly Dictionary<string, string> displayLemmaById;
     private readonly Dictionary<string, string> nameTypeById;
     private readonly Dictionary<string, string[]> phillipsViaByForm;
+    private readonly HashSet<(string Form, string DisplayLemma)> unverifiedLinks;
     // built on first use: the history view walks lemma -> forms, the reverse
     // of every other lookup
     private readonly Lazy<Dictionary<string, string[]>> formsByDisplay;
@@ -34,7 +35,8 @@ public class LemmaTable
         Dictionary<string, string[]> displayLemmasByForm,
         Dictionary<string, string[]> rootDisplayLemmasByForm, HashSet<string> lemmaIds,
         Dictionary<string, string> displayLemmaById, Dictionary<string, string> nameTypeById,
-        Dictionary<string, string[]> phillipsViaByForm)
+        Dictionary<string, string[]> phillipsViaByForm,
+        HashSet<(string, string)>? unverifiedLinks = null)
     {
         this.candidatesByForm = candidatesByForm;
         this.displayLemmasByForm = displayLemmasByForm;
@@ -43,6 +45,7 @@ public class LemmaTable
         this.displayLemmaById = displayLemmaById;
         this.nameTypeById = nameTypeById;
         this.phillipsViaByForm = phillipsViaByForm;
+        this.unverifiedLinks = unverifiedLinks ?? [];
         formsByDisplay = new Lazy<Dictionary<string, string[]>>(() =>
             this.displayLemmasByForm
                 .SelectMany(kv => kv.Value.Select(display => (Display: NormalizeForm(display), Form: kv.Key)))
@@ -121,6 +124,40 @@ public class LemmaTable
     {
         return rootDisplayLemmasByForm.TryGetValue(NormalizeForm(form), out var lemmas) ? lemmas : [];
     }
+
+    /// <summary>
+    /// Whether the table reaches <paramref name="displayLemma"/> from
+    /// <paramref name="form"/> only by rule, with no dictionary page attesting
+    /// the link: a generated mutation ('Vonaco' under Monaco), an unvalidated
+    /// demutation, a univerbation or a particle strip (see
+    /// <see cref="IsUnverifiedRow"/>). A pair the print attests anywhere is
+    /// verified, however many rules also produce it.
+    /// </summary>
+    /// <remarks>
+    /// The generators reproduce the printed dictionaries plus rules over them,
+    /// and the rules are where a wrong lemma comes from — so a reader deserves
+    /// to see which of the two a root hangs on.
+    /// </remarks>
+    public bool IsUnverifiedLink(string form, string displayLemma) =>
+        unverifiedLinks.Contains((NormalizeForm(form), displayLemma));
+
+    /// <summary>
+    /// The generator's own note that a row rests on a rule alone: a mutation spelt
+    /// by <c>mutateForward</c> that no page lists ("generated-lenition"/"-eclipsis"),
+    /// a radical it could not validate against the entry inventory
+    /// ("demutation-unvalidated"), or a synthesized participle ("synthetic").
+    /// </summary>
+    /// <remarks>
+    /// The link type is deliberately not consulted: `particle`, `univerbated` and
+    /// cregeen's apostrophe-strip `mutation` all restate a headword the print
+    /// carries ("e gheiney" -> gheiney), which is transcription, not derivation —
+    /// flagging those would mark the ordinary chain and teach readers to ignore
+    /// the mark.
+    /// </remarks>
+    private static readonly HashSet<string> UnverifiedNotes =
+        ["generated-lenition", "generated-eclipsis", "demutation-unvalidated", "synthetic"];
+
+    private static bool IsUnverifiedRow(string note) => UnverifiedNotes.Contains(note);
 
     /// <summary>
     /// The candidate ids of a form read as a productive clitic contraction:
@@ -279,6 +316,10 @@ public class LemmaTable
         var displayLemmaById = new Dictionary<string, string>();
         var nameTypeById = new Dictionary<string, string>();
         var phillipsViaLists = new Dictionary<string, List<string>>();
+        // (form, displayLemma) links seen by rule, and those the print attests:
+        // a pair in both is verified, so the attested set subtracts at the end
+        var unverifiedLinks = new HashSet<(string, string)>();
+        var verifiedLinks = new HashSet<(string, string)>();
 
         foreach (var reader in readers)
         {
@@ -339,6 +380,9 @@ public class LemmaTable
                     {
                         roots.Add(displayLemma);
                     }
+                    var note = columns.Length > 6 ? columns[6] : "";
+                    (IsUnverifiedRow(note) ? unverifiedLinks : verifiedLinks)
+                        .Add((form, displayLemma));
                 }
             }
         }
@@ -355,9 +399,11 @@ public class LemmaTable
         {
             rootDisplayLemmasByForm[form] = [.. roots];
         }
+        unverifiedLinks.ExceptWith(verifiedLinks);
         return new LemmaTable(candidatesByForm, displayLemmasByForm, rootDisplayLemmasByForm, lemmaIds,
             displayLemmaById, nameTypeById,
-            phillipsViaLists.ToDictionary(kv => kv.Key, kv => kv.Value.ToArray()));
+            phillipsViaLists.ToDictionary(kv => kv.Key, kv => kv.Value.ToArray()),
+            unverifiedLinks);
     }
 
     private static LemmaTable LoadVendored()

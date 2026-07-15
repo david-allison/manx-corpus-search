@@ -253,6 +253,25 @@ const PluralNote = ({ summary }: { summary: DictionaryResponse[number] }) =>
         </span>
     ) : null
 
+/** Marks a root the lemma table only reaches by rule: the dictionaries
+ * document the entry, but nothing documents it as this word's root */
+const UnverifiedMark = ({
+    summary,
+}: {
+    summary: DictionaryResponse[number]
+}) =>
+    summary.unverifiedLink ? (
+        <>
+            {" "}
+            <abbr
+                className="dict-abbr dict-popup-unverified"
+                title="Unverified: no dictionary records this as a root of the word you tapped — it was worked out by rule and may be wrong"
+            >
+                unverified
+            </abbr>
+        </>
+    ) : null
+
 /** Plays the entry's pronunciation recording (streamed from the source) */
 const AudioButton = ({
     summary,
@@ -515,6 +534,9 @@ export const DictionaryLookupModal = (props: DictionaryLookupState) => {
                                                 <strong>
                                                     {summary.primaryWord}
                                                 </strong>
+                                                <UnverifiedMark
+                                                    summary={summary}
+                                                />
                                                 <GrammarLabel
                                                     label={summary.grammarLabel}
                                                 />

@@ -228,6 +228,51 @@ public class DictionaryLookupServiceTest
         Assert.That(Lookup(service, "daase"), Is.EqualTo(new[] { "daase", "aase" }));
     }
 
+    /// <summary>A root the table only reaches by rule is flagged, so the popup can
+    /// say so; one the print attests anywhere is not — and the flag sticks for the
+    /// rest of a chain that crossed it</summary>
+    [Test]
+    public void ARuleDerivedRootIsMarkedUnverified()
+    {
+        var tsv = "form\tlemmaId\tlemma\tlinkType\tpos\tvia\tnote\n"
+                  // a generated lenition: no page lists 'vonaco' at all
+                  + "vonaco\tmonaco.n\tmonaco\tmutation\ts. f.\tmonaco\tgenerated-lenition\n"
+                  // a root of the generated root: inherits the guess it hangs on
+                  + "monaco\tprincipality.n\tprincipality\tinflected\ts. f.\tmonaco\t\n"
+                  // the print lists 'daase' under 'aase' itself
+                  + "daase\taase.v\taase\tinflected\tv.\taase\t\n"
+                  // a particle strip restates a printed headword ("e gheiney"):
+                  // transcription, not derivation
+                  + "gheiney\tdeiney.n\tdeiney\tparticle\ts.\te gheiney\t\n";
+        var service = new DictionaryLookupService(
+            [new FakeDictionary("monaco", "aase", "principality", "deiney")],
+            LemmaTable.Load(new StringReader(tsv)), LemmaResolver.Empty);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(service.Lookup("gv", "vonaco").Select(x => (x.PrimaryWord, x.UnverifiedLink)),
+                Is.EqualTo(new[] { ("monaco", true), ("principality", true) }));
+            Assert.That(service.Lookup("gv", "daase").Select(x => (x.PrimaryWord, x.UnverifiedLink)),
+                Is.EqualTo(new[] { ("aase", false) }));
+            Assert.That(service.Lookup("gv", "gheiney").Select(x => (x.PrimaryWord, x.UnverifiedLink)),
+                Is.EqualTo(new[] { ("deiney", false) }));
+        });
+    }
+
+    /// <summary>A pair the print attests stays verified however many rules also
+    /// reach it: the attested row wins wherever it appears</summary>
+    [Test]
+    public void AnAttestedRowOutranksAGeneratedOneForTheSameLink()
+    {
+        var tsv = "form\tlemmaId\tlemma\tlinkType\tpos\tvia\tnote\n"
+                  + "vannin\tmannin.n\tmannin\tmutation\ts. f.\tmannin\tgenerated-lenition\n"
+                  + "vannin\tmannin.n\tmannin\tinflected\ts. f.\tmannin\t\n";
+        var service = new DictionaryLookupService([new FakeDictionary("mannin")],
+            LemmaTable.Load(new StringReader(tsv)), LemmaResolver.Empty);
+
+        Assert.That(service.Lookup("gv", "vannin").Single().UnverifiedLink, Is.False);
+    }
+
     /// <summary>Root-derived entries carry their hop depth so the popup can nest
     /// them; entries for the selection itself stay at depth 0</summary>
     [Test]

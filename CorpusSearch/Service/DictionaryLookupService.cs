@@ -60,15 +60,21 @@ public class DictionaryLookupService(IEnumerable<ISearchDictionary> dictionarySe
             // headwords a dictionary actually lists, without them posing as
             // entries for the selection
             var seen = new HashSet<string>(candidates, StringComparer.InvariantCultureIgnoreCase);
-            var frontier = ResolvedDisplayLemmas(selection, context).Where(x => !seen.Contains(x)).ToList();
+            // each hop carries whether the table only reaches it by rule: once a
+            // chain crosses an unverified link every root beyond it rests on that
+            // guess, so the flag sticks for the rest of the walk
+            var frontier = ResolvedDisplayLemmas(selection, context)
+                .Where(x => !seen.Contains(x))
+                .Select(x => (Display: x, Unverified: lemmaTable.IsUnverifiedLink(selection, x)))
+                .ToList();
             // which sense of a root the chain means: the word classes of the
             // candidate ids that produced each display (row -> bee.v is the
             // verb 'bee', never the food)
             var expectedPos = ExpectedPosByDisplay(selection, context);
             for (var depth = 1; frontier.Count > 0 && depth <= 3; depth++)
             {
-                seen.UnionWith(frontier);
-                foreach (var display in frontier)
+                seen.UnionWith(frontier.Select(x => x.Display));
+                foreach (var (display, unverified) in frontier)
                 {
                     var summaries = GetSummaries([display]);
                     if (depth == 1 && expectedPos.TryGetValue(display, out var expected))
@@ -98,15 +104,18 @@ public class DictionaryLookupService(IEnumerable<ISearchDictionary> dictionarySe
                     foreach (var summary in summaries)
                     {
                         summary.RootDepth = depth;
+                        summary.UnverifiedLink = unverified;
                         results.Add(summary);
                     }
                 }
                 // deeper hops follow paradigm links only: a mutation guess is a
                 // candidate reading of the selection, not a root of the root
                 frontier = frontier
-                    .SelectMany(root => lemmaTable.RootDisplayLemmasFor(root))
-                    .Where(x => !seen.Contains(x))
-                    .Distinct(StringComparer.InvariantCultureIgnoreCase)
+                    .SelectMany(root => lemmaTable.RootDisplayLemmasFor(root.Display)
+                        .Select(next => (Display: next,
+                            Unverified: root.Unverified || lemmaTable.IsUnverifiedLink(root.Display, next))))
+                    .Where(x => !seen.Contains(x.Display))
+                    .DistinctBy(x => x.Display, StringComparer.InvariantCultureIgnoreCase)
                     .ToList();
             }
         }
@@ -342,6 +351,9 @@ public class DictionaryLookupService(IEnumerable<ISearchDictionary> dictionarySe
                 Summary = NameTypeDescription(nameType),
                 DictionaryName = "Proper nouns",
                 RootDepth = isSelection ? 0 : 1,
+                // the names supplement spells most mutations by rule ('Vonaco'
+                // under Monaco): the name is documented, this spelling of it is not
+                UnverifiedLink = !isSelection && lemmaTable.IsUnverifiedLink(selection, display),
             });
         }
         return results;

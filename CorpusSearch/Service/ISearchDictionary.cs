@@ -42,6 +42,12 @@ public class DictionarySummary
     /// The client nests each level under the previous one</summary>
     public int RootDepth { get; set; }
 
+    /// <summary>Set on a root the lemma table only reaches by rule, with no
+    /// dictionary page attesting the link (see
+    /// <see cref="Dependencies.Lucene.LemmaTable.IsUnverifiedLink"/>): the
+    /// client marks it, so a generated guess never reads as documentation</summary>
+    public bool UnverifiedLink { get; set; }
+
     /// <summary>Set on "did you mean" fallback entries only: the near spelling
     /// the entry was reached through, when nothing matched the selection itself</summary>
     public string? NearMatchOf { get; set; }
