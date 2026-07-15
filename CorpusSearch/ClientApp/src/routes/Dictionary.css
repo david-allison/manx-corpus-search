@@ -42,7 +42,7 @@
 .dict-page-word {
     font-family: Georgia, serif;
     color: #33454d;
-    margin: 0 0 16px;
+    margin: 0 0 4px;
 }
 
 .dict-page-loading {
@@ -53,6 +53,11 @@
 
 .dict-page-group {
     margin-top: 20px;
+}
+
+/* the first sense belongs to the headword above it, not to a new section */
+.dict-page-header + .dict-page-group {
+    margin-top: 6px;
 }
 
 .dict-page-dictionary {
@@ -68,6 +73,64 @@
 
 .dict-page-dictionary a {
     color: inherit;
+}
+
+/* a sense of the word: the headword again, with the classes the dictionaries
+   printed for it. The word repeats because each sense is its own headword. */
+.dict-page-sense {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin: 0 0 8px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--c-border-meta);
+}
+
+.dict-page-sense-word {
+    font-family: Georgia, serif;
+    /* big enough to head the entries below rather than read as one of them */
+    font-size: 22px;
+    color: #33454d;
+}
+
+/* every class the sense gathered ("adv., prep."): a merge the data does not
+   make, so it is shown rather than hidden behind one name */
+.dict-page-sense-label {
+    font-style: italic;
+    color: var(--c-accent);
+    font-size: 15px;
+}
+
+/* an entry from a source that records no word class: it is shown under every
+   sense because it could be any of them. Set back a little so it reads as
+   context rather than as this sense's own evidence. */
+.dict-page-entry-unplaced {
+    padding-left: 10px;
+    border-left: 2px dotted var(--c-border-meta);
+    color: var(--c-accent);
+}
+
+/* which dictionary said it: the sense heading gathers several, so the entry
+   has to carry its own source. An outlined chip, as the note markers are
+   (.doc-note-marker): present while reading, lighter than the text. */
+.dict-page-credit {
+    display: inline-block;
+    margin-left: 8px;
+    padding: 1px 6px;
+    border-radius: 8px;
+    font-size: 11px;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+    background: transparent;
+    color: var(--c-secondary);
+    box-shadow: inset 0 0 0 1px var(--c-border-table-head);
+}
+
+/* the source records no word class, so the entry sits under every sense: the
+   chip fills to say the placing is not the dictionary's word */
+.dict-page-entry-unplaced .dict-page-credit {
+    background: var(--c-note-row);
+    cursor: help;
 }
 
 .dict-page-entry + .dict-page-entry {

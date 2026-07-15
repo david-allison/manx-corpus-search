@@ -1,0 +1,160 @@
+/* the corpus walk: one text at a time, oldest first (AttestationWalker.tsx) */
+.attest {
+    margin-top: 28px;
+}
+
+.attest-experimental {
+    float: right;
+    background: #fff8e1;
+    border: 1px solid #ecdfae;
+    color: #6b5a1e;
+    border-radius: 4px;
+    padding: 0 6px;
+    font-size: 9px;
+    letter-spacing: 1px;
+}
+
+.attest-year {
+    font-family: Georgia, serif;
+    font-size: 15px;
+    color: #33454d;
+}
+
+/* the section header doubles as the collapse control */
+.attest-toggle {
+    border: none;
+    background: none;
+    padding: 0;
+    cursor: pointer;
+    font: inherit;
+    letter-spacing: inherit;
+    text-transform: inherit;
+    color: inherit;
+}
+
+.attest-toggle:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+}
+
+/* what the section holds, readable while it is shut */
+.attest-summary {
+    margin: 0;
+    color: var(--c-accent);
+    font-size: 12px;
+}
+
+.attest-position {
+    margin: 0 0 10px;
+    text-align: center;
+    color: var(--c-accent);
+    font-size: 12px;
+}
+
+/* one reading's uses: the lexeme in a left column, its lines tabbed across from
+   it, so an ambiguous word reads as a short list of readings rather than one
+   long run of lines */
+.attest-group {
+    display: grid;
+    grid-template-columns: minmax(64px, max-content) 1fr;
+    gap: 0 16px;
+    align-items: baseline;
+    padding: 8px 0;
+    border-top: 1px solid var(--c-border-meta);
+}
+
+.attest-group-head {
+    margin: 0;
+    white-space: nowrap;
+}
+
+.attest-group-lemma {
+    font-family: Georgia, serif;
+    color: #33454d;
+}
+
+.attest-group-count {
+    color: var(--c-accent);
+    font-size: 12px;
+}
+
+.attest-group-lines {
+    min-width: 0;
+}
+
+.attest-more {
+    margin: 4px 0 0;
+    font-size: 12px;
+}
+
+/* the lines sit in the right column, so they carry no rule of their own */
+.attest-group .attest-line {
+    padding: 0 0 4px;
+    border-top: none;
+}
+
+@media (max-width: 600px) {
+    /* no room for two columns: the lemma becomes a heading again */
+    .attest-group {
+        grid-template-columns: 1fr;
+        gap: 2px;
+    }
+}
+
+/* a use, as the search results render one */
+.attest-line {
+    padding: 6px 0;
+    border-top: 1px solid var(--c-border-meta);
+}
+
+.attest-line-manx {
+    font-family: Georgia, serif;
+}
+
+/* the Manx doubles as the control which reveals its translation: the page is
+   about Manx words, so the English stays out of the way until asked for */
+.attest-line-tappable {
+    display: block;
+    width: 100%;
+    text-align: left;
+    border: none;
+    background: none;
+    padding: 0;
+    font-size: inherit;
+    color: inherit;
+    cursor: pointer;
+}
+
+.attest-line-tappable:hover {
+    color: var(--c-link);
+}
+
+.attest-line-tappable:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+}
+
+.attest-line-english {
+    color: var(--c-accent);
+    font-size: 13px;
+    margin-top: 2px;
+}
+
+.attest-loading {
+    color: var(--c-accent);
+    font-size: 13px;
+}
+
+/* texts the walk cannot place: counted, so they are not silently dropped */
+.attest-undated {
+    margin-top: 12px;
+    color: #6b5a1e;
+    font-size: 12px;
+}
+
+/* the step before's uses, still on screen while the next load: dimmed rather
+   than blanked, so the section keeps its height and the arrows do not move */
+.attest-stale {
+    opacity: 0.45;
+    transition: opacity 120ms ease-out;
+}

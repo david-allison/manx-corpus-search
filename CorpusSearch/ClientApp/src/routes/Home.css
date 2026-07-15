@@ -10,11 +10,13 @@
     font-size: 21px;
     padding: 14px 26px;
     border-width: 2px;
-    box-shadow: 0 3px 14px rgba(62, 80, 88, 0.10);
+    box-shadow: 0 3px 14px rgba(62, 80, 88, 0.1);
 }
 
 .search-row-hero .corpus-search-input:focus {
-    box-shadow: var(--focus-ring), 0 3px 14px rgba(62, 80, 88, 0.10);
+    box-shadow:
+        var(--focus-ring),
+        0 3px 14px rgba(62, 80, 88, 0.1);
 }
 
 .search-row-hero .seg-control button {
