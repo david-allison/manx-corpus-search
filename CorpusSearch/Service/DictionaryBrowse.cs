@@ -123,3 +123,13 @@ public class BrowseHeadword
     /// <summary>The opening of its definition, for the index line</summary>
     public string? Gloss { get; set; }
 }
+
+/// <summary>The headwords either side of a word, for stepping through a
+/// dictionary the way you turn a page</summary>
+public class DictionaryNeighbours
+{
+    public required string Word { get; set; }
+    /// <summary>Null at the dictionary's first headword, or when it has none</summary>
+    public string? Previous { get; set; }
+    public string? Next { get; set; }
+}

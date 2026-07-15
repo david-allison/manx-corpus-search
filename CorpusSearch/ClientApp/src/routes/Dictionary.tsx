@@ -15,6 +15,7 @@ import {
 import { DefinitionText, GrammarLabel } from "../components/GrammarAbbr"
 import { UnverifiedMark } from "../components/UnverifiedMark"
 import { DictionaryScope } from "../components/DictionaryScope"
+import { HeadwordNav } from "../components/HeadwordNav"
 import {
     getMultidictLookupWord,
     MultidictLink,
@@ -180,6 +181,8 @@ export const Dictionary = () => {
             </form>
 
             {word && <DictionaryScope word={word} dict={dict} />}
+
+            {word && <HeadwordNav word={word} dict={dict} />}
 
             {word && (
                 <div className="dict-page-header">

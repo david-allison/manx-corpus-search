@@ -95,6 +95,18 @@ public class DictionaryController(
     }
 
     /// <summary>
+    /// The headwords either side of a word: stepping through a dictionary the way
+    /// you turn a page.
+    /// </summary>
+    /// <param name="dict">optional slug: one book's own order. Without it, the
+    /// union across every dictionary, in collation order</param>
+    [HttpGet("neighbours")]
+    public DictionaryNeighbours Neighbours([FromQuery] string word, [FromQuery] string? dict = null)
+    {
+        return browseService.Neighbours(dict, word);
+    }
+
+    /// <summary>
     /// The dictionary-coverage debug view: per-token dictionary/lemma status
     /// for each posted line (the client's dictionary debug mode).
     /// </summary>

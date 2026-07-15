@@ -82,6 +82,76 @@ public class DictionaryBrowseService(IEnumerable<ISearchDictionary> dictionarySe
         return empty;
     }
 
+    /// <summary>
+    /// The headwords either side of a word, for stepping through a dictionary the
+    /// way you turn a page.
+    ///
+    /// A word that is not a headword ('gheiney', an inflection) still has
+    /// neighbours: it is placed where it would be filed, between the headwords
+    /// it falls between. Scoped to one dictionary the order is that book's own;
+    /// across all of them it is the union in collation order, which is nobody's
+    /// printed order but is the only one they can share.
+    /// </summary>
+    public DictionaryNeighbours Neighbours(string? slug, string word)
+    {
+        var scope = slug == null ? null : Find(slug);
+        if (slug != null && scope == null)
+        {
+            return new DictionaryNeighbours { Word = word };
+        }
+
+        var ordered = scope != null
+            ? scope.Headwords.ToList()
+            // no book's order can be kept across books, so the union takes the
+            // reader's: a word in several dictionaries is one step, not three
+            : dictionaries
+                .Where(x => x.QueryLanguages.Contains("gv"))
+                .SelectMany(x => x.Headwords)
+                .Distinct(StringComparer.InvariantCultureIgnoreCase)
+                .OrderBy(DictionaryBrowse.CollationKey, StringComparer.Ordinal)
+                .ToList();
+        if (ordered.Count == 0)
+        {
+            return new DictionaryNeighbours { Word = word };
+        }
+
+        var at = ordered.FindIndex(x =>
+            string.Equals(x, word, StringComparison.InvariantCultureIgnoreCase));
+        if (at >= 0)
+        {
+            return new DictionaryNeighbours
+            {
+                Word = word,
+                Previous = at > 0 ? ordered[at - 1] : null,
+                Next = at + 1 < ordered.Count ? ordered[at + 1] : null,
+            };
+        }
+
+        // not a headword: file it, and take the entries it would sit between.
+        // The scoped list is the book's order, which is not the collation's, so
+        // this is where it would go rather than where a binary search says.
+        var key = DictionaryBrowse.CollationKey(word);
+        string? previous = null;
+        string? next = null;
+        foreach (var headword in ordered)
+        {
+            var compared = string.CompareOrdinal(DictionaryBrowse.CollationKey(headword), key);
+            if (compared < 0 && (previous == null
+                || string.CompareOrdinal(DictionaryBrowse.CollationKey(headword),
+                    DictionaryBrowse.CollationKey(previous)) > 0))
+            {
+                previous = headword;
+            }
+            if (compared > 0 && (next == null
+                || string.CompareOrdinal(DictionaryBrowse.CollationKey(headword),
+                    DictionaryBrowse.CollationKey(next)) < 0))
+            {
+                next = headword;
+            }
+        }
+        return new DictionaryNeighbours { Word = word, Previous = previous, Next = next };
+    }
+
     /// <summary>The opening of the headword's own entry. Basic summaries, because
     /// an index line is a glance: the full text belongs to the word's page.</summary>
     private static string? GlossOf(ISearchDictionary dictionary, string headword)
