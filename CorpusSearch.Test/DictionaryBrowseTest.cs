@@ -5,8 +5,8 @@ using NUnit.Framework;
 namespace CorpusSearch.Test;
 
 /// <summary>
-/// Browsing a dictionary by its printed index: the letters it has, and how deep
-/// a prefix bar has to go before a group stops being a wall of words.
+/// Browsing a dictionary by its printed index: the letters it has, and the
+/// chapters a letter's headwords file under.
 /// </summary>
 [TestFixture]
 public class DictionaryBrowseTest
@@ -60,42 +60,78 @@ public class DictionaryBrowseTest
     }
 
     [Test]
-    public void AGroupIsTheWholeWordWhenItIsShorterThanTheDepth()
+    public void AChapterIsTheWholeWordWhenItIsShorterThanTheDepth()
     {
         Assert.That(DictionaryBrowse.PrefixOf("ad", 3), Is.EqualTo("ad"));
         Assert.That(DictionaryBrowse.PrefixOf("aalin", 3), Is.EqualTo("aal"));
     }
 
-    /// <summary>Two letters is enough while the groups stay small: Cregeen's 'A'
-    /// is 150 headwords, and three letters would make 79 groups of two</summary>
-    [Test]
-    public void AShallowBarIsKeptWhileItsGroupsAreSmall()
-    {
-        var headwords = Enumerable.Range(0, 20)
-            .Select(i => $"a{(char)('a' + i % 10)}{i}")
-            .ToList();
+    // ---- the letter, chapter by chapter ----
 
-        Assert.That(DictionaryBrowse.DepthFor(headwords), Is.EqualTo(2));
+    /// <summary>The chapter is headed in capitals, as a printed index heads its
+    /// column, whatever case the book gives the words themselves</summary>
+    [Test]
+    public void AChapterIsHeadedInCapitals()
+    {
+        var chapters = DictionaryBrowse.Chapters(["aalin", "BILLEY"]);
+
+        Assert.That(chapters.Select(x => x.Key), Is.EqualTo(new[] { "AAL", "BIL" }));
     }
 
-    /// <summary>...but a letter with one crowded prefix goes deeper: at two
-    /// letters every 'caa...' word is one group</summary>
+    /// <summary>A chapter breaks where the prefix changes, and the words inside
+    /// keep the order they came in: 'aalin' was printed before 'aalid'</summary>
     [Test]
-    public void ACrowdedPrefixPushesTheBarDeeper()
+    public void AChapterBreaksWhereThePrefixChanges()
     {
-        var headwords = Enumerable.Range(0, 100).Select(i => $"caa{i}").ToList();
+        var chapters = DictionaryBrowse.Chapters(["aalin", "aalid", "aane", "abban"]);
 
-        Assert.That(DictionaryBrowse.DepthFor(headwords), Is.GreaterThan(2));
+        Assert.Multiple(() =>
+        {
+            Assert.That(chapters.Select(x => x.Key), Is.EqualTo(new[] { "AAL", "AAN", "ABB" }));
+            Assert.That(chapters[0].Words.Select(x => x.Word), Is.EqualTo(new[] { "aalin", "aalid" }));
+            Assert.That(chapters[1].Words.Select(x => x.Word), Is.EqualTo(new[] { "aane" }));
+        });
     }
 
-    /// <summary>Four letters is as far as it goes: past that a prefix is most of
-    /// the word it is filing, and a letter no depth can split (these share their
-    /// first four) is left as it is rather than chased further</summary>
+    /// <summary>A hyphen is not a letter, so 'agh-markiagh' files under AGH with
+    /// the rest of them, which is where Cregeen prints it</summary>
     [Test]
-    public void TheBarNeverGoesPastFourLetters()
+    public void AChapterFilesOnWhatTheCollationKeeps()
     {
-        var headwords = Enumerable.Range(0, 200).Select(i => $"aaaa{i}").ToList();
+        var chapters = DictionaryBrowse.Chapters(["aghin", "agh-markiagh"]);
 
-        Assert.That(DictionaryBrowse.DepthFor(headwords), Is.EqualTo(4));
+        Assert.That(chapters.Single().Key, Is.EqualTo("AGH"));
+    }
+
+    /// <summary>The chapters follow the book, so a name can come round twice:
+    /// Cregeen files 'faar-y-chaagh' among the 'caa' words, and gathering the two
+    /// FAAs would move it out of the place the book prints it</summary>
+    [Test]
+    public void AChapterComesRoundAgainWhereTheBookDoublesBack()
+    {
+        var chapters = DictionaryBrowse.Chapters(["faar-y-chaagh", "fa", "faag", "faaie"]);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(chapters.Select(x => x.Key), Is.EqualTo(new[] { "FAA", "FA", "FAA" }));
+            Assert.That(chapters[0].Words.Select(x => x.Word), Is.EqualTo(new[] { "faar-y-chaagh" }));
+            Assert.That(chapters[2].Words.Select(x => x.Word), Is.EqualTo(new[] { "faag", "faaie" }));
+        });
+    }
+
+    /// <summary>Kelly prints five headwords 'A': a word is identified by where it
+    /// sits, so a repeat is kept rather than folded away</summary>
+    [Test]
+    public void AWordTheBookPrintsTwiceIsListedTwice()
+    {
+        var chapters = DictionaryBrowse.Chapters(["A", "A"]);
+
+        Assert.That(chapters.Single().Words.Select(x => x.Word), Is.EqualTo(new[] { "A", "A" }));
+    }
+
+    [Test]
+    public void ALetterWithNoHeadwordsHasNoChapters()
+    {
+        Assert.That(DictionaryBrowse.Chapters([]), Is.Empty);
     }
 }

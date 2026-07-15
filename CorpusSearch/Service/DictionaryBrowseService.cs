@@ -5,25 +5,22 @@ using System.Linq;
 namespace CorpusSearch.Service;
 
 /// <summary>
-/// The dictionary as a book you can open at a letter: A|B|C across the top, a
-/// prefix bar under the letter, and the headwords under the prefix.
+/// The dictionary as a book you can open at a letter: A|B|C across the top, and
+/// the letter's headwords under the prefixes they file under.
 /// </summary>
-public class DictionaryBrowseService(IEnumerable<ISearchDictionary> dictionaryServices)
+public class DictionaryBrowseService(
+    IEnumerable<ISearchDictionary> dictionaryServices, CorpusVocabulary vocabulary)
 {
     private readonly ISearchDictionary[] dictionaries = dictionaryServices.ToArray();
-
-    /// <summary>How much of a definition an index line carries before it stops
-    /// being a glance and starts being the entry</summary>
-    private const int MaxGloss = 60;
 
     public ISearchDictionary? Find(string slug) =>
         dictionaries.FirstOrDefault(x =>
             string.Equals(x.Slug, slug, StringComparison.OrdinalIgnoreCase));
 
     /// <summary>
-    /// One page of the index. <paramref name="at"/> is a letter ("a") or a prefix
-    /// ("aal"); the first letter when it names neither, so the URL always opens
-    /// somewhere.
+    /// One letter of the index, whole. <paramref name="at"/> is a letter ("a"),
+    /// or a prefix ("aal") from a link made when a prefix was a page of its own;
+    /// the first letter when it names neither, so the URL always opens somewhere.
     /// </summary>
     public DictionaryBrowsePage? Page(string slug, string? at)
     {
@@ -35,19 +32,18 @@ public class DictionaryBrowseService(IEnumerable<ISearchDictionary> dictionarySe
 
         var headwords = dictionary.Headwords;
         var letters = DictionaryBrowse.LettersOf(headwords);
-        var empty = new DictionaryBrowsePage
+        var page = new DictionaryBrowsePage
         {
             Dictionary = dictionary.Identifier,
             Slug = dictionary.Slug,
-            Letters = letters.Select(c => c.ToString()).ToList(),
-            Prefixes = [],
-            Headwords = [],
+            Letters = letters.Select(c => char.ToUpperInvariant(c).ToString()).ToList(),
+            Chapters = [],
         };
         if (letters.Count == 0)
         {
             // the JSON is downloaded on deployment: without it the dictionary is
             // empty rather than broken, and so is its index
-            return empty;
+            return page;
         }
 
         // 'at' may be a letter or a prefix, and its first character says which
@@ -55,31 +51,13 @@ public class DictionaryBrowseService(IEnumerable<ISearchDictionary> dictionarySe
         var asked = at == null ? "" : DictionaryBrowse.CollationKey(at);
         var letter = asked.Length > 0 && letters.Contains(asked[0]) ? asked[0] : letters[0];
 
-        var ofLetter = headwords.Where(x => DictionaryBrowse.LetterOf(x) == letter).ToList();
-        var depth = DictionaryBrowse.DepthFor(ofLetter);
-        var prefixes = ofLetter
-            .Select(x => DictionaryBrowse.PrefixOf(x, depth))
-            .Distinct()
-            .Order(StringComparer.Ordinal)
+        page.Letter = char.ToUpperInvariant(letter).ToString();
+        page.Chapters = DictionaryBrowse
+            .Chapters(
+                headwords.Where(x => DictionaryBrowse.LetterOf(x) == letter),
+                vocabulary.IsAttested)
             .ToList();
-
-        // a letter opens at its first prefix; a prefix deeper or shallower than
-        // this letter's bar (a stale link, or 'a' for the whole letter) opens at
-        // the nearest one at or after it
-        var prefix = asked.Length > 1
-            ? prefixes.FirstOrDefault(
-                p => string.CompareOrdinal(p, DictionaryBrowse.PrefixOf(asked, depth)) >= 0)
-              ?? prefixes[0]
-            : prefixes[0];
-
-        empty.Letter = letter.ToString();
-        empty.Prefixes = prefixes;
-        empty.Prefix = prefix;
-        empty.Headwords = ofLetter
-            .Where(x => DictionaryBrowse.PrefixOf(x, depth) == prefix)
-            .Select(x => new BrowseHeadword { Word = x, Gloss = GlossOf(dictionary, x) })
-            .ToList();
-        return empty;
+        return page;
     }
 
     /// <summary>
@@ -119,11 +97,24 @@ public class DictionaryBrowseService(IEnumerable<ISearchDictionary> dictionarySe
             string.Equals(x, word, StringComparison.InvariantCultureIgnoreCase));
         if (at >= 0)
         {
+            // a step to a headword spelled as this one is a step to where you
+            // already are: the URL is the spelling, so Cregeen's two 'baare' and
+            // Kelly's five 'A' are each one page, however many entries they are
+            var back = Step(ordered, at, -1, word, used: false);
+            var forward = Step(ordered, at, +1, word, used: false);
             return new DictionaryNeighbours
             {
                 Word = word,
-                Previous = at > 0 ? ordered[at - 1] : null,
-                Next = at + 1 < ordered.Count ? ordered[at + 1] : null,
+                Attested = vocabulary.IsAttested(word),
+                Previous = back,
+                PreviousAttested = back != null && vocabulary.IsAttested(back),
+                Next = forward,
+                NextAttested = forward != null && vocabulary.IsAttested(forward),
+                // the nearest word either side the corpus uses is rarely the one
+                // next door: stepping through Phil Kelly one headword at a time
+                // walks a long way through words no text says
+                PreviousUsed = Step(ordered, at, -1, word, used: true),
+                NextUsed = Step(ordered, at, +1, word, used: true),
             };
         }
 
@@ -133,41 +124,79 @@ public class DictionaryBrowseService(IEnumerable<ISearchDictionary> dictionarySe
         var key = DictionaryBrowse.CollationKey(word);
         string? previous = null;
         string? next = null;
+        string? previousUsed = null;
+        string? nextUsed = null;
         foreach (var headword in ordered)
         {
             var compared = string.CompareOrdinal(DictionaryBrowse.CollationKey(headword), key);
-            if (compared < 0 && (previous == null
-                || string.CompareOrdinal(DictionaryBrowse.CollationKey(headword),
-                    DictionaryBrowse.CollationKey(previous)) > 0))
+            if (compared < 0)
             {
-                previous = headword;
+                if (Nearer(headword, previous, after: false))
+                {
+                    previous = headword;
+                }
+                if (Nearer(headword, previousUsed, after: false) && vocabulary.IsAttested(headword))
+                {
+                    previousUsed = headword;
+                }
             }
-            if (compared > 0 && (next == null
-                || string.CompareOrdinal(DictionaryBrowse.CollationKey(headword),
-                    DictionaryBrowse.CollationKey(next)) < 0))
+            if (compared > 0)
             {
-                next = headword;
+                if (Nearer(headword, next, after: true))
+                {
+                    next = headword;
+                }
+                if (Nearer(headword, nextUsed, after: true) && vocabulary.IsAttested(headword))
+                {
+                    nextUsed = headword;
+                }
             }
         }
-        return new DictionaryNeighbours { Word = word, Previous = previous, Next = next };
+        return new DictionaryNeighbours
+        {
+            Word = word,
+            Attested = vocabulary.IsAttested(word),
+            Previous = previous,
+            PreviousAttested = previous != null && vocabulary.IsAttested(previous),
+            Next = next,
+            NextAttested = next != null && vocabulary.IsAttested(next),
+            PreviousUsed = previousUsed,
+            NextUsed = nextUsed,
+        };
     }
 
-    /// <summary>The opening of the headword's own entry. Basic summaries, because
-    /// an index line is a glance: the full text belongs to the word's page.</summary>
-    private static string? GlossOf(ISearchDictionary dictionary, string headword)
+    /// <summary>Whether a headword sits closer to the word being filed than the
+    /// best found so far, on the given side of it</summary>
+    private static bool Nearer(string headword, string? best, bool after)
     {
-        var summary = dictionary.GetSummaries(headword, basic: true).FirstOrDefault()?.Summary;
-        if (string.IsNullOrWhiteSpace(summary))
+        if (best == null)
         {
-            return null;
+            return true;
         }
-        summary = summary.Trim();
-        if (summary.Length <= MaxGloss)
+        var compared = string.CompareOrdinal(
+            DictionaryBrowse.CollationKey(headword), DictionaryBrowse.CollationKey(best));
+        return after ? compared < 0 : compared > 0;
+    }
+
+    /// <summary>
+    /// The nearest headword from <paramref name="at"/> in the given direction
+    /// that is a page of its own: one spelled differently from
+    /// <paramref name="word"/>, and — when <paramref name="used"/> — one the
+    /// corpus actually says.
+    /// </summary>
+    private string? Step(List<string> ordered, int at, int step, string word, bool used)
+    {
+        for (var i = at + step; i >= 0 && i < ordered.Count; i += step)
         {
-            return summary;
+            if (string.Equals(ordered[i], word, StringComparison.InvariantCultureIgnoreCase))
+            {
+                continue;
+            }
+            if (!used || vocabulary.IsAttested(ordered[i]))
+            {
+                return ordered[i];
+            }
         }
-        var cut = summary[..MaxGloss];
-        var lastSpace = cut.LastIndexOf(' ');
-        return (lastSpace > MaxGloss / 2 ? cut[..lastSpace] : cut).TrimEnd() + "…";
+        return null;
     }
 }

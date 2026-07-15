@@ -6,16 +6,16 @@ namespace CorpusSearch.Service;
 
 /// <summary>
 /// Browsing a dictionary the way its printed index works: A|B|C across the top,
-/// then a bar of prefixes under the letter, then the headwords themselves.
+/// then the whole letter, its headwords filed under the prefix each one starts
+/// with.
 /// </summary>
 public static class DictionaryBrowse
 {
-    /// <summary>Above this a prefix group is a wall of words rather than a place
-    /// to look something up: it sets how deep <see cref="DepthFor"/> goes</summary>
-    private const int MaxPerGroup = 60;
-
-    /// <summary>Past four letters a prefix is most of the word it is filing</summary>
-    private const int MaxDepth = 4;
+    /// <summary>How many letters of a headword name the chapter it files under.
+    /// Three is what a printed index uses, and it is what the reader scans down
+    /// the margin: at two letters Phil Kelly's 'co' is 2,548 words, and past
+    /// three a chapter is most of the word it is filing.</summary>
+    public const int ChapterDepth = 3;
 
     /// <summary>
     /// How the books alphabetise, which is not how a computer does.
@@ -63,65 +63,81 @@ public static class DictionaryBrowse
     public static IReadOnlyList<char> LettersOf(IEnumerable<string> headwords) =>
         headwords.Select(LetterOf).Where(c => c != '\0').Distinct().Order().ToList();
 
-    /// <summary>
-    /// How many letters of prefix a letter's bar needs: the shallowest that
-    /// leaves no group a wall.
-    ///
-    /// One depth for a whole dictionary fits none of it. Cregeen's 150 'a'
-    /// headwords want two letters — at three they scatter into 79 groups of two —
-    /// while its 376 'c' want three, and Kelly's 1,392 'c' still leave a group of
-    /// 128 at three. So each letter gets its own.
-    ///
-    /// Some letters have no good depth at all. Phil Kelly is a 66,000-word
-    /// translation list rather than a book with an index: its 'c' alone is 10,773
-    /// headwords, which is 12 prefixes of 2,548 at two letters and 625 of 364 at
-    /// four. Nothing here rescues that — it wants a browse of its own, or none.
-    /// </summary>
-    public static int DepthFor(IReadOnlyCollection<string> lettersHeadwords)
-    {
-        for (var depth = 2; depth < MaxDepth; depth++)
-        {
-            var biggest = lettersHeadwords.GroupBy(x => PrefixOf(x, depth)).Max(g => g.Count());
-            if (biggest <= MaxPerGroup)
-            {
-                return depth;
-            }
-        }
-        return MaxDepth;
-    }
-
-    /// <summary>A headword's group at a depth; the whole word when it is shorter
-    /// ('ad' is its own group at three letters)</summary>
+    /// <summary>A headword's chapter at a depth; the whole word when it is shorter
+    /// ('ad' is its own chapter at three letters, 'a' its own at one)</summary>
     public static string PrefixOf(string headword, int depth)
     {
         var key = CollationKey(headword);
         return key.Length <= depth ? key : key[..depth];
     }
+
+    /// <summary>
+    /// A letter's headwords in chapters: a new one each time the prefix changes.
+    ///
+    /// Chunked in the order given rather than grouped, because the order given is
+    /// the book's and grouping would leave it. Cregeen files 'faar-y-chaagh'
+    /// among the 'caa' words, so its 'f' opens with an FAA of that one word and
+    /// meets FAA again where the F section proper begins. A name appearing
+    /// twice is the book being honest — 11 times in Cregeen, 23 in Kelly —
+    /// where gathering the two would move a word out of the place it is printed.
+    /// </summary>
+    /// <param name="attested">Whether the corpus uses a word; everything is taken
+    /// as used when nothing is passed, so a caller with no index greys nothing</param>
+    public static IReadOnlyList<BrowseChapter> Chapters(
+        IEnumerable<string> headwords, Func<string, bool>? attested = null)
+    {
+        var chapters = new List<BrowseChapter>();
+        foreach (var headword in headwords)
+        {
+            var key = PrefixOf(headword, ChapterDepth).ToUpperInvariant();
+            if (chapters.Count == 0 || chapters[^1].Key != key)
+            {
+                chapters.Add(new BrowseChapter { Key = key, Words = [] });
+            }
+            chapters[^1].Words.Add(new BrowseWord
+            {
+                Word = headword,
+                Attested = attested?.Invoke(headword) ?? true,
+            });
+        }
+        return chapters;
+    }
 }
 
-/// <summary>A dictionary's index: the letters, one letter's prefixes, and one
-/// prefix's headwords</summary>
+/// <summary>A dictionary's index: the letters, and one letter's headwords in
+/// their chapters</summary>
 public class DictionaryBrowsePage
 {
     public required string Dictionary { get; set; }
     public required string Slug { get; set; }
-    /// <summary>Every letter the dictionary has headwords for</summary>
+    /// <summary>Every letter the dictionary has headwords for, in capitals as a
+    /// printed index has them</summary>
     public required List<string> Letters { get; set; }
-    /// <summary>The letter being shown; null when the dictionary is empty</summary>
+    /// <summary>The letter being shown, in capitals; null when the dictionary is
+    /// empty</summary>
     public string? Letter { get; set; }
-    /// <summary>The letter's prefix bar, as deep as this letter needs</summary>
-    public required List<string> Prefixes { get; set; }
-    /// <summary>The prefix being shown</summary>
-    public string? Prefix { get; set; }
-    public required List<BrowseHeadword> Headwords { get; set; }
+    /// <summary>The whole letter, chapter by chapter</summary>
+    public required List<BrowseChapter> Chapters { get; set; }
 }
 
-public class BrowseHeadword
+/// <summary>One prefix and the headwords filed under it</summary>
+public class BrowseChapter
+{
+    /// <summary>The prefix in capitals, as a printed index heads its column:
+    /// 'AAL', or 'AD' where the word is shorter than the chapter is deep</summary>
+    public required string Key { get; set; }
+    /// <summary>A word may repeat — Kelly prints five headwords 'A'</summary>
+    public required List<BrowseWord> Words { get; set; }
+}
+
+/// <summary>A headword in the index, and whether the corpus ever says it</summary>
+public class BrowseWord
 {
     /// <summary>As the dictionary prints it: Kelly capitalises, Cregeen does not</summary>
     public required string Word { get; set; }
-    /// <summary>The opening of its definition, for the index line</summary>
-    public string? Gloss { get; set; }
+    /// <summary>False where no text we hold uses the word: a dictionary lists what
+    /// the language can say, and this is what it has said</summary>
+    public required bool Attested { get; set; }
 }
 
 /// <summary>The headwords either side of a word, for stepping through a
@@ -132,4 +148,16 @@ public class DictionaryNeighbours
     /// <summary>Null at the dictionary's first headword, or when it has none</summary>
     public string? Previous { get; set; }
     public string? Next { get; set; }
+    /// <summary>Whether the corpus uses the word itself</summary>
+    public bool Attested { get; set; }
+    /// <summary>Whether the corpus uses <see cref="Previous"/>; false when there
+    /// is none</summary>
+    public bool PreviousAttested { get; set; }
+    public bool NextAttested { get; set; }
+    /// <summary>The nearest headword either side the corpus actually uses, which
+    /// is not usually the one next door: half of Phil Kelly is unattested, so
+    /// stepping one word at a time can walk a long way through words no text
+    /// says. Null when there is none left in that direction.</summary>
+    public string? PreviousUsed { get; set; }
+    public string? NextUsed { get; set; }
 }

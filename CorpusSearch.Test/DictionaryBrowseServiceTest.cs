@@ -1,13 +1,14 @@
 using System.Collections.Generic;
 using System.Linq;
+using CorpusSearch.Dependencies.Lucene;
 using CorpusSearch.Service;
 using NUnit.Framework;
 
 namespace CorpusSearch.Test;
 
 /// <summary>
-/// One page of a dictionary's index: the letters it has, the letter's prefix
-/// bar, and the headwords under a prefix.
+/// One page of a dictionary's index: the letters it has, and one letter's
+/// headwords in the chapters they file under.
 /// </summary>
 [TestFixture]
 public class DictionaryBrowseServiceTest
@@ -30,8 +31,11 @@ public class DictionaryBrowseServiceTest
                 : [];
     }
 
+    /// <summary>No corpus behind it, so <see cref="CorpusVocabulary.IsAttested"/>
+    /// answers true throughout: these tests are about the index, not about which
+    /// of its words a text happens to use</summary>
     private static DictionaryBrowseService Service(params ISearchDictionary[] dictionaries) =>
-        new(dictionaries);
+        new(dictionaries, new CorpusVocabulary(LemmaTable.Instance));
 
     [Test]
     public void AnUnknownDictionaryHasNoIndex()
@@ -39,6 +43,8 @@ public class DictionaryBrowseServiceTest
         Assert.That(Service(new FakeDictionary("cregeen", "aa")).Page("nope", null), Is.Null);
     }
 
+    /// <summary>The bar is in capitals, as a printed index has it, though no book
+    /// here prints its headwords that way</summary>
     [Test]
     public void TheLetterBarComesFromTheHeadwords()
     {
@@ -46,7 +52,7 @@ public class DictionaryBrowseServiceTest
             .Page("d", null)!;
 
         // ç files under c, as the books have it
-        Assert.That(page.Letters, Is.EqualTo(new[] { "a", "b", "c", "y" }));
+        Assert.That(page.Letters, Is.EqualTo(new[] { "A", "B", "C", "Y" }));
     }
 
     [Test]
@@ -56,21 +62,24 @@ public class DictionaryBrowseServiceTest
 
         Assert.Multiple(() =>
         {
-            Assert.That(page.Letter, Is.EqualTo("a"));
-            Assert.That(page.Headwords.Select(x => x.Word), Is.EqualTo(new[] { "aa" }));
+            Assert.That(page.Letter, Is.EqualTo("A"));
+            Assert.That(page.Chapters.Single().Words.Select(x => x.Word), Is.EqualTo(new[] { "aa" }));
         });
     }
 
+    /// <summary>A letter is shown whole: every chapter of it, not one prefix at a
+    /// time</summary>
     [Test]
-    public void ALetterOpensAtItsFirstPrefix()
+    public void ALetterShowsAllOfItsChapters()
     {
-        var page = Service(new FakeDictionary("d", "aalin", "aalid", "abban")).Page("d", "a")!;
+        var page = Service(new FakeDictionary("d", "aalin", "aalid", "abban", "baa"))
+            .Page("d", "a")!;
 
         Assert.Multiple(() =>
         {
-            Assert.That(page.Prefixes, Is.EqualTo(new[] { "aa", "ab" }));
-            Assert.That(page.Prefix, Is.EqualTo("aa"));
-            Assert.That(page.Headwords.Select(x => x.Word), Is.EqualTo(new[] { "aalin", "aalid" }));
+            Assert.That(page.Letter, Is.EqualTo("A"));
+            Assert.That(page.Chapters.Select(x => x.Key), Is.EqualTo(new[] { "AAL", "ABB" }));
+            Assert.That(page.Chapters[0].Words.Select(x => x.Word), Is.EqualTo(new[] { "aalin", "aalid" }));
         });
     }
 
@@ -81,19 +90,7 @@ public class DictionaryBrowseServiceTest
     {
         var page = Service(new FakeDictionary("d", "aalin", "aalid")).Page("d", "aa")!;
 
-        Assert.That(page.Headwords.Select(x => x.Word), Is.EqualTo(new[] { "aalin", "aalid" }));
-    }
-
-    [Test]
-    public void APrefixShowsItsOwnHeadwords()
-    {
-        var page = Service(new FakeDictionary("d", "aalin", "abban", "abbyr")).Page("d", "ab")!;
-
-        Assert.Multiple(() =>
-        {
-            Assert.That(page.Prefix, Is.EqualTo("ab"));
-            Assert.That(page.Headwords.Select(x => x.Word), Is.EqualTo(new[] { "abban", "abbyr" }));
-        });
+        Assert.That(page.Chapters.Single().Words.Select(x => x.Word), Is.EqualTo(new[] { "aalin", "aalid" }));
     }
 
     /// <summary>A hyphen is not a letter: 'agh-markiagh' belongs with the 'agh'
@@ -103,26 +100,36 @@ public class DictionaryBrowseServiceTest
     {
         var page = Service(new FakeDictionary("d", "aghin", "agh-markiagh")).Page("d", "ag")!;
 
-        Assert.That(page.Headwords.Select(x => x.Word),
+        Assert.That(page.Chapters.Single().Words.Select(x => x.Word),
             Is.EqualTo(new[] { "aghin", "agh-markiagh" }));
     }
 
-    /// <summary>A link from a letter whose bar has since deepened, or a prefix
-    /// nothing starts with, still opens somewhere rather than empty</summary>
+    /// <summary>A prefix was once a page of its own, so links to one are out
+    /// there: it opens the letter it names rather than nothing</summary>
     [Test]
-    public void APrefixNothingStartsWithOpensAtTheNearestOne()
+    public void AnOldPrefixLinkOpensItsLetter()
     {
-        var page = Service(new FakeDictionary("d", "aalin", "azzy")).Page("d", "am")!;
+        var page = Service(new FakeDictionary("d", "aalin", "azzy")).Page("d", "aal")!;
 
-        Assert.That(page.Headwords, Is.Not.Empty);
+        Assert.Multiple(() =>
+        {
+            Assert.That(page.Letter, Is.EqualTo("A"));
+            Assert.That(page.Chapters.Select(x => x.Key), Is.EqualTo(new[] { "AAL", "AZZ" }));
+        });
     }
 
+    /// <summary>A letter nothing starts with still opens somewhere rather than
+    /// empty</summary>
     [Test]
-    public void TheIndexLineCarriesTheOpeningOfTheEntry()
+    public void ALetterTheDictionaryHasNoneOfOpensAtTheFirst()
     {
-        var page = Service(new FakeDictionary("d", "aalin")).Page("d", "a")!;
+        var page = Service(new FakeDictionary("d", "aalin", "azzy")).Page("d", "q")!;
 
-        Assert.That(page.Headwords.Single().Gloss, Is.EqualTo("what aalin means"));
+        Assert.Multiple(() =>
+        {
+            Assert.That(page.Letter, Is.EqualTo("A"));
+            Assert.That(page.Chapters, Is.Not.Empty);
+        });
     }
 
     // ---- stepping through, headword by headword ----
@@ -160,6 +167,24 @@ public class DictionaryBrowseServiceTest
         {
             Assert.That(n.Previous, Is.EqualTo("aghin"));
             Assert.That(n.Next, Is.EqualTo("aker"));
+        });
+    }
+
+    /// <summary>Cregeen prints 'baare' twice over, and the URL is the spelling:
+    /// the two are one page, so a step lands on the next word rather than back
+    /// where it started</summary>
+    [Test]
+    public void AHeadwordThePrintedTwiceStepsPastItsTwin()
+    {
+        var service = Service(
+            new FakeDictionary("d", "baar-aadjin", "baare", "baare", "baarelagh"));
+
+        var n = service.Neighbours("d", "baare");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(n.Next, Is.EqualTo("baarelagh"), "not 'baare' again");
+            Assert.That(n.Previous, Is.EqualTo("baar-aadjin"));
         });
     }
 
@@ -214,7 +239,7 @@ public class DictionaryBrowseServiceTest
         Assert.Multiple(() =>
         {
             Assert.That(page.Letters, Is.Empty);
-            Assert.That(page.Headwords, Is.Empty);
+            Assert.That(page.Chapters, Is.Empty);
             Assert.That(page.Letter, Is.Null);
         });
     }
