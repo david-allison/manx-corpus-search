@@ -6,9 +6,10 @@ import {
     DictionaryPageResponse,
     Summary,
 } from "../api/DictionaryApi"
-import { headingFor } from "../utils/DictionaryEntries"
+import { dictionaryWordUrl, headingFor } from "../utils/DictionaryEntries"
 import { DefinitionText, GrammarLabel } from "../components/GrammarAbbr"
 import { UnverifiedMark } from "../components/UnverifiedMark"
+import { DictionaryScope } from "../components/DictionaryScope"
 import {
     getMultidictLookupWord,
     MultidictLink,
@@ -93,7 +94,8 @@ const Entry = ({
  * per-dictionary sections, structured plurals, the root chain, pronunciation,
  * and near-spelling suggestions on a miss. */
 export const Dictionary = () => {
-    const { word } = useParams()
+    // `dict` is set only by /dictionary/in/:dict/:word: the scoped page
+    const { word, dict } = useParams()
     const navigate = useNavigate()
     const [query, setQuery] = useState(word ?? "")
     const [page, setPage] = useState<DictionaryPageResponse | null>(null)
@@ -107,7 +109,7 @@ export const Dictionary = () => {
         setFailed(false)
         if (!word) return
         const abort = new AbortController()
-        dictionaryPage(word, abort.signal)
+        dictionaryPage(word, dict, abort.signal)
             .then(setPage)
             .catch((e) => {
                 if (!abort.signal.aborted) {
@@ -116,13 +118,13 @@ export const Dictionary = () => {
                 }
             })
         return () => abort.abort()
-    }, [word])
+    }, [word, dict])
 
     const onSubmit = (event: FormEvent) => {
         event.preventDefault()
         const trimmed = query.trim()
         if (trimmed) {
-            void navigate(`/dictionary/${encodeURIComponent(trimmed)}`)
+            void navigate(dictionaryWordUrl(trimmed, dict))
         }
     }
 
@@ -139,6 +141,8 @@ export const Dictionary = () => {
                 />
                 <button type="submit">Look up</button>
             </form>
+
+            {word && <DictionaryScope word={word} dict={dict} />}
 
             {word && (
                 <div className="dict-page-header">
@@ -188,7 +192,7 @@ export const Dictionary = () => {
                     <p className="dict-page-bridge">
                         <strong>{page.word}</strong>
                         {" is a c. 1610 spelling (Phillips) of "}
-                        <Link to={`/dictionary/${encodeURIComponent(target)}`}>
+                        <Link to={dictionaryWordUrl(target, dict)}>
                             {target}
                         </Link>
                         {" — the entries below are for "}
