@@ -273,6 +273,45 @@ public class DictionaryLookupServiceTest
         Assert.That(service.Lookup("gv", "vannin").Single().UnverifiedLink, Is.False);
     }
 
+    /// <summary>The vannin case: Cregeen lists 'vannin' among vann's conjugation,
+    /// so a lookup of it answers with "did bless" — but the table lemmatises the
+    /// spelling to Mannin. The entry documents a homograph, not this word</summary>
+    [Test]
+    public void AnEntrySharingOnlyTheSpellingIsDropped()
+    {
+        var tsv = "form\tlemmaId\tlemma\tlinkType\tpos\tvia\tnote\n"
+                  + "vannin\tmannin.n\tMannin\toverride\ts. f.\tMannin\t\n"
+                  + "vann\tbann.v\tbann\tself\tv.\tvann\t\n"
+                  + "mannin\tmannin.n\tMannin\tself\ts. f.\tMannin\t\n";
+        // 'vann' answers for 'vannin' the way a dictionary's inflected-form list does
+        var cregeen = new FakeDictionary(new Dictionary<string, string>
+        {
+            ["vannin"] = "vann",
+            ["vann"] = "vann",
+            ["mannin"] = "Mannin",
+        });
+        var service = new DictionaryLookupService([cregeen], LemmaTable.Load(new StringReader(tsv)),
+            LemmaResolver.Empty);
+
+        Assert.That(Lookup(service, "vannin"), Is.EqualTo(new[] { "Mannin" }));
+    }
+
+    /// <summary>The drop only applies where the table reads the two as different
+    /// lexemes: a plural answering from its entry ('biljin' -> BILLEY) shares the
+    /// selection's reading and stays</summary>
+    [Test]
+    public void AnEntryTheSelectionSharesAReadingWithIsKept()
+    {
+        var tsv = "form\tlemmaId\tlemma\tlinkType\tpos\tvia\tnote\n"
+                  + "biljin\tbilley.n\tbilley\tinflected\ts. m.\tbilley\t\n"
+                  + "billey\tbilley.n\tbilley\tself\ts. m.\tbilley\t\n";
+        var service = new DictionaryLookupService(
+            [new FakeDictionary(new Dictionary<string, string> { ["biljin"] = "BILLEY" })],
+            LemmaTable.Load(new StringReader(tsv)), LemmaResolver.Empty);
+
+        Assert.That(Lookup(service, "biljin"), Is.EqualTo(new[] { "BILLEY" }));
+    }
+
     /// <summary>Root-derived entries carry their hop depth so the popup can nest
     /// them; entries for the selection itself stay at depth 0</summary>
     [Test]
