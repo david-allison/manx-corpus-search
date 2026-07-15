@@ -44,8 +44,9 @@ const lines = {
     useCount: 9,
     groups: [
         {
-            lemmaId: "aase.v",
+            lemmaIds: ["aase.v"],
             lemma: "aase",
+            classes: ["v"],
             count: 9,
             lines: [
                 {
@@ -59,15 +60,29 @@ const lines = {
     ],
 }
 
-const respond = () =>
-    fetchMock.mockImplementation((url) => {
-        const href = hrefOf(url)
-        const body = href.includes("/attestations/") ? lines : walk
-        return Promise.resolve({
+/** the walk is the same in every case here; the step's uses are what varies */
+const respondWith = (uses: unknown) =>
+    fetchMock.mockImplementation((url) =>
+        Promise.resolve({
             ok: true,
-            json: () => Promise.resolve(body),
-        } as Response)
-    })
+            json: () =>
+                Promise.resolve(
+                    hrefOf(url).includes("/attestations/") ? uses : walk,
+                ),
+        } as Response),
+    )
+
+const respond = () => respondWith(lines)
+
+/** one step's uses, with `groups` swapped for the reading(s) under test */
+const withGroups = (
+    useCount: number,
+    groups: Record<string, unknown>[],
+): unknown => ({
+    ...lines,
+    useCount,
+    groups: groups.map((g) => ({ ...lines.groups[0], ...g })),
+})
 
 /** the walk's own tests: the first-seen band it hosts has its own file, and
  * an unattested history keeps it out of the way here */
@@ -135,36 +150,94 @@ describe("AttestationWalker", () => {
     })
 
     it("names each reading when the word is ambiguous", async () => {
-        fetchMock.mockImplementation((url) => {
-            const href = hrefOf(url)
-            const body = href.includes("/attestations/")
-                ? {
-                      ...lines,
-                      useCount: 3,
-                      groups: [
-                          {
-                              ...lines.groups[0],
-                              lemmaId: "bee.v",
-                              lemma: "bee",
-                              count: 2,
-                          },
-                          {
-                              ...lines.groups[0],
-                              lemmaId: "mee.n",
-                              lemma: "mee",
-                              count: 1,
-                          },
-                      ],
-                  }
-                : walk
-            return Promise.resolve({
-                ok: true,
-                json: () => Promise.resolve(body),
-            } as Response)
-        })
+        respondWith(
+            withGroups(3, [
+                { lemmaIds: ["bee.v"], lemma: "bee", classes: ["v"], count: 2 },
+                { lemmaIds: ["mee.n"], lemma: "mee", classes: ["n"], count: 1 },
+            ]),
+        )
         renderWalker()
 
         expect(await screen.findByText("bee")).toBeTruthy()
         expect(screen.getByText("mee")).toBeTruthy()
+        // different headwords: each names the row on its own, and a class beside
+        // it would be noise
+        expect(screen.queryByText("v.")).toBeNull()
+    })
+
+    /** The bug this merging fixed: 'jaagh' is smoke (jaagh.n) or the verb, and a
+     * line the resolver left as either answered to both queries — two rows, both
+     * reading "jaagh ×1", showing the same quote twice under a document that says
+     * "1 use". One row, and it says why one row covers two readings. */
+    it("names both readings on a row standing for either", async () => {
+        respondWith(
+            withGroups(1, [
+                {
+                    lemmaIds: ["jaagh.n", "jaagh.v"],
+                    lemma: "jaagh",
+                    classes: ["n", "v"],
+                    count: 1,
+                },
+            ]),
+        )
+        renderWalker()
+
+        expect(await screen.findByText("jaagh")).toBeTruthy()
+        expect(screen.getByText("n. or v.")).toBeTruthy()
+        // the quote once, not once per reading
+        expect(screen.getAllByText("Daase")).toHaveLength(1)
+    })
+
+    it("tells two rows of one headword apart by their class", async () => {
+        // the resolver read one line as the verb and one as the noun: separate
+        // facts, but 'aase' alone tells neither row from the other
+        respondWith(
+            withGroups(2, [
+                {
+                    lemmaIds: ["aase.v"],
+                    lemma: "aase",
+                    classes: ["v"],
+                    count: 2,
+                },
+                {
+                    lemmaIds: ["aase.n"],
+                    lemma: "aase",
+                    classes: ["n"],
+                    count: 1,
+                },
+            ]),
+        )
+        renderWalker()
+
+        expect(await screen.findByText("v.")).toBeTruthy()
+        expect(screen.getByText("n.")).toBeTruthy()
+    })
+
+    it("leaves a lone reading unnamed: the headword is its whole name", async () => {
+        respond()
+        renderWalker()
+        await screen.findByText("Daase")
+
+        expect(screen.getByText("aase")).toBeTruthy()
+        expect(screen.queryByText("v.")).toBeNull()
+    })
+
+    it("names no class where a reading's has no abbreviation to print", async () => {
+        // 'x' is every class that is not noun, verb or adjective: printing only
+        // the rest would read as the row's whole story
+        respondWith(
+            withGroups(2, [
+                {
+                    lemmaIds: ["mee.x", "mee.n"],
+                    lemma: "mee",
+                    classes: ["x", "n"],
+                    count: 2,
+                },
+            ]),
+        )
+        renderWalker()
+
+        expect(await screen.findByText("mee")).toBeTruthy()
+        expect(screen.queryByText("n.")).toBeNull()
     })
 })

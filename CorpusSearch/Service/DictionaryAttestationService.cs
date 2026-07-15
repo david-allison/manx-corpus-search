@@ -83,6 +83,24 @@ public class DictionaryAttestationService(
             ? line.ManxHighlights.Select(h => (line.CsvLineNumber, h.Start))
             : [(line.CsvLineNumber, -1)]);
 
+    /// <summary>The word class a lemma id names ("jaagh.v" → "v"), or null where it
+    /// names none: an id may carry no class at all ("ny-adv", "bagh-1").</summary>
+    private static string? ClassOf(string lemmaId)
+    {
+        var dot = lemmaId.LastIndexOf('.');
+        return dot < 0 ? null : lemmaId[(dot + 1)..];
+    }
+
+    /// <summary>The word classes naming a row's readings: jaagh.n and jaagh.v → n, v,
+    /// which is what tells one reading of a headword from another where the headword
+    /// itself cannot. Empty unless every id names one — a list missing a reading would
+    /// read as the row's whole story.</summary>
+    private static List<string> ClassesOf(IEnumerable<string> lemmaIds)
+    {
+        var classes = lemmaIds.Select(ClassOf).ToList();
+        return classes.Contains(null) ? [] : classes.OfType<string>().Distinct().ToList();
+    }
+
     /// <summary>Every use of the word's lexeme in one document, grouped by the reading
     /// each line was resolved to, with the surface words highlighted. Null when the
     /// document does not attest it.</summary>
@@ -101,18 +119,40 @@ public class DictionaryAttestationService(
         {
             return null;
         }
-        var groups = matched
-            .Select(x => new AttestationLemmaGroup
+        var readings = matched
+            .Select(x => new
             {
-                LemmaId = x.Id,
+                x.Id,
+                x.Result,
                 Lemma = lemmaTable.DisplayLemmaOf(x.Id) ?? x.Id,
-                // one term, so its spans cannot overlap each other: a plain count
-                Count = Occurrences(x.Result!).Count(),
-                Lines = x.Result!.Lines
-                    .OrderBy(line => line.CsvLineNumber)
-                    .Take(MaxLinesPerLemma)
-                    .ToList(),
+                Uses = Occurrences(x.Result!).ToHashSet(),
             })
+            .ToList();
+        var groups = readings
+            .GroupBy(x => x.Lemma)
+            // readings a reader could not tell apart are one row. 'jaagh' is smoke
+            // (jaagh.n) or the verb (jaagh.v): both display as "jaagh", so a line the
+            // resolver left as either answers to both queries and would head two rows
+            // reading the same. That the use is either of them is one fact about one
+            // word, and the row names both readings to say so — twin rows only show a
+            // repeat. Readings claiming *different* words stay apart: there the
+            // resolver did decide, and the rows differ by more than their labels.
+            .SelectMany(lemma => lemma
+                .GroupBy(x => x.Uses, HashSet<(int Line, int Start)>.CreateSetComparer())
+                .Select(row => new AttestationLemmaGroup
+                {
+                    LemmaIds = row.Select(x => x.Id).ToList(),
+                    Lemma = lemma.Key,
+                    Classes = ClassesOf(row.Select(x => x.Id)),
+                    // the row's readings claim the same uses, so the count is that
+                    // set's: one term's spans cannot overlap each other
+                    Count = row.Key.Count,
+                    // and the same uses are the same lines: any reading's serve
+                    Lines = row.First().Result!.Lines
+                        .OrderBy(line => line.CsvLineNumber)
+                        .Take(MaxLinesPerLemma)
+                        .ToList(),
+                }))
             // the reading a text uses most leads: a one-off demutation guess should
             // not head a document that is really about the other word
             .OrderByDescending(x => x.Count)
@@ -178,16 +218,22 @@ public class AttestationLines
     public required List<AttestationLemmaGroup> Groups { get; set; }
 }
 
-/// <summary>The uses of one lemma reading within a document</summary>
+/// <summary>The uses of one reading of a word within a document — or of several
+/// readings, where nothing on the page could tell them apart</summary>
 public class AttestationLemmaGroup
 {
-    /// <summary>"beg.a": distinguishes homographs the display lemma cannot</summary>
-    public required string LemmaId { get; set; }
+    /// <summary>The readings the row stands for ("beg.a"): distinguishes homographs
+    /// the display lemma cannot. More than one where they share that lemma and claim
+    /// the very same words — the document's use of the word is genuinely either.</summary>
+    public required List<string> LemmaIds { get; set; }
     /// <summary>The headword a reader would look up ("beg")</summary>
     public required string Lemma { get; set; }
-    /// <summary>Uses this reading claims, across the whole document rather than only
-    /// the lines <see cref="Lines"/> shows. A word the resolver left ambiguous is
-    /// claimed by every reading, so these do not sum to
+    /// <summary>The word classes of <see cref="LemmaIds"/> ("n", "v"), for naming a
+    /// reading the headword alone does not. Empty where an id names no class.</summary>
+    public required List<string> Classes { get; set; }
+    /// <summary>Uses the row claims, across the whole document rather than only the
+    /// lines <see cref="Lines"/> shows. A word the resolver left ambiguous between
+    /// two headwords is claimed by each, so these do not sum to
     /// <see cref="AttestationLines.UseCount"/>.</summary>
     public int Count { get; set; }
     public required List<DocumentLine> Lines { get; set; }

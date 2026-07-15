@@ -81,19 +81,59 @@ const UseLine = ({
     )
 }
 
+/** The abbreviation a lemma id's word class reads as, as the books print it.
+ * Only the three the ids name: 'x' is every class that is not one of them —
+ * adverbs, pronouns, particles, participles — a bucket, and no name to print. */
+const CLASS_ABBREVIATION: Record<string, string> = {
+    n: "n.",
+    v: "v.",
+    a: "a.",
+}
+
+/** How a row names the reading it stands for, where the headword alone does not:
+ * 'n. or v.' on a row standing for both readings of a line that is genuinely
+ * either, and 'n.' where another row is the same headword read differently.
+ *
+ * Null where the headword is the whole name — the usual case, and a class on a
+ * row with nothing to be told from is noise — and null too where a class has no
+ * abbreviation to print, since naming only the rest would misread the row. */
+const classLabelFor = (
+    group: AttestationLemmaGroup,
+    groups: AttestationLemmaGroup[],
+): string | null => {
+    const sharesLemma = groups.some(
+        (other) => other !== group && other.lemma === group.lemma,
+    )
+    if (group.lemmaIds.length === 1 && !sharesLemma) {
+        return null
+    }
+    const named = group.classes.map((c) => CLASS_ABBREVIATION[c])
+    return named.length > 0 && named.every(Boolean) ? named.join(" or ") : null
+}
+
 /** The uses a text makes of one reading: the lexeme in a left column, its lines
  * tabbed across from it. An ambiguous word ('vee' is bee or mee) meets the
- * reader as one row per lexeme rather than as one interleaved list. */
+ * reader as one row per lexeme rather than as one interleaved list.
+ *
+ * Where the row stands for readings that cannot be told apart ('jaagh' is smoke
+ * or the verb), `classes` names them: the row is one use of one word which is
+ * genuinely either, and saying so is the difference between an ambiguity and
+ * what would otherwise look like the same quote printed twice. */
 const LemmaGroup = ({
     group,
+    classes,
     ident,
 }: {
     group: AttestationLemmaGroup
+    classes: string | null
     ident: string
 }) => (
     <div className="attest-group">
         <p className="attest-group-head">
             <em className="attest-group-lemma">{group.lemma}</em>
+            {classes && (
+                <span className="attest-group-class">{` ${classes}`}</span>
+            )}
             <span className="attest-group-count">
                 {` ×${group.count.toLocaleString()}`}
             </span>
@@ -323,8 +363,12 @@ export const AttestationWalker = ({
                             <div className={fresh ? undefined : "attest-stale"}>
                                 {lines.groups.map((group) => (
                                     <LemmaGroup
-                                        key={group.lemmaId}
+                                        key={group.lemmaIds.join(" ")}
                                         group={group}
+                                        classes={classLabelFor(
+                                            group,
+                                            lines.groups,
+                                        )}
                                         ident={lines.ident}
                                     />
                                 ))}

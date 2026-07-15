@@ -124,7 +124,7 @@ public class DictionaryAttestationServiceTest : QueryBase
         AddDated("Doc", 1748, "Ta mee aase", "Cha nel eh", "Daase yn billey");
 
         var found = Service().InDocument("aase", "Doc").Result!;
-        var verb = found.Groups.Single(x => x.LemmaId == "aase.v");
+        var verb = found.Groups.Single(x => x.LemmaIds.Contains("aase.v"));
 
         Assert.Multiple(() =>
         {
@@ -144,7 +144,7 @@ public class DictionaryAttestationServiceTest : QueryBase
         AddDated("Doc", 1748, "Daase yn billey");
 
         var line = Service().InDocument("aase", "Doc").Result!
-            .Groups.Single(x => x.LemmaId == "aase.v").Lines.Single();
+            .Groups.Single(x => x.LemmaIds.Contains("aase.v")).Lines.Single();
 
         var highlighted = line.ManxHighlights!.Select(x => line.Manx![x.Start..x.End]);
         Assert.That(highlighted, Is.EqualTo(new[] { "Daase" }));
@@ -158,7 +158,7 @@ public class DictionaryAttestationServiceTest : QueryBase
         AddDated("Doc", 1748, Enumerable.Repeat("Ta mee aase", 20).ToArray());
 
         var group = Service().InDocument("aase", "Doc").Result!
-            .Groups.Single(x => x.LemmaId == "aase.v");
+            .Groups.Single(x => x.LemmaIds.Contains("aase.v"));
 
         Assert.Multiple(() =>
         {
@@ -167,20 +167,49 @@ public class DictionaryAttestationServiceTest : QueryBase
         });
     }
 
-    /// <summary>'aase' is both a noun (growth) and a verb (to grow): the reader
-    /// meets them as two readings rather than one interleaved list</summary>
+    /// <summary>'aase' is both a noun (growth) and a verb (to grow), and this line
+    /// is genuinely either: the readings display the same headword and claim the
+    /// same word, so two rows would print the reader one quote twice with nothing
+    /// to tell them apart, under a document reporting a single use. One row, and
+    /// it names both readings — that the word is either of them is the fact.</summary>
     [Test]
-    public void AHeadwordWithTwoWordClassesIsGroupedByEach()
+    public void ReadingsClaimingTheSameWordAreOneRowNamingBoth()
     {
         AddDated("Doc", 1748, "Ta mee aase");
 
+        var found = Service().InDocument("aase", "Doc").Result!;
+        var row = found.Groups.Single();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(row.LemmaIds, Is.EquivalentTo(new[] { "aase.n", "aase.v" }));
+            Assert.That(row.Classes, Is.EquivalentTo(new[] { "n", "v" }));
+            // the use the document itself reports, not one of them per reading
+            Assert.That(row.Count, Is.EqualTo(1));
+            Assert.That(found.UseCount, Is.EqualTo(1));
+        });
+    }
+
+    /// <summary>...but readings claiming different words stay apart: there the
+    /// resolver did decide, and rows differing by more than their label are two
+    /// facts. 'daase' carries only the verb, so the verb claims both lines and the
+    /// noun one — and each keeps its class, since 'aase' alone tells neither row
+    /// from the other.</summary>
+    [Test]
+    public void ReadingsClaimingDifferentWordsStayApartAndKeepTheirClass()
+    {
+        AddDated("Doc", 1748, "Ta mee aase", "Daase yn billey");
+
         var groups = Service().InDocument("aase", "Doc").Result!.Groups;
 
-        Assert.That(groups.Select(x => x.LemmaId), Is.EquivalentTo(new[] { "aase.n", "aase.v" }));
-        // one word, claimed by both readings: the union counts it once, so the
-        // groups' counts deliberately do not sum to it
-        Assert.That(Service().InDocument("aase", "Doc").Result!.UseCount, Is.EqualTo(1));
-        Assert.That(groups.Sum(x => x.Count), Is.EqualTo(2));
+        Assert.Multiple(() =>
+        {
+            Assert.That(groups.Select(x => x.Lemma), Is.EqualTo(new[] { "aase", "aase" }));
+            // the commoner reading leads
+            Assert.That(groups.Select(x => x.Count), Is.EqualTo(new[] { 2, 1 }));
+            Assert.That(groups.Select(x => string.Join(",", x.Classes)),
+                Is.EqualTo(new[] { "v", "n" }));
+        });
     }
 
     /// <summary>A use is a surface word, not a line: a line saying the word twice
@@ -193,7 +222,7 @@ public class DictionaryAttestationServiceTest : QueryBase
         var found = Service().InDocument("aase", "Doc").Result!;
 
         Assert.That(found.UseCount, Is.EqualTo(2));
-        Assert.That(found.Groups.Single(x => x.LemmaId == "aase.v").Lines, Has.Count.EqualTo(1));
+        Assert.That(found.Groups.Single(x => x.LemmaIds.Contains("aase.v")).Lines, Has.Count.EqualTo(1));
     }
 
     /// <summary>An ambiguous word is split by what each line was read as, so the
@@ -208,8 +237,9 @@ public class DictionaryAttestationServiceTest : QueryBase
 
         Assert.Multiple(() =>
         {
-            // every reading the table offers 'vee' is its own group
-            Assert.That(groups.Select(x => x.LemmaId),
+            // every reading the table offers 'vee' is accounted for by a row —
+            // one of its own, or one shared with a reading it cannot be told from
+            Assert.That(groups.SelectMany(x => x.LemmaIds),
                 Is.EquivalentTo(DictionaryAttestationService.LemmaIdsFor(LemmaTable.Instance, "vee")));
             Assert.That(groups.Select(x => x.Lemma).Distinct(), Is.EquivalentTo(new[] { "bee", "mee" }));
         });

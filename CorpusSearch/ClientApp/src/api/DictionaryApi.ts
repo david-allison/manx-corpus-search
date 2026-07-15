@@ -238,11 +238,15 @@ export type AttestationLinesResponse = {
 }
 
 export type AttestationLemmaGroup = {
-    /** "beg.a": distinguishes homographs the display lemma cannot */
-    lemmaId: string
+    /** "beg.a": distinguishes homographs the display lemma cannot. More than one
+     * where the readings share that lemma and claim the very same words */
+    lemmaIds: string[]
     /** the headword a reader would look up ("beg") */
     lemma: string
-    /** uses this reading claims across the document, not only in `lines` */
+    /** the word classes of `lemmaIds` ("n", "v"), for naming a reading the
+     * headword alone does not; empty where an id names no class */
+    classes: string[]
+    /** uses this row claims across the document, not only in `lines` */
     count: number
     lines: {
         manx?: string | null
