@@ -29,6 +29,44 @@ public class KellyManxToEnglishDictionaryServiceTest
         Assert.That(een.Words, Is.EqualTo(new[] { "EEN", "YN" }));
     }
 
+    /// <summary>Kelly opens a definition with the printed class ("s. a weasel")</summary>
+    [TestCase("s. a weasel, a squirrel, a pert woman or girl.", "Noun")]
+    [TestCase("s. pl. EE. a dog.", "Noun")]
+    [TestCase("v. to grow.", "Verb")]
+    [TestCase("a. small.", "Adjective")]
+    [TestCase("adj. small.", "Adjective")]
+    [TestCase("adv. out; out of him.", "Adverb")]
+    [TestCase("pron. he.", "Pronoun")]
+    [TestCase("pro. he.", "Pronoun")]
+    // the classes the regex used to drop, leaving the entry unlabelled
+    [TestCase("prep. out, without, from or of, in or on.", "Preposition")]
+    [TestCase("pre. out, without.", "Preposition")]
+    [TestCase("conj. and.", "Conjunction")]
+    [TestCase("interj. alas!", "Interjection")]
+    [TestCase("int. alas!", "Interjection")]
+    public void ThePrintedClassIsRecovered(string definition, string expected)
+    {
+        Assert.That(KellyManxToEnglishDictionaryService.PartsOfSpeechOf(definition),
+            Is.EqualTo(new[] { expected }));
+    }
+
+    /// <summary>A participle is a form of a verb, not a class beside it: labelling
+    /// one would filter it out of its own verb's root chain, so it stays unlabelled
+    /// and is therefore always kept</summary>
+    [Test]
+    public void AParticipleIsNotGivenAClassOfItsOwn()
+    {
+        Assert.That(KellyManxToEnglishDictionaryService.PartsOfSpeechOf("part. growing."), Is.Null);
+    }
+
+    [TestCase("a weasel, with no printed class")]
+    [TestCase("St. Patrick's day.")]
+    [TestCase("")]
+    public void AnUndeclaredClassIsNull(string definition)
+    {
+        Assert.That(KellyManxToEnglishDictionaryService.PartsOfSpeechOf(definition), Is.Null);
+    }
+
     /// <summary>The shipped artifact carries the split-out plural data end to end:
     /// biljin (a plural, never a headword) finds BILLEY, the summary exposes the
     /// structured plural, and the definition no longer embeds the marker</summary>

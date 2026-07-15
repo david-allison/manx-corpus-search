@@ -14,6 +14,10 @@ public class KellyManxToEnglishDictionaryService(ISet<string> allWords, IList<Ke
 {
     public string Identifier => "J Kelly Manx to English";
 
+    /// <summary>matches the data repo's own name (kelly-m2e-manx-dictionary-data):
+    /// bare 'kelly' would not say which Kelly, with Phil Kelly's beside it</summary>
+    public string Slug => "kelly-m2e";
+
     public List<string> QueryLanguages => ["gv"];
         
     public bool LinkToDictionary => false;
@@ -101,20 +105,34 @@ public class KellyManxToEnglishDictionaryService(ISet<string> allWords, IList<Ke
 
     public IEnumerable<string> AllWords => allWords;
 
-    /// <summary>Kelly's 1866 definitions open with the printed word-class
-    /// abbreviation ("s. pl. EE. a dog."): recovered for sense filtering.
-    /// Null when the definition doesn't declare one.</summary>
+    /// <summary>
+    /// Kelly's 1866 definitions open with the printed word-class abbreviation
+    /// ("s. pl. EE. a dog."): recovered for sense filtering. Null when the
+    /// definition doesn't declare one.
+    /// </summary>
+    /// <remarks>
+    /// The alternation is longest-first only for readability: every branch is
+    /// anchored by the '.', so "adv." cannot be read as "a.".
+    ///
+    /// 'part.' is deliberately absent. A participle is a form of a verb, not a
+    /// class beside it, so labelling one would filter it out of its own verb's
+    /// root chain (<see cref="DictionaryLookupService"/> keeps only the classes
+    /// the lemma id means). Unlabelled, it stays — which is the right answer.
+    /// </remarks>
     internal static List<string>? PartsOfSpeechOf(string definition)
     {
         var match = System.Text.RegularExpressions.Regex.Match(
-            definition ?? "", @"^\s*(adv|pron|s|v|a)\.");
+            definition ?? "", @"^\s*(interj|prep|pron|conj|adv|adj|pre|pro|int|s|v|a)\.");
         return match.Success
             ? [match.Groups[1].Value switch
             {
                 "s" => "Noun",
                 "v" => "Verb",
-                "a" => "Adjective",
+                "a" or "adj" => "Adjective",
                 "adv" => "Adverb",
+                "pre" or "prep" => "Preposition",
+                "conj" => "Conjunction",
+                "int" or "interj" => "Interjection",
                 _ => "Pronoun",
             }]
             : null;
