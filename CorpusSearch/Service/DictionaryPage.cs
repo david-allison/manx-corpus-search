@@ -24,6 +24,22 @@ public class DictionaryPage
     /// it promises evidence that is not there.</summary>
     public bool Attested { get; set; }
 
+    /// <summary>The <see cref="ISearchDictionary.Slug"/> of every dictionary with
+    /// something to say about the word. The scope picker greys the rest, so that a
+    /// reader can see which books answer before clicking each in turn.
+    ///
+    /// Whatever the page has to show, rather than
+    /// <see cref="ISearchDictionary.ContainsWord"/>, which asks only whether the
+    /// spelling is a headword: a page reached from an inflected form shows the
+    /// root's entry, and greying the book that prints it would contradict the
+    /// entry sitting under the greyed name. A book offering only a near spelling
+    /// is here too — the page is not empty, and its own note says nothing was
+    /// found.
+    ///
+    /// Stamped unscoped, whatever <c>dict</c> the page was asked for: the picker
+    /// lists every dictionary, so it must know about the ones being hidden.</summary>
+    public required List<string> Answering { get; set; }
+
     public required List<DictionaryPageGroup> Groups { get; set; }
 }
 

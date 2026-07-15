@@ -245,7 +245,13 @@ export const Dictionary = () => {
 
             {!word && <DictionaryLetters />}
 
-            {word && <DictionaryScope word={word} dict={dict} />}
+            {word && (
+                <DictionaryScope
+                    word={word}
+                    dict={dict}
+                    answering={page?.answering}
+                />
+            )}
 
             {word && (
                 <HeadwordNav word={word} dict={dict}>

@@ -9,14 +9,25 @@ import { dictionaryWordUrl } from "../utils/DictionaryEntries"
 import "./DictionaryScope.css"
 
 /** Which dictionary the word page is showing: every source at once, or one on
- * its own. Lists every dictionary rather than only those defining the word —
- * that Cregeen has no entry for it is itself worth being able to find out. */
+ * its own.
+ *
+ * Lists every dictionary rather than only those defining the word — that Cregeen
+ * has no entry for it is itself worth being able to find out — but the ones with
+ * nothing to show are greyed, so finding it out costs no clicks. Greyed, not
+ * hidden or disabled: the answer is "not in this book", and a reader is entitled
+ * to go and see the empty page for themselves.
+ *
+ * `answering` is absent until the page arrives. Nothing is greyed until then:
+ * greying every link and lifting it a moment later would read as a fault.
+ */
 export const DictionaryScope = ({
     word,
     dict,
+    answering,
 }: {
     word: string
     dict?: string
+    answering?: string[] | null
 }) => {
     // already known on every step after the first: the picker paints with the
     // page rather than arriving after it
@@ -48,29 +59,38 @@ export const DictionaryScope = ({
         return null
     }
 
+    /** A link to a page that would have nothing on it. "All dictionaries" is
+     * empty only when every one of them is. */
+    const isEmpty = (slug?: string): boolean =>
+        answering != null &&
+        (slug == null ? answering.length === 0 : !answering.includes(slug))
+
+    const linkTo = (slug: string | undefined, name: string) => (
+        <Link
+            key={slug ?? ""}
+            className={[
+                "dict-scope-link",
+                slug === dict ? "active" : "",
+                isEmpty(slug) ? "dict-scope-empty" : "",
+            ]
+                .filter(Boolean)
+                .join(" ")}
+            aria-current={slug === dict ? "page" : undefined}
+            // the grey is a colour, and a colour is not something every reader
+            // gets: the link says the same thing in words
+            title={
+                isEmpty(slug) ? `Nothing for “${word}” in ${name}` : undefined
+            }
+            to={dictionaryWordUrl(word, slug)}
+        >
+            {name}
+        </Link>
+    )
+
     return (
         <nav className="dict-scope" aria-label="Dictionary">
-            <Link
-                className={dict ? "dict-scope-link" : "dict-scope-link active"}
-                aria-current={dict ? undefined : "page"}
-                to={dictionaryWordUrl(word)}
-            >
-                All dictionaries
-            </Link>
-            {dictionaries.map((d) => (
-                <Link
-                    key={d.slug}
-                    className={
-                        d.slug === dict
-                            ? "dict-scope-link active"
-                            : "dict-scope-link"
-                    }
-                    aria-current={d.slug === dict ? "page" : undefined}
-                    to={dictionaryWordUrl(word, d.slug)}
-                >
-                    {d.name}
-                </Link>
-            ))}
+            {linkTo(undefined, "All dictionaries")}
+            {dictionaries.map((d) => linkTo(d.slug, d.name))}
         </nav>
     )
 }
