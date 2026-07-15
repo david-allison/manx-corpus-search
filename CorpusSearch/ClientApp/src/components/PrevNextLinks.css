@@ -34,6 +34,14 @@
     visibility: hidden;
 }
 
+/* the outer skip step: an arrow and a tooltip, so it needs none of the width a
+   name does */
+.prev-next-skip {
+    min-width: 0;
+    flex: none;
+    padding: 4px 8px;
+}
+
 /* One line, always. Document titles run from "Psalms" to "Coyrle Sodjey - The
    Principles and Duties of Christianity": left to wrap, the row grows a line
    and the arrows move out from under the cursor mid-walk. */
