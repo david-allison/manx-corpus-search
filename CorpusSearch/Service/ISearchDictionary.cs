@@ -6,7 +6,14 @@ namespace CorpusSearch.Service;
 public interface ISearchDictionary
 {
     string Identifier { get; }
-        
+
+    /// <summary>The dictionary's stable URL segment ("cregeen"): what
+    /// /dictionary/in/{slug}/{word} scopes a page to.</summary>
+    /// <remarks>Declared, never derived from <see cref="Identifier"/>: a display
+    /// name may be reworded, and a link that was shared must not break with it</remarks>
+    string Slug { get; }
+
+
     /// <summary>
     /// The languages which it takes as Queries
     /// For example: Manx -> English would mean a 'gv' QueryLanguage.

@@ -134,6 +134,7 @@ public class SearchControllerTest
     private class FakeDictionary(string identifier, params string[] queryLanguages) : ISearchDictionary
     {
         public string Identifier => identifier;
+        public string Slug => identifier.ToLowerInvariant();
         public List<string> QueryLanguages => queryLanguages.ToList();
         public bool LinkToDictionary => false;
         public IEnumerable<DictionarySummary> GetSummaries(string query, bool basic = false) =>

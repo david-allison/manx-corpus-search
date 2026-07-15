@@ -58,6 +58,10 @@ public class CultureVanninSpokenDictionaryService(CultureVanninSpokenDictionaryS
     public string Identifier { get; } =
         string.IsNullOrWhiteSpace(artifact.Name) ? "LearnManx Spoken Dictionary" : artifact.Name;
 
+    /// <summary>fixed, unlike <see cref="Identifier"/>: the artifact names itself,
+    /// and a re-published name must not move the dictionary's URL</summary>
+    public string Slug => "spoken";
+
     private readonly string sourceUrl = artifact.Url;
     private readonly string sourceCredit = artifact.Credit;
 

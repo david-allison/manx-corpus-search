@@ -18,6 +18,8 @@ public class PhilKellyDictionaryService(IReadOnlyDictionary<string, IList<string
 
     public string Identifier => Name;
 
+    public string Slug => "phil-kelly";
+
     public List<string> QueryLanguages => ["gv"];
 
     public bool LinkToDictionary => false;

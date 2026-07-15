@@ -26,10 +26,21 @@ public class DictionaryPageGroup
 {
     public required string Dictionary { get; set; }
 
+    /// <summary>The dictionary's <see cref="ISearchDictionary.Slug"/>: the client
+    /// scopes to it rather than to the display name, which is prose and churns</summary>
+    public string? Slug { get; set; }
+
     /// <summary>The defining source's home page: the group heading links the citation</summary>
     public string? SourceUrl { get; set; }
 
     public required List<DictionarySummary> Entries { get; set; }
+}
+
+/// <summary>A dictionary the page can be scoped to</summary>
+public class DictionaryInfo
+{
+    public required string Slug { get; set; }
+    public required string Name { get; set; }
 }
 
 public class DictionaryPageAudio
