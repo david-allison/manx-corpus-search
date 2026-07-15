@@ -13,7 +13,7 @@ namespace CorpusSearch.Controllers;
 [Route("api/[controller]")]
 public class DictionaryController(
     DictionaryLookupService lookupService, DictionaryHistoryService historyService,
-    DictionaryAttestationService attestationService)
+    DictionaryAttestationService attestationService, DictionaryBrowseService browseService)
 {
     /// <summary>
     /// Returns diction
@@ -78,6 +78,20 @@ public class DictionaryController(
     {
         var lines = await attestationService.InDocument(word, ident);
         return lines == null ? new NotFoundResult() : lines;
+    }
+
+    /// <summary>
+    /// One page of a dictionary's index: the letters, one letter's prefix bar,
+    /// and the headwords under a prefix.
+    /// </summary>
+    /// <param name="dict">the dictionary's slug ("cregeen")</param>
+    /// <param name="at">a letter ("a") or a prefix ("aal"); the first letter when
+    /// it names neither</param>
+    [HttpGet("browse")]
+    public ActionResult<DictionaryBrowsePage> Browse([FromQuery] string dict, [FromQuery] string? at = null)
+    {
+        var page = browseService.Page(dict, at);
+        return page == null ? new NotFoundResult() : page;
     }
 
     /// <summary>

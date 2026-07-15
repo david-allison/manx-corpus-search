@@ -97,6 +97,8 @@ internal static class SpaRouteGuard
         {
             // /dictionary/in/<dictionary slug>/<word>
             "in" => segments.Length == 3,
+            // /dictionary/browse/<dictionary slug>[/<letter or prefix>]
+            "browse" => segments.Length is 2 or 3,
             _ => false,
         };
     }

@@ -301,3 +301,39 @@ export const dictionaryCoverage = async (
     }
     return result
 }
+
+/** One page of a dictionary's index: the letters, one letter's prefix bar, and
+ * the headwords under a prefix */
+export type DictionaryBrowseResponse = {
+    dictionary: string
+    slug: string
+    letters: string[]
+    /** null when the dictionary is empty (its JSON is downloaded on deployment) */
+    letter?: string | null
+    prefixes: string[]
+    prefix?: string | null
+    headwords: { word: string; gloss?: string | null }[]
+}
+
+/** @param at a letter ("a") or a prefix ("aal"); the dictionary's first letter
+ * when it names neither */
+export const dictionaryBrowse = async (
+    dict: string,
+    at?: string,
+    signal?: AbortSignal,
+): Promise<DictionaryBrowseResponse> => {
+    const params = new URLSearchParams({ dict })
+    if (at) {
+        params.set("at", at)
+    }
+    const response = await fetch(
+        `/api/Dictionary/browse?${params.toString()}`,
+        {
+            signal,
+        },
+    )
+    if (!response.ok) {
+        throw new Error(`dictionary browse failed: ${response.status}`)
+    }
+    return (await response.json()) as DictionaryBrowseResponse
+}

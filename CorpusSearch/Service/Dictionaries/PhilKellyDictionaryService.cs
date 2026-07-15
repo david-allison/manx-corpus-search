@@ -48,6 +48,13 @@ public class PhilKellyDictionaryService(IReadOnlyDictionary<string, IList<string
 
     public IEnumerable<string> AllWords => entries.Keys;
 
+    /// <summary>The headwords in collation order. Unlike the print dictionaries
+    /// this one is a map with no order of its own, so there is no book's order to
+    /// keep: sorting is the only way to get one, and it is the reader's.</summary>
+    public IReadOnlyList<string> Headwords { get; } = entries.Keys
+        .OrderBy(DictionaryBrowse.CollationKey, StringComparer.Ordinal)
+        .ToList();
+
     public IEnumerable<DictionarySummary> GetSummaries(string query, bool basic = false)
     {
         if (!entries.TryGetValue(query.Trim(), out var glosses))

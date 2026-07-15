@@ -4,6 +4,7 @@ import { Layout } from "./components/Layout"
 import { ErrorBoundary } from "./components/ErrorBoundary"
 import { Home } from "./routes/Home"
 import { Dictionary } from "./routes/Dictionary"
+import { DictionaryBrowse } from "./routes/DictionaryBrowse"
 import { DocumentView } from "./routes/DocumentView"
 import { BitPlayer } from "./routes/BitPlayer"
 import { Contributions } from "./routes/Contributions"
@@ -27,6 +28,12 @@ export const App = () => {
                     <Route
                         path="/dictionary/in/:dict/:word"
                         element={<Dictionary />}
+                    />
+                    {/*:dict is required: an optional one makes
+                       /dictionary/browse/aa ambiguous with the letter*/}
+                    <Route
+                        path="/dictionary/browse/:dict/:at?"
+                        element={<DictionaryBrowse />}
                     />
                     <Route path="/docs/:docId" element={<DocumentView />} />
                     <Route path={"/tools/youtube"} element={<BitPlayer />} />

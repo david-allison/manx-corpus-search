@@ -96,7 +96,7 @@ const Entry = ({
                 className="dict-page-credit"
                 title={
                     unplaced
-                        ? `${summary.dictionaryName} does not record word classes, so this entry may belong to another sense`
+                        ? "Word classes were not extracted from this dictionary. This entry may belong to another sense"
                         : undefined
                 }
             >

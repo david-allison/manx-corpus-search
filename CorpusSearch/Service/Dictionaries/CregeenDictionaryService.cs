@@ -148,6 +148,13 @@ public class CregeenDictionaryService(ISet<string> allWords, IList<CregeenEntry>
 
     public IEnumerable<string> AllWords => allWords;
 
+    /// <summary>The printed headwords, top-level entries only and in the file's
+    /// order, which is Cregeen's own: <see cref="LetterLookup"/>'s sentinels only
+    /// work because of it. Built once: GetSummaries re-flattens the tree per call
+    /// (see the PERF note below), and the index must not pay that.</summary>
+    public IReadOnlyList<string> Headwords { get; } =
+        entries.Select(x => x.Words.FirstOrDefault()).OfType<string>().ToList();
+
     public IEnumerable<DictionarySummary> GetSummaries(string query, bool basic)
     {
         if (!ContainsWordExact(query)) { yield break; }

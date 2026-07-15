@@ -39,6 +39,12 @@ public class SpaRouteGuardTest
     [TestCase("/Dictionary/In/Cregeen/Billey/")]
     // 'in' is a Kelly headword: as one segment it is still the word page
     [TestCase("/dictionary/in")]
+    // like 'in', 'browse' alone is a word to look up, not the index
+    [TestCase("/dictionary/browse")]
+    // the browse index: a dictionary, and optionally where to open it
+    [TestCase("/dictionary/browse/cregeen")]
+    [TestCase("/dictionary/browse/cregeen/aal")]
+    [TestCase("/Dictionary/Browse/Cregeen/")]
     public void SpaPagesFallThroughToTheShell(string path)
     {
         Assert.That(SpaRouteGuard.IsSpaPage(path, workService), Is.True);
@@ -57,9 +63,9 @@ public class SpaRouteGuardTest
     [TestCase("/dictionary/in/cregeen")] // scoped route without a word
     [TestCase("/dictionary/in/cregeen/billey/extra")]
     [TestCase("/dictionary//billey")]
-    // sub-routes the SPA does not render yet: allowing one early would serve
+    [TestCase("/dictionary/browse/cregeen/aal/extra")]
+    // a sub-route the SPA does not render yet: allowing one early would serve
     // the NotFound page with a 200
-    [TestCase("/dictionary/browse/cregeen")]
     [TestCase("/dictionary/lemma/dooinney")]
     public void UnknownPagesAre404(string path)
     {

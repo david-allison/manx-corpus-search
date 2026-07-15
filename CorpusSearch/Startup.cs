@@ -87,6 +87,7 @@ public class Startup(IConfiguration configuration)
         services.AddSingleton<DictionaryLookupService>();
         services.AddSingleton<DictionaryHistoryService>();
         services.AddSingleton<DictionaryAttestationService>();
+        services.AddSingleton<DictionaryBrowseService>();
         services.AddSingleton<WorkService>();
         services.AddSingleton<DocumentSearchService>();
         services.AddSingleton<NewspaperSourceEnricher>();

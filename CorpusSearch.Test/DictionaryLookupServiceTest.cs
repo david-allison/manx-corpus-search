@@ -802,6 +802,7 @@ public class DictionaryLookupServiceTest
 
         public string Identifier => identifier;
         public string Slug => identifier.ToLowerInvariant();
+        public IReadOnlyList<string> Headwords => entries.Select(x => x.PrimaryWord).ToList();
         public List<string> QueryLanguages => ["gv"];
         public bool LinkToDictionary => false;
 

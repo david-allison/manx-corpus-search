@@ -105,6 +105,11 @@ public class KellyManxToEnglishDictionaryService(ISet<string> allWords, IList<Ke
 
     public IEnumerable<string> AllWords => allWords;
 
+    /// <summary>The printed headwords, top-level entries only and in the file's
+    /// order, which is Kelly's own</summary>
+    public IReadOnlyList<string> Headwords { get; } =
+        entries.Select(x => x.Words.FirstOrDefault()).OfType<string>().ToList();
+
     /// <summary>
     /// Kelly's 1866 definitions open with the printed word-class abbreviation
     /// ("s. pl. EE. a dog."): recovered for sense filtering. Null when the

@@ -118,4 +118,13 @@ public class CultureVanninSpokenDictionaryService(CultureVanninSpokenDictionaryS
     public bool ContainsWord(string word) => byWord.ContainsKey(Key(word));
 
     public IEnumerable<string> AllWords => byWord.Values.SelectMany(x => x).Select(x => x.Word);
+
+    /// <summary>The recorded words in collation order: a spoken word list has no
+    /// printed order to keep</summary>
+    public IReadOnlyList<string> Headwords { get; } = artifact.Entries
+        .Select(x => x.Word)
+        .Where(x => !string.IsNullOrWhiteSpace(x))
+        .Distinct(StringComparer.InvariantCultureIgnoreCase)
+        .OrderBy(DictionaryBrowse.CollationKey, StringComparer.Ordinal)
+        .ToList();
 }
