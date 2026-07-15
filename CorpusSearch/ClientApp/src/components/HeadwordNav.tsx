@@ -1,10 +1,15 @@
-import { useEffect, useState } from "react"
+import { ReactNode, useEffect, useState } from "react"
 import {
     dictionaryNeighbours,
     DictionaryNeighboursResponse,
 } from "../api/DictionaryApi"
 import { dictionaryWordUrl } from "../utils/DictionaryEntries"
 import { PrevNextLinks } from "./PrevNextLinks"
+
+/** The index a word with no scope goes back to. A page of every dictionary at
+ * once has no one index behind it, and Cregeen is the one that browses as a
+ * book: it is what /dictionary opens too. See DictionaryLetters. */
+const INDEX_DICT = "cregeen"
 
 /** The headwords either side of this one: the dictionary as a book you turn a
  * page in.
@@ -16,9 +21,13 @@ import { PrevNextLinks } from "./PrevNextLinks"
 export const HeadwordNav = ({
     word,
     dict,
+    children,
 }: {
     word: string
     dict?: string
+    /** what the walk is centred on: the page's title, when the title has nothing
+     * else to distinguish it from this row */
+    children: ReactNode
 }) => {
     const [near, setNear] = useState<DictionaryNeighboursResponse | null>(null)
 
@@ -38,27 +47,46 @@ export const HeadwordNav = ({
         return null
     }
 
+    const step = (to: string | null | undefined, attested: boolean) =>
+        to
+            ? {
+                  to: dictionaryWordUrl(to, dict),
+                  label: to,
+                  title: attested ? to : `${to} — in no text in the corpus`,
+                  muted: !attested,
+              }
+            : null
+
+    // the skip steps carry no name: the row already holds two of them and the
+    // word itself, and the arrow plus its tooltip is the whole of what they say
+    const skip = (to: string | null | undefined) =>
+        to
+            ? {
+                  to: dictionaryWordUrl(to, dict),
+                  label: to,
+                  title: `${to} — the nearest word the corpus uses`,
+              }
+            : null
+
+    // the letter this word is filed under, without having to work out which:
+    // browse takes a whole word for its 'at' and opens the letter it starts,
+    // folding ç to c the way the books do
+    const index = {
+        to: `/dictionary/browse/${encodeURIComponent(dict ?? INDEX_DICT)}/${encodeURIComponent(word)}`,
+        label: "Index",
+        title: "Back to the index",
+    }
+
     return (
         <PrevNextLinks
             ariaLabel="Headwords"
-            previous={
-                near.previous
-                    ? {
-                          to: dictionaryWordUrl(near.previous, dict),
-                          label: near.previous,
-                      }
-                    : null
-            }
-            next={
-                near.next
-                    ? {
-                          to: dictionaryWordUrl(near.next, dict),
-                          label: near.next,
-                      }
-                    : null
-            }
+            up={index}
+            previous={step(near.previous, near.previousAttested)}
+            next={step(near.next, near.nextAttested)}
+            farPrevious={skip(near.previousUsed)}
+            farNext={skip(near.nextUsed)}
         >
-            <span className="dict-page-headword-nav-word">{word}</span>
+            {children}
         </PrevNextLinks>
     )
 }
