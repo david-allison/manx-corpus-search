@@ -1,0 +1,45 @@
+/* the line a first-attestation claim rests on (AttestationLineModal.tsx) */
+.attest-modal-title {
+    font-family: Georgia, serif;
+    font-size: 17px;
+    color: #33454d;
+    margin: 0 0 14px;
+}
+
+.attest-modal-year {
+    color: var(--c-accent);
+    font-weight: normal;
+}
+
+.attest-modal-manx {
+    font-family: Georgia, serif;
+    font-size: 16px;
+    line-height: 1.5;
+    margin: 0;
+}
+
+/* the translation is context for the Manx, not the point of the dialog */
+.attest-modal-english {
+    color: var(--c-accent);
+    font-size: 14px;
+    line-height: 1.5;
+    margin: 10px 0 0;
+    padding-top: 10px;
+    border-top: 1px solid var(--c-border-meta);
+}
+
+.attest-modal-link {
+    margin: 18px 0 0;
+    font-size: 13px;
+}
+
+.attest-modal-loading {
+    display: flex;
+    justify-content: center;
+    padding: 20px 0;
+}
+
+.attest-modal-failed {
+    color: #6b5a1e;
+    margin: 0;
+}

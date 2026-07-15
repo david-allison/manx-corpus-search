@@ -1,0 +1,135 @@
+/* the word's first attestation, up front: the page's headline fact, so it sits
+   between the headword and the entries rather than below them */
+.first-seen {
+    margin: 0 0 20px;
+    padding: 10px 14px;
+    border: 1px solid var(--c-border-meta);
+    border-left: 3px solid var(--c-accent);
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.015);
+}
+
+/* the section label, in the page's existing small-caps meta style */
+.first-seen-label {
+    display: block;
+    font-size: 11px;
+    letter-spacing: 2.5px;
+    color: var(--c-accent);
+    font-weight: 600;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+}
+
+/* the word and its lexeme are first seen in the same place: one unlabelled
+   fact, since there is no distinction left to draw */
+.first-seen-single {
+    margin: 0;
+    font-size: 14px;
+}
+
+/* "This spelling" / "Any form" against their years */
+.first-seen-rows {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 2px 12px;
+    margin: 0;
+    font-size: 14px;
+}
+
+.first-seen-rows dt {
+    color: var(--c-accent);
+    font-size: 12px;
+    white-space: nowrap;
+    padding-top: 2px;
+}
+
+.first-seen-rows dd {
+    margin: 0;
+}
+
+.first-seen-year {
+    font-family: Georgia, serif;
+    font-size: 15px;
+    color: #33454d;
+}
+
+.first-seen-form {
+    font-family: Georgia, serif;
+}
+
+/* the line the year comes from: the claim made concrete. A few words either
+   side of the word, opening to the whole line on a click, so a long verse
+   cannot push the band down the page. */
+.first-seen-sample {
+    color: var(--c-accent);
+    font-style: italic;
+    font-family: inherit;
+    font-size: inherit;
+    border: none;
+    background: none;
+    padding: 0;
+    text-align: left;
+    cursor: pointer;
+}
+
+.first-seen-sample:hover {
+    color: #33454d;
+}
+
+.first-seen-sample:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+}
+
+/* the word itself within the quote */
+.first-seen-sample strong {
+    font-weight: 700;
+    color: #33454d;
+}
+
+/* a spelling another lexeme also uses: the mark carries the doubt */
+.first-seen-shared {
+    color: #6b5a1e;
+    font-weight: 700;
+    text-decoration: none;
+    cursor: help;
+}
+
+/* one spelling, more than one word: the date belongs to whichever came first.
+   Wears the amber the retired History section used for the same job — the
+   site's existing "read this as a guess" colour. */
+.first-seen-warning {
+    margin: 8px 0 0;
+    padding: 6px 10px;
+    font-size: 12.5px;
+    color: #6b5a1e;
+    background: #fff8e1;
+    border: 1px solid #ecdfae;
+    border-radius: 6px;
+}
+
+.first-seen-warning-mark {
+    display: inline-block;
+    width: 15px;
+    height: 15px;
+    margin-right: 7px;
+    text-align: center;
+    line-height: 15px;
+    font-weight: 700;
+    color: #fff8e1;
+    background: #a08a3c;
+    border-radius: 50%;
+}
+
+/* what the claim cannot back: an unscanned spelling, or an earlier but
+   ambiguous reading */
+.first-seen-caveat {
+    color: #6b5a1e;
+    font-size: 12px;
+    margin: 4px 0 0;
+}
+
+.first-seen-none {
+    color: var(--c-accent);
+    font-style: italic;
+}

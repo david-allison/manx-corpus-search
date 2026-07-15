@@ -1,0 +1,60 @@
+/* Previous/next arrows around a label (PrevNextLinks.tsx). Wears BookNav's look
+   without sharing its API: a link cannot be `disabled`, so an edge is a hidden
+   placeholder holding the row's width instead. */
+.prev-next {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin: 10px 0;
+}
+
+.prev-next-link {
+    border: 1px solid var(--c-border-input);
+    background: var(--c-surface);
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 13px;
+    color: var(--c-link);
+    text-decoration: none;
+    /* the neighbours' names vary wildly in length: keep the row from jumping */
+    min-width: 90px;
+    max-width: 40%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.prev-next-link:hover {
+    border-color: var(--c-accent);
+}
+
+/* the first/last step: holds its space so the row does not shift as you walk */
+.prev-next-edge {
+    visibility: hidden;
+}
+
+/* One line, always. Document titles run from "Psalms" to "Coyrle Sodjey - The
+   Principles and Duties of Christianity": left to wrap, the row grows a line
+   and the arrows move out from under the cursor mid-walk. */
+.prev-next-current {
+    flex: 1;
+    text-align: center;
+    font-size: 13px;
+    color: var(--c-ink);
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.prev-next-link:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring) inset;
+}
+
+@media (max-width: 600px) {
+    .prev-next-link {
+        min-width: 44px;
+    }
+}

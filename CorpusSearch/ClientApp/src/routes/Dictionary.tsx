@@ -15,7 +15,8 @@ import {
     MultidictLink,
 } from "../components/MultidictLink"
 import { VerseVersionsModal } from "../components/VerseVersionsModal"
-import { WordHistory } from "../components/WordHistory"
+import { useWordHistory } from "../hooks/useWordHistory"
+import { AttestationWalker } from "../components/AttestationWalker"
 import "./Dictionary.css"
 
 /** "learnmanx.com" from the source URL, for the audio credit's second line */
@@ -102,6 +103,11 @@ export const Dictionary = () => {
     const [failed, setFailed] = useState(false)
     // a tapped scripture citation: the verse's other-versions popup
     const [citationKey, setCitationKey] = useState<string | null>(null)
+    // keyed on the word alone, so it runs beside the lookup rather than after
+    // it: the first-attestation band heads the page. A total miss discards it.
+    // The corpus does not know which dictionary you came in through, so the
+    // history is the same in every scope.
+    const history = useWordHistory(word)
 
     useEffect(() => {
         setQuery(word ?? "")
@@ -182,7 +188,7 @@ export const Dictionary = () => {
                     <CircularProgress />
                 </div>
             )}
-            {failed && <p>Something went wrong — try again.</p>}
+            {failed && <p>Something went wrong. Try again.</p>}
 
             {(() => {
                 const target = page?.groups
@@ -195,7 +201,7 @@ export const Dictionary = () => {
                         <Link to={dictionaryWordUrl(target, dict)}>
                             {target}
                         </Link>
-                        {" — the entries below are for "}
+                        {". The entries below are for "}
                         <strong>{target}</strong>
                         {":"}
                     </p>
@@ -204,7 +210,7 @@ export const Dictionary = () => {
 
             {page?.isSuggestionTier && (
                 <p className="dict-page-suggestions-note">
-                    Nothing found for “{page.word}” — near spellings:
+                    Nothing found for “{page.word}”. Near spellings:
                 </p>
             )}
 
@@ -242,7 +248,7 @@ export const Dictionary = () => {
             ))}
 
             {word && page != null && !page.isSuggestionTier && (
-                <WordHistory word={word} />
+                <AttestationWalker word={word} history={history} />
             )}
 
             {page != null && page.groups.length === 0 && (

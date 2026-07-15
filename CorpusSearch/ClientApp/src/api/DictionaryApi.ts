@@ -163,6 +163,9 @@ export type HistoryForm = {
     earliestIdent?: string | null
     earliestTitle?: string | null
     sample?: string | null
+    /** where the form sits in `sample`: lets the page quote a few words around
+     * the word rather than the head of a long verse */
+    sampleHighlights?: { start: number; end: number }[] | null
 }
 
 export const dictionaryHistory = async (
@@ -178,6 +181,84 @@ export const dictionaryHistory = async (
         throw new Error(`dictionary history failed: ${response.status}`)
     }
     return (await response.json()) as DictionaryHistoryResponse
+}
+
+/** The corpus documents attesting a word's lexeme, oldest first (experimental) */
+export type DictionaryAttestationsResponse = {
+    word: string
+    /** the display lemmas being walked; empty when the table doesn't know the word */
+    lemmas: string[]
+    documents: AttestationDocument[]
+    /** attesting documents with no date: they cannot be placed in the walk */
+    undatedDocuments: number
+    undatedUses: number
+}
+
+/** A step in the walk. Carries no use count on purpose: see AttestationDocument
+ * on the server — the scan's per-document figure counts span matches, which an
+ * ambiguous token inflates. `lineCount` below is the honest total. */
+export type AttestationDocument = {
+    ident: string
+    title: string
+    year: number
+}
+
+/** The lexeme's uses inside one document, split by the reading each line
+ * resolved to */
+export type AttestationLinesResponse = {
+    ident: string
+    title: string
+    year?: number | null
+    /** uses of the lexeme: surface words, not lines, counted once each however
+     * many readings claim them */
+    useCount: number
+    groups: AttestationLemmaGroup[]
+}
+
+export type AttestationLemmaGroup = {
+    /** "beg.a": distinguishes homographs the display lemma cannot */
+    lemmaId: string
+    /** the headword a reader would look up ("beg") */
+    lemma: string
+    /** uses this reading claims across the document, not only in `lines` */
+    count: number
+    lines: {
+        manx?: string | null
+        english?: string | null
+        manxHighlights?: { start: number; end: number }[] | null
+        csvLineNumber: number
+    }[]
+}
+
+export const dictionaryAttestations = async (
+    word: string,
+    signal?: AbortSignal,
+): Promise<DictionaryAttestationsResponse> => {
+    const params = new URLSearchParams({ word })
+    const response = await fetch(
+        `/api/Dictionary/attestations?${params.toString()}`,
+        { signal },
+    )
+    if (!response.ok) {
+        throw new Error(`attestations failed: ${response.status}`)
+    }
+    return (await response.json()) as DictionaryAttestationsResponse
+}
+
+export const dictionaryAttestationLines = async (
+    word: string,
+    ident: string,
+    signal?: AbortSignal,
+): Promise<AttestationLinesResponse> => {
+    const params = new URLSearchParams({ word })
+    const response = await fetch(
+        `/api/Dictionary/attestations/${encodeURIComponent(ident)}?${params.toString()}`,
+        { signal },
+    )
+    if (!response.ok) {
+        throw new Error(`attestation lines failed: ${response.status}`)
+    }
+    return (await response.json()) as AttestationLinesResponse
 }
 
 /** One token of a line in the dictionary-coverage debug view: how a tap on it

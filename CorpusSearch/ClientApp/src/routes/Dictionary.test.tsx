@@ -29,6 +29,15 @@ const dictionaries = [
     { slug: "kelly-m2e", name: "J Kelly Manx to English" },
 ]
 
+/** the walk renders nothing without documents: these tests are about the page */
+const emptyAttestations = {
+    word: "",
+    lemmas: [],
+    documents: [],
+    undatedDocuments: 0,
+    undatedUses: 0,
+}
+
 const respondWith = (page: DictionaryPageResponse) =>
     fetchMock.mockImplementation((url) => {
         const href = hrefOf(url)
@@ -36,7 +45,9 @@ const respondWith = (page: DictionaryPageResponse) =>
             ? emptyHistory
             : href.includes("/dictionaries")
               ? dictionaries
-              : page
+              : href.includes("/attestations")
+                ? emptyAttestations
+                : page
         return Promise.resolve({
             ok: true,
             json: () => Promise.resolve(body),
@@ -158,7 +169,7 @@ describe("Dictionary page", () => {
         })
         renderAt("/dictionary/costlagh")
 
-        expect(await screen.findByText(/near spellings/)).toBeTruthy()
+        expect(await screen.findByText(/Near spellings/)).toBeTruthy()
     })
 
     it("shows the search box without a word", () => {

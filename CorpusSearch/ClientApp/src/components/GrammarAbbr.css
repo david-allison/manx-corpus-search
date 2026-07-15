@@ -1,5 +1,11 @@
-/* printed dictionary abbreviations, expanded on hover teanglann-style */
+/* printed dictionary abbreviations, expanded on hover teanglann-style.
+   Wears the accent so an abbreviation reads the same wherever it sits: Cregeen
+   declares its class as data ("adv." below) while Kelly prints it inside the
+   definition ("prep. out, without"), and the reader should not be able to tell
+   which is which. */
 .dict-abbr {
+    font-style: italic;
+    color: var(--c-accent);
     text-decoration: underline dotted;
     text-decoration-color: var(--c-border-meta);
     text-underline-offset: 2px;
@@ -10,7 +16,9 @@
     text-decoration-color: var(--c-accent);
 }
 
-/* the grammar label beside a headword: "s. f." */
+/* the grammar label beside a headword: "s. f.". Its look now comes from
+   .dict-abbr, which every printed abbreviation shares: only its size and the
+   gap to the headword are its own. */
 .dict-grammar-label {
     font-style: italic;
     color: var(--c-accent);
