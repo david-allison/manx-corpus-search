@@ -629,6 +629,54 @@ public class DictionaryLookupServiceTest
         });
     }
 
+    [Test]
+    public void PageGroupsCarryTheDictionarySlug()
+    {
+        var service = Service("goll");
+
+        var page = service.Page("gv", "goll");
+
+        // the client scopes on the slug: the display name is prose and churns
+        Assert.That(page.Groups.Single().Slug, Is.EqualTo("fake"));
+    }
+
+    [Test]
+    public void PageScopedToADictionaryDropsTheOthers()
+    {
+        var service = new DictionaryLookupService(
+            [new FakeDictionary("Cregeen", ["goll"]), new FakeDictionary("Kelly", ["goll"])],
+            NoLemmas, LemmaResolver.Empty);
+
+        var page = service.Page("gv", "goll", dict: "cregeen");
+
+        Assert.That(page.Groups.Select(x => x.Dictionary), Is.EqualTo(new[] { "Cregeen" }));
+    }
+
+    /// <summary>A slug no dictionary answers to scopes to nothing: silently
+    /// widening back to every dictionary would show a page the URL never asked
+    /// for, and read as though the named dictionary held those entries</summary>
+    [Test]
+    public void PageScopedToAnUnknownDictionaryIsEmpty()
+    {
+        var service = Service("goll");
+
+        var page = service.Page("gv", "goll", dict: "no-such-dictionary");
+
+        Assert.That(page.Groups, Is.Empty);
+    }
+
+    [Test]
+    public void DictionariesListsEveryDictionaryForTheLanguage()
+    {
+        var service = new DictionaryLookupService(
+            [new FakeDictionary("Cregeen", ["goll"]), new FakeDictionary("Kelly", ["mygeayrt"])],
+            NoLemmas, LemmaResolver.Empty);
+
+        // every dictionary, not only those defining the word being viewed
+        Assert.That(service.Dictionaries("gv").Select(x => x.Slug),
+            Is.EqualTo(new[] { "cregeen", "kelly" }));
+    }
+
     /// <summary>Phil Kelly merges homograph senses into one gloss list, so when
     /// the chain knows which sense it means (row -> bee.v, the verb), the
     /// sense-blind entry stands aside for the sense-capable dictionaries</summary>
@@ -753,6 +801,7 @@ public class DictionaryLookupServiceTest
         private readonly List<(string Word, string Pos, string Gloss)>? posEntries;
 
         public string Identifier => identifier;
+        public string Slug => identifier.ToLowerInvariant();
         public List<string> QueryLanguages => ["gv"];
         public bool LinkToDictionary => false;
 

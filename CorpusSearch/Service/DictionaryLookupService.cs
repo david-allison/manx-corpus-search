@@ -30,6 +30,11 @@ public class DictionaryLookupService(IEnumerable<ISearchDictionary> dictionarySe
 
     private readonly ISearchDictionary[] dictionaryServices = dictionaryServices.ToArray();
 
+    /// <summary>Display name -> URL slug: entries carry the name they were
+    /// defined under, the page links the slug</summary>
+    private readonly Dictionary<string, string> slugByDictionary = dictionaryServices
+        .ToDictionary(x => x.Identifier, x => x.Slug);
+
     /// <param name="lang">the query language, for example 'gv'</param>
     /// <param name="selection">the word/phrase the user selected</param>
     /// <param name="context">the text surrounding the selection (typically the line it appears in)</param>
@@ -172,12 +177,32 @@ public class DictionaryLookupService(IEnumerable<ISearchDictionary> dictionarySe
         return deduplicated;
     }
 
+    /// <summary>The dictionaries which answer the query language, for the page's
+    /// scope picker: every dictionary, not only those defining some word</summary>
+    public List<DictionaryInfo> Dictionaries(string lang)
+    {
+        return dictionaryServices
+            .Where(x => x.QueryLanguages.Contains(lang))
+            .Select(x => new DictionaryInfo { Slug = x.Slug, Name = x.Identifier })
+            .ToList();
+    }
+
     /// <summary>The teanglann-style full page for a word (experimental): the
     /// lookup re-shaped into per-dictionary groups, the word's own recording
     /// pulled out as the page control, near-match suggestions marked as a tier</summary>
-    public DictionaryPage Page(string lang, string word)
+    /// <param name="dict">optional <see cref="ISearchDictionary.Slug"/>: scopes the
+    /// page to one dictionary. An unknown slug scopes to nothing, rather than
+    /// silently widening back to every dictionary</param>
+    public DictionaryPage Page(string lang, string word, string? dict = null)
     {
         var summaries = WithoutDemutationGuesses(word, Lookup(lang, word));
+        if (dict != null)
+        {
+            // filtered before anything else is derived: a scoped page's audio and
+            // suggestion tier must describe the dictionary being shown, not the
+            // ones being hidden
+            summaries = summaries.Where(x => SlugOf(x) == dict).ToList();
+        }
         var audio = summaries.FirstOrDefault(x =>
             x.AudioUrl != null && x.NearMatchOf == null
             && string.Equals(x.PrimaryWord, word, StringComparison.InvariantCultureIgnoreCase));
@@ -198,12 +223,20 @@ public class DictionaryLookupService(IEnumerable<ISearchDictionary> dictionarySe
                 .Select(g => new DictionaryPageGroup
                 {
                     Dictionary = g.Key,
+                    Slug = slugByDictionary.GetValueOrDefault(g.Key),
                     SourceUrl = g.Select(x => x.SourceUrl).FirstOrDefault(x => x != null),
                     Entries = g.ToList(),
                 })
                 .ToList(),
         };
     }
+
+    /// <summary>The URL slug of the dictionary defining an entry; null when the
+    /// entry names a dictionary no longer registered (a disabled source)</summary>
+    private string? SlugOf(DictionarySummary summary) =>
+        summary.DictionaryName == null
+            ? null
+            : slugByDictionary.GetValueOrDefault(summary.DictionaryName);
 
     /// <summary>The dictionary page looks up a headword with no sentence
     /// context: when the word is a headword itself, demutation guesses stay

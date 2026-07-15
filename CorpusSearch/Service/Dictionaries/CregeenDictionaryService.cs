@@ -43,6 +43,7 @@ public class CregeenDictionaryService(ISet<string> allWords, IList<CregeenEntry>
     };
 
     public string Identifier => "Cregeen";
+    public string Slug => "cregeen";
     public bool LinkToDictionary => true;
     public List<string> QueryLanguages => ["gv"];
 
