@@ -54,6 +54,12 @@ public class DictionaryLookupService(IEnumerable<ISearchDictionary> dictionarySe
         var results = GetSummaries(candidates);
         if (lang == "gv")
         {
+            // a dictionary answers from its own inflected-form list, so Cregeen's
+            // 'vann' ("did bless") replies to 'vannin' - a spelling the table reads
+            // as Mannin. No escape if this empties the list: the reading is wrong
+            // however little else there is, and the root chain below (then names,
+            // parts, near matches) is what the reader actually wants
+            results = results.Where(x => !IsAnotherLexeme(selection, x)).ToList();
             // the root chain of an inflected/mutated selection follows the surface
             // candidates, each hop tagged with its depth so the client can nest it
             // ('gheiney' -> 'deiney' -> 'dooinney'): the reader always gets the
@@ -374,6 +380,38 @@ public class DictionaryLookupService(IEnumerable<ISearchDictionary> dictionarySe
     /// 'fer' under a prepositional 'er' — no longer seeds the root chain. Unresolved
     /// selections keep every reading, so nothing the table offers is ever lost.
     /// </summary>
+    /// <summary>
+    /// Whether <paramref name="summary"/> documents a different lexeme that merely
+    /// shares the selection's spelling. A dictionary's lookup set covers an entry's
+    /// inflected forms, so Cregeen's 'vann' ("did bless") answers a lookup of
+    /// 'vannin' — which the table lemmatises to Mannin. The two share no reading, so
+    /// the entry is a homograph of the spelling, not documentation of the word.
+    /// </summary>
+    /// <remarks>
+    /// Deliberately narrow, since a wrong drop hides a real entry: only single-word
+    /// entries qualify (a phrase is matched through the line's context, not a
+    /// spelling clash), never one headed by another spelling of the selection
+    /// ('BILL, BILLEY'), and never when the table has no reading of either side —
+    /// no opinion is not a rejection.
+    /// </remarks>
+    private bool IsAnotherLexeme(string selection, DictionarySummary summary)
+    {
+        var word = summary.PrimaryWord;
+        if (word.Any(c => c is ' ' or '-' or '‑'))
+        {
+            return false;
+        }
+        var form = LemmaTable.NormalizeForm(selection);
+        if (LemmaTable.NormalizeForm(word) == form
+            || (summary.Words ?? []).Any(x => LemmaTable.NormalizeForm(x) == form))
+        {
+            return false;
+        }
+        var selectionIds = lemmaTable.CandidatesFor(form);
+        var entryIds = lemmaTable.CandidatesFor(word);
+        return selectionIds.Count > 0 && entryIds.Count > 0 && !selectionIds.Intersect(entryIds).Any();
+    }
+
     private IEnumerable<string> ResolvedDisplayLemmas(string selection, string? context)
     {
         var allowedIds = ResolvedLemmaIds(selection, context);
