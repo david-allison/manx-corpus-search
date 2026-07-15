@@ -19,6 +19,11 @@ public class DictionaryPage
     /// <summary>The word's own pronunciation recording, when a source has one</summary>
     public DictionaryPageAudio? Audio { get; set; }
 
+    /// <summary>Whether the corpus says the word. False on a page that only a
+    /// dictionary knows: there is nothing to search the corpus for, and offering
+    /// it promises evidence that is not there.</summary>
+    public bool Attested { get; set; }
+
     public required List<DictionaryPageGroup> Groups { get; set; }
 }
 

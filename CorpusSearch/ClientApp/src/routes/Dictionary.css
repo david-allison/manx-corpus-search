@@ -43,7 +43,11 @@
     font-family: Georgia, serif;
     color: #33454d;
     margin: 0 0 4px;
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
 }
+
 
 .dict-page-loading {
     display: flex;

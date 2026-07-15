@@ -13,6 +13,7 @@ const entry = (over: Partial<Summary>): Summary => ({
 const page = (entries: Summary[]): DictionaryPageResponse => ({
     word: "ass",
     isSuggestionTier: false,
+    attested: true,
     groups: [{ dictionary: "Cregeen", entries }],
 })
 

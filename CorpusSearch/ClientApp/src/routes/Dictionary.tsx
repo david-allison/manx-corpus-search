@@ -169,6 +169,68 @@ export const Dictionary = () => {
             ? []
             : page.groups.flatMap((g) => g.entries).filter((e) => e.rootDepth)
 
+    const senses =
+        page != null && !page.isSuggestionTier ? senseGroupsIn(page) : []
+
+    /* The only sense of a word has nothing to tell apart, so it needs no heading
+       of its own: its label rides on the title, and the word is not said twice
+       over. Several senses each earn the word again, under a label that says
+       which of them you are reading. */
+    const singleSense = senses.length === 1
+
+    /** Whether any text actually uses the word, as the history's own scan found
+     * it: the evidence, rather than the browse page's guess at it */
+    const usedInCorpus =
+        history != null &&
+        history.traditionalCount + history.revivedCount + history.undatedCount >
+            0
+
+    const header = (
+        <div className="dict-page-header">
+            <h1
+                className={
+                    page != null && !page.attested
+                        ? "dict-page-word dict-unattested"
+                        : "dict-page-word"
+                }
+            >
+                {word}
+                {singleSense && senses[0].label && (
+                    <span className="dict-page-sense-label">
+                        {senses[0].label}
+                    </span>
+                )}
+            </h1>
+            {page?.audio && (
+                <div className="dict-page-audio-corner">
+                    <button
+                        className="dict-page-audio-main"
+                        aria-label={`Play pronunciation of ${word}`}
+                        title="Play pronunciation"
+                        onClick={() => {
+                            new Audio(page.audio!.url)
+                                .play()
+                                .catch(console.warn)
+                        }}
+                    >
+                        {"▶"}
+                    </button>
+                    {page.audio.sourceUrl && (
+                        <a
+                            className="dict-page-audio-credit"
+                            href={page.audio.sourceUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                        >
+                            <span>{page.audio.credit}</span>
+                            <span>{hostOf(page.audio.sourceUrl)}</span>
+                        </a>
+                    )}
+                </div>
+            )}
+        </div>
+    )
+
     return (
         <div className="dict-page">
             <form className="dict-page-search" onSubmit={onSubmit}>
@@ -185,40 +247,21 @@ export const Dictionary = () => {
 
             {word && <DictionaryScope word={word} dict={dict} />}
 
-            {word && <HeadwordNav word={word} dict={dict} />}
-
             {word && (
-                <div className="dict-page-header">
-                    <h1 className="dict-page-word">{word}</h1>
-                    {page?.audio && (
-                        <div className="dict-page-audio-corner">
-                            <button
-                                className="dict-page-audio-main"
-                                aria-label={`Play pronunciation of ${word}`}
-                                title="Play pronunciation"
-                                onClick={() => {
-                                    new Audio(page.audio!.url)
-                                        .play()
-                                        .catch(console.warn)
-                                }}
-                            >
-                                {"▶"}
-                            </button>
-                            {page.audio.sourceUrl && (
-                                <a
-                                    className="dict-page-audio-credit"
-                                    href={page.audio.sourceUrl}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                >
-                                    <span>{page.audio.credit}</span>
-                                    <span>{hostOf(page.audio.sourceUrl)}</span>
-                                </a>
-                            )}
-                        </div>
-                    )}
-                </div>
+                <HeadwordNav word={word} dict={dict}>
+                    <span
+                        className={
+                            page != null && !page.attested
+                                ? "dict-page-headword-nav-word dict-unattested"
+                                : "dict-page-headword-nav-word"
+                        }
+                    >
+                        {word}
+                    </span>
+                </HeadwordNav>
             )}
+
+            {word && header}
 
             {word && page == null && !failed && (
                 <div className="dict-page-loading">
@@ -275,18 +318,22 @@ export const Dictionary = () => {
 
             {page != null &&
                 !page.isSuggestionTier &&
-                senseGroupsIn(page).map((sense, _i, senses) => (
+                senses.map((sense) => (
                     <section className="dict-page-group" key={sense.key}>
-                        <h3 className="dict-page-sense">
-                            <span className="dict-page-sense-word">
-                                {page.word}
-                            </span>
-                            {sense.label && (
+                        {/* the heading is what tells one sense from another, so
+                            it earns the word again. The only sense of a word has
+                            nothing to tell apart: its label rides on the title
+                            instead, and the heading would say the title over */}
+                        {!singleSense && sense.label && (
+                            <h3 className="dict-page-sense">
+                                <span className="dict-page-sense-word">
+                                    {page.word}
+                                </span>
                                 <span className="dict-page-sense-label">
                                     {sense.label}
                                 </span>
-                            )}
-                        </h3>
+                            </h3>
+                        )}
                         {sense.entries.map((summary, index) => (
                             <Entry
                                 word={page.word}
@@ -343,7 +390,17 @@ export const Dictionary = () => {
                 </p>
             )}
 
-            {word && page != null && (
+            {/* A word no text says has nothing to find: the offer would promise
+                evidence the corpus does not hold.
+
+                Asked of the history, which really scanned, rather than of
+                page.attested, which is a guess cheap enough for a browse page of
+                ten thousand words: that guess meets a phrase one word at a time,
+                so it calls 'geinnagh vane' attested on the strength of 'geinnagh'
+                and 'vane' turning up separately, and the corpus holds no such
+                phrase. Here there is one word to answer for, and the real answer
+                is already on the page. */}
+            {word && usedInCorpus && (
                 <p className="dict-page-corpus-link">
                     <Link to={`/?q=${encodeURIComponent(word)}`}>
                         Search the corpus for “{word}”

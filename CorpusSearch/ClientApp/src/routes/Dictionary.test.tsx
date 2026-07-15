@@ -38,11 +38,17 @@ const emptyAttestations = {
     undatedUses: 0,
 }
 
-const respondWith = (page: DictionaryPageResponse) =>
+/** A word one text uses: what the history's scan reports for an attested word */
+const usedOnce = { ...emptyHistory, traditionalCount: 1 }
+
+const respondWith = (
+    page: DictionaryPageResponse,
+    history: typeof emptyHistory = emptyHistory,
+) =>
     fetchMock.mockImplementation((url) => {
         const href = hrefOf(url)
         const body = href.includes("/history")
-            ? emptyHistory
+            ? history
             : href.includes("/dictionaries")
               ? dictionaries
               : href.includes("/attestations")
@@ -84,6 +90,7 @@ describe("Dictionary page", () => {
         respondWith({
             word: "billey",
             isSuggestionTier: false,
+            attested: true,
             groups: [
                 {
                     dictionary: "J Kelly Manx to English",
@@ -117,7 +124,48 @@ describe("Dictionary page", () => {
         // the sense heading gathers several dictionaries, so each entry says
         // which one it came from
         expect(document.querySelectorAll(".dict-page-credit")).toHaveLength(2)
-        expect(screen.getByText(/Search the corpus for/)).toBeTruthy()
+    })
+
+    /** The offer is only worth making where there is something to find. The
+     * browse page's cheap guess meets a phrase one word at a time and would call
+     * 'geinnagh vane' attested for using 'geinnagh' and 'vane' apart; the history
+     * really scanned, so the link asks it instead. */
+    describe("the corpus link", () => {
+        const page: DictionaryPageResponse = {
+            word: "caag",
+            isSuggestionTier: false,
+            attested: true,
+            groups: [
+                {
+                    dictionary: "Cregeen",
+                    entries: [
+                        {
+                            primaryWord: "caag",
+                            summary: "a forelock",
+                            dictionaryName: "Cregeen",
+                            rootDepth: 0,
+                        },
+                    ],
+                },
+            ],
+        }
+
+        it("is offered for a word the corpus uses", async () => {
+            respondWith(page, usedOnce)
+            renderAt("/dictionary/caag")
+
+            expect(
+                await screen.findByText(/Search the corpus for/),
+            ).toBeTruthy()
+        })
+
+        it("is withheld where no text uses the word", async () => {
+            respondWith(page, emptyHistory)
+            renderAt("/dictionary/caag")
+
+            expect(await screen.findByText(/a forelock/)).toBeTruthy()
+            expect(screen.queryByText(/Search the corpus for/)).toBeNull()
+        })
     })
 
     it("splits the entries into the senses they declare", async () => {
@@ -126,6 +174,7 @@ describe("Dictionary page", () => {
         respondWith({
             word: "ass",
             isSuggestionTier: false,
+            attested: true,
             groups: [
                 {
                     dictionary: "Cregeen",
@@ -174,6 +223,7 @@ describe("Dictionary page", () => {
         respondWith({
             word: "dwyne",
             isSuggestionTier: false,
+            attested: true,
             groups: [
                 {
                     dictionary: "Cregeen",
@@ -200,6 +250,7 @@ describe("Dictionary page", () => {
         respondWith({
             word: "gheiney",
             isSuggestionTier: false,
+            attested: true,
             groups: [
                 {
                     dictionary: "Cregeen",
@@ -225,6 +276,7 @@ describe("Dictionary page", () => {
         respondWith({
             word: "deiney",
             isSuggestionTier: false,
+            attested: true,
             groups: [
                 {
                     dictionary: "Cregeen",
@@ -249,6 +301,7 @@ describe("Dictionary page", () => {
         respondWith({
             word: "costlagh",
             isSuggestionTier: true,
+            attested: true,
             groups: [
                 {
                     dictionary: "Cregeen",
@@ -270,7 +323,12 @@ describe("Dictionary page", () => {
     })
 
     it("shows the search box and the letters without a word", async () => {
-        respondWith({ word: "", isSuggestionTier: false, groups: [] })
+        respondWith({
+            word: "",
+            isSuggestionTier: false,
+            attested: true,
+            groups: [],
+        })
         renderAt("/dictionary")
 
         expect(screen.getByLabelText("Look up a Manx word")).toBeTruthy()
@@ -284,7 +342,12 @@ describe("Dictionary page", () => {
     })
 
     it("offers every dictionary as a scope, alongside all-at-once", async () => {
-        respondWith({ word: "billey", isSuggestionTier: false, groups: [] })
+        respondWith({
+            word: "billey",
+            isSuggestionTier: false,
+            attested: true,
+            groups: [],
+        })
         renderAt("/dictionary/billey")
 
         expect(await screen.findByText("All dictionaries")).toBeTruthy()
@@ -295,7 +358,12 @@ describe("Dictionary page", () => {
     })
 
     it("scopes the lookup to the dictionary in the URL", async () => {
-        respondWith({ word: "billey", isSuggestionTier: false, groups: [] })
+        respondWith({
+            word: "billey",
+            isSuggestionTier: false,
+            attested: true,
+            groups: [],
+        })
         renderAt("/dictionary/in/cregeen/billey")
 
         await screen.findByText("All dictionaries")
@@ -306,7 +374,12 @@ describe("Dictionary page", () => {
     })
 
     it("keeps the scope when looking up another word", async () => {
-        respondWith({ word: "billey", isSuggestionTier: false, groups: [] })
+        respondWith({
+            word: "billey",
+            isSuggestionTier: false,
+            attested: true,
+            groups: [],
+        })
         renderAt("/dictionary/in/cregeen/billey")
 
         const scoped = await screen.findByText("Cregeen")
