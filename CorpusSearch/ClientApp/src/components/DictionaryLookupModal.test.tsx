@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { classifyEntries, headingFor } from "./DictionaryLookupModal"
+import { classifyEntries, headingFor } from "../utils/DictionaryEntries"
 
 const entry = (
     primaryWord: string,

@@ -6,8 +6,9 @@ import {
     DictionaryPageResponse,
     Summary,
 } from "../api/DictionaryApi"
-import { headingFor } from "../components/DictionaryLookupModal"
+import { headingFor } from "../utils/DictionaryEntries"
 import { DefinitionText, GrammarLabel } from "../components/GrammarAbbr"
+import { UnverifiedMark } from "../components/UnverifiedMark"
 import {
     getMultidictLookupWord,
     MultidictLink,
@@ -56,6 +57,7 @@ const Entry = ({
                 ? summary.primaryWord
                 : headingFor(word, summary)}
         </strong>
+        <UnverifiedMark summary={summary} />
         <GrammarLabel label={summary.grammarLabel} />
         {": "}
         <DefinitionText

@@ -1,0 +1,15 @@
+/* a root reached only by rule: the dictionary documents the entry, but nothing
+   documents it as this word's root, so it may simply be wrong. Wears the
+   suggestion box's amber, the popup's existing colour for "this is a guess" */
+.dict-unverified {
+    background: #fff8e1;
+    border: 1px solid #ecdfae;
+    color: #6b5a1e;
+    font-size: 0.8em;
+    font-weight: 600;
+    border-radius: 4px;
+    padding: 0 5px;
+    margin-left: 4px;
+    text-decoration: none;
+    white-space: nowrap;
+}
