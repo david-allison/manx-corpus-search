@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Net.Http;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using CorpusSearch.Service.Dictionaries;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CorpusSearch.Controllers;
@@ -34,6 +35,11 @@ public class AudioController(IHttpClientFactory httpClientFactory) : ControllerB
     [HttpGet]
     public async Task<IActionResult> Get([FromQuery] string url)
     {
+        if (!CultureVanninSpokenDictionaryService.Enabled)
+        {
+            return NotFound();
+        }
+
         if (url == null || !AllowedUrl.IsMatch(url) || !Uri.TryCreate(url, UriKind.Absolute, out _))
         {
             return NotFound();
