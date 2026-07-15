@@ -275,7 +275,7 @@ export const AttestationWalker = ({
                                 previous
                                     ? {
                                           to: stepTo(previous.ident),
-                                          label: `${previous.year} · ${previous.title}`,
+                                          label: `${previous.year}`,
                                           title: `${previous.title} (${previous.year})`,
                                       }
                                     : null
@@ -284,7 +284,7 @@ export const AttestationWalker = ({
                                 next
                                     ? {
                                           to: stepTo(next.ident),
-                                          label: `${next.year} · ${next.title}`,
+                                          label: `${next.year}`,
                                           title: `${next.title} (${next.year})`,
                                       }
                                     : null

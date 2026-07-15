@@ -17,11 +17,9 @@
     font-size: 13px;
     color: var(--c-link);
     text-decoration: none;
-    /* the neighbours' names vary wildly in length ("Psalms" against "Coyrle
-       Sodjey - The Principles and Duties of Christianity"): a share of the row
-       each, clipped, so the row keeps its shape whatever the next step is */
+    /* the neighbours' names vary wildly in length: keep the row from jumping */
     min-width: 90px;
-    max-width: 32%;
+    max-width: 40%;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;

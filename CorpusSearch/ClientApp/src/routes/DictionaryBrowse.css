@@ -1,0 +1,64 @@
+/* the dictionary's index: letters, then prefixes, then headwords.
+   The bars wear the Razor Cregeen browser's look (site-design.css
+   .dict-letters), which only the server-rendered pages load. */
+.dict-browse-bar {
+    display: flex;
+    justify-content: center;
+    gap: 4px;
+    flex-wrap: wrap;
+    margin: 14px 0;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--c-border-meta);
+}
+
+.dict-browse-bar a {
+    font-family: Georgia, serif;
+    font-size: 17px;
+    text-decoration: none;
+    padding: 2px 7px;
+    color: var(--c-link);
+    border-bottom: 2px solid transparent;
+}
+
+.dict-browse-bar a.active {
+    color: var(--c-accent);
+    border-bottom-color: var(--c-accent);
+}
+
+/* headword against the opening of its entry: a glance, not the entry */
+.dict-browse-list {
+    margin: 18px 0 0;
+}
+
+.dict-browse-row {
+    display: grid;
+    grid-template-columns: minmax(120px, max-content) 1fr;
+    gap: 0 16px;
+    align-items: baseline;
+    padding: 5px 0;
+    border-top: 1px solid var(--c-border-meta);
+}
+
+.dict-browse-row dt {
+    font-family: Georgia, serif;
+}
+
+.dict-browse-row dd {
+    margin: 0;
+    color: var(--c-accent);
+    font-size: 13px;
+    min-width: 0;
+}
+
+.dict-browse-empty {
+    color: var(--c-accent);
+    font-style: italic;
+}
+
+@media (max-width: 600px) {
+    /* no room for two columns: the gloss goes under its headword */
+    .dict-browse-row {
+        grid-template-columns: 1fr;
+        gap: 2px;
+    }
+}

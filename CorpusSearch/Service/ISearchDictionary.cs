@@ -33,6 +33,20 @@ public interface ISearchDictionary
 
     /// <summary>Every word an entry answers for: the near-match suggestion pool</summary>
     IEnumerable<string> AllWords { get; }
+
+    /// <summary>
+    /// The dictionary's headwords, as printed and in the order printed: what the
+    /// browse index lists, and what next/previous steps through.
+    /// </summary>
+    /// <remarks>
+    /// The order is the file's, which is the book's, and it is not the order a
+    /// sort would give: the books alphabetise ignoring hyphens and spaces
+    /// ('aghin' before 'agh-markiagh'), so Cregeen contradicts an ordinal sort
+    /// 68 times and Kelly 906. Re-sorting would scramble the book. Duplicates
+    /// are real too — Kelly prints five headwords 'A' — so a headword is
+    /// identified by its position here, never by its spelling.
+    /// </remarks>
+    IReadOnlyList<string> Headwords { get; }
 }
 
 /// <summary>When a query is made, provide a short summary of the result</summary>

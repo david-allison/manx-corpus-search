@@ -135,6 +135,7 @@ public class SearchControllerTest
     {
         public string Identifier => identifier;
         public string Slug => identifier.ToLowerInvariant();
+        public IReadOnlyList<string> Headwords => [];
         public List<string> QueryLanguages => queryLanguages.ToList();
         public bool LinkToDictionary => false;
         public IEnumerable<DictionarySummary> GetSummaries(string query, bool basic = false) =>
