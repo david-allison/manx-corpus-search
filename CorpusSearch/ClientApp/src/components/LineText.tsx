@@ -1,6 +1,6 @@
-import { MouseEvent as ReactMouseEvent, ReactNode } from "react"
+import { MouseEvent as ReactMouseEvent, ReactNode, useState } from "react"
 import Highlighter from "react-highlight-words"
-import { diffChars } from "diff"
+import { diffChars, diffWordsWithSpace } from "diff"
 import { HighlightRange } from "../api/SearchApi"
 import { SearchWorkResult } from "../api/SearchWorkApi"
 
@@ -252,8 +252,57 @@ const HighlightedLine = (props: {
     )
 }
 
+/** A word the correction rewrote rather than adjusted: a character diff of it
+ * interleaves both spellings into a readable-as-neither jumble ("moadea" over
+ * "moddee" gives "moaddeae"), so only the correction is shown, with a "±" chip
+ * that reveals the struck original. The word itself stays plain text: tapping
+ * it looks up the dictionary, like any other word. */
+const CorrectionToggle = (props: {
+    original: string
+    corrected: ReactNode
+}) => {
+    const { original, corrected } = props
+    const [revealed, setRevealed] = useState(false)
+    const label = revealed ? "Hide original text" : "Show original text"
+    return (
+        <>
+            {revealed && (
+                <>
+                    <span className="part-removed">{original}</span>{" "}
+                </>
+            )}
+            <span
+                className={
+                    revealed ? "doc-correction part-added" : "doc-correction"
+                }
+            >
+                {corrected}
+            </span>
+            <button
+                type="button"
+                className="doc-correction-marker"
+                aria-expanded={revealed}
+                aria-label={label}
+                title={label}
+                onClick={(e) => {
+                    e.stopPropagation() // not a dictionary lookup
+                    setRevealed(!revealed)
+                }}
+            >
+                ±
+            </button>
+        </>
+    )
+}
+
 /**
- * A character diff of the original text against the correction we made to it.
+ * A diff of the original text against the correction we made to it.
+ *
+ * Words the correction only inserted characters into (or only removed them
+ * from) still read as both spellings when marked character-by-character, so
+ * they are diffed inline; substitutions interleave and read as neither, so
+ * they render as a CorrectionToggle. Whole-word insertions and deletions stay
+ * inline.
  *
  * The server's highlight ranges are offsets into `text`, so they mark the
  * unchanged/added parts; removed parts only exist in `original` and cannot
@@ -266,9 +315,78 @@ const DiffedLine = (props: {
     onWordClick?: (event: ReactMouseEvent, context: string) => void
 }) => {
     const { original, text, highlights, onWordClick } = props
-    const result = diffChars(original, text)
+    const words = diffWordsWithSpace(original, text)
 
     let partStart = 0
+    /** One run of characters, coloured by how the correction changed it. Only
+     * text present in the correction advances partStart or holds a match. */
+    const charPart = (
+        value: string,
+        added: boolean,
+        removed: boolean,
+        key: string,
+    ) => {
+        const chunks = removed
+            ? []
+            : segmentChunks(highlights ?? [], partStart, value.length)
+        if (!removed) {
+            partStart += value.length
+        }
+        return (
+            <span
+                key={key}
+                className={
+                    added ? "part-added" : removed ? "part-removed" : undefined
+                }
+            >
+                {markChunks(value, chunks)}
+            </span>
+        )
+    }
+
+    const nodes: ReactNode[] = []
+    for (let index = 0; index < words.length; index++) {
+        const part = words[index]
+        const next = words[index + 1]
+        if (part.removed && next?.added) {
+            // the word pair (old, new); jsdiff emits removed before added
+            const chars = diffChars(part.value, next.value)
+            const substituted =
+                chars.some((c) => c.added) && chars.some((c) => c.removed)
+            if (substituted) {
+                const chunks = segmentChunks(
+                    highlights ?? [],
+                    partStart,
+                    next.value.length,
+                )
+                partStart += next.value.length
+                nodes.push(
+                    <CorrectionToggle
+                        key={index}
+                        original={part.value}
+                        corrected={markChunks(next.value, chunks)}
+                    />,
+                )
+            } else {
+                nodes.push(
+                    ...chars.map((c, charIndex) =>
+                        charPart(
+                            c.value,
+                            c.added,
+                            c.removed,
+                            `${index}-${charIndex}`,
+                        ),
+                    ),
+                )
+            }
+            index++ // the pair is consumed
+        } else {
+            nodes.push(
+                charPart(part.value, part.added, part.removed, `${index}`),
+            )
+        }
+    }
+
     // TODO: This only handles the correction, not the original
     // TODO: Also apply justify to 'browse' screen
     return (
@@ -276,37 +394,7 @@ const DiffedLine = (props: {
             onClick={onWordClick && ((event) => onWordClick(event, text))}
             className="doc-line"
         >
-            {result.map((part, index) => {
-                const chunks = part.removed
-                    ? []
-                    : segmentChunks(
-                          highlights ?? [],
-                          partStart,
-                          part.value.length,
-                      )
-                if (!part.removed) {
-                    partStart += part.value.length
-                }
-                const color = part.added
-                    ? "rgba(0, 128, 0, 0.3)"
-                    : part.removed
-                      ? "rgba(255, 0, 0, 0.3)"
-                      : ""
-                const className = part.added
-                    ? "part-added"
-                    : part.removed
-                      ? "part-removed"
-                      : ""
-                return (
-                    <span
-                        key={index}
-                        className={className}
-                        style={{ backgroundColor: color }}
-                    >
-                        {markChunks(part.value, chunks)}
-                    </span>
-                )
-            })}
+            {nodes}
         </div>
     )
 }

@@ -68,6 +68,15 @@ const getWordAround = (node: Node, offset: number): string | null => {
         return null
     }
 
+    // a diffed line interleaves two readings: the original's removed text and
+    // the correction's added text. Stitch the reading the tap landed on, so
+    // both spellings can be looked up. Buttons (note markers, reveal chips)
+    // are part of neither.
+    const excluded =
+        node.parentElement?.closest(".part-removed") != null
+            ? ".part-added, button"
+            : ".part-removed, button"
+
     let text = ""
     let caret = -1
     const walker = document.createTreeWalker(line, NodeFilter.SHOW_TEXT)
@@ -76,9 +85,7 @@ const getWordAround = (node: Node, offset: number): string | null => {
         current != null;
         current = walker.nextNode()
     ) {
-        // 'part-removed' diff text and note-marker buttons ("[1]") are not
-        // part of the displayed word
-        if (current.parentElement?.closest(".part-removed, button") != null) {
+        if (current.parentElement?.closest(excluded) != null) {
             continue
         }
         if (current == node) {

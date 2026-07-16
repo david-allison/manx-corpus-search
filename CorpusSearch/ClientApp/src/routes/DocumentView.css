@@ -289,6 +289,55 @@
     background: var(--c-note-row);
 }
 
+/* a correction diff: text the correction added / removed. Softened tints of
+   the palette's green and brand red; the strike carries the meaning for
+   readers the colours don't reach */
+.part-added {
+    background: rgba(74, 122, 58, 0.16);
+}
+
+.part-removed {
+    background: rgba(166, 57, 44, 0.1);
+    text-decoration: line-through;
+    text-decoration-color: rgba(166, 57, 44, 0.55);
+}
+
+/* a word the correction rewrote (see CorrectionToggle): the corrected form
+   reads clean with a dotted underline and stays tappable for the dictionary;
+   the "±" chip after it reveals the struck original */
+.doc-correction {
+    text-decoration: underline dotted rgba(74, 122, 58, 0.8);
+    text-underline-offset: 3px;
+}
+
+/* the reveal chip: the note markers' outlined-chip look (see .doc-note-marker) */
+.doc-correction-marker {
+    border: none;
+    cursor: pointer;
+    margin-left: 2px;
+    padding: 1px 5px;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 600;
+    vertical-align: super;
+    background: transparent;
+    color: var(--c-secondary);
+    box-shadow: inset 0 0 0 1px var(--c-border-table-head);
+}
+
+/* hover-capable devices only: on touch, :hover sticks after a tap (as with
+   .doc-note-marker above) */
+@media (hover: hover) {
+    .doc-correction-marker:hover {
+        background: var(--c-border-input);
+    }
+}
+
+/* the original is revealed: the chip fills with the addition tint */
+.doc-correction-marker[aria-expanded="true"] {
+    background: rgba(74, 122, 58, 0.16);
+}
+
 /* context lines revealed by an expander (#286): visibly not matches */
 .doc-row-context {
     opacity: 0.75;
