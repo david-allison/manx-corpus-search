@@ -5,6 +5,18 @@
     color: var(--c-muted);
 }
 
+/* the corpus's words stand forward and the never-said recede: the lemma index
+   is the corpus search's own, and its point is what the texts actually say.
+   The book indexes keep their evenness — a book's index is the book's. */
+.dict-lemma-chapters .dict-browse-words a {
+    font-weight: bold;
+}
+
+.dict-lemma-chapters .dict-browse-words a.dict-unattested {
+    font-weight: normal;
+    font-size: 15px;
+}
+
 /* the heading is the tree's root: the trunk below hangs straight off it */
 .dict-lemma-root {
     margin-bottom: 2px;
