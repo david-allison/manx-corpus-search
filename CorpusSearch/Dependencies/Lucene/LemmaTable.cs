@@ -346,6 +346,15 @@ public class LemmaTable
     /// bridge entry re-heading a Cregeen name — stays one candidate</summary>
     public static LemmaTable Load(IEnumerable<TextReader> readers)
     {
+        // unlabeled: links carry no provenance, which only the lemma tree names
+        return Load(readers.Select(reader => (reader, "")));
+    }
+
+    /// <summary><see cref="Load(IEnumerable{TextReader})"/> with each file's
+    /// source named ("cregeen", "names", "phillips", "vocab"): what lets the
+    /// lemma tree say which book records a form no corpus text uses</summary>
+    public static LemmaTable Load(IEnumerable<(TextReader Reader, string Source)> sources)
+    {
         var listsByForm = new Dictionary<string, List<string>>();
         var displayListsByForm = new Dictionary<string, List<string>>();
         var rootListsByForm = new Dictionary<string, List<string>>();
@@ -359,7 +368,7 @@ public class LemmaTable
         var verifiedLinks = new HashSet<(string, string)>();
         var linkSets = new Dictionary<string, MutableLinkSet>();
 
-        foreach (var reader in readers)
+        foreach (var (reader, source) in sources)
         {
             reader.ReadLine(); // header
             while (reader.ReadLine() is { } line)
@@ -397,6 +406,10 @@ public class LemmaTable
                 var linkType = columns.Length > 3 ? columns[3] : "self";
                 var note = columns.Length > 6 ? columns[6] : "";
                 var unverifiedRow = IsUnverifiedRow(note);
+                // a closed-class paradigm row (ta -> bee) is the treebank's
+                // hand-declared suppletion, not the book's print: certain
+                // enough to draw unmarked, but no book may take the credit
+                var rowSource = HasNoteTag(note, "closed-class") ? "" : source;
                 // the lemma tree's rows: every way a form hangs off this display
                 // lemma, deduped per (linkType, form) — a link any row attests
                 // stays verified however many rules also produce it. The
@@ -419,6 +432,12 @@ public class LemmaTable
                         // one (the vocab supplement) makes the root itself a guess
                         if (linkType == "self")
                         {
+                            // the first attesting file names the root's book;
+                            // a guessed row must not (a verified one may later)
+                            if (!linkSet.SelfVerifiedSeen && !unverifiedRow)
+                            {
+                                linkSet.SelfSource = rowSource;
+                            }
                             linkSet.SelfSeen = true;
                             linkSet.SelfVerifiedSeen |= !unverifiedRow;
                         }
@@ -435,10 +454,20 @@ public class LemmaTable
                             viaKey = "";
                         }
                         var linkKey = (linkType, form);
-                        linkSet.Links[linkKey] = linkSet.Links.TryGetValue(linkKey, out var soFar)
-                            ? (soFar.Unverified && unverifiedRow,
-                                soFar.Via.Length > 0 ? soFar.Via : viaKey)
-                            : (unverifiedRow, viaKey);
+                        if (linkSet.Links.TryGetValue(linkKey, out var soFar))
+                        {
+                            linkSet.Links[linkKey] = (
+                                soFar.Unverified && unverifiedRow,
+                                soFar.Via.Length > 0 ? soFar.Via : viaKey,
+                                // the source is the attestation's: a verified
+                                // row's file names the link's book, however
+                                // many rules from elsewhere also produce it
+                                soFar.Unverified && !unverifiedRow ? rowSource : soFar.Source);
+                        }
+                        else
+                        {
+                            linkSet.Links[linkKey] = (unverifiedRow, viaKey, rowSource);
+                        }
                     }
                 }
                 // the Phillips supplement's via column: the classical spelling
@@ -489,9 +518,11 @@ public class LemmaTable
             {
                 Lemma = kv.Value.Lemma,
                 SelfUnverified = kv.Value.SelfSeen && !kv.Value.SelfVerifiedSeen,
+                SelfSource = kv.Value.SelfSource,
                 Links = kv.Value.Links
                     .Select(link => new LemmaLink(
-                        link.Key.LinkType, link.Key.Form, link.Value.Unverified, link.Value.Via))
+                        link.Key.LinkType, link.Key.Form, link.Value.Unverified,
+                        link.Value.Via, link.Value.Source))
                     .ToArray(),
             });
         return new LemmaTable(candidatesByForm, displayLemmasByForm, rootDisplayLemmasByForm, lemmaIds,
@@ -506,7 +537,8 @@ public class LemmaTable
         public required string Lemma { get; init; }
         public bool SelfSeen;
         public bool SelfVerifiedSeen;
-        public Dictionary<(string LinkType, string Form), (bool Unverified, string Via)> Links { get; } = [];
+        public string SelfSource = "";
+        public Dictionary<(string LinkType, string Form), (bool Unverified, string Via, string Source)> Links { get; } = [];
     }
 
     private static LemmaTable LoadVendored()
@@ -520,23 +552,28 @@ public class LemmaTable
             return new LemmaTable([], [], [], [], [], [], []);
         }
         // the supplements ride beside the table when vendored: proper nouns,
-        // the Phillips 1610 spelling links, and the hand-asserted vocabulary
-        var readers = new List<TextReader> { new StreamReader(path) };
+        // the Phillips 1610 spelling links, and the hand-asserted vocabulary.
+        // Each is named, so a link can say which book or supplement attests it.
+        var sources = new List<(TextReader Reader, string Source)>
+        {
+            (new StreamReader(path), "cregeen"),
+        };
         foreach (var supplement in new[] { "names.tsv", "phillips.tsv", "vocab.tsv" })
         {
             var supplementPath = Startup.GetLocalFile("Resources", supplement);
             if (File.Exists(supplementPath))
             {
-                readers.Add(new StreamReader(supplementPath));
+                sources.Add((new StreamReader(supplementPath),
+                    supplement[..^".tsv".Length]));
             }
         }
         try
         {
-            return Load(readers);
+            return Load(sources);
         }
         finally
         {
-            readers.ForEach(r => r.Dispose());
+            sources.ForEach(x => x.Reader.Dispose());
         }
     }
 }
@@ -552,6 +589,11 @@ public sealed class LemmaLinkSet
     /// (the vocab supplement's 'peiagh'): the root itself is a guess, not print</summary>
     public required bool SelfUnverified { get; init; }
 
+    /// <summary>The file whose print attests the lemma's own row ("cregeen",
+    /// "names", ...); "" when nothing does, when the source is unnamed, or for
+    /// a closed-class paradigm row, which no book may take credit for</summary>
+    public string SelfSource { get; init; } = "";
+
     /// <summary>Each form linked to the lemma, once per way it is linked: 'deiney'
     /// is both `inflected` and `plural` of dooinney, and that is two links</summary>
     public required IReadOnlyList<LemmaLink> Links { get; init; }
@@ -563,5 +605,9 @@ public sealed class LemmaLinkSet
 /// hand-assertion (the vocab supplement) alone. <paramref name="Via"/> is the
 /// intermediate the form derives through, normalized ('pyaghyn' inflects the
 /// variant 'pyagh', not peiagh itself); "" where it derives from the lemma
-/// directly.</summary>
-public sealed record LemmaLink(string LinkType, string Form, bool Unverified, string Via = "");
+/// directly. <paramref name="Source"/> names the attesting row's file
+/// ("cregeen", "names", ...): the verified row's, however many rules from
+/// elsewhere also produce the link; "" when unnamed or when the row is the
+/// treebank's closed-class paradigm, which no book may take credit for.</summary>
+public sealed record LemmaLink(
+    string LinkType, string Form, bool Unverified, string Via = "", string Source = "");

@@ -98,6 +98,9 @@ public class LemmaIndexService(LemmaTable lemmaTable, CorpusVocabulary vocabular
             Attestations = vocabulary.AttestationsOf(links.Lemma),
             Attested = (vocabulary.AttestationsOf(links.Lemma) ?? 1) > 0,
             Unverified = links.SelfUnverified,
+            Source = links.SelfUnverified || links.SelfSource.Length == 0
+                ? null
+                : links.SelfSource,
             Groups = Grouped(byParent[rootKey].Select(x => (x, byParent)), expanded),
         };
     }
@@ -176,6 +179,9 @@ public class LemmaIndexService(LemmaTable lemmaTable, CorpusVocabulary vocabular
             // greying is a claim
             Attested = (vocabulary.AttestationsOf(link.Form) ?? 1) > 0,
             Unverified = link.Unverified,
+            // provenance belongs to the attestation: an unverified link has
+            // only the generator behind it, and names no book
+            Source = link.Unverified || link.Source.Length == 0 ? null : link.Source,
             Groups = groups,
         };
     }
@@ -196,6 +202,10 @@ public class LemmaTreePage
     /// 'peiagh'): the root itself renders as a guess, as the popup's
     /// unverifiedLink does</summary>
     public bool Unverified { get; set; }
+    /// <summary>The file whose print attests the lemma itself ("cregeen",
+    /// "names", ...): what lets a lemma no text uses say a book records it.
+    /// Null when nothing does.</summary>
+    public string? Source { get; set; }
     public required List<LemmaTreeGroup> Groups { get; set; }
 }
 
@@ -222,6 +232,11 @@ public class LemmaTreeForm
     /// <summary>No row attests the link: it was made by rule (a generated
     /// mutation) or hand-asserted (the vocab supplement), and may be wrong</summary>
     public bool Unverified { get; set; }
+    /// <summary>The file whose print attests the link ("cregeen", "names",
+    /// ...): what lets a form no text uses say a book records it. Null for an
+    /// unverified link — only the generator is behind one — and for the
+    /// treebank's closed-class paradigm rows, which no book may claim.</summary>
+    public string? Source { get; set; }
     /// <summary>What hangs off this form in turn: rows deriving through it, and
     /// — where it heads a lexeme of its own — that lexeme's tree. Null at a
     /// leaf, and at a form the tree has already drawn (a book-true cycle's

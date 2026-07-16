@@ -181,6 +181,39 @@ const FORM_UNVERIFIED_TITLE =
     "Unverified: no dictionary records this form under this lemma. It was " +
     "worked out by rule or asserted by hand, and may be wrong"
 
+/** The reader's name for a source file. Only the book earns a note: the
+ * Phillips rows wear their group label already, the names supplement is
+ * corpus-driven, and the vocab supplement's rows are guesses with a mark of
+ * their own. */
+const SOURCE_NAMES: Record<string, string> = { cregeen: "Cregeen" }
+
+/** Names the book behind a node no text uses. Greyed, it would otherwise read
+ * as a phantom — when in fact Cregeen prints it, and only the corpus is
+ * silent. An attested node needs no vouching, and a guess names no book (the
+ * server sends no source for one). */
+const SourceNote = ({
+    form,
+    attested,
+    source,
+}: {
+    form: string
+    attested: boolean
+    source?: string | null
+}) => {
+    const name = !attested && source != null ? SOURCE_NAMES[source] : undefined
+    return name ? (
+        <>
+            {" "}
+            <abbr
+                className="dict-abbr dict-lemma-source"
+                title={`${name} records “${form}”, though no text in the corpus uses this spelling`}
+            >
+                {name}
+            </abbr>
+        </>
+    ) : null
+}
+
 /** The branches under one node: its forms by how each hangs off it, every
  * form nesting in turn what hangs off *it* — the rows deriving through it
  * ('pyaghyn' inflects the variant 'pyagh'), and a lexeme it heads itself
@@ -220,6 +253,11 @@ const TreeGroups = ({
                                 {form.form}
                             </Link>
                             <Count attestations={form.attestations} />
+                            <SourceNote
+                                form={form.form}
+                                attested={form.attested}
+                                source={form.source}
+                            />
                             <UnverifiedMark
                                 unverified={form.unverified}
                                 title={FORM_UNVERIFIED_TITLE}
@@ -304,6 +342,11 @@ const LemmaTree = ({ lemma }: { lemma: string }) => {
                     >
                         {tree.lemma}
                         <Count attestations={tree.attestations} />
+                        <SourceNote
+                            form={tree.lemma}
+                            attested={tree.attested}
+                            source={tree.source}
+                        />
                         <UnverifiedMark
                             unverified={tree.unverified}
                             title={

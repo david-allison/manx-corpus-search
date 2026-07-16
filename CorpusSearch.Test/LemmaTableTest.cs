@@ -1,4 +1,5 @@
 using System.IO;
+using System.Linq;
 using CorpusSearch.Dependencies.Lucene;
 using NUnit.Framework;
 
@@ -272,6 +273,54 @@ public class LemmaTableTest
         });
     }
 
+    /// <summary>Each file names its links' source, and the attesting row's file
+    /// keeps the name however many rules from elsewhere also produce the link —
+    /// while a closed-class paradigm row (ta -> bee, the treebank's suppletion)
+    /// credits no book at all</summary>
+    [Test]
+    public void ALinkNamesTheFileWhosePrintAttestsIt()
+    {
+        using var cregeen = new StringReader(
+            "form\tlemmaId\tlemma\tlinkType\tpos\tvia\tnote\n"
+            + "dooinney\tdooinney.n\tdooinney\tself\ts. m.\tdooinney\t\n"
+            + "deiney\tdooinney.n\tdooinney\tinflected\ts. m.\tdooinney\t\n"
+            + "bee\tbee.v\tbee\tself\tv.\tbee\t\n"
+            + "ta\tbee.v\tbee\tirregular\tv.\tta\tclosed-class\n");
+        using var vocab = new StringReader(
+            "form\tlemmaId\tlemma\tlinkType\tpos\tvia\tnote\n"
+            + "peiaghyn\tpeiagh.n\tpeiagh\tinflected\ts.\tpeiagh\tunverified\n");
+        var table = LemmaTable.Load([(cregeen, "cregeen"), (vocab, "vocab")]);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(table.LinksOf("dooinney")!.SelfSource, Is.EqualTo("cregeen"));
+            Assert.That(table.LinksOf("dooinney")!.Links,
+                Is.EqualTo(new[] { new LemmaLink("inflected", "deiney", false, "", "cregeen") }));
+            // the paradigm's row draws unmarked, but no book takes the credit
+            Assert.That(table.LinksOf("bee")!.Links,
+                Is.EqualTo(new[] { new LemmaLink("irregular", "ta", false, "", "") }));
+            // an unverified link still remembers where the assertion lives
+            Assert.That(table.LinksOf("peiagh")!.Links.Single().Source, Is.EqualTo("vocab"));
+        });
+    }
+
+    /// <summary>A pair the print attests takes the print's name even when a rule
+    /// from another file produced it first</summary>
+    [Test]
+    public void TheAttestingFileWinsWhateverTheOrder()
+    {
+        using var vocab = new StringReader(
+            "form\tlemmaId\tlemma\tlinkType\tpos\tvia\tnote\n"
+            + "deiney\tdooinney.n\tdooinney\tinflected\ts.\tdooinney\tunverified\n");
+        using var cregeen = new StringReader(
+            "form\tlemmaId\tlemma\tlinkType\tpos\tvia\tnote\n"
+            + "deiney\tdooinney.n\tdooinney\tinflected\ts. m.\tdooinney\t\n");
+        var table = LemmaTable.Load([(vocab, "vocab"), (cregeen, "cregeen")]);
+
+        Assert.That(table.LinksOf("dooinney")!.Links,
+            Is.EqualTo(new[] { new LemmaLink("inflected", "deiney", false, "", "cregeen") }));
+    }
+
     /// <summary>The vendored table loads and covers the acceptance forms</summary>
     [Test]
     public void VendoredTableLoads()
@@ -281,9 +330,10 @@ public class LemmaTableTest
         Assert.That(table.FormCount, Is.GreaterThan(39_000));
         // ~14,100: the lemma column's distinct spellings, transcription rows aside
         Assert.That(table.AllDisplayLemmas, Has.Count.GreaterThan(13_000));
-        // the Phillips supplement's 1610 spellings hang off the classical lemma
+        // the Phillips supplement's 1610 spellings hang off the classical
+        // lemma, each row naming the file that attests it
         Assert.That(table.LinksOf("dooinney")!.Links,
-            Does.Contain(new LemmaLink("phillips", "dwyne", false)));
+            Does.Contain(new LemmaLink("phillips", "dwyne", false, "", "phillips")));
         Assert.That(table.CandidatesFor("daase"), Does.Contain("aase.v"));
         Assert.That(table.CandidatesFor("aaseyn"), Does.Contain("aase.n"));
         // n'aase (the er n'aase participle) shares aase's lemma id, so a

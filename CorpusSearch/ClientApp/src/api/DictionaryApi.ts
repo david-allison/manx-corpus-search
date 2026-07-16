@@ -438,6 +438,9 @@ export type LemmaTreeResponse = {
     /** the lemma's own row is hand-asserted (the vocab supplement): the root
      * itself is a guess, like the popup's unverifiedLink */
     unverified: boolean
+    /** the file whose print attests the lemma itself ("cregeen", "names", …):
+     * what lets a lemma no text uses say a book records it */
+    source?: string | null
     groups: LemmaTreeGroup[]
 }
 
@@ -460,6 +463,10 @@ export type LemmaTreeForm = {
     /** no row attests the link: made by rule (a generated mutation) or asserted
      * by hand (the vocab supplement), and possibly wrong */
     unverified: boolean
+    /** the file whose print attests the link ("cregeen", "names", …); absent
+     * for an unverified link — only the generator is behind one — and for the
+     * treebank's closed-class paradigm rows, which no book may claim */
+    source?: string | null
     /** what hangs off this form in turn: forms deriving through it ('pyaghyn'
      * inflects the variant 'pyagh'), and — where it heads a lexeme of its own
      * ('deiney' under dooinney) — that lexeme's tree. Absent at a leaf, and at

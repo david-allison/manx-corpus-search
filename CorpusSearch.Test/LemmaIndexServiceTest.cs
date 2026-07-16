@@ -242,6 +242,29 @@ public class LemmaIndexServiceTest
         Assert.That(Service(Table()).Tree("xyzzy"), Is.Null);
     }
 
+    /// <summary>A form Cregeen prints but no text uses can say so: the source
+    /// rides the node — and only an attested link's, since a guess has nothing
+    /// but the generator behind it</summary>
+    [Test]
+    public void TheTreeNamesTheBookBehindAVerifiedLink()
+    {
+        using var reader = new StringReader(
+            "form\tlemmaId\tlemma\tlinkType\tpos\tvia\tnote\n"
+            + "aase\taase.n\taase\tself\ts. m.\taase\t\n"
+            + "aaseyn\taase.n\taase\tinflected\ts. m.\taase\t\n"
+            + "haase\taase.n\taase\tmutation\ts. m.\taase\tgenerated-lenition\n");
+        var table = LemmaTable.Load([(reader, "cregeen")]);
+
+        var tree = Service(table).Tree("aase")!;
+        var byForm = tree.Groups.SelectMany(x => x.Forms).ToDictionary(x => x.Form);
+        Assert.Multiple(() =>
+        {
+            Assert.That(tree.Source, Is.EqualTo("cregeen"));
+            Assert.That(byForm["aaseyn"].Source, Is.EqualTo("cregeen"));
+            Assert.That(byForm["haase"].Source, Is.Null);
+        });
+    }
+
     /// <summary>Each node counts how often the corpus says it, by its spelling</summary>
     [Test]
     public void TheTreeCountsEachSpellingsAttestations()
