@@ -75,6 +75,13 @@
     font-size: 12px;
 }
 
+/* the book behind a node no text uses: without it a greyed form reads as a
+   phantom, when in fact Cregeen prints it */
+.dict-lemma-source {
+    color: var(--c-muted);
+    font-size: 12px;
+}
+
 .dict-page-word .dict-lemma-count {
     font-size: 15px;
     font-weight: normal;

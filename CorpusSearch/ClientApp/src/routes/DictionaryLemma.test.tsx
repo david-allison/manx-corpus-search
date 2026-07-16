@@ -44,6 +44,13 @@ const tree: LemmaTreeResponse = {
                     attested: false,
                     unverified: true,
                 },
+                {
+                    form: "pyee",
+                    attestations: 0,
+                    attested: false,
+                    unverified: false,
+                    source: "cregeen",
+                },
             ],
         },
         {
@@ -157,7 +164,7 @@ describe("lemma tree", () => {
         // the branches nest inside the tree, a list per branch
         expect(
             document.querySelectorAll(".dict-lemma-tree > li > ul > li"),
-        ).toHaveLength(3)
+        ).toHaveLength(4)
         // a form is a link to its own word page
         expect(
             screen.getByRole("link", { name: "peiaghyn" }).getAttribute("href"),
@@ -202,6 +209,18 @@ describe("lemma tree", () => {
         expect(screen.getByText("×2")).toBeTruthy()
         expect(screen.getByText("×3")).toBeTruthy()
         expect(document.querySelectorAll(".dict-lemma-count")).toHaveLength(3)
+    })
+
+    it("names the book behind a form no text uses", async () => {
+        respondWith(tree)
+        renderAt("/dictionary/lemma/peiagh")
+
+        // pyee: greyed, but Cregeen prints it and the note says so.
+        // Nothing else earns one — not the attested forms (the corpus
+        // vouches), not the guesses (marked unverified instead)
+        const note = await screen.findByText("Cregeen")
+        expect(note.getAttribute("title")).toContain("Cregeen records “pyee”")
+        expect(screen.getAllByText("Cregeen")).toHaveLength(1)
     })
 
     it("says when the tables know no such lemma, with a way back", async () => {
