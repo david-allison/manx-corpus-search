@@ -77,9 +77,17 @@ public static class DictionaryBrowse
     /// Chunked in the order given rather than grouped, because the order given is
     /// the book's and grouping would leave it. Cregeen files 'faar-y-chaagh'
     /// among the 'caa' words, so its 'f' opens with an FAA of that one word and
-    /// meets FAA again where the F section proper begins. A name appearing
+    /// meets FAA again where the F section proper begins. A chapter key appearing
     /// twice is the book being honest — 11 times in Cregeen, 23 in Kelly —
     /// where gathering the two would move a word out of the place it is printed.
+    ///
+    /// A headword printed more than once in a row is another matter: the book
+    /// heads five entries 'A' because it has five senses to define, but the index
+    /// is a way in and not the book, and five identical links to the one page ('A'
+    /// resolves by its spelling, and its page carries all five senses) are one
+    /// entry to a reader. So a run of the same spelling folds to one. Only against
+    /// the word beside it — the double-back opens a fresh chapter, so a spelling
+    /// repeating across that seam is left alone.
     /// </summary>
     /// <param name="attested">Whether the corpus uses a word; everything is taken
     /// as used when nothing is passed, so a caller with no index greys nothing</param>
@@ -94,7 +102,13 @@ public static class DictionaryBrowse
             {
                 chapters.Add(new BrowseChapter { Key = key, Words = [] });
             }
-            chapters[^1].Words.Add(new BrowseWord
+            var words = chapters[^1].Words;
+            // the same spelling twice over is one link twice over: fold it
+            if (words.Count > 0 && words[^1].Word == headword)
+            {
+                continue;
+            }
+            words.Add(new BrowseWord
             {
                 Word = headword,
                 Attested = attested?.Invoke(headword) ?? true,
@@ -126,7 +140,9 @@ public class BrowseChapter
     /// <summary>The prefix in capitals, as a printed index heads its column:
     /// 'AAL', or 'AD' where the word is shorter than the chapter is deep</summary>
     public required string Key { get; set; }
-    /// <summary>A word may repeat — Kelly prints five headwords 'A'</summary>
+    /// <summary>The chapter's headwords, each spelling once: the book prints five
+    /// entries 'A', but they are one link and the index shows one (see
+    /// <see cref="DictionaryBrowse.Chapters"/>)</summary>
     public required List<BrowseWord> Words { get; set; }
 }
 

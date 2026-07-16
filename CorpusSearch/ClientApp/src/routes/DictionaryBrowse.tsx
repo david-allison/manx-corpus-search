@@ -105,9 +105,9 @@ export const DictionaryBrowse = () => {
                         className="dict-browse-chapters"
                         aria-label={`Words under ${page.letter}`}
                     >
-                        {/* the key repeats where the book doubles back, and a
-                            word where the book prints it twice: neither is an
-                            identity, so both are keyed by where they sit */}
+                        {/* the key repeats where the book doubles back, so a
+                            chapter is keyed by where it sits rather than by its
+                            name (DictionaryBrowse.Chapters) */}
                         {page.chapters.map((chapter, index) => (
                             <div
                                 className="dict-browse-chapter"
@@ -151,6 +151,18 @@ export const DictionaryBrowse = () => {
                             </div>
                         ))}
                     </div>
+
+                    {/* the letters again, so a reader at the foot of a long page
+                        (Kelly's 's' is 1,778 words) can turn to another without
+                        scrolling back to the top for the bar */}
+                    {page.letters.length > 0 && (
+                        <Bar
+                            items={page.letters}
+                            active={page.letter}
+                            dict={page.slug}
+                            ariaLabel="Letters, again"
+                        />
+                    )}
                 </>
             )}
         </div>

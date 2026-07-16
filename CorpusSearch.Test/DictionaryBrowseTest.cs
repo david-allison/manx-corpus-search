@@ -119,14 +119,43 @@ public class DictionaryBrowseTest
         });
     }
 
-    /// <summary>Kelly prints five headwords 'A': a word is identified by where it
-    /// sits, so a repeat is kept rather than folded away</summary>
+    /// <summary>Kelly prints five headwords 'A', one per sense, but the index is a
+    /// way in and they are one link: a run of the same spelling folds to one entry
+    /// (its page carries the senses)</summary>
     [Test]
-    public void AWordTheBookPrintsTwiceIsListedTwice()
+    public void AWordPrintedInARunIsListedOnce()
     {
-        var chapters = DictionaryBrowse.Chapters(["A", "A"]);
+        var chapters = DictionaryBrowse.Chapters(["A", "A", "A", "A", "A"]);
 
-        Assert.That(chapters.Single().Words.Select(x => x.Word), Is.EqualTo(new[] { "A", "A" }));
+        Assert.That(chapters.Single().Words.Select(x => x.Word), Is.EqualTo(new[] { "A" }));
+    }
+
+    /// <summary>Only a run folds: the same spelling with a different word between
+    /// is two places in the book, and both are kept</summary>
+    [Test]
+    public void ASpellingThatRecursAfterAnotherWordIsKept()
+    {
+        // one chapter (BAA): baare, then baaghyn, then baare again
+        var words = DictionaryBrowse.Chapters(["baare", "baaghyn", "baare"])
+            .Single().Words.Select(x => x.Word);
+
+        Assert.That(words, Is.EqualTo(new[] { "baare", "baaghyn", "baare" }));
+    }
+
+    /// <summary>...and a run does not fold across the double-back's seam, which
+    /// opens a new chapter: were 'faa' to head the FAA that doubles back and the
+    /// FAA that follows, both stand</summary>
+    [Test]
+    public void AFoldDoesNotReachAcrossADoubleBack()
+    {
+        var chapters = DictionaryBrowse.Chapters(["faa", "fa", "faa"]);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(chapters.Select(x => x.Key), Is.EqualTo(new[] { "FAA", "FA", "FAA" }));
+            Assert.That(chapters[0].Words.Select(x => x.Word), Is.EqualTo(new[] { "faa" }));
+            Assert.That(chapters[2].Words.Select(x => x.Word), Is.EqualTo(new[] { "faa" }));
+        });
     }
 
     [Test]
