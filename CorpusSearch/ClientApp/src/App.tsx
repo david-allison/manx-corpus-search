@@ -17,8 +17,10 @@ export const App = () => {
 
     return (
         <Layout onRefresh={onRefresh}>
-            {/*keyed by path: navigating away from a crashed page clears the error*/}
-            <ErrorBoundary key={location.pathname}>
+            {/*told the path, not keyed by it: navigating away from a crashed
+               page clears the error, without remounting every page each time a
+               URL changes*/}
+            <ErrorBoundary resetOn={location.pathname}>
                 <Routes>
                     <Route path="/" element={<Home key={k} />} />
                     {/*experimental: the teanglann-style dictionary page. Any
