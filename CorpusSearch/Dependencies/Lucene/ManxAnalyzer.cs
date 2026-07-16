@@ -31,6 +31,12 @@ public class ManxAnalyzer : Analyzer
         Tokenizer tokenizer = new ManxTokenizer(LuceneVersion.LUCENE_48, reader, preserveCase);
 
         TokenStream filter = new ManxTokenFilter(tokenizer, preserveCase);
+        if (LuceneIndex.IsStatsField(fieldName))
+        {
+            // numbers stay searchable in the search fields, but are not Manx
+            // words: the statistics stream drops them (verse/page/year numbers)
+            filter = new DigitTokenFilter(filter);
+        }
         if (LuceneIndex.IsLemmaField(fieldName))
         {
             filter = new LemmaTokenFilter(filter, LemmaTable.Instance, lemmaResolver);

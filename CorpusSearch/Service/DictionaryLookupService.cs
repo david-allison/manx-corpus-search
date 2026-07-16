@@ -574,6 +574,12 @@ public class DictionaryLookupService(IEnumerable<ISearchDictionary> dictionarySe
             while (stream.IncrementToken())
             {
                 var token = term.ToString();
+                if (DigitTokenFilter.IsPureDigits(token))
+                {
+                    // a number is not a dictionary word: neither painted nor
+                    // counted (the statistics stream drops these too)
+                    continue;
+                }
                 string status;
                 if (HasEntry(token))
                 {

@@ -73,6 +73,9 @@ public class LuceneIndex(IndexWriter indexWriter)
     /// <summary>Whether the field's tokens append candidate lemma ids (<see cref="LemmaTokenFilter"/>)</summary>
     internal static bool IsLemmaField(string field) => field is DOCUMENT_LEMMA_MANX;
 
+    /// <summary>Whether the field feeds the Manx-language statistics (<see cref="DigitTokenFilter"/>)</summary>
+    internal static bool IsStatsField(string field) => field is DOCUMENT_MANX_GV;
+
     /// <summary>Whether the field holds verse/chapter references (digit-preserving analyzer)</summary>
     internal static bool IsReferenceField(string field) => field is DOCUMENT_REFERENCE;
 
