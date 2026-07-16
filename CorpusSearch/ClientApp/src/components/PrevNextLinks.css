@@ -25,6 +25,18 @@
     text-overflow: ellipsis;
 }
 
+/* The step forward reads to its own edge: "1819 ›" sits against the right of the
+   chip, the way "‹ 1748" sits against the left of its own. The chips hold a
+   width the long names need (min-width above), so a short label — a year is four
+   characters — otherwise floats in the middle of the box with its arrow stranded
+   behind it, pointing at nothing.
+
+   Hung on rel, which the steps already carry and which is what they mean: a
+   parallel class would only say it twice. */
+.prev-next-link[rel="next"] {
+    text-align: right;
+}
+
 .prev-next-link:hover {
     border-color: var(--c-accent);
 }
