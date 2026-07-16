@@ -8,6 +8,23 @@
 /* the look-up box and its way back to the index live with WordSearch, which the
    index shares */
 
+/* The entries, and the evidence under them: everything that is about the word
+   rather than about the page.
+
+   They hold their place while the next word's are on their way, and dim rather
+   than going — blanked, the page dropped to a spinner and grew back, so the
+   scrollbar went and the footer jumped up into the gap for as long as the
+   answer took. The corpus search dims a stale result exactly so (Home.tsx and
+   DocumentView, on React's own isPending); this fades on the same numbers, from
+   a request it tracks itself. */
+.dict-page-entries {
+    transition: opacity 150ms ease;
+}
+
+.dict-page-entries.dict-page-stale {
+    opacity: 0.5;
+}
+
 /* the corpus has not been read for this phrase yet. A note, not a warning:
    nothing is wrong, an answer is simply on its way — and the way past it is
    offered rather than a wait imposed. */

@@ -217,7 +217,11 @@ export const AttestationWalker = ({
     useEffect(() => setReserved(0), [word])
 
     useEffect(() => {
-        setWalk(null)
+        // the word before's walk is not blanked first. This section is the tallest
+        // thing on the page, and dropping it between one headword and the next
+        // takes 200px out of the middle: the page shortens, the scrollbar goes and
+        // the footer comes up to meet the gap, for as long as an answer takes. The
+        // page fades what has not caught up (dict-page-entries).
         const abort = new AbortController()
         dictionaryAttestations(word, abort.signal)
             .then(setWalk)
@@ -226,6 +230,9 @@ export const AttestationWalker = ({
             })
         return () => abort.abort()
     }, [word])
+
+    // the walk on screen is this word's only once it arrives
+    const walked = walk != null && walk.word === word
 
     // no step named: the walk starts at the word's first attestation
     const index = Math.max(
@@ -241,6 +248,12 @@ export const AttestationWalker = ({
             setLines(null)
             return
         }
+        // the step is still the last word's: its documents are not this word's,
+        // and asking for one in the other's name answers about neither. The uses
+        // on screen keep the section's shape until the walk catches up.
+        if (!walked) {
+            return
+        }
         // the previous step's uses stay on screen until the next arrive. Blanking
         // them would collapse the section to a one-line "Loading…" and grow it
         // back, moving the arrows out from under the cursor: the walk is meant to
@@ -252,15 +265,17 @@ export const AttestationWalker = ({
                 if (!abort.signal.aborted) console.warn(e)
             })
         return () => abort.abort()
-    }, [word, currentIdent, open])
+    }, [word, currentIdent, open, walked])
 
     const hasWalk = walk != null && walk.documents.length > 0 && current != null
+    // the band is this word's or nothing; the walk may still be the last word's,
+    // and holds its place while this one's is fetched
     if (!hasWalk && !hasAttestation(history)) {
         return null
     }
 
     // the uses on screen belong to the step we are on only once they arrive
-    const fresh = lines != null && lines.ident === currentIdent
+    const fresh = walked && lines != null && lines.ident === currentIdent
 
     const stepTo = (ident: string) =>
         `${pathname}?at=${encodeURIComponent(ident)}`
