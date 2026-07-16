@@ -13,6 +13,18 @@ export type VerseAlignmentDocument = {
     english?: string
 }
 
+/** One dictionary entry quoting the verse ("aalid" quotes Ps. 45, 12) */
+export type VerseQuotation = {
+    /** display name of the dictionary ("Cregeen") */
+    dictionary: string
+    /** the dictionary's URL segment ("cregeen"): scopes the entry link */
+    slug: string
+    /** the quoting entry's headword */
+    word: string
+    /** the citation as the entry prints it ("Ps. 45, 12") */
+    citation: string
+}
+
 export type VerseAlignmentResponse = {
     /** the canonical "book.chapter[.verse]" key that was aligned */
     key: string
@@ -20,6 +32,8 @@ export type VerseAlignmentResponse = {
     display: string
     /** every document with the verse (or its chapter), oldest translation first */
     documents: VerseAlignmentDocument[]
+    /** dictionary entries quoting this verse; absent when none */
+    quotedBy?: VerseQuotation[]
 }
 
 /**

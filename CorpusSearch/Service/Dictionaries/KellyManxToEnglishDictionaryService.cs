@@ -10,8 +10,14 @@ using Newtonsoft.Json;
 namespace CorpusSearch.Service.Dictionaries;
 
 public class KellyManxToEnglishDictionaryService(ISet<string> allWords, IList<KellyManxToEnglishEntry> entries)
-    : ISearchDictionary
+    : ISearchDictionary, IQuotingDictionary
 {
+    /// <summary>Every entry's definition text: the reverse verse lookup's input</summary>
+    public IEnumerable<(string Word, string Text)> QuotableEntries =>
+        entries.SelectMany(x => x.ChildrenRecursive)
+            .Where(e => e.Words.Count > 0 && !string.IsNullOrEmpty(e.Definition))
+            .Select(e => (e.Words[0], e.Definition));
+
     public string Identifier => "J Kelly Manx to English";
 
     /// <summary>matches the data repo's own name (kelly-m2e-manx-dictionary-data):

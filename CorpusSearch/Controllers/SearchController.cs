@@ -15,7 +15,8 @@ public partial class SearchController(
     DocumentSearchService documentSearchService,
     OverviewSearchService2 overviewSearchService,
     IEnumerable<ISearchDictionary> dictionaryServices,
-    WorkService workService)
+    WorkService workService,
+    VerseQuotationIndex verseQuotations)
     : ControllerBase
 {
     public static string PUNCTUATION_REGEX = "[,.;!?\\s]";
@@ -188,6 +189,9 @@ public partial class SearchController(
         {
             return BadRequest("not a canonical reference key");
         }
+        // the reverse of a dictionary entry's verse citations: the popup also
+        // says which entries quote this verse
+        result.QuotedBy = verseQuotations.For(result.Key);
         return result;
     }
 

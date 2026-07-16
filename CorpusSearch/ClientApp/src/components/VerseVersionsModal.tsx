@@ -126,6 +126,32 @@ export const VerseVersionsModal = (props: {
                         )}
                     </ul>
                 )}
+                {alignment?.quotedBy != null && (
+                    <>
+                        <h3 className="verse-versions-quoted-title">
+                            Quoted in the dictionaries
+                        </h3>
+                        <ul className="verse-versions-quoted">
+                            {alignment.quotedBy.map((q) => (
+                                <li key={`${q.slug}:${q.word}`}>
+                                    <Link
+                                        to={`/dictionary/in/${q.slug}/${encodeURIComponent(q.word)}`}
+                                        lang="gv"
+                                        onClick={() => {
+                                            onClose()
+                                            onNavigate?.()
+                                        }}
+                                    >
+                                        {q.word}
+                                    </Link>
+                                    <span className="verse-versions-quoted-dict">
+                                        {q.dictionary}
+                                    </span>
+                                </li>
+                            ))}
+                        </ul>
+                    </>
+                )}
             </Box>
         </Modal>
     )

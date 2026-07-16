@@ -11,7 +11,8 @@ using Newtonsoft.Json;
 
 namespace CorpusSearch.Service.Dictionaries;
 
-public class CregeenDictionaryService(ISet<string> allWords, IList<CregeenEntry> entries) : ISearchDictionary
+public class CregeenDictionaryService(ISet<string> allWords, IList<CregeenEntry> entries)
+    : ISearchDictionary, IQuotingDictionary
 {
     public static readonly Dictionary<char, string> LetterLookup = new(new CaseInsensitiveCharComparer())
     {
@@ -154,6 +155,18 @@ public class CregeenDictionaryService(ISet<string> allWords, IList<CregeenEntry>
     /// (see the PERF note below), and the index must not pay that.</summary>
     public IReadOnlyList<string> Headwords { get; } =
         entries.Select(x => x.Words.FirstOrDefault()).OfType<string>().ToList();
+
+    /// <summary>Every entry's decoded text (never the basic gloss, which drops
+    /// the quotations): the reverse verse lookup's input</summary>
+    public IEnumerable<(string Word, string Text)> QuotableEntries =>
+        entries.SelectMany(x => x.ChildrenRecursive)
+            .Where(e => e.Words.Count > 0 && !string.IsNullOrEmpty(e.EntryHtml))
+            .Select(e =>
+            {
+                HtmlDocument doc = new();
+                doc.LoadHtml(e.EntryHtml);
+                return (e.Words[0], HttpUtility.HtmlDecode(doc.DocumentNode.InnerText));
+            });
 
     public IEnumerable<DictionarySummary> GetSummaries(string query, bool basic)
     {
