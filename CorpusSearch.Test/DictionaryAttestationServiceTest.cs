@@ -245,6 +245,69 @@ public class DictionaryAttestationServiceTest : QueryBase
         });
     }
 
+    /// <summary>The walk's tabs ask a reading at a time: 'vee' is bee or mee, and
+    /// the mee tab must not step through texts that only use bee</summary>
+    [Test]
+    public void AReadingCanBeWalkedAlone()
+    {
+        AddDated("OnlyBee", 1748, "va bee ayn");
+        AddDated("OnlyMee", 1819, "ta mee goll");
+
+        var walk = Service().Attestations("vee", "mee");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(walk.Documents.Select(x => x.Ident), Is.EqualTo(new[] { "OnlyMee" }));
+            Assert.That(walk.Lemma, Is.EqualTo("mee"));
+            // every reading still listed: the tabs stay put while one is open
+            Assert.That(walk.Lemmas, Does.Contain("bee").And.Contain("mee"));
+        });
+    }
+
+    /// <summary>A reading the word does not have (a stale tab in a URL) walks
+    /// everything rather than nothing: the section must not blank</summary>
+    [Test]
+    public void AReadingTheWordLacksFallsBackToTheWholeWalk()
+    {
+        AddDated("Doc", 1748, "va bee ayn");
+
+        var walk = Service().Attestations("vee", "xyzzy");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(walk.Documents.Select(x => x.Ident), Is.EqualTo(new[] { "Doc" }));
+            Assert.That(walk.Lemma, Is.Null);
+        });
+    }
+
+    /// <summary>An unambiguous word names its reading unasked: the walk is that
+    /// reading's whether or not a tab said so</summary>
+    [Test]
+    public void AnUnambiguousWalkNamesItsOwnReading()
+    {
+        AddDated("Doc", 1748, "Ta mee aase");
+
+        Assert.That(Service().Attestations("aase").Lemma, Is.EqualTo("aase"));
+    }
+
+    /// <summary>The step's uses follow the tab they were opened from: the mee tab's
+    /// step through a document shows mee's uses, not bee's alongside</summary>
+    [Test]
+    public void AStepCanShowOneReadingsUsesAlone()
+    {
+        AddDated("Doc", 1748, "va mee as bee ayn");
+
+        var found = Service().InDocument("vee", "Doc", "mee").Result!;
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(found.Groups.Select(x => x.Lemma).Distinct(), Is.EqualTo(new[] { "mee" }));
+            Assert.That(found.Lemma, Is.EqualTo("mee"));
+            // the count is the reading's, not the word's across readings
+            Assert.That(found.UseCount, Is.EqualTo(1));
+        });
+    }
+
     /// <summary>A word nothing knows — no lexeme in the table, and no text saying
     /// the spelling either — walks nothing: the fallback scan must come back with
     /// what it found, which is nothing, rather than with every document</summary>

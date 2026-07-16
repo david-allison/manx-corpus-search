@@ -188,15 +188,23 @@ export const AttestationWalker = ({
     const { pathname } = useLocation()
     const [params] = useSearchParams()
     const at = params.get("at")
+    // the open tab: which reading the walk below is of. A tab you chose is a
+    // walk you can link someone to, so it lives on the URL like the step does.
+    const reading = params.get("reading")
     const [open, setOpen] = usePersistedState<boolean>(
         OPEN_KEY,
         // open unless shut before: the evidence is the point of the section
         (stored) => stored !== "false",
         (value) => String(value),
     )
-    const [walk, setWalk] = useState<DictionaryAttestationsResponse | null>(
-        null,
-    )
+    // the walk together with what was asked for: a garbage ?reading= falls back
+    // to the whole walk on the server, so the response alone cannot say whether
+    // it answers this URL
+    const [shown, setShown] = useState<{
+        walk: DictionaryAttestationsResponse
+        word: string
+        reading: string | null
+    } | null>(null)
     const [lines, setLines] = useState<AttestationLinesResponse | null>(null)
     // The walk reserves the tallest step it has shown. Steps differ in height
     // (a text may use one reading or three), and a reader scrolled to the foot
@@ -223,16 +231,34 @@ export const AttestationWalker = ({
         // the footer comes up to meet the gap, for as long as an answer takes. The
         // page fades what has not caught up (dict-page-entries).
         const abort = new AbortController()
-        dictionaryAttestations(word, abort.signal)
-            .then(setWalk)
-            .catch((e) => {
-                if (!abort.signal.aborted) console.warn(e)
-            })
+        const load = async () => {
+            let walk = await dictionaryAttestations(
+                word,
+                reading ?? undefined,
+                abort.signal,
+            )
+            // the walk is one reading's at a time: with none asked and several
+            // to choose from, the first tab is the one walked. One extra round
+            // trip, and only for the ~4% of words with more than one reading.
+            if (reading == null && walk.lemmas.length > 1) {
+                walk = await dictionaryAttestations(
+                    word,
+                    walk.lemmas[0],
+                    abort.signal,
+                )
+            }
+            setShown({ walk, word, reading })
+        }
+        load().catch((e) => {
+            if (!abort.signal.aborted) console.warn(e)
+        })
         return () => abort.abort()
-    }, [word])
+    }, [word, reading])
 
-    // the walk on screen is this word's only once it arrives
-    const walked = walk != null && walk.word === word
+    const walk = shown?.walk ?? null
+    // the walk on screen is this word's, on this tab's, only once it arrives
+    const walked =
+        shown != null && shown.word === word && shown.reading === reading
 
     // no step named: the walk starts at the word's first attestation
     const index = Math.max(
@@ -241,6 +267,10 @@ export const AttestationWalker = ({
     )
     const current = walk?.documents[index]
     const currentIdent = current?.ident
+
+    // what the step is asked to show: the walked reading's uses, so the lines
+    // agree with the tab the document list came from
+    const walkLemma = walked ? (walk?.lemma ?? null) : null
 
     useEffect(() => {
         // shut: the uses are not worth fetching until they would be shown
@@ -259,13 +289,18 @@ export const AttestationWalker = ({
         // back, moving the arrows out from under the cursor: the walk is meant to
         // be clicked through.
         const abort = new AbortController()
-        dictionaryAttestationLines(word, currentIdent, abort.signal)
+        dictionaryAttestationLines(
+            word,
+            currentIdent,
+            walkLemma ?? undefined,
+            abort.signal,
+        )
             .then(setLines)
             .catch((e) => {
                 if (!abort.signal.aborted) console.warn(e)
             })
         return () => abort.abort()
-    }, [word, currentIdent, open, walked])
+    }, [word, currentIdent, open, walked, walkLemma])
 
     const hasWalk = walk != null && walk.documents.length > 0 && current != null
     // the band is this word's or nothing; the walk may still be the last word's,
@@ -274,11 +309,35 @@ export const AttestationWalker = ({
         return null
     }
 
-    // the uses on screen belong to the step we are on only once they arrive
-    const fresh = walked && lines != null && lines.ident === currentIdent
+    // the uses on screen belong to the step we are on, and to its tab's
+    // reading, only once they arrive
+    const fresh =
+        walked &&
+        lines != null &&
+        lines.ident === currentIdent &&
+        (lines.lemma ?? null) === (walk?.lemma ?? null)
 
-    const stepTo = (ident: string) =>
-        `${pathname}?at=${encodeURIComponent(ident)}`
+    /* Always a tab, even for the ~96% of words with one reading (and for the
+       walk of a spelling, whose one tab is the spelling): the tab is the
+       walk's caption — it names the lexeme being walked, which no other line
+       does. Only a word with no walk at all earns no bar, except that several
+       readings keep theirs: an empty tab must leave a way to the others. */
+    const tabs =
+        walk == null ? [] : walk.lemmas.length > 0 ? walk.lemmas : [walk.word]
+    const activeTab =
+        reading != null && tabs.includes(reading)
+            ? reading
+            : (walk?.lemma ?? tabs[0])
+    const showTabs = tabs.length > 0 && (hasWalk || tabs.length > 1)
+
+    const stepTo = (ident: string) => {
+        const query = new URLSearchParams()
+        if (reading != null) {
+            query.set("reading", reading)
+        }
+        query.set("at", ident)
+        return `${pathname}?${query.toString()}`
+    }
     const previous = walk?.documents[index - 1]
     const next = walk?.documents[index + 1]
 
@@ -306,6 +365,33 @@ export const AttestationWalker = ({
             </h3>
 
             <FirstAttestation history={history} classes={classes} />
+
+            {showTabs && (
+                <nav className="attest-tabs" aria-label="Readings of this word">
+                    {tabs.map((lemma) =>
+                        lemma === activeTab ? (
+                            <span
+                                key={lemma}
+                                className="attest-tab attest-tab-active"
+                                aria-current="true"
+                            >
+                                {lemma}
+                            </span>
+                        ) : (
+                            <Link
+                                key={lemma}
+                                className="attest-tab"
+                                to={`${pathname}?reading=${encodeURIComponent(lemma)}`}
+                            >
+                                {lemma}
+                            </Link>
+                        ),
+                    )}
+                </nav>
+            )}
+            {showTabs && !hasWalk && (
+                <p className="attest-empty">No dated text uses this reading.</p>
+            )}
 
             {!hasWalk ? null : (
                 <>

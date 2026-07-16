@@ -69,20 +69,24 @@ public class DictionaryController(
     /// The corpus documents attesting a word's lexeme, oldest first: the word
     /// page's attestation walk (experimental).
     /// </summary>
+    /// <param name="lemma">optional display lemma: one reading's documents, for
+    /// the walk's per-reading tabs</param>
     [HttpGet("attestations")]
-    public DictionaryAttestations Attestations([FromQuery] string word)
+    public DictionaryAttestations Attestations([FromQuery] string word, [FromQuery] string? lemma = null)
     {
-        return attestationService.Attestations(word);
+        return attestationService.Attestations(word, lemma);
     }
 
     /// <summary>
     /// Every use of a word's lexeme within one document, for the walk's current step.
     /// </summary>
+    /// <param name="lemma">optional display lemma: one reading's uses, matching
+    /// the tab the step was opened from</param>
     [HttpGet("attestations/{ident}")]
     public async Task<ActionResult<AttestationLines>> AttestationsInDocument(
-        string ident, [FromQuery] string word)
+        string ident, [FromQuery] string word, [FromQuery] string? lemma = null)
     {
-        var lines = await attestationService.InDocument(word, ident);
+        var lines = await attestationService.InDocument(word, ident, lemma);
         return lines == null ? new NotFoundResult() : lines;
     }
 
