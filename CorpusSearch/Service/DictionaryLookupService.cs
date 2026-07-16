@@ -565,23 +565,56 @@ public class DictionaryLookupService(IEnumerable<ISearchDictionary> dictionarySe
         var result = new List<List<TokenCoverage>>(lines.Count);
         foreach (var line in lines)
         {
-            var tokens = new List<TokenCoverage>();
+            var words = new List<(string Term, int Start, int End)>();
             var tokenizer = new ManxTokenizer(LuceneVersion.LUCENE_48, new StringReader(line ?? ""));
-            using var stream = new ManxTokenFilter(tokenizer);
-            var term = stream.GetAttribute<ICharTermAttribute>();
-            var offsets = stream.GetAttribute<IOffsetAttribute>();
-            stream.Reset();
-            while (stream.IncrementToken())
+            using (var stream = new ManxTokenFilter(tokenizer))
             {
-                var token = term.ToString();
-                if (NonWordTokenFilter.IsNotAWord(token))
+                var term = stream.GetAttribute<ICharTermAttribute>();
+                var offsets = stream.GetAttribute<IOffsetAttribute>();
+                stream.Reset();
+                while (stream.IncrementToken())
                 {
-                    // a number or ?-marker is not a dictionary word: neither
-                    // painted nor counted (the statistics stream drops these too)
-                    continue;
+                    var token = term.ToString();
+                    if (NonWordTokenFilter.IsNotAWord(token))
+                    {
+                        // a number or ?-marker is not a dictionary word: neither
+                        // painted nor counted (the statistics stream drops these too)
+                        continue;
+                    }
+                    words.Add((token, offsets.StartOffset, offsets.EndOffset));
                 }
+                stream.End();
+            }
+
+            // a tap resolves phrases from its context ("mie er bashtal" is
+            // Phil Kelly's entry, "bashtal" alone is nobody's): a token inside
+            // a listed phrase is covered. Longest first, as GetCandidates asks.
+            var phraseCovered = new bool[words.Count];
+            for (int length = MaxPhraseWords; length >= 2; length--)
+            {
+                for (int start = 0; start + length <= words.Count; start++)
+                {
+                    if (Enumerable.Range(start, length).All(i => phraseCovered[i]))
+                    {
+                        continue;
+                    }
+                    var phrase = string.Join(" ", words.Skip(start).Take(length).Select(w => w.Term));
+                    if (HasEntry(phrase))
+                    {
+                        for (int i = start; i < start + length; i++)
+                        {
+                            phraseCovered[i] = true;
+                        }
+                    }
+                }
+            }
+
+            var tokens = new List<TokenCoverage>();
+            for (int i = 0; i < words.Count; i++)
+            {
+                var (token, start, end) = words[i];
                 string status;
-                if (HasEntry(token))
+                if (phraseCovered[i] || HasEntry(token))
                 {
                     status = "entry";
                 }
@@ -601,12 +634,11 @@ public class DictionaryLookupService(IEnumerable<ISearchDictionary> dictionarySe
                 }
                 tokens.Add(new TokenCoverage
                 {
-                    Start = offsets.StartOffset,
-                    Length = offsets.EndOffset - offsets.StartOffset,
+                    Start = start,
+                    Length = end - start,
                     Status = status,
                 });
             }
-            stream.End();
             result.Add(tokens);
         }
         return result;
