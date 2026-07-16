@@ -429,6 +429,9 @@ export const lemmaIndex = async (
 export type LemmaTreeResponse = {
     /** as the tables spell it ("aa-aase", "Aachummey") */
     lemma: string
+    /** how often the corpus says the lemma by its own spelling; null while
+     * not yet known */
+    attestations?: number | null
     /** whether the corpus says the lemma by its own spelling: the forms below
      * answer for the rest of the paradigm */
     attested: boolean
@@ -447,8 +450,12 @@ export type LemmaTreeGroup = {
 
 export type LemmaTreeForm = {
     form: string
-    /** whether any text says the form by this spelling — no lemma hop, which
-     * would answer for the whole paradigm at once */
+    /** how often the corpus says the form by this spelling — no lemma hop,
+     * which would answer for the whole paradigm at once; null while not yet
+     * known (a phrase before the corpus has been read for it) */
+    attestations?: number | null
+    /** whether any text says the form by this spelling: false only where
+     * `attestations` is a known 0 */
     attested: boolean
     /** no row attests the link: made by rule (a generated mutation) or asserted
      * by hand (the vocab supplement), and possibly wrong */

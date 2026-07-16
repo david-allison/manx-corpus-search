@@ -31,20 +31,42 @@ const index: DictionaryBrowseResponse = {
 
 const tree: LemmaTreeResponse = {
     lemma: "peiagh",
+    attestations: 12,
     attested: true,
     unverified: true,
     groups: [
         {
             linkType: "inflected",
-            forms: [{ form: "peiaghyn", attested: false, unverified: true }],
+            forms: [
+                {
+                    form: "peiaghyn",
+                    attestations: 0,
+                    attested: false,
+                    unverified: true,
+                },
+            ],
         },
         {
             linkType: "mutation",
-            forms: [{ form: "pheiagh", attested: true, unverified: true }],
+            forms: [
+                {
+                    form: "pheiagh",
+                    attestations: 2,
+                    attested: true,
+                    unverified: true,
+                },
+            ],
         },
         {
             linkType: "made-up-link",
-            forms: [{ form: "pyagh", attested: true, unverified: false }],
+            forms: [
+                {
+                    form: "pyagh",
+                    attestations: null,
+                    attested: true,
+                    unverified: false,
+                },
+            ],
         },
     ],
 }
@@ -108,18 +130,18 @@ describe("lemma index", () => {
 })
 
 describe("lemma tree", () => {
-    it("groups the forms under the reader's name for each link", async () => {
+    it("draws a branch per link type, under the reader's name for it", async () => {
         respondWith(tree)
         renderAt("/dictionary/lemma/peiagh")
 
-        expect(
-            await screen.findByRole("heading", { name: "Inflected forms" }),
-        ).toBeTruthy()
-        expect(screen.getByRole("heading", { name: "Mutations" })).toBeTruthy()
+        expect(await screen.findByText("Inflected forms")).toBeTruthy()
+        expect(screen.getByText("Mutations")).toBeTruthy()
         // a link type the data grows shows under its own name, not nothing
+        expect(screen.getByText("made-up-link")).toBeTruthy()
+        // the branches nest inside the tree, a list per branch
         expect(
-            screen.getByRole("heading", { name: "made-up-link" }),
-        ).toBeTruthy()
+            document.querySelectorAll(".dict-lemma-tree > li > ul > li"),
+        ).toHaveLength(3)
         // a form is a link to its own word page
         expect(
             screen.getByRole("link", { name: "peiaghyn" }).getAttribute("href"),
@@ -138,6 +160,17 @@ describe("lemma tree", () => {
         ).not.toContain("dict-unattested")
         // one mark per unverified link, and one for the hand-asserted root
         expect(screen.getAllByText("unverified")).toHaveLength(3)
+    })
+
+    it("counts each node's attestations, silent at 0 and unknown", async () => {
+        respondWith(tree)
+        renderAt("/dictionary/lemma/peiagh")
+
+        // the root's count and pheiagh's; peiaghyn is a known 0 (the greying
+        // says it) and pyagh's phrase count has not landed — neither shows
+        expect(await screen.findByText("×12")).toBeTruthy()
+        expect(screen.getByText("×2")).toBeTruthy()
+        expect(document.querySelectorAll(".dict-lemma-count")).toHaveLength(2)
     })
 
     it("says when the tables know no such lemma, with a way back", async () => {

@@ -180,6 +180,19 @@ const FORM_UNVERIFIED_TITLE =
     "Unverified: no dictionary records this form under this lemma. It was " +
     "worked out by rule or asserted by hand, and may be wrong"
 
+/** How often the corpus says a node's spelling, as the walk counts uses
+ * ("×96"). Silent at a known 0 — the greying already says it — and while a
+ * phrase's count is not yet known. */
+const Count = ({ attestations }: { attestations?: number | null }) =>
+    attestations != null && attestations > 0 ? (
+        <span
+            className="dict-lemma-count"
+            title={`Said ${attestations.toLocaleString()} ${attestations === 1 ? "time" : "times"} in the corpus, by this spelling`}
+        >
+            {` ×${attestations.toLocaleString()}`}
+        </span>
+    ) : null
+
 /** One lemma's form tree: the lemma at the root, its forms grouped by how each
  * hangs off it, every guess marked and every unattested spelling greyed.
  *
@@ -221,11 +234,12 @@ const LemmaTree = ({ lemma }: { lemma: string }) => {
 
             {tree != null && (
                 <>
+                    {/* the root of the tree: the trunk below hangs off it */}
                     <h1
                         className={
                             tree.attested
-                                ? "dict-page-word"
-                                : "dict-page-word dict-unattested"
+                                ? "dict-page-word dict-lemma-root"
+                                : "dict-page-word dict-lemma-root dict-unattested"
                         }
                         title={
                             tree.attested
@@ -234,6 +248,7 @@ const LemmaTree = ({ lemma }: { lemma: string }) => {
                         }
                     >
                         {tree.lemma}
+                        <Count attestations={tree.attestations} />
                         <UnverifiedMark
                             unverified={tree.unverified}
                             title={
@@ -243,28 +258,23 @@ const LemmaTree = ({ lemma }: { lemma: string }) => {
                             }
                         />
                     </h1>
-                    <p className="dict-lemma-note">
-                        <Link to={dictionaryWordUrl(tree.lemma)}>
-                            Read the dictionary entries for “{tree.lemma}” ›
-                        </Link>
-                    </p>
 
                     {tree.groups.length === 0 && (
                         <p className="dict-browse-empty">
                             No forms hang off this lemma.
                         </p>
                     )}
-                    <div className="dict-lemma-groups">
+                    <ul
+                        className="dict-lemma-tree"
+                        aria-label={`Forms of ${tree.lemma}`}
+                    >
                         {tree.groups.map((group) => (
-                            <div
-                                className="dict-lemma-group"
-                                key={group.linkType}
-                            >
-                                <h3 className="dict-lemma-group-name">
+                            <li key={group.linkType}>
+                                <span className="dict-lemma-branch">
                                     {GROUP_LABELS[group.linkType] ??
                                         group.linkType}
-                                </h3>
-                                <ul className="dict-lemma-forms">
+                                </span>
+                                <ul>
                                     {group.forms.map((form) => (
                                         <li key={form.form}>
                                             <Link
@@ -284,6 +294,9 @@ const LemmaTree = ({ lemma }: { lemma: string }) => {
                                             >
                                                 {form.form}
                                             </Link>
+                                            <Count
+                                                attestations={form.attestations}
+                                            />
                                             <UnverifiedMark
                                                 unverified={form.unverified}
                                                 title={FORM_UNVERIFIED_TITLE}
@@ -291,9 +304,15 @@ const LemmaTree = ({ lemma }: { lemma: string }) => {
                                         </li>
                                     ))}
                                 </ul>
-                            </div>
+                            </li>
                         ))}
-                    </div>
+                    </ul>
+
+                    <p className="dict-lemma-note">
+                        <Link to={dictionaryWordUrl(tree.lemma)}>
+                            Read the dictionary entries for “{tree.lemma}” ›
+                        </Link>
+                    </p>
                 </>
             )}
         </>
