@@ -71,34 +71,50 @@ public class CorpusVocabularyTest
         Assert.That(vocabulary.IsAttested("jaagheyder"), Is.True);
     }
 
-    /// <summary>Cregeen prints 'an-' as a headword, and it is only ever the front
-    /// of a longer word: no text says one. The corpus does say 'an' — Phillips
-    /// writes "’an" for *their* — and every path through here drops the hyphen
-    /// that tells the two apart, so the prefix must be caught before they do.</summary>
+    /// <summary>An affix is attested by the words carrying it: 'aa-' by
+    /// 'aa-vioghey', which is the only way a prefix ever is said</summary>
     [Test]
-    public void AnAffixIsNotAttestedByTheWordItIsTheFrontOf()
+    public void AnAffixIsAttestedByTheWordsCarryingIt()
     {
-        var vocabulary = Loaded("an", "aa", "ys");
+        var vocabulary = Loaded("aa-vioghey", "cooinaghtyn");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(vocabulary.IsAttested("aa-"), Is.True);
+            // no text carries this one
+            Assert.That(vocabulary.IsAttested("neu-"), Is.False);
+        });
+    }
+
+    /// <summary>...and never by the bare word it is spelled like. The corpus says
+    /// 'an' 126 times meaning *their* (Phillips writes "’an"), and none of it is
+    /// the prefix 'an-'. Every path below this drops the hyphen that tells the two
+    /// apart, so the affix has to be caught before they do.</summary>
+    [Test]
+    public void AnAffixIsNotAttestedByTheWordItIsSpelledLike()
+    {
+        var vocabulary = Loaded("an", "aa");
 
         Assert.Multiple(() =>
         {
             Assert.That(vocabulary.IsAttested("an-"), Is.False);
             Assert.That(vocabulary.IsAttested("aa-"), Is.False);
-            // and a suffix, which the books print the other way round
-            Assert.That(vocabulary.IsAttested("-ys"), Is.False);
             // the word itself is still a word
             Assert.That(vocabulary.IsAttested("an"), Is.True);
         });
     }
 
-    /// <summary>An affix is unattested whether or not the index ever loaded: that
-    /// is a fact about the headword, not a guess the evidence could overturn</summary>
+    /// <summary>A suffix, which the books print the other way round</summary>
     [Test]
-    public void AnAffixIsGreyedEvenBeforeTheIndexLoads()
+    public void ASuffixIsAttestedByTheWordsItEnds()
     {
-        var vocabulary = new CorpusVocabulary(LemmaTable.Instance);
+        var vocabulary = Loaded("shirveish-ys", "ys");
 
-        Assert.That(vocabulary.IsAttested("an-"), Is.False);
+        Assert.Multiple(() =>
+        {
+            Assert.That(vocabulary.IsAttested("-ys"), Is.True);
+            Assert.That(vocabulary.IsAttested("-agh"), Is.False);
+        });
     }
 
     /// <summary>A hyphen inside a word is not an affix marker: 'aa-aase' is a word

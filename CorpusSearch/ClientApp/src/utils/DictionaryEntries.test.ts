@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest"
-import { declaredClassesIn, senseGroupsIn } from "./DictionaryEntries"
+import {
+    corpusSearchUrl,
+    declaredClassesIn,
+    senseGroupsIn,
+} from "./DictionaryEntries"
 import { DictionaryPageResponse, Summary } from "../api/DictionaryApi"
 
 const entry = (over: Partial<Summary>): Summary => ({
@@ -164,5 +168,28 @@ describe("senseGroupsIn", () => {
 
         expect(groups.map((g) => g.key)).toEqual(["noun"])
         expect(groups[0].entries.map((e) => e.primaryWord)).toEqual(["ass"])
+    })
+})
+
+/** An affix is attested by the words carrying it and never on its own, so the
+ * link asks for those — as the evidence above it does. Asking for 'aa-' as
+ * written finds nothing: no token is 'aa-'. See Affix.cs. */
+describe("corpusSearchUrl", () => {
+    it("asks for a word as it is written", () => {
+        expect(corpusSearchUrl("billey")).toBe("/?q=billey")
+    })
+
+    it("asks for the words a prefix begins", () => {
+        expect(corpusSearchUrl("aa-")).toBe("/?q=aa-*")
+    })
+
+    it("asks for the words a suffix ends", () => {
+        expect(corpusSearchUrl("-agh")).toBe("/?q=*-agh")
+        // the non-breaking hyphen is not what is indexed
+        expect(corpusSearchUrl("‑ys")).toBe("/?q=*-ys")
+    })
+
+    it("leaves a hyphen inside a word alone: it joins, it does not cut loose", () => {
+        expect(corpusSearchUrl("aa-aase")).toBe("/?q=aa-aase")
     })
 })

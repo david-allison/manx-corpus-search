@@ -56,11 +56,11 @@ public class DictionaryHistoryService(
         // the timeline counts documents, not occurrences: the Bible is by far
         // the largest work and would otherwise dominate every graph
         var attestingDocs = new HashSet<(string Ident, int Year)>();
-        foreach (var form in forms)
+        foreach (var (query, form) in forms)
         {
             try
             {
-                var scanned = ScanForm(form);
+                var scanned = ScanForm(query, form);
                 if (scanned != null)
                 {
                     attested.Add(scanned.Value.Form);
@@ -121,26 +121,32 @@ public class DictionaryHistoryService(
         };
     }
 
-    /// <summary>The spellings whose uses make up the word's history: its lexeme's
-    /// forms, or the surface word itself where the table does not know it.
-    ///
-    /// None at all for an affix. 'an-' is only ever the front of a longer word, so
-    /// no text says it — but <see cref="LemmaTable.NormalizeForm"/> folds 'an-' to
-    /// 'an', so both the cluster and the fall-back would go looking for the
-    /// standalone word instead, and come back with all 252 of its uses and a first
-    /// attestation of 1610. The hyphen has to be read before it is folded away.</summary>
-    private List<string> FormsToScan(string word, IReadOnlyList<string> lemmas)
+    /// <summary>The scans the word's history is made of: what to ask the corpus,
+    /// and the spelling each answer belongs to. For an ordinary word those are one
+    /// and the same — its lexeme's forms, or the word itself where the table knows
+    /// no lexeme.</summary>
+    private List<(string Query, string Form)> FormsToScan(string word, IReadOnlyList<string> lemmas)
     {
-        if (LemmaTable.IsAffix(word))
+        if (Affix.Is(word))
         {
-            return [];
+            // an affix is attested by the words carrying it and by nothing else,
+            // so it is asked for as "aa-*" — which is not a spelling, and the uses
+            // it finds belong to the headword. Asking for the bare form would
+            // answer with the word it is spelled like: 'an-' would report all 252
+            // uses of 'an'. Its lexeme is no help either, NormalizeForm having
+            // folded the two into one key. See Affix.
+            return [(Affix.CorpusQuery(word), word)];
         }
         var forms = lemmas
             .SelectMany(lemmaTable.FormsOf)
             .Distinct(StringComparer.InvariantCultureIgnoreCase)
             .Order()
             .ToList();
-        return forms.Count > 0 ? forms : [LemmaTable.NormalizeForm(word)];
+        if (forms.Count == 0)
+        {
+            forms = [LemmaTable.NormalizeForm(word)];
+        }
+        return forms.Select(form => (form, form)).ToList();
     }
 
     /// <summary>The cognates a definition cites: "(Ir. bile; S.G. bil.)" ->
@@ -167,9 +173,13 @@ public class DictionaryHistoryService(
         return self.Count > 0 ? self : displays;
     }
 
-    private (HistoryForm Form, List<(string Ident, int Year)> DatedDocs)? ScanForm(string form)
+    /// <param name="query">what the corpus is asked. Usually the spelling itself;
+    /// for an affix, the words carrying it, which is not a spelling</param>
+    /// <param name="form">the spelling the uses belong to, as the page prints it</param>
+    private (HistoryForm Form, List<(string Ident, int Year)> DatedDocs)? ScanForm(
+        string query, string form)
     {
-        var scan = searcher.Scan(form);
+        var scan = searcher.Scan(query);
         if (scan.NumberOfMatches == 0)
         {
             return null;

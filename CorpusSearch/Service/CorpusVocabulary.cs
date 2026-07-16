@@ -59,25 +59,36 @@ public class CorpusVocabulary(LemmaTable lemmaTable)
     /// </summary>
     public bool IsAttested(string word)
     {
-        // an affix is not a word a text can say, whatever the index holds: 'an-'
-        // is only ever the front of a longer word, and what is built from it is
-        // its own headword. Asked before anything below, because everything below
-        // drops the hyphen that says it is bound — and would then answer for the
-        // standalone 'an' the corpus really does say.
-        if (LemmaTable.IsAffix(word))
-        {
-            return false;
-        }
         // an index that never loaded would grey out the whole language
         if (!loaded)
         {
             return true;
+        }
+        // an affix is attested by the words carrying it and by nothing else, and
+        // it is asked first because everything below drops the hyphen that marks
+        // it bound: 'an-' would otherwise be attested by the 126 uses of 'an'
+        // meaning *their*. Costs a walk of the term list, but only the sixteen
+        // affix headwords in the books ever take this path.
+        if (Affix.Is(word))
+        {
+            return CarriedByATerm(word);
         }
         if (UsesEveryWordOf(word))
         {
             return true;
         }
         return lemmaTable.DisplayLemmasFor(word).Any(attestedLemmas.Contains);
+    }
+
+    /// <summary>Whether any word the corpus says carries the affix: 'aa-' is
+    /// attested by 'aa-vioghey', which is the only way an affix ever is</summary>
+    private bool CarriedByATerm(string affix)
+    {
+        var trimmed = affix.Trim().Replace('‑', '-');
+        return trimmed[^1] == '-'
+            // longer than the affix itself: 'aa-' is not carried by a bare 'aa-'
+            ? terms.Any(t => t.Length > trimmed.Length && t.StartsWith(trimmed, StringComparison.Ordinal))
+            : terms.Any(t => t.Length > trimmed.Length && t.EndsWith(trimmed, StringComparison.Ordinal));
     }
 
     private bool UsesEveryWordOf(string headword)

@@ -82,15 +82,34 @@ public class DictionaryHistoryScanTest : QueryBase
             new DocumentLine { Manx = manx, English = "", CsvLineNumber = i + 2 }));
     }
 
-    /// <summary>Cregeen prints 'an-' as a headword: a prefix, only ever the front
-    /// of a longer word, so no text says one. But the corpus says 'an' 252 times,
-    /// and the hyphen is the only thing telling the two apart — NormalizeForm
-    /// folds it away, so a history that normalizes first goes and finds all 252
-    /// and reports the prefix as attested since 1610.</summary>
+    /// <summary>An affix is scanned for the words carrying it: 'an-' by 'an-ghoo',
+    /// which is the only way a prefix is ever said. The bare 'an' on the same line
+    /// is the word meaning *their* and no part of the prefix's history — but
+    /// NormalizeForm folds 'an-' to 'an', so a history that normalizes first goes
+    /// and reports all 252 of them as the prefix, attested since 1610.</summary>
     [Test]
-    public void AnAffixIsScannedForNothing()
+    public void AnAffixIsScannedForTheWordsCarryingIt()
     {
-        Add("Psalms", 1610, "ta an dooinney");
+        Add("Doc", 1748, "ta an dooinney", "yn an-ghoo as an-chreestee");
+
+        var history = Service().History("gv", "an-");
+
+        Assert.Multiple(() =>
+        {
+            // two carriers on one line, and not the bare 'an' on the other
+            Assert.That(history.TraditionalCount, Is.EqualTo(2));
+            Assert.That(history.Earliest!.EarliestYear, Is.EqualTo(1748));
+            // filed under the headword: 'an-*' is a query, not a spelling
+            Assert.That(history.Forms.Single().Form, Is.EqualTo("an-"));
+        });
+    }
+
+    /// <summary>An affix no text carries has no history, rather than the bare
+    /// word's</summary>
+    [Test]
+    public void AnAffixNoWordCarriesIsScannedForNothing()
+    {
+        Add("Doc", 1748, "ta an dooinney");
 
         var history = Service().History("gv", "an-");
 
@@ -99,7 +118,6 @@ public class DictionaryHistoryScanTest : QueryBase
             Assert.That(history.Forms, Is.Empty);
             Assert.That(history.Earliest, Is.Null);
             Assert.That(history.TraditionalCount, Is.Zero);
-            Assert.That(history.Decades, Is.Empty);
         });
     }
 

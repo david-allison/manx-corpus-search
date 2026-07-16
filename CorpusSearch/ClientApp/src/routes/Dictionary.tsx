@@ -7,6 +7,7 @@ import {
     Summary,
 } from "../api/DictionaryApi"
 import {
+    corpusSearchUrl,
     declaredClassesIn,
     dictionaryIndexUrl,
     dictionaryWordUrl,
@@ -395,7 +396,7 @@ export const Dictionary = () => {
                 is already on the page. */}
             {word && usedInCorpus && (
                 <p className="dict-page-corpus-link">
-                    <Link to={`/?q=${encodeURIComponent(word)}`}>
+                    <Link to={corpusSearchUrl(word)}>
                         Search the corpus for “{word}”
                     </Link>
                 </p>
