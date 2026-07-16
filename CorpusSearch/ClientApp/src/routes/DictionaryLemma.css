@@ -79,3 +79,19 @@
     font-size: 15px;
     font-weight: normal;
 }
+
+@media (max-width: 600px) {
+    /* a deep chain (dooinney → deiney → e gheiney → gheiney) must not walk
+       off a phone: shallower steps, same shape */
+    .dict-lemma-tree li {
+        padding-left: 12px;
+    }
+
+    .dict-lemma-tree li > ul {
+        margin-left: 8px;
+    }
+
+    .dict-lemma-tree li::after {
+        width: 8px;
+    }
+}

@@ -425,10 +425,20 @@ public class LemmaTable
                     }
                     else
                     {
+                        // the via column names what the form derives through:
+                        // 'pyaghyn' inflects pyagh, the variant, not peiagh
+                        // itself. Kept only when it is a genuine intermediate —
+                        // deriving through yourself or the lemma says nothing.
+                        var viaKey = columns.Length > 5 ? NormalizeForm(columns[5]) : "";
+                        if (viaKey == form || viaKey == displayKey)
+                        {
+                            viaKey = "";
+                        }
                         var linkKey = (linkType, form);
                         linkSet.Links[linkKey] = linkSet.Links.TryGetValue(linkKey, out var soFar)
-                            ? soFar && unverifiedRow
-                            : unverifiedRow;
+                            ? (soFar.Unverified && unverifiedRow,
+                                soFar.Via.Length > 0 ? soFar.Via : viaKey)
+                            : (unverifiedRow, viaKey);
                     }
                 }
                 // the Phillips supplement's via column: the classical spelling
@@ -480,7 +490,8 @@ public class LemmaTable
                 Lemma = kv.Value.Lemma,
                 SelfUnverified = kv.Value.SelfSeen && !kv.Value.SelfVerifiedSeen,
                 Links = kv.Value.Links
-                    .Select(link => new LemmaLink(link.Key.LinkType, link.Key.Form, link.Value))
+                    .Select(link => new LemmaLink(
+                        link.Key.LinkType, link.Key.Form, link.Value.Unverified, link.Value.Via))
                     .ToArray(),
             });
         return new LemmaTable(candidatesByForm, displayLemmasByForm, rootDisplayLemmasByForm, lemmaIds,
@@ -495,7 +506,7 @@ public class LemmaTable
         public required string Lemma { get; init; }
         public bool SelfSeen;
         public bool SelfVerifiedSeen;
-        public Dictionary<(string LinkType, string Form), bool> Links { get; } = [];
+        public Dictionary<(string LinkType, string Form), (bool Unverified, string Via)> Links { get; } = [];
     }
 
     private static LemmaTable LoadVendored()
@@ -549,5 +560,8 @@ public sealed class LemmaLinkSet
 /// <summary>One form's link to a display lemma. <paramref name="Unverified"/>
 /// mirrors <see cref="LemmaTable.IsUnverifiedLink"/>: no row of this link type
 /// attests the pair — it rests on a rule ('generated-lenition') or a
-/// hand-assertion (the vocab supplement) alone.</summary>
-public sealed record LemmaLink(string LinkType, string Form, bool Unverified);
+/// hand-assertion (the vocab supplement) alone. <paramref name="Via"/> is the
+/// intermediate the form derives through, normalized ('pyaghyn' inflects the
+/// variant 'pyagh', not peiagh itself); "" where it derives from the lemma
+/// directly.</summary>
+public sealed record LemmaLink(string LinkType, string Form, bool Unverified, string Via = "");

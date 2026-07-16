@@ -65,6 +65,20 @@ const tree: LemmaTreeResponse = {
                     attestations: null,
                     attested: true,
                     unverified: false,
+                    // full depth: what hangs off pyagh nests inside its node
+                    groups: [
+                        {
+                            linkType: "inflected",
+                            forms: [
+                                {
+                                    form: "pyaghyn",
+                                    attestations: 3,
+                                    attested: true,
+                                    unverified: true,
+                                },
+                            ],
+                        },
+                    ],
                 },
             ],
         },
@@ -134,7 +148,9 @@ describe("lemma tree", () => {
         respondWith(tree)
         renderAt("/dictionary/lemma/peiagh")
 
-        expect(await screen.findByText("Inflected forms")).toBeTruthy()
+        expect(
+            (await screen.findAllByText("Inflected forms")).length,
+        ).toBeGreaterThan(0)
         expect(screen.getByText("Mutations")).toBeTruthy()
         // a link type the data grows shows under its own name, not nothing
         expect(screen.getByText("made-up-link")).toBeTruthy()
@@ -158,19 +174,34 @@ describe("lemma tree", () => {
         expect(
             screen.getByRole("link", { name: "pheiagh" }).className,
         ).not.toContain("dict-unattested")
-        // one mark per unverified link, and one for the hand-asserted root
-        expect(screen.getAllByText("unverified")).toHaveLength(3)
+        // one mark per unverified link — nested pyaghyn's included — and one
+        // for the hand-asserted root
+        expect(screen.getAllByText("unverified")).toHaveLength(4)
+    })
+
+    it("nests what hangs off a form inside its node, to full depth", async () => {
+        respondWith(tree)
+        renderAt("/dictionary/lemma/peiagh")
+
+        const nested = await screen.findByRole("link", { name: "pyaghyn" })
+        // pyaghyn inflects pyagh, not peiagh: its list sits inside pyagh's li
+        const pyagh = screen.getByRole("link", { name: "pyagh" })
+        expect(pyagh.parentElement!.contains(nested)).toBe(true)
+        // and it wears its own branch chip on the way down
+        expect(screen.getAllByText("Inflected forms")).toHaveLength(2)
     })
 
     it("counts each node's attestations, silent at 0 and unknown", async () => {
         respondWith(tree)
         renderAt("/dictionary/lemma/peiagh")
 
-        // the root's count and pheiagh's; peiaghyn is a known 0 (the greying
-        // says it) and pyagh's phrase count has not landed — neither shows
+        // the root's count, pheiagh's and nested pyaghyn's; peiaghyn is a
+        // known 0 (the greying says it) and pyagh's phrase count has not
+        // landed — neither shows
         expect(await screen.findByText("×12")).toBeTruthy()
         expect(screen.getByText("×2")).toBeTruthy()
-        expect(document.querySelectorAll(".dict-lemma-count")).toHaveLength(2)
+        expect(screen.getByText("×3")).toBeTruthy()
+        expect(document.querySelectorAll(".dict-lemma-count")).toHaveLength(3)
     })
 
     it("says when the tables know no such lemma, with a way back", async () => {

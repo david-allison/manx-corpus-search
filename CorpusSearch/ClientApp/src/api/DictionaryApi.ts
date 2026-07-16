@@ -460,6 +460,11 @@ export type LemmaTreeForm = {
     /** no row attests the link: made by rule (a generated mutation) or asserted
      * by hand (the vocab supplement), and possibly wrong */
     unverified: boolean
+    /** what hangs off this form in turn: forms deriving through it ('pyaghyn'
+     * inflects the variant 'pyagh'), and — where it heads a lexeme of its own
+     * ('deiney' under dooinney) — that lexeme's tree. Absent at a leaf, and at
+     * a form the tree has already drawn (a book-true cycle's second meeting) */
+    groups?: LemmaTreeGroup[] | null
 }
 
 export const lemmaTree = async (
