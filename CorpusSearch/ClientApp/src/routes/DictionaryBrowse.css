@@ -11,6 +11,16 @@
     border-bottom: 1px solid var(--c-border-meta);
 }
 
+/* the copy at the foot of the page: its rule reads as the end of the words
+   above it, not the start of nothing below */
+.dict-browse-bar:last-child {
+    margin-top: 22px;
+    padding-bottom: 0;
+    padding-top: 10px;
+    border-bottom: none;
+    border-top: 1px solid var(--c-border-meta);
+}
+
 .dict-browse-bar a {
     font-family: Georgia, serif;
     font-size: 17px;
