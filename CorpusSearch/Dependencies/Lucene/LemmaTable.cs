@@ -155,9 +155,13 @@ public class LemmaTable
     /// the mark.
     /// </remarks>
     private static readonly HashSet<string> UnverifiedNotes =
-        ["generated-lenition", "generated-eclipsis", "demutation-unvalidated", "synthetic"];
+        ["generated-lenition", "generated-eclipsis", "demutation-unvalidated", "synthetic",
+         // the vocab supplement: hand-asserted rows awaiting review
+         "unverified"];
 
-    private static bool IsUnverifiedRow(string note) => UnverifiedNotes.Contains(note);
+    // the note column holds space-separated tags ("modern-variant unverified")
+    private static bool IsUnverifiedRow(string note) =>
+        note.Split(' ').Any(UnverifiedNotes.Contains);
 
     /// <summary>
     /// The candidate ids of a form read as a productive clitic contraction:
@@ -417,9 +421,9 @@ public class LemmaTable
             return new LemmaTable([], [], [], [], [], [], []);
         }
         // the supplements ride beside the table when vendored: proper nouns,
-        // and the Phillips 1610 spelling links
+        // the Phillips 1610 spelling links, and the hand-asserted vocabulary
         var readers = new List<TextReader> { new StreamReader(path) };
-        foreach (var supplement in new[] { "names.tsv", "phillips.tsv" })
+        foreach (var supplement in new[] { "names.tsv", "phillips.tsv", "vocab.tsv" })
         {
             var supplementPath = Startup.GetLocalFile("Resources", supplement);
             if (File.Exists(supplementPath))

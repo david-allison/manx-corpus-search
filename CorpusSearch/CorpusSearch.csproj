@@ -91,6 +91,14 @@
         <Link>Resources\phillips.tsv</Link>
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <!-- The general-vocabulary supplement (generated from cregeen-nvh
+    vocab/vocab.nvh): hand-asserted words the corpus attests but Cregeen never
+    listed, every row tagged unverified; loaded beside cregeen.tsv when present -->
+    <Content Include="external\manx-lemma-data\vocab.tsv"
+             Condition="Exists('external\manx-lemma-data\vocab.tsv')">
+        <Link>Resources\vocab.tsv</Link>
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <!-- The disambiguation layers ride beside the table (LemmaResolver);
     optional until the data repo adopts the generated artifacts -->
     <Content Include="external\manx-lemma-data\lemma.overrides.tsv"
