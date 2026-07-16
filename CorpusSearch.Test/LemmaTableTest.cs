@@ -58,6 +58,23 @@ public class LemmaTableTest
     }
 
     [Test]
+    public void VocabSupplementRowsAreUnverifiedLinks()
+    {
+        // the vocab supplement tags every row unverified, additively beside
+        // any print reading; the note column holds space-separated tags, so
+        // a second tag must not hide the unverified one
+        var table = Table(
+            "pyaghyn\tpy.n\tpy\tinflected\ts. f.\tpy\t",
+            "pyaghyn\tpeiagh.n\tpeiagh\tinflected\ts.\tpyagh\tunverified",
+            "pheiagh\tpeiagh.n\tpeiagh\tmutation\ts.\tpeiagh\tmodern-variant unverified");
+
+        Assert.That(table.CandidatesFor("pyaghyn"), Is.EqualTo(new[] { "py.n", "peiagh.n" }));
+        Assert.That(table.IsUnverifiedLink("pyaghyn", "peiagh"), Is.True);
+        Assert.That(table.IsUnverifiedLink("pheiagh", "peiagh"), Is.True);
+        Assert.That(table.IsUnverifiedLink("pyaghyn", "py"), Is.False);
+    }
+
+    [Test]
     public void LookupNormalizesItsInput()
     {
         var table = Table("aa aase\taa-aase.n\taa-aase\tself\ts. m.\taa-aase\t");
