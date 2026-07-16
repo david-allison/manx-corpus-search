@@ -40,9 +40,19 @@
     color: var(--c-muted-2);
 }
 
+/* and it answers to the pointer, because it is a link and going to look for
+   yourself is a thing a reader is allowed to want. One step darker along its own
+   muted ramp, rather than up to the link colour: the hover should say "you may
+   click this", not promise the entry it hasn't got. */
+.dict-scope-empty:hover {
+    color: var(--c-muted);
+    border-bottom-color: var(--c-muted-2);
+}
+
 /* except while you are reading it: the scope you chose is never the greyed one,
    whatever it holds */
-.dict-scope-link.dict-scope-empty.active {
+.dict-scope-link.dict-scope-empty.active,
+.dict-scope-link.dict-scope-empty.active:hover {
     color: var(--c-accent);
 }
 

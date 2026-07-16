@@ -1,0 +1,61 @@
+/* the dictionary's look-up box (WordSearch.tsx), on the word page and on the
+   index. The class names are the word page's own, from when the form only lived
+   there: kept so that a rule anywhere still means what it says. */
+.dict-page-search {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+}
+
+/* back to the index the word is filed in. Sized to the input beside it rather
+   than to the walk's arrows: it is a control on the page's top row now, and a
+   row of controls should look like one. */
+.dict-page-index {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px;
+    min-width: 38px;
+    border: 1px solid var(--c-border-input);
+    border-radius: 4px;
+    background: var(--c-surface);
+    color: var(--c-link);
+    text-decoration: none;
+}
+
+.dict-page-index svg {
+    display: block;
+    width: 15px;
+    height: 15px;
+}
+
+.dict-page-index:hover {
+    border-color: var(--c-accent);
+    color: var(--c-accent);
+}
+
+.dict-page-index:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring) inset;
+}
+
+.dict-page-search input {
+    flex: 1;
+    padding: 8px 12px;
+    font-size: 16px;
+    border: 1px solid var(--c-border-meta);
+    border-radius: 4px;
+}
+
+.dict-page-search button {
+    padding: 8px 16px;
+    border: 1px solid var(--c-accent);
+    border-radius: 4px;
+    background: none;
+    color: var(--c-accent);
+    cursor: pointer;
+}
+
+.dict-page-search button:hover {
+    background: rgba(0, 0, 0, 0.05);
+}
