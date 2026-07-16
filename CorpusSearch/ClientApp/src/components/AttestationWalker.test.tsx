@@ -222,6 +222,26 @@ describe("AttestationWalker", () => {
         expect(screen.queryByText("v.")).toBeNull()
     })
 
+    /** The lemma table knows no lexeme for 'angaish', so the walk scans the
+     * spelling instead: the row stands for no reading, and must not print a class
+     * nothing has claimed. */
+    it("names no class on a row that is a spelling rather than a reading", async () => {
+        respondWith(
+            withGroups(2, [
+                {
+                    lemmaIds: [],
+                    lemma: "angaish",
+                    classes: [],
+                    count: 2,
+                },
+            ]),
+        )
+        renderWalker()
+
+        expect(await screen.findByText("angaish")).toBeTruthy()
+        expect(screen.getByText(/×2/)).toBeTruthy()
+    })
+
     it("names no class where a reading's has no abbreviation to print", async () => {
         // 'x' is every class that is not noun, verb or adjective: printing only
         // the rest would read as the row's whole story

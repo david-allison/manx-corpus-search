@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -16,6 +17,12 @@ namespace CorpusSearch.Service;
 /// lexeme itself: one query, no form budget to truncate the cluster, and the
 /// resolver's per-line decisions already applied, so a line it read as another word
 /// does not ride along.
+///
+/// Where the lemma table knows no lexeme for the word it falls back to that scan
+/// instead (<see cref="ReadingsIn"/>). The table is built from Cregeen and J Kelly
+/// and does not cover even those: 'angaish' is one of J Kelly's own headwords and
+/// has no lexeme here. Walking only the lemma field left the page counting 63 uses
+/// in the band and offering no way to read one.
 /// </summary>
 public class DictionaryAttestationService(
     Searcher searcher, LemmaTable lemmaTable, WorkService workService)
@@ -42,11 +49,12 @@ public class DictionaryAttestationService(
         return own.Count > 0 ? own : candidates;
     }
 
-    /// <summary>The documents attesting the word's lexeme, oldest first.</summary>
+    /// <summary>The documents attesting the word, oldest first: its lexeme's, or
+    /// its spelling's where the table knows no lexeme.</summary>
     public DictionaryAttestations Attestations(string word)
     {
         var lemmaIds = LemmaIdsFor(lemmaTable, word);
-        var scan = searcher.ScanLemma(lemmaIds);
+        var scan = ScanFor(word, lemmaIds);
 
         // an undated document cannot take a place in a chronological walk, but
         // dropping it silently would understate the word's use: it is counted instead
@@ -67,13 +75,40 @@ public class DictionaryAttestationService(
                     Year = x.StartDate!.Value.Year,
                     // the scan counts span matches, and an OR over several
                     // readings scores one token once per reading claiming it:
-                    // only a lone reading can be counted from here without
-                    // reading four uses of 'vee' where there is one
-                    Uses = lemmaIds.Count == 1 ? x.Count : null,
+                    // only a lone term can be counted from here without
+                    // reading four uses of 'vee' where there is one. A spelling
+                    // scan (no readings at all) is one term too.
+                    Uses = lemmaIds.Count <= 1 ? x.Count : null,
                 })
                 .ToList(),
             UndatedDocuments = undated.Count,
         };
+    }
+
+    /// <summary>The documents using the word: its lexeme's, or — where the lemma
+    /// table knows no lexeme — the ones its spelling turns up in, which is what
+    /// the first-seen band counts by. Nothing at all for an affix, which is not a
+    /// word a text can say.</summary>
+    private ScanResult ScanFor(string word, IReadOnlyList<string> lemmaIds)
+    {
+        if (lemmaIds.Count > 0)
+        {
+            return searcher.ScanLemma(lemmaIds);
+        }
+        if (LemmaTable.IsAffix(word))
+        {
+            return new ScanResult();
+        }
+        try
+        {
+            return searcher.Scan(word);
+        }
+        catch (Exception)
+        {
+            // a headword the query grammar cannot parse has no walk, which is
+            // where it started: never fatal to the page
+            return new ScanResult();
+        }
     }
 
     /// <summary>How many lines of one reading the walk shows before deferring to the
@@ -101,27 +136,69 @@ public class DictionaryAttestationService(
     /// <summary>The word classes naming a row's readings: jaagh.n and jaagh.v → n, v,
     /// which is what tells one reading of a headword from another where the headword
     /// itself cannot. Empty unless every id names one — a list missing a reading would
-    /// read as the row's whole story.</summary>
-    private static List<string> ClassesOf(IEnumerable<string> lemmaIds)
+    /// read as the row's whole story — so a row that is a spelling rather than a
+    /// reading (a null id) has none, which is right: nothing has said what class it is.
+    /// </summary>
+    private static List<string> ClassesOf(IEnumerable<string?> lemmaIds)
     {
-        var classes = lemmaIds.Select(ClassOf).ToList();
+        var classes = lemmaIds.Select(id => id == null ? null : ClassOf(id)).ToList();
         return classes.Contains(null) ? [] : classes.OfType<string>().Distinct().ToList();
     }
 
-    /// <summary>Every use of the word's lexeme in one document, grouped by the reading
-    /// each line was resolved to, with the surface words highlighted. Null when the
+    /// <summary>A query the walk found the word by, and the name its uses are filed
+    /// under. <paramref name="LemmaId"/> is null for the spelling fallback: there is
+    /// no reading there, only the word as it is written.</summary>
+    private sealed record Reading(string? LemmaId, string Lemma, SearchResult Result);
+
+    /// <summary>What found the word in one document, and what each found.</summary>
+    private List<Reading> ReadingsIn(string word, string ident)
+    {
+        var lemmaIds = LemmaIdsFor(lemmaTable, word);
+        if (lemmaIds.Count > 0)
+        {
+            // one query per reading: a span query says which lines matched, never
+            // which of its OR'd terms did, and an ambiguous word has two or three
+            // readings at most. A line the resolver left ambiguous answers to each
+            // of them, and is counted under each: that it could be either is the
+            // fact, not a bug.
+            return lemmaIds
+                .Select(id => (Id: id, Result: searcher.SearchLemma(ident, [id])))
+                .Where(x => x.Result is { Lines.Count: > 0 })
+                .Select(x => new Reading(x.Id, lemmaTable.DisplayLemmaOf(x.Id) ?? x.Id, x.Result!))
+                .ToList();
+        }
+        if (LemmaTable.IsAffix(word))
+        {
+            return [];
+        }
+        // no lexeme to ask for, so ask for the spelling — the scan the first-seen
+        // band above the walk has always used, and whose count the walk otherwise
+        // leaves the reader unable to see a single line of.
+        //
+        // Weaker evidence, knowingly: a spelling scan cannot apply the resolver's
+        // per-line decisions, so an ambiguous spelling brings the other lexeme's
+        // lines with it. Nothing is being confused that the table could have told
+        // apart — it has no reading for this word at all — and the row is filed
+        // under the spelling rather than under a lexeme it cannot name.
+        try
+        {
+            var found = searcher.SearchWork(ident, word, SearchOptions.Default,
+                returnTranscriptData: false);
+            return found is { Lines.Count: > 0 } ? [new Reading(null, word, found)] : [];
+        }
+        catch (Exception)
+        {
+            // a headword the query grammar cannot parse shows no uses, never an error
+            return [];
+        }
+    }
+
+    /// <summary>Every use of the word in one document, grouped by the reading each
+    /// line was resolved to, with the surface words highlighted. Null when the
     /// document does not attest it.</summary>
     public async Task<AttestationLines?> InDocument(string word, string ident)
     {
-        var lemmaIds = LemmaIdsFor(lemmaTable, word);
-        // one query per reading: a span query says which lines matched, never which
-        // of its OR'd terms did, and an ambiguous word has two or three readings at
-        // most. A line the resolver left ambiguous answers to each of them, and is
-        // counted under each: that it could be either is the fact, not a bug.
-        var matched = lemmaIds
-            .Select(id => (Id: id, Result: searcher.SearchLemma(ident, [id])))
-            .Where(x => x.Result is { Lines.Count: > 0 })
-            .ToList();
+        var matched = ReadingsIn(word, ident);
         if (matched.Count == 0)
         {
             return null;
@@ -129,10 +206,10 @@ public class DictionaryAttestationService(
         var readings = matched
             .Select(x => new
             {
-                x.Id,
+                x.LemmaId,
                 x.Result,
-                Lemma = lemmaTable.DisplayLemmaOf(x.Id) ?? x.Id,
-                Uses = Occurrences(x.Result!).ToHashSet(),
+                x.Lemma,
+                Uses = Occurrences(x.Result).ToHashSet(),
             })
             .ToList();
         var groups = readings
@@ -148,14 +225,14 @@ public class DictionaryAttestationService(
                 .GroupBy(x => x.Uses, HashSet<(int Line, int Start)>.CreateSetComparer())
                 .Select(row => new AttestationLemmaGroup
                 {
-                    LemmaIds = row.Select(x => x.Id).ToList(),
+                    LemmaIds = row.Select(x => x.LemmaId).OfType<string>().ToList(),
                     Lemma = lemma.Key,
-                    Classes = ClassesOf(row.Select(x => x.Id)),
+                    Classes = ClassesOf(row.Select(x => x.LemmaId)),
                     // the row's readings claim the same uses, so the count is that
                     // set's: one term's spans cannot overlap each other
                     Count = row.Key.Count,
                     // and the same uses are the same lines: any reading's serve
-                    Lines = row.First().Result!.Lines
+                    Lines = row.First().Result.Lines
                         .OrderBy(line => line.CsvLineNumber)
                         .Take(MaxLinesPerLemma)
                         .ToList(),
@@ -173,18 +250,19 @@ public class DictionaryAttestationService(
             Year = document.CreatedCircaStart?.Year,
             // the union, not the sum: a word the resolver left ambiguous is claimed
             // by every reading, and is still one use of it
-            UseCount = matched.SelectMany(x => Occurrences(x.Result!)).Distinct().Count(),
+            UseCount = matched.SelectMany(x => Occurrences(x.Result)).Distinct().Count(),
             Groups = groups,
         };
     }
 }
 
-/// <summary>The corpus documents attesting a lexeme, oldest first</summary>
+/// <summary>The corpus documents attesting a word, oldest first</summary>
 public class DictionaryAttestations
 {
     public required string Word { get; set; }
-    /// <summary>The display lemmas being walked; empty when the lemma table does not
-    /// know the word, in which case there is nothing to walk</summary>
+    /// <summary>The display lemmas being walked; empty where the lemma table knows
+    /// no lexeme for the word, in which case the walk is of its spelling and there
+    /// is no lexeme to name</summary>
     public required List<string> Lemmas { get; set; }
     public required List<AttestationDocument> Documents { get; set; }
     /// <summary>Documents attesting the lexeme which carry no date: they cannot be
@@ -231,9 +309,13 @@ public class AttestationLemmaGroup
 {
     /// <summary>The readings the row stands for ("beg.a"): distinguishes homographs
     /// the display lemma cannot. More than one where they share that lemma and claim
-    /// the very same words — the document's use of the word is genuinely either.</summary>
+    /// the very same words — the document's use of the word is genuinely either.
+    ///
+    /// Empty where the row is a spelling rather than a reading: the lemma table
+    /// knows no lexeme for the word, so the walk scanned what it is written as.</summary>
     public required List<string> LemmaIds { get; set; }
-    /// <summary>The headword a reader would look up ("beg")</summary>
+    /// <summary>The headword a reader would look up ("beg"), or the spelling that was
+    /// scanned where <see cref="LemmaIds"/> is empty</summary>
     public required string Lemma { get; set; }
     /// <summary>The word classes of <see cref="LemmaIds"/> ("n", "v"), for naming a
     /// reading the headword alone does not. Empty where an id names no class.</summary>

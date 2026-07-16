@@ -242,9 +242,11 @@ export type AttestationLinesResponse = {
 
 export type AttestationLemmaGroup = {
     /** "beg.a": distinguishes homographs the display lemma cannot. More than one
-     * where the readings share that lemma and claim the very same words */
+     * where the readings share that lemma and claim the very same words; empty
+     * where the row is a spelling the lemma table knows no lexeme for */
     lemmaIds: string[]
-    /** the headword a reader would look up ("beg") */
+    /** the headword a reader would look up ("beg"), or the spelling scanned
+     * where `lemmaIds` is empty */
     lemma: string
     /** the word classes of `lemmaIds` ("n", "v"), for naming a reading the
      * headword alone does not; empty where an id names no class */

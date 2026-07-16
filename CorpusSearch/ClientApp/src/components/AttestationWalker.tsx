@@ -104,7 +104,9 @@ const classLabelFor = (
     const sharesLemma = groups.some(
         (other) => other !== group && other.lemma === group.lemma,
     )
-    if (group.lemmaIds.length === 1 && !sharesLemma) {
+    // one reading, and nothing to be told apart from: the lemma is its whole name.
+    // No readings at all is a row that is a spelling — nothing has said its class
+    if (group.lemmaIds.length < 2 && !sharesLemma) {
         return null
     }
     const named = group.classes.map((c) => CLASS_ABBREVIATION[c])
@@ -363,7 +365,12 @@ export const AttestationWalker = ({
                             <div className={fresh ? undefined : "attest-stale"}>
                                 {lines.groups.map((group) => (
                                     <LemmaGroup
-                                        key={group.lemmaIds.join(" ")}
+                                        // a row with no readings is a spelling,
+                                        // and there is only ever one of those
+                                        key={
+                                            group.lemmaIds.join(" ") ||
+                                            group.lemma
+                                        }
                                         group={group}
                                         classes={classLabelFor(
                                             group,
