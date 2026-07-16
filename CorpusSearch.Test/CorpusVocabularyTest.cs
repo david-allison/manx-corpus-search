@@ -192,4 +192,46 @@ public class CorpusVocabularyTest
             Assert.That(vocabulary.IsAttested("cur my ner"), Is.False);
         });
     }
+
+    /// <summary>The lemma tree asks for the spelling itself: 'yaagh' attests the
+    /// lexeme (<see cref="AWordTheCorpusOnlyWritesMutatedIsStillAttested"/>), but
+    /// it does not attest the spelling 'yaagh' being asked about the other way —
+    /// the hop would answer for the whole paradigm at once</summary>
+    [Test]
+    public void AFormIsAttestedByItsOwnSpellingNotItsParadigm()
+    {
+        var vocabulary = Loaded("jaagh");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(vocabulary.AttestsForm("jaagh"), Is.True);
+            Assert.That(vocabulary.AttestsForm("yaagh"), Is.False);
+        });
+    }
+
+    /// <summary>The lemma table spaces a hyphenated form ('aa-vioghey' is 'aa
+    /// vioghey' there), so the corpus is folded the same way before the two meet</summary>
+    [Test]
+    public void ASpacedFormIsSaidByItsHyphenatedToken()
+    {
+        Assert.That(Loaded("aa-vioghey").AttestsForm("aa vioghey"), Is.True);
+    }
+
+    /// <summary>A spaced form of several words is a phrase: read for, not guessed
+    /// at, and unanswered until the read lands</summary>
+    [Test]
+    public void APhraseFormWaitsForTheCorpusToBeRead()
+    {
+        var vocabulary = Loaded("er", "n'aase", "ta", "mee");
+        Assert.That(vocabulary.AttestsForm("er n'aase"), Is.Null);
+
+        vocabulary.ScanPhrases(["er n'aase"], ["ta mee er n'aase"]);
+        Assert.That(vocabulary.AttestsForm("er n'aase"), Is.True);
+    }
+
+    [Test]
+    public void NoFormIsGreyedBeforeTheIndexLoads()
+    {
+        Assert.That(new CorpusVocabulary(LemmaTable.Instance).AttestsForm("xyzzy"), Is.True);
+    }
 }

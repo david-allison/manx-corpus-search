@@ -14,7 +14,7 @@ namespace CorpusSearch.Controllers;
 public class DictionaryController(
     DictionaryLookupService lookupService, DictionaryHistoryService historyService,
     DictionaryAttestationService attestationService, DictionaryBrowseService browseService,
-    CorpusVocabulary vocabulary)
+    LemmaIndexService lemmaIndexService, CorpusVocabulary vocabulary)
 {
     /// <summary>
     /// Returns diction
@@ -97,6 +97,29 @@ public class DictionaryController(
     public ActionResult<DictionaryBrowsePage> Browse([FromQuery] string dict, [FromQuery] string? at = null)
     {
         var page = browseService.Page(dict, at);
+        return page == null ? new NotFoundResult() : page;
+    }
+
+    /// <summary>
+    /// One page of the lemma index: every lemma the tables link a form to, one
+    /// letter at a time, in the browse page's shape.
+    /// </summary>
+    /// <param name="at">a letter ("a") or a prefix; the first letter when it
+    /// names neither</param>
+    [HttpGet("lemmas")]
+    public DictionaryBrowsePage Lemmas([FromQuery] string? at = null)
+    {
+        return lemmaIndexService.Index(at);
+    }
+
+    /// <summary>
+    /// One lemma's form tree: the forms the tables link to it, grouped by link
+    /// type, each marked for corpus attestation and unverified links.
+    /// </summary>
+    [HttpGet("lemma")]
+    public ActionResult<LemmaTreePage> Lemma([FromQuery] string lemma)
+    {
+        var page = lemmaIndexService.Tree(lemma);
         return page == null ? new NotFoundResult() : page;
     }
 

@@ -148,6 +148,105 @@ public class LemmaTableTest
         Assert.That(table.CliticCandidatesFor("ta"), Is.Empty); // no clitic pattern: direct lookup's job
     }
 
+    /// <summary>The file order is the generator's, not an alphabet's ('yn nah' is
+    /// row 2 of the real table): the accessor is what sorts</summary>
+    [Test]
+    public void AllDisplayLemmasAreSortedThoughTheFileIsNot()
+    {
+        var table = Table(
+            "yn nah\tnah.n\tnah\tself\ts. f.\tyn nah\tdemutation-unvalidated",
+            "aase\taase.n\taase\tself\ts. m.\taase\t",
+            "daaney\tdaaney.a\tdaaney\tself\ta.\tdaaney\t");
+
+        Assert.That(table.AllDisplayLemmas, Is.EqualTo(new[] { "aase", "daaney", "nah" }));
+    }
+
+    /// <summary>A form is linked once per way it hangs off the lemma: 'deiney' is
+    /// both `inflected` and `plural` of dooinney, and that is two links, but a
+    /// repeated row is not</summary>
+    [Test]
+    public void LinksOfCollectsAFormOncePerLinkType()
+    {
+        var table = Table(
+            "dooinney\tdooinney.n\tdooinney\tself\ts. m.\tdooinney\t",
+            "deiney\tdooinney.n\tdooinney\tinflected\ts. m.\tdooinney\t",
+            "deiney\tdooinney.n\tdooinney\tplural\ts. m.\tdeiney\t",
+            "deiney\tdooinney.n\tdooinney\tplural\ts. m.\tdeiney\t");
+
+        Assert.That(table.LinksOf("dooinney")!.Links, Is.EquivalentTo(new[]
+        {
+            new LemmaLink("inflected", "deiney", false),
+            new LemmaLink("plural", "deiney", false),
+        }));
+    }
+
+    /// <summary>The lemma's own row draws no branch, but a hand-asserted one (the
+    /// vocab supplement) makes the root itself a guess</summary>
+    [Test]
+    public void TheLemmasOwnRowDrawsNoBranchAndCanMakeTheRootAGuess()
+    {
+        var table = Table(
+            "peiagh\tpeiagh.n\tpeiagh\tself\ts.\tpeiagh\tmodern-variant unverified",
+            "peiaghyn\tpeiagh.n\tpeiagh\tinflected\ts.\tpeiagh\tunverified");
+
+        var links = table.LinksOf("peiagh")!;
+        Assert.Multiple(() =>
+        {
+            Assert.That(links.SelfUnverified, Is.True);
+            Assert.That(links.Links, Is.EqualTo(new[] { new LemmaLink("inflected", "peiaghyn", true) }));
+        });
+    }
+
+    [Test]
+    public void APrintedSelfRowKeepsTheRootVerified()
+    {
+        Assert.That(Table("aase\taase.n\taase\tself\ts. m.\taase\t")
+            .LinksOf("aase")!.SelfUnverified, Is.False);
+    }
+
+    /// <summary>Cregeen prints 'daase' as an entry of its own and the table files
+    /// it under aase as `self`: another headword of the lexeme is a link the tree
+    /// shows, unlike the lemma's own row</summary>
+    [Test]
+    public void AnotherHeadwordOfTheLexemeIsASelfLink()
+    {
+        var table = Table(
+            "aase\taase.v\taase\tself\tv.\taase\t",
+            "daase\taase.v\taase\tself\tv.\tdaase\t");
+
+        Assert.That(table.LinksOf("aase")!.Links,
+            Is.EqualTo(new[] { new LemmaLink("self", "daase", false) }));
+    }
+
+    /// <summary>A pair the print attests anywhere stays verified, however many
+    /// rules also produce it — as <see cref="LemmaTable.IsUnverifiedLink"/> has it</summary>
+    [Test]
+    public void ALinkAnyRowAttestsStaysVerified()
+    {
+        var table = Table(
+            "pheiagh\tpeiagh.n\tpeiagh\tmutation\ts.\tpeiagh\tgenerated-lenition",
+            "pheiagh\tpeiagh.n\tpeiagh\tmutation\ts.\tpeiagh\t");
+
+        Assert.That(table.LinksOf("peiagh")!.Links,
+            Is.EqualTo(new[] { new LemmaLink("mutation", "pheiagh", false) }));
+    }
+
+    /// <summary>The lookup folds ('Aa-Aase' -> 'aa aase'), the answer keeps the
+    /// printed spelling</summary>
+    [Test]
+    public void LinksOfNormalizesItsInputAndKeepsThePrintedSpelling()
+    {
+        var table = Table("aa aase\taa-aase.n\taa-aase\tself\ts. m.\taa-aase\t");
+
+        Assert.That(table.LinksOf("Aa-Aase")!.Lemma, Is.EqualTo("aa-aase"));
+    }
+
+    [Test]
+    public void AnUnknownLemmaHasNoLinks()
+    {
+        Assert.That(Table().LinksOf("xyzzy"), Is.Null);
+    }
+
     /// <summary>The vendored table loads and covers the acceptance forms</summary>
     [Test]
     public void VendoredTableLoads()
@@ -155,6 +254,10 @@ public class LemmaTableTest
         var table = LemmaTable.Instance;
 
         Assert.That(table.FormCount, Is.GreaterThan(39_000));
+        Assert.That(table.AllDisplayLemmas, Has.Count.GreaterThan(15_000));
+        // the Phillips supplement's 1610 spellings hang off the classical lemma
+        Assert.That(table.LinksOf("dooinney")!.Links,
+            Does.Contain(new LemmaLink("phillips", "dwyne", false)));
         Assert.That(table.CandidatesFor("daase"), Does.Contain("aase.v"));
         Assert.That(table.CandidatesFor("aaseyn"), Does.Contain("aase.n"));
         // n'aase (the er n'aase participle) shares aase's lemma id, so a

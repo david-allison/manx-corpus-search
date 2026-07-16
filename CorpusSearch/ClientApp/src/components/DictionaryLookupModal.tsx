@@ -414,7 +414,9 @@ export const DictionaryLookupModal = (props: DictionaryLookupState) => {
                                                     {summary.primaryWord}
                                                 </strong>
                                                 <UnverifiedMark
-                                                    summary={summary}
+                                                    unverified={
+                                                        summary.unverifiedLink
+                                                    }
                                                 />
                                                 <GrammarLabel
                                                     label={summary.grammarLabel}

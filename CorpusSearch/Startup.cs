@@ -93,6 +93,7 @@ public class Startup(IConfiguration configuration)
         // filled from the index's term list in Configure, once the corpus is loaded
         services.AddSingleton<CorpusVocabulary>();
         services.AddSingleton<DictionaryBrowseService>();
+        services.AddSingleton<LemmaIndexService>();
         services.AddSingleton<WorkService>();
         services.AddSingleton<DocumentSearchService>();
         services.AddSingleton<NewspaperSourceEnricher>();
@@ -266,6 +267,9 @@ public class Startup(IConfiguration configuration)
                 var stopwatch = System.Diagnostics.Stopwatch.StartNew();
                 var headwords = services.GetServices<ISearchDictionary>()
                     .SelectMany(x => x.Headwords)
+                    // the lemma tables' forms ride along: the lemma tree greys a
+                    // multiword form ('er n'aase') by the same read of the corpus
+                    .Concat(LemmaTable.Instance.AllForms)
                     .ToList();
                 var scan = Task.Run(() =>
                     vocabulary.ScanPhrases(headwords, CorpusLines(workService, searcher)));

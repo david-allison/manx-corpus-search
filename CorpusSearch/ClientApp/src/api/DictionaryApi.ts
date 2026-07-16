@@ -382,6 +382,71 @@ export const dictionaryBrowse = async (
     return (await response.json()) as DictionaryBrowseResponse
 }
 
+/** The lemma index, in the browse page's shape: the same letters and chapters,
+ * over every lemma the tables link a form to instead of one book's headwords */
+export const lemmaIndex = async (
+    at?: string | null,
+    signal?: AbortSignal,
+): Promise<DictionaryBrowseResponse> => {
+    const params = new URLSearchParams()
+    if (at) {
+        params.set("at", at)
+    }
+    const response = await fetch(
+        `/api/Dictionary/lemmas?${params.toString()}`,
+        { signal },
+    )
+    if (!response.ok) {
+        throw new Error(`lemma index failed: ${response.status}`)
+    }
+    return (await response.json()) as DictionaryBrowseResponse
+}
+
+/** One lemma's form tree: the forms the lemma tables link to it, grouped by
+ * how each hangs off it */
+export type LemmaTreeResponse = {
+    /** as the tables spell it ("aa-aase", "Aachummey") */
+    lemma: string
+    /** whether the corpus says the lemma by its own spelling: the forms below
+     * answer for the rest of the paradigm */
+    attested: boolean
+    /** the lemma's own row is hand-asserted (the vocab supplement): the root
+     * itself is a guess, like the popup's unverifiedLink */
+    unverified: boolean
+    groups: LemmaTreeGroup[]
+}
+
+export type LemmaTreeGroup = {
+    /** the tables' own name for the link ("inflected", "mutation", "variant",
+     * "undecided", ...): the page puts the reader's words on it */
+    linkType: string
+    forms: LemmaTreeForm[]
+}
+
+export type LemmaTreeForm = {
+    form: string
+    /** whether any text says the form by this spelling — no lemma hop, which
+     * would answer for the whole paradigm at once */
+    attested: boolean
+    /** no row attests the link: made by rule (a generated mutation) or asserted
+     * by hand (the vocab supplement), and possibly wrong */
+    unverified: boolean
+}
+
+export const lemmaTree = async (
+    lemma: string,
+    signal?: AbortSignal,
+): Promise<LemmaTreeResponse> => {
+    const params = new URLSearchParams({ lemma })
+    const response = await fetch(`/api/Dictionary/lemma?${params.toString()}`, {
+        signal,
+    })
+    if (!response.ok) {
+        throw new Error(`lemma tree failed: ${response.status}`)
+    }
+    return (await response.json()) as LemmaTreeResponse
+}
+
 /** The headwords either side of a word, for stepping through a dictionary */
 export type DictionaryNeighboursResponse = {
     word: string

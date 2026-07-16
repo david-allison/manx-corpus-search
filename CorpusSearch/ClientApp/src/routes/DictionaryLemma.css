@@ -1,0 +1,68 @@
+/* the lemma pages: a note under the heading, and the form tree's groups.
+   The index itself wears DictionaryBrowse.css, being the same index. */
+.dict-lemma-note {
+    margin: 4px 0 14px;
+    color: var(--c-muted);
+}
+
+.dict-lemma-groups {
+    margin: 18px 0 0;
+}
+
+/* a group reads like a browse chapter: the link's name in the margin, the
+   forms running on beside it */
+.dict-lemma-group {
+    position: relative;
+    padding-left: 190px;
+    margin: 10px 0;
+}
+
+.dict-lemma-group-name {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 178px;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 2px 5px;
+    border-radius: 2px;
+    background-color: var(--c-border-meta);
+    font-family: Georgia, serif;
+    font-size: 13px;
+    font-weight: bold;
+    letter-spacing: 0.5px;
+}
+
+.dict-lemma-forms {
+    list-style: none;
+    margin: 0;
+    padding: 2px 0 0;
+    font-family: Georgia, serif;
+    line-height: 1.7;
+}
+
+.dict-lemma-forms li {
+    display: inline;
+}
+
+/* the separator the browse page draws between words, drawn here in CSS so the
+   unverified mark stays inside its form's breath group */
+.dict-lemma-forms li + li::before {
+    content: " · ";
+    color: var(--c-accent);
+    padding: 0 2px;
+}
+
+@media (max-width: 600px) {
+    /* no margin to keep the name in: it sits above its forms instead */
+    .dict-lemma-group {
+        padding-left: 0;
+        margin: 14px 0;
+    }
+
+    .dict-lemma-group-name {
+        position: static;
+        display: inline-block;
+        margin-bottom: 3px;
+    }
+}
