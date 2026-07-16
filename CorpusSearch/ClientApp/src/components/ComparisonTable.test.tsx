@@ -169,10 +169,16 @@ describe("diffed lines (#310)", () => {
         manxHighlights: [{ start: 3, end: 10 }],
     })
 
-    it("still renders the diff parts", () => {
+    it("renders the rewritten word as a correction with a reveal chip", () => {
         const { container } = renderTable([correctedLine])
-        expect(container.querySelector(".part-added")?.textContent).toBe("ç")
-        expect(container.querySelector(".part-removed")?.textContent).toBe("c")
+        expect(container.querySelector(".doc-correction")?.textContent).toBe(
+            "çhengey",
+        )
+        const chip = container.querySelector("button.doc-correction-marker")
+        fireEvent.click(chip!)
+        expect(container.querySelector(".part-removed")?.textContent).toBe(
+            "chengey",
+        )
     })
 
     it("highlights the server-provided ranges within the diff", () => {
@@ -205,7 +211,7 @@ describe("diffed lines (#310)", () => {
             highlightManx: false,
         })
         expect(container.querySelector("mark.textHighlight")).toBeNull()
-        expect(container.querySelector(".part-added")).not.toBeNull()
+        expect(container.querySelector(".doc-correction")).not.toBeNull()
     })
 })
 
