@@ -245,8 +245,9 @@ public class DictionaryAttestationServiceTest : QueryBase
         });
     }
 
-    /// <summary>A word the lemma table does not know has no lexeme to walk: it
-    /// must return nothing rather than every document in the corpus</summary>
+    /// <summary>A word nothing knows — no lexeme in the table, and no text saying
+    /// the spelling either — walks nothing: the fallback scan must come back with
+    /// what it found, which is nothing, rather than with every document</summary>
     [Test]
     public void AnUnknownWordWalksNothing()
     {
@@ -300,7 +301,7 @@ public class DictionaryAttestationServiceTest : QueryBase
     [Test]
     public void AnAffixHasNoLexemeToWalk()
     {
-        AddDated("Psalms", 1610, "ta ern’ ’an seiaghy heyn");
+        AddDated("Psalms", 1610, "ta an dooinney");
 
         var walk = Service().Attestations("an-");
 
@@ -313,4 +314,65 @@ public class DictionaryAttestationServiceTest : QueryBase
             Assert.That(LemmaTable.Instance.CandidatesFor("an-"), Is.Not.Empty);
         });
     }
+
+    /// <summary>...and an affix does not reach the spelling fallback either: 'an-'
+    /// scanned as a spelling finds every use of the word 'an', which is the whole
+    /// thing being guarded against</summary>
+    [Test]
+    public void AnAffixIsNotWalkedByItsSpellingEither()
+    {
+        AddDated("Psalms", 1610, "ta an dooinney");
+
+        Assert.That(Service().InDocument("an-", "Psalms").Result, Is.Null);
+    }
+
+    /// <summary>The lemma table is built from Cregeen and J Kelly and does not
+    /// cover even those: 'angaish' is one of J Kelly's own headwords with no lexeme
+    /// here. The first-seen band scans the spelling and reports 63 uses; the walk
+    /// asked the lemma field, found nothing, and left the page claiming a word was
+    /// used 63 times while offering no way to read one of them.</summary>
+    [Test]
+    public void AWordWithNoLexemeIsWalkedByItsSpelling()
+    {
+        AddDated("Later", 1819, "Ta angaish orrym");
+        AddDated("Earlier", 1748, "Angaish as seaghyn");
+
+        var walk = Service().Attestations("angaish");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(DictionaryAttestationService.LemmaIdsFor(LemmaTable.Instance, "angaish"),
+                Is.Empty, "the premise: the table knows no lexeme for it");
+            Assert.That(walk.Documents.Select(x => x.Ident), Is.EqualTo(new[] { "Earlier", "Later" }));
+            // one term, so the scan can be trusted to count it
+            Assert.That(walk.Documents[0].Uses, Is.EqualTo(1));
+            // ...and there is no lexeme to name
+            Assert.That(walk.Lemmas, Is.Empty);
+        });
+    }
+
+    /// <summary>Its uses read as any other step's, filed under the spelling: there
+    /// is no reading to file them under, and the row must not invent one</summary>
+    [Test]
+    public void AWordWithNoLexemeShowsItsUsesUnderItsSpelling()
+    {
+        AddDated("Doc", 1748, "Ta angaish orrym", "Cha nel eh", "Angaish as seaghyn");
+
+        var found = Service().InDocument("angaish", "Doc").Result!;
+        var row = found.Groups.Single();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(row.Lemma, Is.EqualTo("angaish"));
+            Assert.That(row.LemmaIds, Is.Empty);
+            Assert.That(row.Classes, Is.Empty);
+            Assert.That(row.Count, Is.EqualTo(2));
+            Assert.That(found.UseCount, Is.EqualTo(2));
+            // the surface word is marked, as it is on a lexeme's step
+            var line = row.Lines[0];
+            Assert.That(line.ManxHighlights!.Select(x => line.Manx![x.Start..x.End]),
+                Is.EqualTo(new[] { "angaish" }));
+        });
+    }
+
 }
