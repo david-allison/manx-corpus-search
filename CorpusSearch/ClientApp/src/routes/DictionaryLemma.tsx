@@ -5,6 +5,7 @@ import {
     DictionaryBrowseResponse,
     lemmaIndex,
     lemmaTree,
+    LemmaTreeGroup,
     LemmaTreeResponse,
 } from "../api/DictionaryApi"
 import { dictionaryWordUrl } from "../utils/DictionaryEntries"
@@ -180,6 +181,60 @@ const FORM_UNVERIFIED_TITLE =
     "Unverified: no dictionary records this form under this lemma. It was " +
     "worked out by rule or asserted by hand, and may be wrong"
 
+/** The branches under one node: its forms by how each hangs off it, every
+ * form nesting in turn what hangs off *it* — the rows deriving through it
+ * ('pyaghyn' inflects the variant 'pyagh'), and a lexeme it heads itself
+ * ('deiney' under dooinney carries 'e gheiney'). The server draws each form
+ * once, so a book-true cycle (fee ↔ feeagh) closes as a leaf. */
+const TreeGroups = ({
+    groups,
+    className,
+    ariaLabel,
+}: {
+    groups: LemmaTreeGroup[]
+    className?: string
+    ariaLabel?: string
+}) => (
+    <ul className={className} aria-label={ariaLabel}>
+        {groups.map((group) => (
+            <li key={group.linkType}>
+                <span className="dict-lemma-branch">
+                    {GROUP_LABELS[group.linkType] ?? group.linkType}
+                </span>
+                <ul>
+                    {group.forms.map((form) => (
+                        <li key={form.form}>
+                            <Link
+                                className={
+                                    form.attested
+                                        ? undefined
+                                        : "dict-unattested"
+                                }
+                                title={
+                                    form.attested
+                                        ? undefined
+                                        : `${form.form} — by this spelling, in no text in the corpus`
+                                }
+                                to={dictionaryWordUrl(form.form)}
+                            >
+                                {form.form}
+                            </Link>
+                            <Count attestations={form.attestations} />
+                            <UnverifiedMark
+                                unverified={form.unverified}
+                                title={FORM_UNVERIFIED_TITLE}
+                            />
+                            {form.groups?.length ? (
+                                <TreeGroups groups={form.groups} />
+                            ) : null}
+                        </li>
+                    ))}
+                </ul>
+            </li>
+        ))}
+    </ul>
+)
+
 /** How often the corpus says a node's spelling, as the walk counts uses
  * ("×96"). Silent at a known 0 — the greying already says it — and while a
  * phrase's count is not yet known. */
@@ -264,49 +319,11 @@ const LemmaTree = ({ lemma }: { lemma: string }) => {
                             No forms hang off this lemma.
                         </p>
                     )}
-                    <ul
+                    <TreeGroups
+                        groups={tree.groups}
                         className="dict-lemma-tree"
-                        aria-label={`Forms of ${tree.lemma}`}
-                    >
-                        {tree.groups.map((group) => (
-                            <li key={group.linkType}>
-                                <span className="dict-lemma-branch">
-                                    {GROUP_LABELS[group.linkType] ??
-                                        group.linkType}
-                                </span>
-                                <ul>
-                                    {group.forms.map((form) => (
-                                        <li key={form.form}>
-                                            <Link
-                                                className={
-                                                    form.attested
-                                                        ? undefined
-                                                        : "dict-unattested"
-                                                }
-                                                title={
-                                                    form.attested
-                                                        ? undefined
-                                                        : `${form.form} — by this spelling, in no text in the corpus`
-                                                }
-                                                to={dictionaryWordUrl(
-                                                    form.form,
-                                                )}
-                                            >
-                                                {form.form}
-                                            </Link>
-                                            <Count
-                                                attestations={form.attestations}
-                                            />
-                                            <UnverifiedMark
-                                                unverified={form.unverified}
-                                                title={FORM_UNVERIFIED_TITLE}
-                                            />
-                                        </li>
-                                    ))}
-                                </ul>
-                            </li>
-                        ))}
-                    </ul>
+                        ariaLabel={`Forms of ${tree.lemma}`}
+                    />
 
                     <p className="dict-lemma-note">
                         <Link to={dictionaryWordUrl(tree.lemma)}>

@@ -71,12 +71,16 @@ public class LemmaIndexService(LemmaTable lemmaTable, CorpusVocabulary vocabular
     ];
 
     /// <summary>
-    /// One lemma's form tree: every form the tables link to it, grouped by link
-    /// type, each marked for whether the corpus says it and whether the link
-    /// rests on a rule or hand-assertion alone. One level deep on purpose — the
-    /// link graph carries book-true cycles (fee inflects to feeagh, feeagh
-    /// pluralizes to fee; see LemmaLinkCycleTest), and a tree of leaves cannot
-    /// be walked in a circle. Null when the tables name no such lemma.
+    /// One lemma's form tree, full depth: every form the tables link to it,
+    /// grouped by link type, each marked for whether the corpus says it and
+    /// whether the link rests on a rule or hand-assertion alone. A form nests
+    /// what hangs off *it*: the rows deriving through it (via — 'pyaghyn'
+    /// inflects the variant 'pyagh', not peiagh itself), and — where the form
+    /// heads a lexeme of its own — that lexeme's whole tree ('deiney' under
+    /// dooinney carries 'e gheiney'). Each form is expanded once: the link
+    /// graph carries book-true cycles (fee inflects to feeagh, feeagh
+    /// pluralizes to fee; see LemmaLinkCycleTest), so the second meeting is a
+    /// leaf rather than a circle. Null when the tables name no such lemma.
     /// </summary>
     public LemmaTreePage? Tree(string lemma)
     {
@@ -85,8 +89,38 @@ public class LemmaIndexService(LemmaTable lemmaTable, CorpusVocabulary vocabular
         {
             return null;
         }
-        var groups = links.Links
-            .GroupBy(x => x.LinkType)
+        var rootKey = LemmaTable.NormalizeForm(links.Lemma);
+        var expanded = new HashSet<string> { rootKey };
+        var byParent = ParentLookup(rootKey, links.Links);
+        return new LemmaTreePage
+        {
+            Lemma = links.Lemma,
+            Attestations = vocabulary.AttestationsOf(links.Lemma),
+            Attested = (vocabulary.AttestationsOf(links.Lemma) ?? 1) > 0,
+            Unverified = links.SelfUnverified,
+            Groups = Grouped(byParent[rootKey].Select(x => (x, byParent)), expanded),
+        };
+    }
+
+    /// <summary>Each link filed under the form it derives through: its via where
+    /// that names another of the lemma's own forms, the lemma itself otherwise
+    /// (a via naming no form here would dangle, so it hangs off the root)</summary>
+    private static ILookup<string, LemmaLink> ParentLookup(
+        string rootKey, IReadOnlyList<LemmaLink> links)
+    {
+        var forms = links.Select(x => x.Form).ToHashSet();
+        return links.ToLookup(x =>
+            x.Via.Length > 0 && x.Via != x.Form && forms.Contains(x.Via) ? x.Via : rootKey);
+    }
+
+    /// <summary>Children as branches: grouped by link type in reading order,
+    /// each form once per way it is linked, in collation order within</summary>
+    private List<LemmaTreeGroup> Grouped(
+        IEnumerable<(LemmaLink Link, ILookup<string, LemmaLink> ByParent)> children,
+        HashSet<string> expanded)
+    {
+        return children
+            .GroupBy(x => x.Link.LinkType)
             .OrderBy(g =>
             {
                 var known = Array.IndexOf(GroupOrder, g.Key);
@@ -97,26 +131,51 @@ public class LemmaIndexService(LemmaTable lemmaTable, CorpusVocabulary vocabular
             {
                 LinkType = g.Key,
                 Forms = g
-                    .OrderBy(x => DictionaryBrowse.CollationKey(x.Form), StringComparer.Ordinal)
-                    .ThenBy(x => x.Form, StringComparer.Ordinal)
-                    .Select(x => new LemmaTreeForm
-                    {
-                        Form = x.Form,
-                        Attestations = vocabulary.AttestationsOf(x.Form),
-                        // an unread phrase is left un-greyed, as the browse
-                        // leaves one: greying is a claim
-                        Attested = (vocabulary.AttestationsOf(x.Form) ?? 1) > 0,
-                        Unverified = x.Unverified,
-                    })
+                    // the same (link type, form) can arrive from both the via
+                    // rows and a nested lexeme's own: one node
+                    .GroupBy(x => x.Link.Form)
+                    .Select(x => x.First())
+                    .OrderBy(x => DictionaryBrowse.CollationKey(x.Link.Form), StringComparer.Ordinal)
+                    .ThenBy(x => x.Link.Form, StringComparer.Ordinal)
+                    .Select(x => Node(x.Link, x.ByParent, expanded))
                     .ToList(),
             })
             .ToList();
-        return new LemmaTreePage
+    }
+
+    /// <summary>One form of the tree, its own children nested — unless it has
+    /// been drawn already: a form met again (a shared intermediate, or a
+    /// book-true cycle) is a leaf the second time, not a circle</summary>
+    private LemmaTreeForm Node(
+        LemmaLink link, ILookup<string, LemmaLink> byParent, HashSet<string> expanded)
+    {
+        List<LemmaTreeGroup>? groups = null;
+        if (expanded.Add(link.Form))
         {
-            Lemma = links.Lemma,
-            Attestations = vocabulary.AttestationsOf(links.Lemma),
-            Attested = (vocabulary.AttestationsOf(links.Lemma) ?? 1) > 0,
-            Unverified = links.SelfUnverified,
+            // the rows of the enclosing lemma that derive through this form...
+            var children = byParent[link.Form].Select(x => (x, byParent));
+            // ...and, where the form heads a lexeme of its own, that lexeme's
+            // tree, its rows parented among themselves by their own vias. Never
+            // through a demutation guess — as RootDisplayLemmasFor refuses the
+            // same hop: fee's guessed 'ee' must not import the whole family of
+            // *to eat* into a tree about weaving
+            var own = link.LinkType == "demutated" ? null : lemmaTable.LinksOf(link.Form);
+            if (own != null)
+            {
+                var ownByParent = ParentLookup(link.Form, own.Links);
+                children = children.Concat(ownByParent[link.Form].Select(x => (x, ownByParent)));
+            }
+            var built = Grouped(children, expanded);
+            groups = built.Count > 0 ? built : null;
+        }
+        return new LemmaTreeForm
+        {
+            Form = link.Form,
+            Attestations = vocabulary.AttestationsOf(link.Form),
+            // an unread phrase is left un-greyed, as the browse leaves one:
+            // greying is a claim
+            Attested = (vocabulary.AttestationsOf(link.Form) ?? 1) > 0,
+            Unverified = link.Unverified,
             Groups = groups,
         };
     }
@@ -163,4 +222,9 @@ public class LemmaTreeForm
     /// <summary>No row attests the link: it was made by rule (a generated
     /// mutation) or hand-asserted (the vocab supplement), and may be wrong</summary>
     public bool Unverified { get; set; }
+    /// <summary>What hangs off this form in turn: rows deriving through it, and
+    /// — where it heads a lexeme of its own — that lexeme's tree. Null at a
+    /// leaf, and at a form the tree has already drawn (a book-true cycle's
+    /// second meeting).</summary>
+    public List<LemmaTreeGroup>? Groups { get; set; }
 }

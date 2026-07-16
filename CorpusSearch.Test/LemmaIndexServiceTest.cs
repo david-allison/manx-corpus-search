@@ -140,11 +140,81 @@ public class LemmaIndexServiceTest
         });
     }
 
-    /// <summary>fee inflects to feeagh and feeagh pluralizes to fee — a directed
-    /// cycle the print itself creates (LemmaLinkCycleTest). A tree one level deep
-    /// shows each side from the other and cannot be walked in a circle.</summary>
+    /// <summary>The via column is the tree's depth: 'pyaghyn' inflects the
+    /// variant 'pyagh', not peiagh itself, and the tree hangs it there</summary>
     [Test]
-    public void ABookTrueCycleIsTwoTreesNotARecursion()
+    public void AFormDerivingThroughAnotherNestsUnderIt()
+    {
+        var service = Service(Table(
+            "peiagh\tpeiagh.n\tpeiagh\tself\ts.\tpeiagh\t",
+            "peiaghyn\tpeiagh.n\tpeiagh\tinflected\ts.\tpeiagh\t",
+            "pyagh\tpeiagh.n\tpeiagh\tvariant\ts.\tpyagh\t",
+            "pyaghyn\tpeiagh.n\tpeiagh\tinflected\ts.\tpyagh\t"));
+
+        var tree = service.Tree("peiagh")!;
+        var inflected = tree.Groups.Single(x => x.LinkType == "inflected");
+        var pyagh = tree.Groups.Single(x => x.LinkType == "variant").Forms.Single();
+        Assert.Multiple(() =>
+        {
+            // only the lemma's own inflection at the root; the variant's nests
+            Assert.That(inflected.Forms.Single().Form, Is.EqualTo("peiaghyn"));
+            Assert.That(pyagh.Groups!.Single().Forms.Single().Form, Is.EqualTo("pyaghyn"));
+        });
+    }
+
+    /// <summary>A form heading a lexeme of its own carries that lexeme's tree:
+    /// Cregeen enters 'e gheiney' under a lemma 'deiney', which is itself an
+    /// inflection of dooinney — and 'gheiney' derives via the printed 'e
+    /// gheiney', so the whole chain draws: dooinney -> deiney -> e gheiney ->
+    /// gheiney</summary>
+    [Test]
+    public void AFormHeadingItsOwnLexemeNestsItsTree()
+    {
+        var service = Service(Table(
+            "dooinney\tdooinney.n\tdooinney\tself\ts. m.\tdooinney\t",
+            "deiney\tdooinney.n\tdooinney\tinflected\ts. m.\tdooinney\t",
+            "e gheiney\tdeiney.n\tdeiney\tself\ts.\te gheiney\t",
+            "gheiney\tdeiney.n\tdeiney\tparticle\ts.\te gheiney\t"));
+
+        var deiney = service.Tree("dooinney")!.Groups.Single().Forms.Single();
+        Assert.Multiple(() =>
+        {
+            Assert.That(deiney.Form, Is.EqualTo("deiney"));
+            var eGheiney = deiney.Groups!.Single().Forms.Single();
+            Assert.That(eGheiney.Form, Is.EqualTo("e gheiney"));
+            var gheiney = eGheiney.Groups!.Single().Forms.Single();
+            Assert.That(gheiney.Form, Is.EqualTo("gheiney"));
+            Assert.That(eGheiney.Groups!.Single().LinkType, Is.EqualTo("particle"));
+        });
+    }
+
+    /// <summary>A demutation guess is a leaf, never a doorway: fee's guessed
+    /// 'ee' must not import the whole family of *to eat* into a tree about
+    /// weaving — the same hop <see cref="LemmaTable.RootDisplayLemmasFor"/>
+    /// refuses</summary>
+    [Test]
+    public void ADemutationGuessDoesNotImportTheOtherLexeme()
+    {
+        var service = Service(Table(
+            "fee\tfee.v\tfee\tself\tv.\tfee\t",
+            "ee\tfee.v\tfee\tdemutated\tv.\tfee\t",
+            "ee\tee.v\tee\tself\tv.\tee\t",
+            "eeym\tee.v\tee\tinflected\tv.\tee\t"));
+
+        var ee = service.Tree("fee")!.Groups.Single(x => x.LinkType == "demutated")
+            .Forms.Single();
+        Assert.Multiple(() =>
+        {
+            Assert.That(ee.Form, Is.EqualTo("ee"));
+            Assert.That(ee.Groups, Is.Null);
+        });
+    }
+
+    /// <summary>fee inflects to feeagh and feeagh pluralizes to fee — a directed
+    /// cycle the print itself creates (LemmaLinkCycleTest). Each form is drawn
+    /// once: the second meeting is a leaf, not a circle.</summary>
+    [Test]
+    public void ABookTrueCycleClosesAsALeaf()
     {
         var service = Service(Table(
             "fee\tfee.v\tfee\tself\tv.\tfee\t",
@@ -152,10 +222,15 @@ public class LemmaIndexServiceTest
             "feeagh\tfeeagh.n\tfeeagh\tself\ts. m.\tfeeagh\t",
             "fee\tfeeagh.n\tfeeagh\tplural\ts. m.\tfee\t"));
 
+        var feeagh = service.Tree("fee")!.Groups.Single().Forms.Single();
         Assert.Multiple(() =>
         {
-            Assert.That(service.Tree("fee")!.Groups.Single().Forms.Single().Form,
-                Is.EqualTo("feeagh"));
+            Assert.That(feeagh.Form, Is.EqualTo("feeagh"));
+            // feeagh's own lexeme nests, and its 'fee' closes the loop as a leaf
+            var loop = feeagh.Groups!.Single().Forms.Single();
+            Assert.That(loop.Form, Is.EqualTo("fee"));
+            Assert.That(loop.Groups, Is.Null);
+            // ...and the other way round
             Assert.That(service.Tree("feeagh")!.Groups.Single().Forms.Single().Form,
                 Is.EqualTo("fee"));
         });
