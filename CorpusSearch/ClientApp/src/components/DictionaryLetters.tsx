@@ -49,6 +49,13 @@ export const DictionaryLetters = () => {
                     ))}
                 </nav>
             )}
+            {/* the other way in: not a book's index but the corpus search's
+                own — every lemma, and what hangs off each */}
+            <p className="dict-letters-lemmas">
+                <Link to="/dictionary/lemma">
+                    Or the lemma index: every word and its forms, as a tree ›
+                </Link>
+            </p>
         </>
     )
 }

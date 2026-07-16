@@ -387,6 +387,19 @@ export const AttestationWalker = ({
                             </Link>
                         ),
                     )}
+                    {/* the reading's whole family, drawn on the lemma page:
+                        the tab names the lexeme, this is the way to its tree.
+                        Not offered for a spelling walk — there is no lemma to
+                        draw */}
+                    {walk != null && walk.lemmas.includes(activeTab) && (
+                        <Link
+                            className="attest-tab-tree"
+                            to={`/dictionary/lemma/${encodeURIComponent(activeTab)}`}
+                            title={`Every form of “${activeTab}”, as a tree`}
+                        >
+                            All forms ›
+                        </Link>
+                    )}
                 </nav>
             )}
             {showTabs && !hasWalk && (

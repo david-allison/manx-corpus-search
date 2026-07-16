@@ -21,3 +21,16 @@
     color: var(--c-accent);
     border-bottom-color: var(--c-accent);
 }
+
+/* the other way in, under the letters: the lemma index is nobody's book, so
+   it is a line rather than a letter bar */
+.dict-letters-lemmas {
+    text-align: center;
+    margin: 8px 0 24px;
+    font-size: 14px;
+}
+
+/* tucked up under the letter bar's own spacing when it rendered */
+.dict-letters-home + .dict-letters-lemmas {
+    margin-top: -10px;
+}

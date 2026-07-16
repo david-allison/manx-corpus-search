@@ -64,6 +64,13 @@ a.attest-tab {
     border-bottom-color: var(--c-accent);
 }
 
+/* the way from a reading to its whole family: the tree on the lemma page */
+.attest-tab-tree {
+    margin-left: auto;
+    align-self: center;
+    font-size: 12px;
+}
+
 /* a reading with no dated text to walk: said, so the empty tab does not read
    as a broken one */
 .attest-empty {
