@@ -33,11 +33,13 @@ public class DictionaryAttestationService(
     /// <see cref="DictionaryHistoryService.LemmaReadingsFor"/> keeps their timelines
     /// apart.
     ///
-    /// None at all for an affix (<see cref="LemmaTable.IsAffix"/>): there is no
-    /// walking a prefix through the texts, because no text says one.</summary>
+    /// None at all for an affix: its lexeme is keyed by the bare word it is
+    /// spelled like, so asking the lemma field for 'an-' answers with 'an'. It is
+    /// walked by <see cref="Affix.CorpusQuery"/> instead — the words carrying it,
+    /// which is what attests it.</summary>
     internal static IReadOnlyList<string> LemmaIdsFor(LemmaTable table, string word)
     {
-        if (LemmaTable.IsAffix(word))
+        if (Affix.Is(word))
         {
             return [];
         }
@@ -86,22 +88,17 @@ public class DictionaryAttestationService(
     }
 
     /// <summary>The documents using the word: its lexeme's, or — where the lemma
-    /// table knows no lexeme — the ones its spelling turns up in, which is what
-    /// the first-seen band counts by. Nothing at all for an affix, which is not a
-    /// word a text can say.</summary>
+    /// table knows no lexeme — the ones the query below turns up in, which is what
+    /// the first-seen band counts by.</summary>
     private ScanResult ScanFor(string word, IReadOnlyList<string> lemmaIds)
     {
         if (lemmaIds.Count > 0)
         {
             return searcher.ScanLemma(lemmaIds);
         }
-        if (LemmaTable.IsAffix(word))
-        {
-            return new ScanResult();
-        }
         try
         {
-            return searcher.Scan(word);
+            return searcher.Scan(CorpusQueryFor(word));
         }
         catch (Exception)
         {
@@ -110,6 +107,12 @@ public class DictionaryAttestationService(
             return new ScanResult();
         }
     }
+
+    /// <summary>What to ask the corpus for a word with no lexeme to ask for: the
+    /// spelling, or — for an affix — the words carrying it, since an affix is
+    /// attested by those and never on its own (see <see cref="Affix"/>)</summary>
+    private static string CorpusQueryFor(string word) =>
+        Affix.Is(word) ? Affix.CorpusQuery(word) : word;
 
     /// <summary>How many lines of one reading the walk shows before deferring to the
     /// document itself: a text like the Psalms uses a common word over a hundred
@@ -167,23 +170,20 @@ public class DictionaryAttestationService(
                 .Select(x => new Reading(x.Id, lemmaTable.DisplayLemmaOf(x.Id) ?? x.Id, x.Result!))
                 .ToList();
         }
-        if (LemmaTable.IsAffix(word))
-        {
-            return [];
-        }
-        // no lexeme to ask for, so ask for the spelling — the scan the first-seen
-        // band above the walk has always used, and whose count the walk otherwise
-        // leaves the reader unable to see a single line of.
+        // no lexeme to ask for, so ask the corpus directly — the scan the
+        // first-seen band above the walk has always used, and whose count the walk
+        // otherwise leaves the reader unable to see a single line of. For an affix
+        // that is the words carrying it; for anything else, the spelling.
         //
-        // Weaker evidence, knowingly: a spelling scan cannot apply the resolver's
-        // per-line decisions, so an ambiguous spelling brings the other lexeme's
-        // lines with it. Nothing is being confused that the table could have told
-        // apart — it has no reading for this word at all — and the row is filed
-        // under the spelling rather than under a lexeme it cannot name.
+        // Weaker evidence, knowingly: this cannot apply the resolver's per-line
+        // decisions, so an ambiguous spelling brings the other lexeme's lines with
+        // it. Nothing is being confused that the table could have told apart — it
+        // has no reading for this word at all — and the row is filed under the
+        // headword rather than under a lexeme it cannot name.
         try
         {
-            var found = searcher.SearchWork(ident, word, SearchOptions.Default,
-                returnTranscriptData: false);
+            var found = searcher.SearchWork(ident, CorpusQueryFor(word),
+                SearchOptions.Default, returnTranscriptData: false);
             return found is { Lines.Count: > 0 } ? [new Reading(null, word, found)] : [];
         }
         catch (Exception)

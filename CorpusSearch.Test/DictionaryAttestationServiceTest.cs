@@ -294,36 +294,65 @@ public class DictionaryAttestationServiceTest : QueryBase
         Assert.That(ids, Does.Contain("mee.n"));
     }
 
-    /// <summary>There is no walking a prefix through the texts, because no text
-    /// says one: 'an-' is only ever the front of a longer word. The lemma table
-    /// cannot refuse it — NormalizeForm folds 'an-' to 'an', so the prefix is
-    /// keyed by the standalone word and answers for all 252 of its uses.</summary>
+    /// <summary>A prefix has no lexeme to walk: NormalizeForm folds 'an-' to 'an',
+    /// so the table keys the prefix by the standalone word and the lemma field
+    /// would answer for all 252 of its uses. It is walked by the words carrying it
+    /// instead, which is the only way a prefix is ever said.</summary>
     [Test]
-    public void AnAffixHasNoLexemeToWalk()
+    public void AnAffixIsWalkedByTheWordsCarryingIt()
     {
-        AddDated("Psalms", 1610, "ta an dooinney");
+        AddDated("Later", 1819, "yn an-chreestee");
+        AddDated("Earlier", 1748, "yn an-ghoo as an-chreestee");
+        AddDated("BareWordOnly", 1610, "ta an dooinney");
 
         var walk = Service().Attestations("an-");
 
         Assert.Multiple(() =>
         {
             Assert.That(DictionaryAttestationService.LemmaIdsFor(LemmaTable.Instance, "an-"),
-                Is.Empty);
-            Assert.That(walk.Documents, Is.Empty);
-            // ...though the table does know the prefix's lexeme by that key
+                Is.Empty, "no lexeme: the table keys the prefix by the bare word");
+            // ...though the table does know that lexeme by that key
             Assert.That(LemmaTable.Instance.CandidatesFor("an-"), Is.Not.Empty);
+            // the text that only says the word 'an' does not attest the prefix
+            Assert.That(walk.Documents.Select(x => x.Ident),
+                Is.EqualTo(new[] { "Earlier", "Later" }));
+            Assert.That(walk.Documents[0].Uses, Is.EqualTo(2));
         });
     }
 
-    /// <summary>...and an affix does not reach the spelling fallback either: 'an-'
-    /// scanned as a spelling finds every use of the word 'an', which is the whole
-    /// thing being guarded against</summary>
+    /// <summary>Its uses read as any other step's, filed under the headword</summary>
     [Test]
-    public void AnAffixIsNotWalkedByItsSpellingEither()
+    public void AnAffixShowsTheWordsCarryingItAsItsUses()
     {
-        AddDated("Psalms", 1610, "ta an dooinney");
+        AddDated("Doc", 1748, "yn an-ghoo", "ta an dooinney");
 
-        Assert.That(Service().InDocument("an-", "Psalms").Result, Is.Null);
+        var found = Service().InDocument("an-", "Doc").Result!;
+        var row = found.Groups.Single();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(row.Lemma, Is.EqualTo("an-"));
+            Assert.That(row.LemmaIds, Is.Empty);
+            // the carrier, and not the bare word on the next line
+            Assert.That(row.Count, Is.EqualTo(1));
+            var line = row.Lines.Single();
+            Assert.That(line.ManxHighlights!.Select(x => line.Manx![x.Start..x.End]),
+                Is.EqualTo(new[] { "an-ghoo" }));
+        });
+    }
+
+    /// <summary>An affix no word carries has no walk, rather than the bare
+    /// word's</summary>
+    [Test]
+    public void AnAffixNoWordCarriesIsNotWalked()
+    {
+        AddDated("Doc", 1610, "ta an dooinney");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(Service().Attestations("an-").Documents, Is.Empty);
+            Assert.That(Service().InDocument("an-", "Doc").Result, Is.Null);
+        });
     }
 
     /// <summary>The lemma table is built from Cregeen and J Kelly and does not

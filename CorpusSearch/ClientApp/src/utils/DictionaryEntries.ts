@@ -154,6 +154,28 @@ export const dictionaryWordUrl = (word: string, dict?: string): string =>
 export const dictionaryIndexUrl = (word: string, dict?: string): string =>
     `/dictionary/browse/${encodeURIComponent(dict ?? "cregeen")}/${encodeURIComponent(word)}`
 
+const HYPHEN = /^[-‑]|[-‑]$/
+
+/** The corpus search behind "Search the corpus for …".
+ *
+ * An affix is asked for as the words carrying it ('aa-' → 'aa-*'), the way the
+ * evidence above the link is: it is attested by those and never on its own, and
+ * asking for it as written finds nothing at all — the tokenizer keeps a hyphen
+ * inside the token it joins, so no token is 'aa-'. The section would say 85
+ * texts and the link would open on none.
+ *
+ * Mirrors Affix.cs, which is where the reasoning is written down. The server
+ * decides what the corpus is asked; this only decides what to link to. */
+export const corpusSearchUrl = (word: string): string => {
+    const trimmed = word.trim()
+    const query = HYPHEN.test(trimmed)
+        ? trimmed.endsWith("-") || trimmed.endsWith("‑")
+            ? `${trimmed.slice(0, -1).replace(/‑/g, "-")}-*`
+            : `*-${trimmed.slice(1).replace(/‑/g, "-")}`
+        : trimmed
+    return `/?q=${encodeURIComponent(query)}`
+}
+
 /** Trims punctuation (but never letters/digits, so internal apostrophes and
  * hyphens survive) from the edges of a tapped word: 'meenid,' -> 'meenid' */
 export const trimPunctuation = (s: string): string =>
