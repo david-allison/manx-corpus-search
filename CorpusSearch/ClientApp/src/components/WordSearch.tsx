@@ -52,12 +52,17 @@ export const WordSearch = ({
                     title="Back to the index"
                     aria-label="Back to the index"
                 >
-                    {/* drawn, not typed: ⌃ is the modifier-key caret, and fonts
-                        set it small and high — beside a 16px input it reads as a
-                        stray mark rather than as a way out */}
+                    {/* drawn, not typed, so it does not depend on how a font sets
+                        an arrow: ⌃ came out small and high, being the
+                        modifier-key caret, and read as a stray mark.
+
+                        Back rather than up: the index is where a reader browsing
+                        came from, and the walk's ‹ › below already mean the step
+                        either side. The tooltip says where back is, because this
+                        goes to the index however you arrived. */}
                     <svg viewBox="0 0 16 16" aria-hidden="true">
                         <path
-                            d="M3.5 10 8 5.5 12.5 10"
+                            d="M13.5 8H3M7.5 3.5 3 8l4.5 4.5"
                             fill="none"
                             stroke="currentColor"
                             strokeWidth="1.75"
