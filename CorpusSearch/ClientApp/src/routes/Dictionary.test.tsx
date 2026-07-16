@@ -331,11 +331,56 @@ describe("Dictionary page", () => {
         renderAt("/dictionary/ass")
 
         expect(await screen.findByText("n.")).toBeTruthy()
-        // the merged sense names both classes, so a wrong merge is visible
-        expect(screen.getByText("adv., prep.")).toBeTruthy()
+        // the merged sense names both classes, so a wrong merge is visible.
+        // Each class is its own <abbr>, so the label is read whole rather than
+        // matched as one string
+        expect(
+            [...document.querySelectorAll(".dict-page-sense-label")].map(
+                (x) => x.textContent,
+            ),
+        ).toEqual(["n.", "adv., prep."])
         expect(
             screen.getAllByText("ass", { selector: ".dict-page-sense-word" }),
         ).toHaveLength(2)
+    })
+
+    /** Every printed abbreviation on the page explains itself on hover, and the
+     * class beside a title is no different for having been worked out from the
+     * entries rather than read off a page */
+    it("expands each class of a sense label on hover", async () => {
+        respondWith({
+            word: "ass",
+            isSuggestionTier: false,
+            attested: true,
+            groups: [
+                {
+                    dictionary: "Cregeen",
+                    entries: [
+                        {
+                            primaryWord: "ass",
+                            summary: "out",
+                            dictionaryName: "Cregeen",
+                            rootDepth: 0,
+                            partsOfSpeech: ["Adverb"],
+                        },
+                        {
+                            primaryWord: "ASS",
+                            summary: "a weasel",
+                            dictionaryName: "Cregeen",
+                            rootDepth: 0,
+                            partsOfSpeech: ["Noun"],
+                        },
+                    ],
+                },
+            ],
+        })
+        renderAt("/dictionary/ass")
+
+        // 'n.' is the page's own word for a noun: the books print 's.'
+        expect((await screen.findByTitle("noun")).textContent).toBe("n.")
+        expect(screen.getByTitle("adverb").textContent).toBe("adv.")
+        // each is its own abbr: a tooltip cannot be hung on half a string
+        expect(screen.getByTitle("noun").tagName).toBe("ABBR")
     })
 
     it("a Phillips spelling gets a bridge line, not implied dictionary entries", async () => {

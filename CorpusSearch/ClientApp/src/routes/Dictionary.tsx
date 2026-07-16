@@ -1,4 +1,4 @@
-import { useEffect, useReducer, useState } from "react"
+import { Fragment, useEffect, useReducer, useState } from "react"
 import { Link, useParams } from "react-router-dom"
 import { CircularProgress } from "@mui/material"
 import {
@@ -14,7 +14,11 @@ import {
     headingFor,
     senseGroupsIn,
 } from "../utils/DictionaryEntries"
-import { DefinitionText, GrammarLabel } from "../components/GrammarAbbr"
+import {
+    DefinitionText,
+    expandGrammarLabel,
+    GrammarLabel,
+} from "../components/GrammarAbbr"
 import { UnverifiedMark } from "../components/UnverifiedMark"
 import { DictionaryScope } from "../components/DictionaryScope"
 import { DictionaryLetters } from "../components/DictionaryLetters"
@@ -123,6 +127,35 @@ const Entry = ({
     </div>
 )
 
+/** A sense's word classes beside the headword: "n.", or "adv., prep." where one
+ * sense gathers more than one label for the one job.
+ *
+ * Each expands on hover, as every printed abbreviation on the page does — the
+ * entries below wear the same dotted underline for the labels their books
+ * printed, and a reader has no reason to care that this one was worked out from
+ * them rather than read off a page. */
+const SenseLabel = ({ labels }: { labels: string[] }) => (
+    <span className="dict-page-sense-label">
+        {labels.map((label, index) => {
+            const expansion = expandGrammarLabel(label)
+            return (
+                <Fragment key={label}>
+                    {index > 0 && ", "}
+                    {expansion ? (
+                        <abbr className="dict-abbr" title={expansion}>
+                            {label}
+                        </abbr>
+                    ) : (
+                        // no tooltip is better than a wrong one, and better than
+                        // a control that offers nothing when you reach for it
+                        label
+                    )}
+                </Fragment>
+            )
+        })}
+    </span>
+)
+
 /** The experimental teanglann-style dictionary page: one word, every source —
  * per-dictionary sections, structured plurals, the root chain, pronunciation,
  * and near-spelling suggestions on a miss. */
@@ -217,10 +250,8 @@ export const Dictionary = () => {
                 {/* the class is the entries', so it waits for them: the title is
                     already this word, and "CREEAGH n." on cree's authority is a
                     claim about a word that has not arrived */}
-                {!stale && singleSense && senses[0].label && (
-                    <span className="dict-page-sense-label">
-                        {senses[0].label}
-                    </span>
+                {!stale && singleSense && (
+                    <SenseLabel labels={senses[0].labels} />
                 )}
             </h1>
             {page?.audio && (
@@ -362,14 +393,12 @@ export const Dictionary = () => {
                             it earns the word again. The only sense of a word has
                             nothing to tell apart: its label rides on the title
                             instead, and the heading would say the title over */}
-                            {!singleSense && sense.label && (
+                            {!singleSense && sense.labels.length > 0 && (
                                 <h3 className="dict-page-sense">
                                     <span className="dict-page-sense-word">
                                         {page.word}
                                     </span>
-                                    <span className="dict-page-sense-label">
-                                        {sense.label}
-                                    </span>
+                                    <SenseLabel labels={sense.labels} />
                                 </h3>
                             )}
                             {sense.entries.map((summary, index) => (

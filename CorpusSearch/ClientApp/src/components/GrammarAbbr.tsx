@@ -63,6 +63,10 @@ const GLOSSARY: Record<string, string> = {
 /** Label-only expansions: safe beside a headword, too ambiguous to tag
  * inside running English prose ("the state he was in.") */
 const LABEL_ONLY: Record<string, string> = {
+    // the books write a noun 's.' for substantive; the page's own sense labels
+    // say 'n.', which no dictionary here prints and no definition would contain
+    "n.": "noun",
+    "interj.": "interjection",
     "in.": "interjection",
     "int.": "interjection",
     "p.": "participle",
