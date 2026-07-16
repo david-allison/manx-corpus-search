@@ -106,6 +106,22 @@ public class OpenDataLoader
             .Select(x => new RecentDocument(x.Document!, x.Date))
             .ToList();
     }
+
+    /// <summary>
+    /// A random sample standing in for newdocs.txt, which only the deployment
+    /// generates: the development 'recently added' section shows these (dated
+    /// today and backwards, newest first) so there is something to develop
+    /// against.
+    /// </summary>
+    public static async Task<List<RecentDocument>> RandomRecentDocuments(WorkService workService, int count = 10)
+    {
+        var allDocuments = await workService.GetAll();
+        return allDocuments
+            .OrderBy(_ => Random.Shared.Next())
+            .Take(count)
+            .Select((document, index) => new RecentDocument(document, DateTime.Now.AddDays(-index)))
+            .ToList();
+    }
 }
 
 public static class ClosedDataLoader
