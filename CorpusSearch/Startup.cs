@@ -80,6 +80,9 @@ public class Startup(IConfiguration configuration)
         // resolves lazily on first lookup, after SetupDictionaries has loaded manx.json
         services.AddSingleton(provider => PhilKellyDictionaryService.Init());
         services.AddSingleton<ISearchDictionary>(provider => provider.GetRequiredService<PhilKellyDictionaryService>());
+        // verse key -> the dictionary entries quoting it (the reverse of the
+        // entries' verse citations): built once from the quoting dictionaries
+        services.AddSingleton(provider => new VerseQuotationIndex(provider.GetServices<ISearchDictionary>()));
         // eager: the lemma table is also the analyzer's, best loaded before indexing
         services.AddSingleton(LemmaTable.Instance);
         // eager for the same reason: the resolution layers narrow the lemma field

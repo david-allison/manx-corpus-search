@@ -50,3 +50,30 @@
 .verse-versions-none {
     color: var(--c-secondary, #5a6b72);
 }
+
+/* the entries quoting this verse: a compact afterword under the versions */
+.verse-versions-quoted-title {
+    margin: 14px 0 4px;
+    font-size: 0.8rem;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--c-secondary, #5a6b72);
+}
+
+.verse-versions-quoted {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.verse-versions-quoted > li {
+    display: inline-block;
+    margin-right: 16px;
+    padding: 2px 0;
+}
+
+.verse-versions-quoted-dict {
+    margin-left: 6px;
+    color: var(--c-secondary, #5a6b72);
+    font-size: 0.85em;
+}

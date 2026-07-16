@@ -144,6 +144,10 @@ public class VerseAlignmentResult
     /// <summary>"Psalms 23:1"</summary>
     public required string Display { get; init; }
     public required List<VerseAlignmentDocument> Documents { get; init; }
+    /// <summary>Dictionary entries quoting this verse ("aalid" quotes Ps. 45,
+    /// 12): stamped by the controller from <see cref="VerseQuotationIndex"/>;
+    /// null when none</summary>
+    public List<VerseQuotation>? QuotedBy { get; set; }
 }
 
 /// <summary>One document's rendering of an aligned verse</summary>

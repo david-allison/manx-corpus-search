@@ -16,7 +16,7 @@ public class SearchControllerTest
     private static readonly string TooLongQuery = new('a', CorpusSearchQuery.MAX_LENGTH + 1);
 
     /// <remarks>Services are not used here.</remarks>
-    private static SearchController GetController() => new(null!, null!, [], null!);
+    private static SearchController GetController() => new(null!, null!, [], null!, new VerseQuotationIndex([]));
 
     [Test]
     public async Task SearchCorpusRejectsTooLongQuery()
@@ -127,7 +127,7 @@ public class SearchControllerTest
     private static Dictionary<string, SearchController.DictionaryData> DictionaryLookup(QueryLanguages languages, string query = "moddey")
     {
         ISearchDictionary[] dictionaries = [new FakeDictionary("manxDictionary", "gv"), new FakeDictionary("englishDictionary", "en")];
-        var controller = new SearchController(null!, null!, dictionaries, null!);
+        var controller = new SearchController(null!, null!, dictionaries, null!, new VerseQuotationIndex([]));
         return controller.DictionaryLookup(query, languages);
     }
 
