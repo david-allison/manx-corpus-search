@@ -40,8 +40,9 @@ public class DictionaryController(
     {
         var page = lookupService.Page(lang, word, dict);
         // the lookup is about the books; whether a text ever says the word is the
-        // corpus's business, and the page only carries the answer
-        page.Attested = vocabulary.IsAttested(word);
+        // corpus's business, and the page only carries the answer — including
+        // "not yet", which a phrase gets until the corpus has been read for it
+        page.Attested = vocabulary.Attestation(word);
         return page;
     }
 

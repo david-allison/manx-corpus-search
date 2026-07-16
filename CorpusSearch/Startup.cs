@@ -141,6 +141,7 @@ public class Startup(IConfiguration configuration)
         // which is what tells a used word from a proposed one
         vocabulary.Init(termFrequency);
         SetupDictionaries();
+        ScanPhrasesInBackground(vocabulary, workService, searcher, app.ApplicationServices);
 
         try
         {
@@ -234,6 +235,70 @@ public class Startup(IConfiguration configuration)
             var dict = DeserializeAsync<Dictionary<string, IList<string>>>(fileStream).Result
                 ?? throw new InvalidOperationException($"dictionary '{fileStream.Name}' deserialized to null");
             return new Dictionary<string, IList<string>>(dict, StringComparer.OrdinalIgnoreCase);
+        }
+    }
+
+    /// <summary>
+    /// Reads the corpus for the books' phrase headwords, behind the running server.
+    ///
+    /// Not awaited, and deliberately: it walks every line of the corpus, and the
+    /// answer it works out is only what a browse index greys by. Nobody should wait
+    /// on the door for it — and until it lands the vocabulary says so rather than
+    /// guessing, so a page can offer the reader the corpus search instead.
+    /// </summary>
+    /// <summary>How often the phrase pass says it is still going. It takes some
+    /// thirteen seconds while the server is already answering pages, so without a
+    /// heartbeat there is nothing at all to see between "started" and "done" —
+    /// and a phrase page saying "still reading the corpus" would have no log to
+    /// be read against.</summary>
+    private static readonly TimeSpan ScanHeartbeat = TimeSpan.FromSeconds(5);
+
+    private void ScanPhrasesInBackground(CorpusVocabulary vocabulary, WorkService workService,
+        Searcher searcher, IServiceProvider services)
+    {
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+                var headwords = services.GetServices<ISearchDictionary>()
+                    .SelectMany(x => x.Headwords)
+                    .ToList();
+                var scan = Task.Run(() =>
+                    vocabulary.ScanPhrases(headwords, CorpusLines(workService, searcher)));
+                while (await Task.WhenAny(scan, Task.Delay(ScanHeartbeat)) != scan)
+                {
+                    log.LogInformation(
+                        "Still reading the corpus for {Count} headwords ({Seconds:F0}s so far)",
+                        headwords.Count, stopwatch.Elapsed.TotalSeconds);
+                }
+                // faulted or not: WhenAny above swallows nothing this does not rethrow
+                await scan;
+                log.LogInformation("Scanned the corpus for {Count} headwords in {Milliseconds}ms",
+                    headwords.Count, stopwatch.ElapsedMilliseconds);
+            }
+            catch (Exception e)
+            {
+                // the vocabulary goes on saying it does not know, which is where it
+                // started: every page is still readable, and none of them lies
+                log.LogError(e, "failed to scan the corpus for phrase headwords");
+            }
+        });
+    }
+
+    /// <summary>The Manx of every line of the corpus, as the statistics count it: a
+    /// document at a time, so only one document's lines are ever held</summary>
+    private static IEnumerable<string> CorpusLines(WorkService workService, Searcher searcher)
+    {
+        foreach (var document in workService.GetAll().Result)
+        {
+            foreach (var line in searcher.AllLines(document.Ident))
+            {
+                if (line.IsManxLanguage)
+                {
+                    yield return line.NormalizedStatsManx;
+                }
+            }
         }
     }
 
