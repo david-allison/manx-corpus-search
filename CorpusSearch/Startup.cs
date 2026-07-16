@@ -145,7 +145,11 @@ public class Startup(IConfiguration configuration)
 
         try
         {
-            var latestDocuments = OpenDataLoader.LoadRecentDocuments(workService).Result;
+            // the deployment generates newdocs.txt; a dev checkout has none, so
+            // 'recently added' shows a random sample to develop against
+            var latestDocuments = env.IsDevelopment()
+                ? OpenDataLoader.RandomRecentDocuments(workService).Result
+                : OpenDataLoader.LoadRecentDocuments(workService).Result;
             recentDocumentsService.Init(latestDocuments, log);
         }
         catch (Exception e)
