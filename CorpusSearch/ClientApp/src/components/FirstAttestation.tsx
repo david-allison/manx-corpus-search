@@ -43,7 +43,7 @@ const Sample = ({
     // no offsets to centre on (the scan could not highlight it): the line as it
     // came, and no window to open out of
     if (kwic == null) {
-        return <span className="first-seen-sample">{`: “${sample}”`}</span>
+        return <span className="first-seen-sample">{`“${sample}”`}</span>
     }
     // the window's own bounds say whether the line runs on past it
     const runsOnBefore = highlight!.start - kwic.pre.length > 0
@@ -56,7 +56,7 @@ const Sample = ({
             title="Read the whole line"
             onClick={onOpen}
         >
-            {": “"}
+            {"“"}
             {runsOnBefore && "…"}
             {kwic.pre}
             <strong>{kwic.match}</strong>
@@ -93,6 +93,14 @@ const ClaimText = ({
                 </Link>
             </>
         )}
+        {/* the colon punctuates the citation, so it stays against the title's
+            last word — it used to open the quote below, which is a button and so
+            an atomic inline: the line could break in front of it and carry the
+            colon off to sit alone under "…yn Noo Mian".
+            The space rides with it rather than leading the quote, because
+            whitespace opening an inline-block is collapsed away — and it is what
+            gives the line somewhere to break instead. */}
+        {claim.form.sample && ": "}
         <Sample claim={claim} onOpen={() => onOpen(claim)} />
     </>
 )
