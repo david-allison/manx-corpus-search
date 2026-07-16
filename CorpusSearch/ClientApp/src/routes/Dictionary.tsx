@@ -1,5 +1,5 @@
-import { FormEvent, useEffect, useState } from "react"
-import { Link, useNavigate, useParams } from "react-router-dom"
+import { useEffect, useState } from "react"
+import { Link, useParams } from "react-router-dom"
 import { CircularProgress } from "@mui/material"
 import {
     dictionaryPage,
@@ -17,6 +17,7 @@ import { DefinitionText, GrammarLabel } from "../components/GrammarAbbr"
 import { UnverifiedMark } from "../components/UnverifiedMark"
 import { DictionaryScope } from "../components/DictionaryScope"
 import { DictionaryLetters } from "../components/DictionaryLetters"
+import { WordSearch } from "../components/WordSearch"
 import { HeadwordNav } from "../components/HeadwordNav"
 import {
     getMultidictLookupWord,
@@ -127,8 +128,6 @@ const Entry = ({
 export const Dictionary = () => {
     // `dict` is set only by /dictionary/in/:dict/:word: the scoped page
     const { word, dict } = useParams()
-    const navigate = useNavigate()
-    const [query, setQuery] = useState(word ?? "")
     const [page, setPage] = useState<DictionaryPageResponse | null>(null)
     const [failed, setFailed] = useState(false)
     // a tapped scripture citation: the verse's other-versions popup
@@ -140,7 +139,6 @@ export const Dictionary = () => {
     const history = useWordHistory(word)
 
     useEffect(() => {
-        setQuery(word ?? "")
         setPage(null)
         setFailed(false)
         if (!word) return
@@ -155,14 +153,6 @@ export const Dictionary = () => {
             })
         return () => abort.abort()
     }, [word, dict])
-
-    const onSubmit = (event: FormEvent) => {
-        event.preventDefault()
-        const trimmed = query.trim()
-        if (trimmed) {
-            void navigate(dictionaryWordUrl(trimmed, dict))
-        }
-    }
 
     const multidictWord = word ? getMultidictLookupWord(word) : null
     const rootEntries =
@@ -234,29 +224,11 @@ export const Dictionary = () => {
 
     return (
         <div className="dict-page">
-            <form className="dict-page-search" onSubmit={onSubmit}>
-                {/* the way out of the word and back to the index it is filed
-                    in. A page-level control, so it keeps the page's own top
-                    row rather than the headword walk's: that row is the walk,
-                    and stepping out of it is not a step in it. */}
-                {word && (
-                    <Link
-                        className="dict-page-index"
-                        to={dictionaryIndexUrl(word, dict)}
-                        title="Back to the index"
-                        aria-label="Back to the index"
-                    >
-                        {"⌃"}
-                    </Link>
-                )}
-                <input
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    placeholder="Look up a Manx word…"
-                    aria-label="Look up a Manx word"
-                />
-                <button type="submit">Look up</button>
-            </form>
+            <WordSearch
+                word={word}
+                dict={dict}
+                indexUrl={word ? dictionaryIndexUrl(word, dict) : undefined}
+            />
 
             {!word && <DictionaryLetters />}
 

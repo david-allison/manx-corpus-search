@@ -5,51 +5,8 @@
     padding: 16px 12px 48px;
 }
 
-.dict-page-search {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 24px;
-}
-
-/* back to the index the word is filed in. Sized to the input beside it rather
-   than to the walk's arrows: it is a control on the page's top row now, and a
-   row of controls should look like one. */
-.dict-page-index {
-    display: flex;
-    align-items: center;
-    padding: 8px 12px;
-    border: 1px solid var(--c-border-input);
-    border-radius: 4px;
-    background: var(--c-surface);
-    color: var(--c-link);
-    text-decoration: none;
-    line-height: 1;
-}
-
-.dict-page-index:hover {
-    border-color: var(--c-accent);
-}
-
-.dict-page-search input {
-    flex: 1;
-    padding: 8px 12px;
-    font-size: 16px;
-    border: 1px solid var(--c-border-meta);
-    border-radius: 4px;
-}
-
-.dict-page-search button {
-    padding: 8px 16px;
-    border: 1px solid var(--c-accent);
-    border-radius: 4px;
-    background: none;
-    color: var(--c-accent);
-    cursor: pointer;
-}
-
-.dict-page-search button:hover {
-    background: rgba(0, 0, 0, 0.05);
-}
+/* the look-up box and its way back to the index live with WordSearch, which the
+   index shares */
 
 .dict-page-header {
     display: flex;

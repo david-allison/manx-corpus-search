@@ -9,6 +9,7 @@ import {
     dictionaryList,
 } from "../api/DictionaryApi"
 import { dictionaryWordUrl } from "../utils/DictionaryEntries"
+import { WordSearch } from "../components/WordSearch"
 import "./DictionaryBrowse.css"
 
 const browseUrl = (dict: string, at?: string) =>
@@ -86,6 +87,11 @@ export const DictionaryBrowse = () => {
 
     return (
         <div className="dict-page">
+            {/* a reader who knows the word they want should not have to find it
+                in the index first. No way back to the index from here: this is
+                it, and the letters are a row below. */}
+            <WordSearch dict={dict} />
+
             {/* which dictionary is being browsed */}
             {dictionaries.length > 0 && (
                 <nav className="dict-scope" aria-label="Dictionary">
