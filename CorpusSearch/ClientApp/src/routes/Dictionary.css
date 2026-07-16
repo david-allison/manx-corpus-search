@@ -163,6 +163,15 @@
     text-indent: -18px;
 }
 
+/* ...and the hang is the entry's own first line, not that of everything inside
+   it. text-indent inherits, and an inline-block starts a first line of its own
+   to apply it to: the credit chip was pulling its text 18px left, out through
+   its own outline and across the definition ("in youPhil Kelly Manx to
+   English"). Inline children ignore text-indent, so this costs them nothing. */
+.dict-page-root-entry > * {
+    text-indent: 0;
+}
+
 .dict-page-root-connector {
     color: var(--c-accent);
 }
