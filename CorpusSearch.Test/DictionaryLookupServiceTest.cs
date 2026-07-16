@@ -611,6 +611,24 @@ public class DictionaryLookupServiceTest
         Assert.That(coverage[0].Select(x => x.Status), Is.EqualTo(new[] { "entry" }));
     }
 
+    /// <summary>"mie er bashtal" is Phil Kelly's entry and "bashtal" alone is
+    /// nobody's: a tap resolves the phrase from its context, so every token
+    /// inside a listed phrase counts as covered</summary>
+    [Test]
+    public void CoverageResolvesPhrasesLikeATap()
+    {
+        var service = new DictionaryLookupService(
+            [new FakeDictionary("mie er bashtal", "mie", "er", "shen")], NoLemmas, LemmaResolver.Empty);
+
+        var coverage = service.Coverage("gv", ["shen mie er bashtal shen", "bashtal shen"]);
+
+        // the phrase covers "bashtal"; the words outside it answer for themselves
+        Assert.That(coverage[0].Select(x => x.Status),
+            Is.EqualTo(new[] { "entry", "entry", "entry", "entry", "entry" }));
+        // without its phrase around it, "bashtal" stays unknown
+        Assert.That(coverage[1].Select(x => x.Status), Is.EqualTo(new[] { "none", "entry" }));
+    }
+
     [Test]
     public void PageGroupsEntriesByDictionary()
     {
