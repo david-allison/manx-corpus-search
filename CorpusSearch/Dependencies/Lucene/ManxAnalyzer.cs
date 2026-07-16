@@ -33,9 +33,9 @@ public class ManxAnalyzer : Analyzer
         TokenStream filter = new ManxTokenFilter(tokenizer, preserveCase);
         if (LuceneIndex.IsStatsField(fieldName))
         {
-            // numbers stay searchable in the search fields, but are not Manx
-            // words: the statistics stream drops them (verse/page/year numbers)
-            filter = new DigitTokenFilter(filter);
+            // numbers and ?-markers stay searchable in the search fields, but
+            // are not Manx words: the statistics stream drops them
+            filter = new NonWordTokenFilter(filter);
         }
         if (LuceneIndex.IsLemmaField(fieldName))
         {
