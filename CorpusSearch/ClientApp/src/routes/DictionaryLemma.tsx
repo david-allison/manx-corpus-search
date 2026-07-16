@@ -98,7 +98,7 @@ const LemmaIndex = ({ at }: { at?: string | null }) => {
                         </p>
                     )}
                     <div
-                        className="dict-browse-chapters"
+                        className="dict-browse-chapters dict-lemma-chapters"
                         aria-label={`Lemmas under ${page.letter}`}
                     >
                         {page.chapters.map((chapter, index) => (
