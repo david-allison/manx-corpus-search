@@ -84,7 +84,7 @@ describe("senseGroupsIn", () => {
         )
 
         expect(groups.map((g) => g.key)).toEqual(["noun", "particle"])
-        expect(groups.map((g) => g.label)).toEqual(["n.", "adv., prep."])
+        expect(groups.map((g) => g.labels)).toEqual([["n."], ["adv.", "prep."]])
         expect(groups[1].entries).toHaveLength(2)
     })
 
@@ -97,7 +97,7 @@ describe("senseGroupsIn", () => {
         )
 
         expect(groups).toHaveLength(1)
-        expect(groups[0].label).toBe("adv., conj.")
+        expect(groups[0].labels).toEqual(["adv.", "conj."])
     })
 
     it("keeps noun, verb and adjective apart: those distinctions are real", () => {
@@ -137,7 +137,7 @@ describe("senseGroupsIn", () => {
         )
 
         expect(groups.map((g) => g.key)).toEqual(["noun", "verb"])
-        expect(groups.map((g) => g.label)).toEqual(["n.", "v."])
+        expect(groups.map((g) => g.labels)).toEqual([["n."], ["v."]])
     })
 
     it("returns one unlabelled group when nothing declares a class", () => {
@@ -145,7 +145,7 @@ describe("senseGroupsIn", () => {
         const groups = senseGroupsIn(page([entry({}), entry({})]))
 
         expect(groups).toHaveLength(1)
-        expect(groups[0].label).toBe("")
+        expect(groups[0].labels).toEqual([])
         expect(groups[0].entries).toHaveLength(2)
     })
 

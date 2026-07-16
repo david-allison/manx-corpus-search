@@ -70,9 +70,13 @@ const SENSE_ORDER = ["noun", "verb", "adjective", "particle"]
 export type SenseGroup = {
     /** the sense's key ("noun"); "" when nothing declared a class */
     key: string
-    /** the classes it gathered, as the dictionaries abbreviate them ("adv., prep.");
-     * empty when nothing declared a class */
-    label: string
+    /** the classes it gathered, as the dictionaries abbreviate them
+     * (["adv.", "prep."]); empty when nothing declared a class.
+     *
+     * Kept apart rather than joined into "adv., prep.": each is an abbreviation
+     * the reader is owed the expansion of, and a tooltip cannot be hung on half
+     * a string. */
+    labels: string[]
     entries: DictionaryResponse
 }
 
@@ -94,7 +98,7 @@ export const senseGroupsIn = (page: DictionaryPageResponse): SenseGroup[] => {
     const unplaceable = own.filter((e) => !e.partsOfSpeech?.length)
     const placed = own.filter((e) => e.partsOfSpeech?.length)
     if (placed.length === 0) {
-        return [{ key: "", label: "", entries: own }]
+        return [{ key: "", labels: [], entries: own }]
     }
 
     const byKey = new Map<
@@ -124,10 +128,9 @@ export const senseGroupsIn = (page: DictionaryPageResponse): SenseGroup[] => {
         const sense = byKey.get(key)!
         return {
             key,
-            label: [...sense.classes]
+            labels: [...sense.classes]
                 .sort()
-                .map((c) => ABBREVIATION[c] ?? c.toLowerCase())
-                .join(", "),
+                .map((c) => ABBREVIATION[c] ?? c.toLowerCase()),
             // the unplaceable ride along with each: they may be any of them
             entries: [...sense.entries, ...unplaceable],
         }
