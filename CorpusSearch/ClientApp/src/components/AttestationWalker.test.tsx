@@ -279,6 +279,41 @@ describe("AttestationWalker", () => {
         expect(tab?.tagName).not.toBe("A")
     })
 
+    it("offers the reading's form tree beside the tabs", async () => {
+        respond()
+        renderWalker()
+        await screen.findByText("Daase")
+
+        expect(
+            screen
+                .getByRole("link", { name: "All forms ›" })
+                .getAttribute("href"),
+        ).toBe("/dictionary/lemma/aase")
+    })
+
+    it("offers no tree for a spelling walk: there is no lemma to draw", async () => {
+        fetchMock.mockImplementation((url) =>
+            Promise.resolve({
+                ok: true,
+                json: () =>
+                    Promise.resolve(
+                        hrefOf(url).includes("/attestations/")
+                            ? { ...lines, lemma: null }
+                            : {
+                                  ...walk,
+                                  word: "angaish",
+                                  lemmas: [],
+                                  lemma: null,
+                              },
+                    ),
+            } as Response),
+        )
+        renderWalker("angaish")
+        await screen.findByText(/2 texts/)
+
+        expect(screen.queryByRole("link", { name: /All forms/ })).toBeNull()
+    })
+
     it("fetches a step's uses under the tab's reading", async () => {
         respond()
         renderWalker()
@@ -319,6 +354,13 @@ describe("AttestationWalker", () => {
         expect(document.querySelector(".attest-tab-active")?.textContent).toBe(
             "bee",
         )
+
+        // the tree link follows the open tab
+        expect(
+            screen
+                .getByRole("link", { name: "All forms ›" })
+                .getAttribute("href"),
+        ).toBe("/dictionary/lemma/bee")
 
         // the other reading is a turn of the tab away, resetting the step
         const other = screen.getByRole("link", { name: "mee" })
