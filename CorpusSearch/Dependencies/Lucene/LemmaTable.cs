@@ -23,6 +23,7 @@ public class LemmaTable
     private readonly Dictionary<string, string> nameTypeById;
     private readonly Dictionary<string, string[]> phillipsViaByForm;
     private readonly HashSet<(string Form, string DisplayLemma)> unverifiedLinks;
+    private readonly Dictionary<string, LemmaLinkSet> linkSetsByDisplay;
     // built on first use: the history view walks lemma -> forms, the reverse
     // of every other lookup
     private readonly Lazy<Dictionary<string, string[]>> formsByDisplay;
@@ -36,7 +37,8 @@ public class LemmaTable
         Dictionary<string, string[]> rootDisplayLemmasByForm, HashSet<string> lemmaIds,
         Dictionary<string, string> displayLemmaById, Dictionary<string, string> nameTypeById,
         Dictionary<string, string[]> phillipsViaByForm,
-        HashSet<(string, string)>? unverifiedLinks = null)
+        HashSet<(string, string)>? unverifiedLinks = null,
+        Dictionary<string, LemmaLinkSet>? linkSetsByDisplay = null)
     {
         this.candidatesByForm = candidatesByForm;
         this.displayLemmasByForm = displayLemmasByForm;
@@ -46,6 +48,11 @@ public class LemmaTable
         this.nameTypeById = nameTypeById;
         this.phillipsViaByForm = phillipsViaByForm;
         this.unverifiedLinks = unverifiedLinks ?? [];
+        this.linkSetsByDisplay = linkSetsByDisplay ?? [];
+        AllDisplayLemmas = this.linkSetsByDisplay.Values
+            .Select(x => x.Lemma)
+            .Order(StringComparer.Ordinal)
+            .ToArray();
         formsByDisplay = new Lazy<Dictionary<string, string[]>>(() =>
             this.displayLemmasByForm
                 .SelectMany(kv => kv.Value.Select(display => (Display: NormalizeForm(display), Form: kv.Key)))
@@ -54,6 +61,28 @@ public class LemmaTable
     }
 
     public int FormCount => candidatesByForm.Count;
+
+    /// <summary>Every form the tables map, normalized (the `form` column). The
+    /// phrase scan reads the corpus for the multiword ones, so the lemma tree can
+    /// grey a spaced form ('er n'aase') by evidence rather than a guess.</summary>
+    public IEnumerable<string> AllForms => candidatesByForm.Keys;
+
+    /// <summary>
+    /// Every display lemma the tables link a form to — the `lemma` column's
+    /// distinct spellings (~16,700 with the supplements) — sorted: the file order
+    /// is the generator's, not an alphabet's ('yn nah' is row 2).
+    /// </summary>
+    public IReadOnlyList<string> AllDisplayLemmas { get; }
+
+    /// <summary>
+    /// The forms the tables link to <paramref name="displayLemma"/> (normalized
+    /// here) and how — the lemma tree's data. Rows linking the lemma's own
+    /// spelling to itself draw no branch: their standing surfaces as
+    /// <see cref="LemmaLinkSet.SelfUnverified"/> instead. Null when the tables
+    /// name no such lemma.
+    /// </summary>
+    public LemmaLinkSet? LinksOf(string displayLemma) =>
+        linkSetsByDisplay.TryGetValue(NormalizeForm(displayLemma), out var links) ? links : null;
 
     /// <summary>The lemma ids of <paramref name="form"/> (normalized here); empty when unknown</summary>
     public IReadOnlyList<string> CandidatesFor(string form)
@@ -324,6 +353,7 @@ public class LemmaTable
         // a pair in both is verified, so the attested set subtracts at the end
         var unverifiedLinks = new HashSet<(string, string)>();
         var verifiedLinks = new HashSet<(string, string)>();
+        var linkSets = new Dictionary<string, MutableLinkSet>();
 
         foreach (var reader in readers)
         {
@@ -361,6 +391,33 @@ public class LemmaTable
                 // paradigm links (see RootDisplayLemmasFor): not the form's own entry,
                 // not a demutation guess
                 var linkType = columns.Length > 3 ? columns[3] : "self";
+                var note = columns.Length > 6 ? columns[6] : "";
+                // the lemma tree's rows: every way a form hangs off this display
+                // lemma, deduped per (linkType, form) — a link any row attests
+                // stays verified however many rules also produce it
+                var displayKey = NormalizeForm(displayLemma);
+                if (!linkSets.TryGetValue(displayKey, out var linkSet))
+                {
+                    linkSets[displayKey] = linkSet = new MutableLinkSet { Lemma = displayLemma };
+                }
+                var unverifiedRow = IsUnverifiedRow(note);
+                if (form == displayKey)
+                {
+                    // the lemma's own row draws no branch, but a hand-asserted one
+                    // (the vocab supplement) makes the root itself a guess
+                    if (linkType == "self")
+                    {
+                        linkSet.SelfSeen = true;
+                        linkSet.SelfVerifiedSeen |= !unverifiedRow;
+                    }
+                }
+                else
+                {
+                    var linkKey = (linkType, form);
+                    linkSet.Links[linkKey] = linkSet.Links.TryGetValue(linkKey, out var soFar)
+                        ? soFar && unverifiedRow
+                        : unverifiedRow;
+                }
                 // the Phillips supplement's via column: the classical spelling
                 // the 1610 form stands for
                 if (linkType == "phillips" && columns.Length > 5 && columns[5].Length > 0)
@@ -384,8 +441,7 @@ public class LemmaTable
                     {
                         roots.Add(displayLemma);
                     }
-                    var note = columns.Length > 6 ? columns[6] : "";
-                    (IsUnverifiedRow(note) ? unverifiedLinks : verifiedLinks)
+                    (unverifiedRow ? unverifiedLinks : verifiedLinks)
                         .Add((form, displayLemma));
                 }
             }
@@ -404,10 +460,29 @@ public class LemmaTable
             rootDisplayLemmasByForm[form] = [.. roots];
         }
         unverifiedLinks.ExceptWith(verifiedLinks);
+        var linkSetsByDisplay = linkSets.ToDictionary(
+            kv => kv.Key,
+            kv => new LemmaLinkSet
+            {
+                Lemma = kv.Value.Lemma,
+                SelfUnverified = kv.Value.SelfSeen && !kv.Value.SelfVerifiedSeen,
+                Links = kv.Value.Links
+                    .Select(link => new LemmaLink(link.Key.LinkType, link.Key.Form, link.Value))
+                    .ToArray(),
+            });
         return new LemmaTable(candidatesByForm, displayLemmasByForm, rootDisplayLemmasByForm, lemmaIds,
             displayLemmaById, nameTypeById,
             phillipsViaLists.ToDictionary(kv => kv.Key, kv => kv.Value.ToArray()),
-            unverifiedLinks);
+            unverifiedLinks, linkSetsByDisplay);
+    }
+
+    /// <summary>Accumulates one display lemma's rows while <see cref="Load(IEnumerable{TextReader})"/> reads</summary>
+    private sealed class MutableLinkSet
+    {
+        public required string Lemma { get; init; }
+        public bool SelfSeen;
+        public bool SelfVerifiedSeen;
+        public Dictionary<(string LinkType, string Form), bool> Links { get; } = [];
     }
 
     private static LemmaTable LoadVendored()
@@ -441,3 +516,25 @@ public class LemmaTable
         }
     }
 }
+
+/// <summary>Everything the tables hang off one display lemma: the lemma tree's data</summary>
+public sealed class LemmaLinkSet
+{
+    /// <summary>The lemma as the `lemma` column spells it ("aa-aase", "Aachummey"):
+    /// the form-keyed lookups fold this, the tree displays it</summary>
+    public required string Lemma { get; init; }
+
+    /// <summary>The lemma's own row rests on a hand-assertion or a rule alone
+    /// (the vocab supplement's 'peiagh'): the root itself is a guess, not print</summary>
+    public required bool SelfUnverified { get; init; }
+
+    /// <summary>Each form linked to the lemma, once per way it is linked: 'deiney'
+    /// is both `inflected` and `plural` of dooinney, and that is two links</summary>
+    public required IReadOnlyList<LemmaLink> Links { get; init; }
+}
+
+/// <summary>One form's link to a display lemma. <paramref name="Unverified"/>
+/// mirrors <see cref="LemmaTable.IsUnverifiedLink"/>: no row of this link type
+/// attests the pair — it rests on a rule ('generated-lenition') or a
+/// hand-assertion (the vocab supplement) alone.</summary>
+public sealed record LemmaLink(string LinkType, string Form, bool Unverified);

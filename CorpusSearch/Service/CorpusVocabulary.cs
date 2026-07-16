@@ -32,6 +32,11 @@ public class CorpusVocabulary(LemmaTable lemmaTable)
     /// would walk its paradigm again for each of a browse page's ten thousand.</summary>
     private HashSet<string> attestedLemmas = [];
 
+    /// <summary>The terms again, folded the lemma table's way: the table spaces a
+    /// hyphenated form ('aa-vioghey' is 'aa vioghey' there), so asking whether the
+    /// corpus says a *form* has to fold the corpus to match</summary>
+    private HashSet<string> formTerms = [];
+
     /// <summary>The multiword headwords the corpus really says, once
     /// <see cref="ScanPhrases"/> has read it for them. Null until then, and a
     /// phrase is met a word at a time in the meantime — the guess that was the
@@ -44,6 +49,7 @@ public class CorpusVocabulary(LemmaTable lemmaTable)
     {
         terms = termFrequency.Select(x => DocumentLine.NormalizeManx(x.Term)).ToHashSet();
         attestedLemmas = terms.SelectMany(lemmaTable.DisplayLemmasFor).ToHashSet();
+        formTerms = terms.Select(LemmaTable.NormalizeForm).ToHashSet();
         loaded = true;
     }
 
@@ -167,6 +173,33 @@ public class CorpusVocabulary(LemmaTable lemmaTable)
     /// them to say so. An unread phrase is left un-greyed: the index claims nothing
     /// it has not read, and greying is a claim.</summary>
     public bool IsAttested(string word) => Attestation(word) ?? true;
+
+    /// <summary>
+    /// Whether the corpus says the form by this spelling itself — no lemma hop:
+    /// the lemma tree asks which of a lexeme's spellings the texts use, and the
+    /// hop would answer for the whole paradigm at once. The corpus is folded the
+    /// table's way, so a spaced form is said by its hyphenated token ('aa
+    /// vioghey' by 'aa-vioghey'); a spaced form of several words is a phrase, and
+    /// answered as <see cref="Attestation"/> answers one. Null while not yet known.
+    /// </summary>
+    public bool? AttestsForm(string form)
+    {
+        // an index that never loaded would grey out the whole language
+        if (!loaded)
+        {
+            return true;
+        }
+        var folded = LemmaTable.NormalizeForm(form);
+        if (folded.Length == 0)
+        {
+            return false;
+        }
+        if (formTerms.Contains(folded))
+        {
+            return true;
+        }
+        return folded.Contains(' ') ? attestedPhrases?.Contains(folded) : false;
+    }
 
     /// <summary>Whether any word the corpus says carries the affix: 'aa-' is
     /// attested by 'aa-vioghey', which is the only way an affix ever is</summary>

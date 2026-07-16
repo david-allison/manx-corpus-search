@@ -83,7 +83,7 @@ const Entry = ({
                 ? summary.primaryWord
                 : headingFor(word, summary)}
         </strong>
-        <UnverifiedMark summary={summary} />
+        <UnverifiedMark unverified={summary.unverifiedLink} />
         <GrammarLabel label={summary.grammarLabel} />
         {": "}
         <DefinitionText

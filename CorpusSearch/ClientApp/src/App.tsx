@@ -5,6 +5,7 @@ import { ErrorBoundary } from "./components/ErrorBoundary"
 import { Home } from "./routes/Home"
 import { Dictionary } from "./routes/Dictionary"
 import { DictionaryBrowse } from "./routes/DictionaryBrowse"
+import { DictionaryLemma } from "./routes/DictionaryLemma"
 import { DocumentView } from "./routes/DocumentView"
 import { BitPlayer } from "./routes/BitPlayer"
 import { Contributions } from "./routes/Contributions"
@@ -36,6 +37,13 @@ export const App = () => {
                     <Route
                         path="/dictionary/browse/:dict/:at?"
                         element={<DictionaryBrowse />}
+                    />
+                    {/*:lemma is optional: bare it is the lemma index, whose
+                       letter rides on ?at= — 'e' is a lemma, so a path letter
+                       would shadow that word's tree*/}
+                    <Route
+                        path="/dictionary/lemma/:lemma?"
+                        element={<DictionaryLemma />}
                     />
                     <Route path="/docs/:docId" element={<DocumentView />} />
                     <Route path={"/tools/youtube"} element={<BitPlayer />} />

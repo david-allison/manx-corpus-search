@@ -45,6 +45,11 @@ public class SpaRouteGuardTest
     [TestCase("/dictionary/browse/cregeen")]
     [TestCase("/dictionary/browse/cregeen/aal")]
     [TestCase("/Dictionary/Browse/Cregeen/")]
+    // the lemma index (a single segment, like 'in' and 'browse') and one
+    // lemma's form tree
+    [TestCase("/dictionary/lemma")]
+    [TestCase("/dictionary/lemma/dooinney")]
+    [TestCase("/Dictionary/Lemma/Dooinney/")]
     public void SpaPagesFallThroughToTheShell(string path)
     {
         Assert.That(SpaRouteGuard.IsSpaPage(path, workService), Is.True);
@@ -64,9 +69,7 @@ public class SpaRouteGuardTest
     [TestCase("/dictionary/in/cregeen/billey/extra")]
     [TestCase("/dictionary//billey")]
     [TestCase("/dictionary/browse/cregeen/aal/extra")]
-    // a sub-route the SPA does not render yet: allowing one early would serve
-    // the NotFound page with a 200
-    [TestCase("/dictionary/lemma/dooinney")]
+    [TestCase("/dictionary/lemma/dooinney/extra")]
     public void UnknownPagesAre404(string path)
     {
         Assert.That(SpaRouteGuard.IsSpaPage(path, workService), Is.False);

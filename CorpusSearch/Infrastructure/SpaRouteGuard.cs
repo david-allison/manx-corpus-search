@@ -99,6 +99,9 @@ internal static class SpaRouteGuard
             "in" => segments.Length == 3,
             // /dictionary/browse/<dictionary slug>[/<letter or prefix>]
             "browse" => segments.Length is 2 or 3,
+            // /dictionary/lemma/<lemma>; bare /dictionary/lemma is the lemma
+            // index, already allowed above as a single segment
+            "lemma" => segments.Length == 2,
             _ => false,
         };
     }
