@@ -51,12 +51,41 @@ public class DictionaryAttestationService(
         return own.Count > 0 ? own : candidates;
     }
 
+    /// <summary>The readings of <paramref name="lemmaIds"/> narrowed to the one
+    /// displaying as <paramref name="lemma"/> — the walk's per-reading tabs ask a
+    /// reading at a time. Unchanged when nothing (or nothing the word has) is
+    /// asked: a stale tab in a URL must not blank the section.</summary>
+    private IReadOnlyList<string> ReadingOf(IReadOnlyList<string> lemmaIds, string? lemma)
+    {
+        if (lemma == null)
+        {
+            return lemmaIds;
+        }
+        var wanted = LemmaTable.NormalizeForm(lemma);
+        var reading = lemmaIds
+            .Where(id => LemmaTable.NormalizeForm(lemmaTable.DisplayLemmaOf(id) ?? "") == wanted)
+            .ToList();
+        return reading.Count > 0 ? reading : lemmaIds;
+    }
+
+    /// <summary>The display lemma <paramref name="lemmaIds"/> share, when they do:
+    /// what a filtered walk says it walked. Null over several readings — the
+    /// unfiltered walk of an ambiguous word names no one reading.</summary>
+    private string? WalkedLemma(IReadOnlyList<string> lemmaIds)
+    {
+        var displays = lemmaIds.Select(lemmaTable.DisplayLemmaOf).OfType<string>().Distinct().ToList();
+        return displays.Count == 1 ? displays[0] : null;
+    }
+
     /// <summary>The documents attesting the word, oldest first: its lexeme's, or
     /// its spelling's where the table knows no lexeme.</summary>
-    public DictionaryAttestations Attestations(string word)
+    /// <param name="lemma">optional display lemma: one reading's documents, for
+    /// the walk's tabs ('vee' is bee or mee, and each tab walks one of them)</param>
+    public DictionaryAttestations Attestations(string word, string? lemma = null)
     {
         var lemmaIds = LemmaIdsFor(lemmaTable, word);
-        var scan = ScanFor(word, lemmaIds);
+        var walkedIds = ReadingOf(lemmaIds, lemma);
+        var scan = ScanFor(word, walkedIds);
 
         // an undated document cannot take a place in a chronological walk, but
         // dropping it silently would understate the word's use: it is counted instead
@@ -65,7 +94,9 @@ public class DictionaryAttestationService(
         return new DictionaryAttestations
         {
             Word = word,
+            // every reading, whatever was walked: the tabs stay put while one is open
             Lemmas = lemmaIds.Select(lemmaTable.DisplayLemmaOf).OfType<string>().Distinct().ToList(),
+            Lemma = WalkedLemma(walkedIds),
             Documents = scan.DocumentResults
                 .Where(x => x.StartDate != null)
                 .OrderBy(x => x.StartDate)
@@ -80,7 +111,7 @@ public class DictionaryAttestationService(
                     // only a lone term can be counted from here without
                     // reading four uses of 'vee' where there is one. A spelling
                     // scan (no readings at all) is one term too.
-                    Uses = lemmaIds.Count <= 1 ? x.Count : null,
+                    Uses = walkedIds.Count <= 1 ? x.Count : null,
                 })
                 .ToList(),
             UndatedDocuments = undated.Count,
@@ -154,9 +185,9 @@ public class DictionaryAttestationService(
     private sealed record Reading(string? LemmaId, string Lemma, SearchResult Result);
 
     /// <summary>What found the word in one document, and what each found.</summary>
-    private List<Reading> ReadingsIn(string word, string ident)
+    private List<Reading> ReadingsIn(string word, string ident, string? lemma)
     {
-        var lemmaIds = LemmaIdsFor(lemmaTable, word);
+        var lemmaIds = ReadingOf(LemmaIdsFor(lemmaTable, word), lemma);
         if (lemmaIds.Count > 0)
         {
             // one query per reading: a span query says which lines matched, never
@@ -196,9 +227,11 @@ public class DictionaryAttestationService(
     /// <summary>Every use of the word in one document, grouped by the reading each
     /// line was resolved to, with the surface words highlighted. Null when the
     /// document does not attest it.</summary>
-    public async Task<AttestationLines?> InDocument(string word, string ident)
+    /// <param name="lemma">optional display lemma: one reading's uses, matching the
+    /// walk tab the step was opened from</param>
+    public async Task<AttestationLines?> InDocument(string word, string ident, string? lemma = null)
     {
-        var matched = ReadingsIn(word, ident);
+        var matched = ReadingsIn(word, ident, lemma);
         if (matched.Count == 0)
         {
             return null;
@@ -248,6 +281,7 @@ public class DictionaryAttestationService(
             Ident = ident,
             Title = document.Name,
             Year = document.CreatedCircaStart?.Year,
+            Lemma = WalkedLemma(matched.Select(x => x.LemmaId).OfType<string>().ToList()),
             // the union, not the sum: a word the resolver left ambiguous is claimed
             // by every reading, and is still one use of it
             UseCount = matched.SelectMany(x => Occurrences(x.Result)).Distinct().Count(),
@@ -260,10 +294,15 @@ public class DictionaryAttestationService(
 public class DictionaryAttestations
 {
     public required string Word { get; set; }
-    /// <summary>The display lemmas being walked; empty where the lemma table knows
-    /// no lexeme for the word, in which case the walk is of its spelling and there
-    /// is no lexeme to name</summary>
+    /// <summary>The word's display lemmas, every reading whatever was walked: the
+    /// walk's tabs, which must stay put while one of them is open. Empty where the
+    /// lemma table knows no lexeme for the word, in which case the walk is of its
+    /// spelling and there is no lexeme to name</summary>
     public required List<string> Lemmas { get; set; }
+    /// <summary>The one reading <see cref="Documents"/> walks, where it is one:
+    /// the asked reading, or an unambiguous word's own. Null for the unfiltered
+    /// walk of an ambiguous word, and for a spelling walk.</summary>
+    public string? Lemma { get; set; }
     public required List<AttestationDocument> Documents { get; set; }
     /// <summary>Documents attesting the lexeme which carry no date: they cannot be
     /// placed in the walk, so they are counted beside it rather than dropped</summary>
@@ -295,6 +334,11 @@ public class AttestationLines
     public required string Ident { get; set; }
     public required string Title { get; set; }
     public int? Year { get; set; }
+    /// <summary>The one reading the groups answer for, where it is one — matching
+    /// <see cref="DictionaryAttestations.Lemma"/>, so a step can be told to belong
+    /// to the tab it was opened from. Null over several readings, and for a
+    /// spelling walk.</summary>
+    public string? Lemma { get; set; }
     /// <summary>Uses of the lexeme in the document: surface words, not lines, and
     /// counted once each however many readings claim them</summary>
     public int UseCount { get; set; }

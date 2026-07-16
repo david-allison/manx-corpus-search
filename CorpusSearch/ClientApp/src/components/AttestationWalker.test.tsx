@@ -30,6 +30,7 @@ const hrefOf = (url: unknown): string =>
 const walk = {
     word: "aase",
     lemmas: ["aase"],
+    lemma: "aase",
     documents: [
         { ident: "Psalms1610", title: "Psalms", year: 1610 },
         { ident: "Coyrle", title: "Coyrle Sodjey", year: 1707 },
@@ -41,6 +42,7 @@ const lines = {
     ident: "Psalms1610",
     title: "Psalms",
     year: 1610,
+    lemma: "aase",
     useCount: 9,
     groups: [
         {
@@ -86,10 +88,10 @@ const withGroups = (
 
 /** the walk's own tests: the first-seen band it hosts has its own file, and
  * an unattested history keeps it out of the way here */
-const renderWalker = () =>
+const renderWalker = (word = "aase") =>
     render(
-        <MemoryRouter initialEntries={["/dictionary/aase"]}>
-            <AttestationWalker word="aase" history={null} classes={[]} />
+        <MemoryRouter initialEntries={[`/dictionary/${word}`]}>
+            <AttestationWalker word={word} history={null} classes={[]} />
         </MemoryRouter>,
     )
 
@@ -145,7 +147,10 @@ describe("AttestationWalker", () => {
         renderWalker()
         await screen.findByText("Daase")
 
-        expect(screen.getByText("aase")).toBeTruthy()
+        // the group's own name, not the tab above: both say "aase"
+        expect(document.querySelector(".attest-group-lemma")?.textContent).toBe(
+            "aase",
+        )
         expect(screen.getByText(/×9/)).toBeTruthy()
     })
 
@@ -218,7 +223,9 @@ describe("AttestationWalker", () => {
         renderWalker()
         await screen.findByText("Daase")
 
-        expect(screen.getByText("aase")).toBeTruthy()
+        expect(document.querySelector(".attest-group-lemma")?.textContent).toBe(
+            "aase",
+        )
         expect(screen.queryByText("v.")).toBeNull()
     })
 
@@ -259,5 +266,70 @@ describe("AttestationWalker", () => {
 
         expect(await screen.findByText("mee")).toBeTruthy()
         expect(screen.queryByText("n.")).toBeNull()
+    })
+
+    it("always shows a tab naming the walked reading", async () => {
+        respond()
+        renderWalker()
+        await screen.findByText("Daase")
+
+        const tab = document.querySelector(".attest-tab-active")
+        expect(tab?.textContent).toBe("aase")
+        // one reading: nothing to switch to, so the tab is a caption, not a link
+        expect(tab?.tagName).not.toBe("A")
+    })
+
+    it("fetches a step's uses under the tab's reading", async () => {
+        respond()
+        renderWalker()
+        await screen.findByText("Daase")
+
+        const stepCall = fetchMock.mock.calls
+            .map(([u]) => hrefOf(u))
+            .find((u) => u.includes("/attestations/Psalms1610"))
+        expect(stepCall).toContain("lemma=aase")
+    })
+
+    it("walks an ambiguous word one reading at a time, first tab first", async () => {
+        fetchMock.mockImplementation((url) => {
+            const href = hrefOf(url)
+            const body = href.includes("/attestations/")
+                ? { ...lines, lemma: "bee" }
+                : {
+                      ...walk,
+                      word: "vee",
+                      lemmas: ["bee", "mee"],
+                      // the unfiltered walk of an ambiguous word names no one
+                      // reading; the filtered one names what it walked
+                      lemma: href.includes("lemma=") ? "bee" : null,
+                  }
+            return Promise.resolve({
+                ok: true,
+                json: () => Promise.resolve(body),
+            } as Response)
+        })
+        renderWalker("vee")
+        await screen.findByText(/2 texts/)
+
+        // asked once to learn the readings, then again for the first of them
+        const walkCalls = fetchMock.mock.calls
+            .map(([u]) => hrefOf(u))
+            .filter((u) => u.includes("/attestations?"))
+        expect(walkCalls[1]).toContain("lemma=bee")
+        expect(document.querySelector(".attest-tab-active")?.textContent).toBe(
+            "bee",
+        )
+
+        // the other reading is a turn of the tab away, resetting the step
+        const other = screen.getByRole("link", { name: "mee" })
+        expect(other.getAttribute("href")).toBe("/dictionary/vee?reading=mee")
+        fireEvent.click(other)
+        await waitFor(() =>
+            expect(
+                fetchMock.mock.calls
+                    .map(([u]) => hrefOf(u))
+                    .some((u) => u.includes("lemma=mee")),
+            ).toBe(true),
+        )
     })
 })

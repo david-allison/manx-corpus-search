@@ -37,6 +37,40 @@
     box-shadow: var(--focus-ring);
 }
 
+/* the walk's tabs: one per reading, the open one underlined the way the
+   browse bar marks its letter. Always shown, even for the one-reading words —
+   the tab is the walk's caption, naming the lexeme being walked. */
+.attest-tabs {
+    display: flex;
+    gap: 2px;
+    flex-wrap: wrap;
+    margin: 8px 0 6px;
+}
+
+.attest-tab {
+    font-family: Georgia, serif;
+    font-size: 15px;
+    text-decoration: none;
+    padding: 1px 8px;
+    border-bottom: 2px solid transparent;
+}
+
+a.attest-tab {
+    color: var(--c-link);
+}
+
+.attest-tab-active {
+    color: var(--c-accent);
+    border-bottom-color: var(--c-accent);
+}
+
+/* a reading with no dated text to walk: said, so the empty tab does not read
+   as a broken one */
+.attest-empty {
+    color: var(--c-accent);
+    font-size: 13px;
+}
+
 /* what the section holds, readable while it is shut */
 .attest-summary {
     margin: 0;

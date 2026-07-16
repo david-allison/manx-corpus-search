@@ -211,8 +211,14 @@ export const dictionaryHistory = async (
 /** The corpus documents attesting a word's lexeme, oldest first (experimental) */
 export type DictionaryAttestationsResponse = {
     word: string
-    /** the display lemmas being walked; empty when the table doesn't know the word */
+    /** the word's display lemmas, every reading whatever was walked — the
+     * walk's tabs, which stay put while one is open; empty when the table
+     * doesn't know the word */
     lemmas: string[]
+    /** the one reading `documents` walks, where it is one: the asked reading,
+     * or an unambiguous word's own. Null for the unfiltered walk of an
+     * ambiguous word, and for a spelling walk */
+    lemma?: string | null
     documents: AttestationDocument[]
     /** attesting documents with no date: they cannot be placed in the walk */
     undatedDocuments: number
@@ -236,6 +242,10 @@ export type AttestationLinesResponse = {
     ident: string
     title: string
     year?: number | null
+    /** the one reading the groups answer for, where it is one — matching the
+     * walk's `lemma`, so a step can be told to belong to the tab it was
+     * opened from */
+    lemma?: string | null
     /** uses of the lexeme: surface words, not lines, counted once each however
      * many readings claim them */
     useCount: number
@@ -263,11 +273,17 @@ export type AttestationLemmaGroup = {
     }[]
 }
 
+/** @param lemma optional display lemma: one reading's documents, for the
+ * walk's per-reading tabs */
 export const dictionaryAttestations = async (
     word: string,
+    lemma?: string,
     signal?: AbortSignal,
 ): Promise<DictionaryAttestationsResponse> => {
     const params = new URLSearchParams({ word })
+    if (lemma) {
+        params.set("lemma", lemma)
+    }
     const response = await fetch(
         `/api/Dictionary/attestations?${params.toString()}`,
         { signal },
@@ -278,12 +294,18 @@ export const dictionaryAttestations = async (
     return (await response.json()) as DictionaryAttestationsResponse
 }
 
+/** @param lemma optional display lemma: one reading's uses, matching the tab
+ * the step was opened from */
 export const dictionaryAttestationLines = async (
     word: string,
     ident: string,
+    lemma?: string,
     signal?: AbortSignal,
 ): Promise<AttestationLinesResponse> => {
     const params = new URLSearchParams({ word })
+    if (lemma) {
+        params.set("lemma", lemma)
+    }
     const response = await fetch(
         `/api/Dictionary/attestations/${encodeURIComponent(ident)}?${params.toString()}`,
         { signal },
