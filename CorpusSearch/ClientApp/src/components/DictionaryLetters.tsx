@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 import { Link } from "react-router-dom"
 import { dictionaryBrowse } from "../api/DictionaryApi"
+import { DictionaryBooks } from "./DictionaryBooks"
 import "./DictionaryLetters.css"
 
 /** The dictionary the letters open. Cregeen is a book with an index and browses
@@ -10,8 +11,13 @@ import "./DictionaryLetters.css"
  * has not asked for a word yet is better met by the one they can browse. */
 const BROWSE_DICT = "cregeen"
 
-/** A|B|C with no word looked up: the way into the dictionary for a reader who
- * came to browse rather than to search. */
+/** The way in for a reader who came to browse rather than to search: the books,
+ * and the letters of the one this opens at.
+ *
+ * The books are named above the letters because the letters are one book's. They
+ * were Cregeen's before too, and said so nowhere — an unlabelled A|B|C that gave
+ * a reader no way to know whose index they were reading, nor that there were
+ * others to read. */
 export const DictionaryLetters = () => {
     const [letters, setLetters] = useState<string[]>([])
 
@@ -25,20 +31,24 @@ export const DictionaryLetters = () => {
         return () => abort.abort()
     }, [])
 
-    if (letters.length === 0) {
-        return null
-    }
-
     return (
-        <nav className="dict-letters-home" aria-label="Browse by letter">
-            {letters.map((letter) => (
-                <Link
-                    key={letter}
-                    to={`/dictionary/browse/${BROWSE_DICT}/${encodeURIComponent(letter)}`}
+        <>
+            <DictionaryBooks active={BROWSE_DICT} />
+            {letters.length > 0 && (
+                <nav
+                    className="dict-letters-home"
+                    aria-label="Browse by letter"
                 >
-                    {letter}
-                </Link>
-            ))}
-        </nav>
+                    {letters.map((letter) => (
+                        <Link
+                            key={letter}
+                            to={`/dictionary/browse/${BROWSE_DICT}/${encodeURIComponent(letter)}`}
+                        >
+                            {letter}
+                        </Link>
+                    ))}
+                </nav>
+            )}
+        </>
     )
 }
