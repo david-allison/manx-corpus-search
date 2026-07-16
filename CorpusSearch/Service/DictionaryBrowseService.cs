@@ -61,6 +61,92 @@ public class DictionaryBrowseService(
     }
 
     /// <summary>
+    /// A handful of a dictionary's entries spanning the range of corpus use — a
+    /// couple of common words, the middling, the rare, and one no text says (a
+    /// dictionary word): the letter bar invites A-and-onward reading, and this
+    /// invites opening the book anywhere. Random each visit, and unordered.
+    /// Null for an unknown dictionary.
+    /// </summary>
+    /// <param name="random">seedable for tests; the site rolls fresh</param>
+    public List<DictionarySample>? Samples(string slug, int count, Random? random = null)
+    {
+        var dictionary = Find(slug);
+        if (dictionary == null)
+        {
+            return null;
+        }
+        var headwords = dictionary.Headwords;
+        var rng = random ?? Random.Shared;
+        count = Math.Clamp(count, 1, 12);
+        if (headwords.Count == 0)
+        {
+            return [];
+        }
+
+        // bands by corpus use: never said, rare, middling, common
+        var bands = new[] { new List<string>(), [], [], [] };
+        var wanted = Quota(count);
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        // probe rather than scan: Phil Kelly is 66,000 headwords, and a page
+        // of six needs no census. A band the probes never fill stays short.
+        for (var probe = 0; probe < count * 50; probe++)
+        {
+            if (bands.Select((band, i) => band.Count >= wanted[i]).All(full => full))
+            {
+                break;
+            }
+            var word = headwords[rng.Next(headwords.Count)];
+            if (!seen.Add(word) || !Sampleable(word))
+            {
+                continue;
+            }
+            var uses = vocabulary.AttestationsOf(word);
+            if (uses == null)
+            {
+                continue; // a phrase the corpus is still being read for
+            }
+            var band = uses == 0 ? 0 : uses < 10 ? 1 : uses < 100 ? 2 : 3;
+            if (bands[band].Count < wanted[band])
+            {
+                bands[band].Add(word);
+            }
+        }
+
+        var samples = bands.SelectMany(x => x)
+            .Select(word => new DictionarySample
+            {
+                Word = word,
+                Summary = dictionary.GetSummaries(word, basic: true)
+                    .FirstOrDefault()?.Summary,
+                Attestations = vocabulary.AttestationsOf(word),
+                Attested = (vocabulary.AttestationsOf(word) ?? 1) > 0,
+            })
+            .ToArray();
+        rng.Shuffle(samples);
+        return [.. samples];
+    }
+
+    /// <summary>How many of each band a page of <paramref name="count"/> wants:
+    /// one word no text says, the rest spread from common down</summary>
+    private static int[] Quota(int count)
+    {
+        var quota = new int[4];
+        quota[0] = count > 1 ? 1 : 0;
+        var order = new[] { 3, 2, 1 }; // common, middling, rare
+        for (var i = 0; i < count - quota[0]; i++)
+        {
+            quota[order[i % order.Length]]++;
+        }
+        return quota;
+    }
+
+    /// <summary>A headword the word page opens cleanly: letters at both ends —
+    /// no affixes ('-al'), no trailing-dot keys (Phil Kelly's 'a.r.e.', which
+    /// the lookup's punctuation trim still misses)</summary>
+    private static bool Sampleable(string word) =>
+        word.Length > 0 && char.IsLetter(word[0]) && char.IsLetter(word[^1]);
+
+    /// <summary>
     /// The headwords either side of a word, for stepping through a dictionary the
     /// way you turn a page.
     ///

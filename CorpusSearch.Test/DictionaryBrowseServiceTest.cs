@@ -243,4 +243,55 @@ public class DictionaryBrowseServiceTest
             Assert.That(page.Letter, Is.Null);
         });
     }
+
+    /// <summary>The sampler wants breadth, not proportion: something common,
+    /// the middling, the rare, and one word no text says — dealt on purpose,
+    /// so a reader meets the book's range rather than the letter A</summary>
+    [Test]
+    public void TheSamplerDealsAcrossTheRangeOfUse()
+    {
+        var vocabulary = new CorpusVocabulary(LemmaTable.Instance);
+        vocabulary.Init([
+            ("cadjin", 500L), ("cadjinagh", 200L),
+            ("mean", 40L), ("meanagh", 20L), ("goan", 3L),
+        ]);
+        var service = new DictionaryBrowseService(
+            [new FakeDictionary("d", "cadjin", "cadjinagh", "mean", "meanagh", "goan", "ynrican")],
+            vocabulary);
+
+        var samples = service.Samples("d", 6, new System.Random(1))!;
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(samples.Select(x => x.Word), Is.Unique);
+            // exactly one dictionary-only word rides along
+            Assert.That(samples.Count(x => !x.Attested), Is.EqualTo(1));
+            Assert.That(samples.Single(x => !x.Attested).Word, Is.EqualTo("ynrican"));
+            // the rest span the range, counted for the shop window
+            Assert.That(samples.Count(x => x.Attestations >= 100), Is.EqualTo(2));
+            Assert.That(samples.Single(x => x.Attestations == 3).Word, Is.EqualTo("goan"));
+            Assert.That(samples[0].Summary, Does.Contain("means"));
+        });
+    }
+
+    /// <summary>A sample must open cleanly as a word page: no affixes, and no
+    /// trailing-dot keys (Phil Kelly's 'a.r.e.', which the lookup misses)</summary>
+    [Test]
+    public void TheSamplerSkipsHeadwordsTheWordPageCannotOpen()
+    {
+        var vocabulary = new CorpusVocabulary(LemmaTable.Instance);
+        vocabulary.Init([("glen", 5L)]);
+        var service = new DictionaryBrowseService(
+            [new FakeDictionary("d", "-al", "a.r.e.", "glen")], vocabulary);
+
+        var samples = service.Samples("d", 6, new System.Random(1))!;
+
+        Assert.That(samples.Select(x => x.Word), Is.EqualTo(new[] { "glen" }));
+    }
+
+    [Test]
+    public void AnUnknownDictionaryDealsNothing()
+    {
+        Assert.That(Service(new FakeDictionary("d", "aa")).Samples("nope", 6), Is.Null);
+    }
 }

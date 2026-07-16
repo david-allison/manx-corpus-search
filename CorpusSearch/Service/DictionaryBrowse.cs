@@ -156,6 +156,21 @@ public class BrowseWord
     public required bool Attested { get; set; }
 }
 
+/// <summary>One entry of the browse sampler: a way into the book that is not
+/// the letter A</summary>
+public class DictionarySample
+{
+    public required string Word { get; set; }
+    /// <summary>The entry's short gloss, as the popups use it; null where the
+    /// book has none to give</summary>
+    public string? Summary { get; set; }
+    /// <summary>How often the corpus says the word; null while not yet known</summary>
+    public long? Attestations { get; set; }
+    /// <summary>False only at a known 0: the dictionary-only word the sampler
+    /// deals in on purpose</summary>
+    public bool Attested { get; set; }
+}
+
 /// <summary>The headwords either side of a word, for stepping through a
 /// dictionary the way you turn a page</summary>
 public class DictionaryNeighbours

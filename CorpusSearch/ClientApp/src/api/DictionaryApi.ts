@@ -488,6 +488,36 @@ export const lemmaTree = async (
     return (await response.json()) as LemmaTreeResponse
 }
 
+/** One entry of the browse sampler: a way into the book that is not the
+ * letter A */
+export type DictionarySample = {
+    word: string
+    /** the entry's short gloss; null where the book has none to give */
+    summary?: string | null
+    /** how often the corpus says the word; null while not yet known */
+    attestations?: number | null
+    /** false only at a known 0: the dictionary-only word dealt on purpose */
+    attested: boolean
+}
+
+/** A handful of a dictionary's entries spanning corpus use, unordered: a
+ * couple common, some middling, one no text says */
+export const dictionarySamples = async (
+    dict: string,
+    count = 6,
+    signal?: AbortSignal,
+): Promise<DictionarySample[]> => {
+    const params = new URLSearchParams({ dict, count: String(count) })
+    const response = await fetch(
+        `/api/Dictionary/samples?${params.toString()}`,
+        { signal },
+    )
+    if (!response.ok) {
+        throw new Error(`dictionary samples failed: ${response.status}`)
+    }
+    return (await response.json()) as DictionarySample[]
+}
+
 /** The headwords either side of a word, for stepping through a dictionary */
 export type DictionaryNeighboursResponse = {
     word: string
