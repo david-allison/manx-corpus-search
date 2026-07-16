@@ -179,6 +179,12 @@ public class Searcher(LuceneIndex luceneIndex, SearchParser parser)
         return query == null ? null : luceneIndex.Search(ident, query, getTranscriptData: false);
     }
 
+    /// <summary>Every line of a document as it was indexed, for a reader that wants
+    /// the corpus itself rather than an answer about it (CorpusVocabulary's phrase
+    /// pass). The stored text, so no query is parsed and nothing is scored.</summary>
+    public List<DocumentLine> AllLines(string ident) =>
+        luceneIndex.GetAllLines(ident, getTranscript: false);
+
     public ScanResult Scan(string query)
     {
         return Scan(query, SearchOptions.Default);

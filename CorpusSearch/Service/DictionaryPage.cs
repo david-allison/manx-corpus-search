@@ -21,8 +21,13 @@ public class DictionaryPage
 
     /// <summary>Whether the corpus says the word. False on a page that only a
     /// dictionary knows: there is nothing to search the corpus for, and offering
-    /// it promises evidence that is not there.</summary>
-    public bool Attested { get; set; }
+    /// it promises evidence that is not there.
+    ///
+    /// Null while the answer is not known yet: a phrase is answered from a read of
+    /// the whole corpus (<see cref="CorpusVocabulary.ScanPhrases"/>) which runs
+    /// behind the server, and for the seconds before it lands the page says so
+    /// rather than claiming either way.</summary>
+    public bool? Attested { get; set; }
 
     /// <summary>The <see cref="ISearchDictionary.Slug"/> of every dictionary with
     /// something to say about the word. The scope picker greys the rest, so that a

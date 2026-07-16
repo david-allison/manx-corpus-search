@@ -39,19 +39,6 @@ public class CorpusVocabularyTest
         Assert.That(Loaded("cheusthie").IsAttested("Cheusthie"), Is.True);
     }
 
-    /// <summary>The corpus indexes words, not phrases: every word of a headword
-    /// being used is the most that can honestly be claimed for it</summary>
-    [Test]
-    public void APhraseIsMetOneWordAtATime()
-    {
-        var vocabulary = Loaded("cur", "my", "ner");
-
-        Assert.Multiple(() =>
-        {
-            Assert.That(vocabulary.IsAttested("cur my ner"), Is.True);
-            Assert.That(vocabulary.IsAttested("cur my sooill"), Is.False);
-        });
-    }
 
     /// <summary>'yaagh' is 'jaagh' after a lenition: a text saying the one attests
     /// the other, and the lemma table is what knows so</summary>
@@ -123,5 +110,86 @@ public class CorpusVocabularyTest
     public void AWordWithAHyphenInsideItIsNotAnAffix()
     {
         Assert.That(Loaded("aa-aase").IsAttested("aa-aase"), Is.True);
+    }
+
+    /// <summary>
+    /// A phrase is not said by a text saying its words apart: 'aachummey eddin'
+    /// was called attested on the strength of 'aachummey' in one line and 'eddin'
+    /// in another, and its page then had nothing to show. Half of Phil Kelly is
+    /// phrases, so the corpus is read for them once and each is answered from that.
+    /// </summary>
+    [Test]
+    public void APhraseIsAttestedOnlyWhereALineSaysIt()
+    {
+        var vocabulary = Loaded("aachummey", "eddin", "cur", "my", "ner");
+        vocabulary.ScanPhrases(
+            ["aachummey eddin", "cur my ner"],
+            ["Ta mee cur my ner yn eddin", "as aachummey ny lurg shen"]);
+
+        Assert.Multiple(() =>
+        {
+            // said, in that order, in one line
+            Assert.That(vocabulary.IsAttested("cur my ner"), Is.True);
+            // both words are used, but no line says the phrase
+            Assert.That(vocabulary.IsAttested("aachummey eddin"), Is.False);
+            // and its words are still words
+            Assert.That(vocabulary.IsAttested("eddin"), Is.True);
+        });
+    }
+
+    /// <summary>The pass reads the corpus behind the running server, and until it
+    /// lands there is no answer: the page says so rather than claiming either way,
+    /// and a browse index of ten thousand headwords greys nothing it has not
+    /// read</summary>
+    [Test]
+    public void APhraseHasNoAnswerUntilTheCorpusHasBeenReadForIt()
+    {
+        var vocabulary = Loaded("aachummey", "eddin");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(vocabulary.Attestation("aachummey eddin"), Is.Null);
+            // ...and the index leaves it alone rather than greying a guess
+            Assert.That(vocabulary.IsAttested("aachummey eddin"), Is.True);
+            // a single word never waits: the term list already answers it
+            Assert.That(vocabulary.Attestation("eddin"), Is.True);
+        });
+    }
+
+    /// <summary>The phrase must be met whole and in order, not merely word by word
+    /// within one line</summary>
+    [Test]
+    public void APhraseIsNotSaidByItsWordsSharingALine()
+    {
+        var vocabulary = Loaded("cur", "my", "ner");
+        vocabulary.ScanPhrases(["cur my ner"], ["ner as my chur, cur ny lurg"]);
+
+        Assert.That(vocabulary.IsAttested("cur my ner"), Is.False);
+    }
+
+    /// <summary>A phrase is read the way the term list is, so a line's punctuation
+    /// and case cannot hide it</summary>
+    [Test]
+    public void APhraseIsFoundThroughTheLinesPunctuation()
+    {
+        var vocabulary = Loaded("cur", "my", "ner");
+        vocabulary.ScanPhrases(["Cur my ner"], ["Eisht, cur my ner: hie eh."]);
+
+        Assert.That(vocabulary.IsAttested("cur my ner"), Is.True);
+    }
+
+    /// <summary>Single headwords go nowhere near the pass: the term list has
+    /// already answered them, and carrying 34,000 of them would only slow it</summary>
+    [Test]
+    public void ASingleHeadwordIsNotScannedAsAPhrase()
+    {
+        var vocabulary = Loaded("jaagh");
+        vocabulary.ScanPhrases(["jaagh", "cur my ner"], ["ta jaagh ayn"]);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(vocabulary.IsAttested("jaagh"), Is.True);
+            Assert.That(vocabulary.IsAttested("cur my ner"), Is.False);
+        });
     }
 }

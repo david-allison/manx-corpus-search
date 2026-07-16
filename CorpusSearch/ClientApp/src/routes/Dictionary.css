@@ -8,6 +8,29 @@
 /* the look-up box and its way back to the index live with WordSearch, which the
    index shares */
 
+/* the corpus has not been read for this phrase yet. A note, not a warning:
+   nothing is wrong, an answer is simply on its way — and the way past it is
+   offered rather than a wait imposed. */
+.dict-page-pending {
+    font-size: 13px;
+    color: var(--c-muted);
+    margin: 12px 0 0;
+}
+
+.dict-page-pending button {
+    font: inherit;
+    color: var(--c-link);
+    background: none;
+    border: none;
+    padding: 0;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.dict-page-pending button:hover {
+    color: var(--c-link-hover);
+}
+
 .dict-page-header {
     display: flex;
     align-items: flex-start;

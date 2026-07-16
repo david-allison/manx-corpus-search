@@ -32,6 +32,12 @@ public class CorpusVocabulary(LemmaTable lemmaTable)
     /// would walk its paradigm again for each of a browse page's ten thousand.</summary>
     private HashSet<string> attestedLemmas = [];
 
+    /// <summary>The multiword headwords the corpus really says, once
+    /// <see cref="ScanPhrases"/> has read it for them. Null until then, and a
+    /// phrase is met a word at a time in the meantime — the guess that was the
+    /// only answer there was before this existed.</summary>
+    private HashSet<string>? attestedPhrases;
+
     private bool loaded;
 
     public void Init(IEnumerable<(string Term, long Frequency)> termFrequency)
@@ -41,6 +47,72 @@ public class CorpusVocabulary(LemmaTable lemmaTable)
         loaded = true;
     }
 
+    /// <summary>The longest a headword phrase runs: Phil Kelly's longest is twelve
+    /// words, and a line offers no n-gram longer than the phrase looked for</summary>
+    private const int LongestPhrase = 16;
+
+    /// <summary>
+    /// Reads the corpus for the books' multiword headwords, and remembers which of
+    /// them it actually says.
+    ///
+    /// A phrase cannot be met a word at a time — the index holds tokens, and
+    /// 'aachummey eddin' is not said by a text saying 'aachummey' in one place and
+    /// 'eddin' in another. But nor can it be asked one phrase at a time: 6,395 of
+    /// the 10,804 headwords on Phil Kelly's 'c' page are phrases, and a phrase
+    /// query each would take a minute to paint one page. So the corpus is read
+    /// once, here, and every phrase is answered from the result in a hash lookup.
+    ///
+    /// Deliberately off the startup path (Startup runs it behind the server): the
+    /// pass walks two million tokens, and nobody should wait to read a page for an
+    /// answer only a browse index greys by.
+    /// </summary>
+    /// <param name="headwords">every headword the books print; the single words are
+    /// ignored, being answered by <see cref="terms"/> already</param>
+    /// <param name="corpusLines">the Manx of every line, as the statistics count it</param>
+    public void ScanPhrases(IEnumerable<string> headwords, IEnumerable<string> corpusLines)
+    {
+        var wanted = new HashSet<string>();
+        var opening = new HashSet<string>();
+        foreach (var headword in headwords)
+        {
+            var words = Words(headword);
+            if (words.Length is > 1 and <= LongestPhrase)
+            {
+                wanted.Add(string.Join(' ', words));
+                // most tokens open no headword at all, so this is what keeps the
+                // pass to one hash lookup for nearly every word of the corpus
+                opening.Add(words[0]);
+            }
+        }
+        var found = new HashSet<string>();
+        foreach (var line in corpusLines)
+        {
+            var words = Words(line);
+            for (var i = 0; i < words.Length; i++)
+            {
+                if (!opening.Contains(words[i]))
+                {
+                    continue;
+                }
+                var last = Math.Min(words.Length, i + LongestPhrase);
+                for (var end = i + 2; end <= last; end++)
+                {
+                    var phrase = string.Join(' ', words, i, end - i);
+                    if (wanted.Contains(phrase))
+                    {
+                        found.Add(phrase);
+                    }
+                }
+            }
+        }
+        // only what was found is kept: a phrase asked about came from `headwords`,
+        // so one that is not here is one the corpus does not say
+        attestedPhrases = found;
+    }
+
+    private static string[] Words(string text) =>
+        DocumentLine.NormalizeManx(text).Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
     /// <summary>How many distinct words the corpus uses</summary>
     public int Count => terms.Count;
 
@@ -48,16 +120,18 @@ public class CorpusVocabulary(LemmaTable lemmaTable)
     /// Whether the corpus uses the word — by that spelling, or by one the lemma
     /// table calls the same word.
     ///
-    /// The corpus indexes tokens rather than phrases, so a headword of several
-    /// words ('cur my ner', half of Phil Kelly) can only be met one word at a
-    /// time: every word of it being used is the most this can honestly claim.
+    /// A phrase is answered from the read <see cref="ScanPhrases"/> made of the
+    /// corpus, and only met a word at a time until that lands: 'aachummey eddin'
+    /// is not said by a text saying 'aachummey' in one place and 'eddin' in
+    /// another, and claiming so left a browse index un-greying 4,444 phrases on
+    /// one page whose word pages then had nothing to show.
     ///
     /// The lemma hop is what saves a headword the corpus only ever writes
     /// mutated: 'yaagh' is 'jaagh' after a lenition, and a text that says the one
     /// attests the other. It reaches 16% of Phil Kelly — the table is built from
     /// Cregeen and J Kelly, which is most of what it knows.
     /// </summary>
-    public bool IsAttested(string word)
+    public bool? Attestation(string word)
     {
         // an index that never loaded would grey out the whole language
         if (!loaded)
@@ -73,12 +147,26 @@ public class CorpusVocabulary(LemmaTable lemmaTable)
         {
             return CarriedByATerm(word);
         }
-        if (UsesEveryWordOf(word))
+        var words = Words(word);
+        if (words.Length > 1)
+        {
+            // the corpus is read for a phrase, never guessed at: no lemma hop
+            // either — a phrase's mutations are not a paradigm the table holds,
+            // and the word page's own scan is as literal as this
+            return attestedPhrases?.Contains(string.Join(' ', words));
+        }
+        if (words.Length > 0 && Array.TrueForAll(words, terms.Contains))
         {
             return true;
         }
         return lemmaTable.DisplayLemmasFor(word).Any(attestedLemmas.Contains);
     }
+
+    /// <summary>Whether the corpus uses the word, for a caller with nowhere to put
+    /// "not yet known" — a browse page of ten thousand headwords cannot ask each of
+    /// them to say so. An unread phrase is left un-greyed: the index claims nothing
+    /// it has not read, and greying is a claim.</summary>
+    public bool IsAttested(string word) => Attestation(word) ?? true;
 
     /// <summary>Whether any word the corpus says carries the affix: 'aa-' is
     /// attested by 'aa-vioghey', which is the only way an affix ever is</summary>
@@ -89,12 +177,5 @@ public class CorpusVocabulary(LemmaTable lemmaTable)
             // longer than the affix itself: 'aa-' is not carried by a bare 'aa-'
             ? terms.Any(t => t.Length > trimmed.Length && t.StartsWith(trimmed, StringComparison.Ordinal))
             : terms.Any(t => t.Length > trimmed.Length && t.EndsWith(trimmed, StringComparison.Ordinal));
-    }
-
-    private bool UsesEveryWordOf(string headword)
-    {
-        var words = DocumentLine.NormalizeManx(headword)
-            .Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        return words.Length > 0 && Array.TrueForAll(words, terms.Contains);
     }
 }

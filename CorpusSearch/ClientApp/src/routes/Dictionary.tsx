@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useReducer, useState } from "react"
 import { Link, useParams } from "react-router-dom"
 import { CircularProgress } from "@mui/material"
 import {
@@ -131,6 +131,9 @@ export const Dictionary = () => {
     const { word, dict } = useParams()
     const [page, setPage] = useState<DictionaryPageResponse | null>(null)
     const [failed, setFailed] = useState(false)
+    // bumped to ask the page again: a phrase's attestation is worked out behind
+    // the server, so the answer this page could not get may be there by now
+    const [asked, askAgain] = useReducer((x: number) => x + 1, 0)
     // a tapped scripture citation: the verse's other-versions popup
     const [citationKey, setCitationKey] = useState<string | null>(null)
     // keyed on the word alone, so it runs beside the lookup rather than after
@@ -153,7 +156,7 @@ export const Dictionary = () => {
                 }
             })
         return () => abort.abort()
-    }, [word, dict])
+    }, [word, dict, asked])
 
     const multidictWord = word ? getMultidictLookupWord(word) : null
     const rootEntries =
@@ -181,7 +184,7 @@ export const Dictionary = () => {
         <div className="dict-page-header">
             <h1
                 className={
-                    page != null && !page.attested
+                    page?.attested === false
                         ? "dict-page-word dict-unattested"
                         : "dict-page-word"
                 }
@@ -245,7 +248,7 @@ export const Dictionary = () => {
                 <HeadwordNav word={word} dict={dict}>
                     <span
                         className={
-                            page != null && !page.attested
+                            page?.attested === false
                                 ? "dict-page-headword-nav-word dict-unattested"
                                 : "dict-page-headword-nav-word"
                         }
@@ -385,20 +388,36 @@ export const Dictionary = () => {
             )}
 
             {/* A word no text says has nothing to find: the offer would promise
-                evidence the corpus does not hold.
-
-                Asked of the history, which really scanned, rather than of
-                page.attested, which is a guess cheap enough for a browse page of
-                ten thousand words: that guess meets a phrase one word at a time,
-                so it calls 'geinnagh vane' attested on the strength of 'geinnagh'
-                and 'vane' turning up separately, and the corpus holds no such
-                phrase. Here there is one word to answer for, and the real answer
-                is already on the page. */}
+                evidence the corpus does not hold. Asked of the history, which
+                really scanned this word, rather than of page.attested, which
+                answers for a browse page of ten thousand headwords at once. */}
             {word && usedInCorpus && (
                 <p className="dict-page-corpus-link">
                     <Link to={corpusSearchUrl(word)}>
                         Search the corpus for “{word}”
                     </Link>
+                </p>
+            )}
+
+            {/* A phrase is answered from a read of the whole corpus, which runs
+                behind the server: for the few seconds before it lands there is no
+                answer to give, and the page says so rather than guessing at one.
+                The way to the corpus stays open — a reader who came to look
+                should not be kept waiting on a claim about the looking. */}
+            {word && page?.attested == null && page != null && (
+                <p className="dict-page-pending" role="status">
+                    {"Still reading the corpus for phrases like this one. "}
+                    <button type="button" onClick={() => askAgain()}>
+                        Check again
+                    </button>
+                    {!usedInCorpus && (
+                        <>
+                            {" or "}
+                            <Link to={corpusSearchUrl(word)}>
+                                search it yourself
+                            </Link>
+                        </>
+                    )}
                 </p>
             )}
 

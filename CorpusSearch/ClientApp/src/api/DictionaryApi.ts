@@ -88,8 +88,10 @@ export type DictionaryPageResponse = {
     word: string
     /** nothing matched the word itself: every group is a near spelling */
     isSuggestionTier: boolean
-    /** whether the corpus says the word: false where only a dictionary knows it */
-    attested: boolean
+    /** whether the corpus says the word: false where only a dictionary knows it.
+     * Null while not yet known — a phrase is answered from a read of the whole
+     * corpus, which runs behind the server for a few seconds after it starts */
+    attested: boolean | null
     /** the slug of every dictionary with something to say about the word,
      * whatever scope the page was asked for: the picker greys the rest */
     answering: string[]
