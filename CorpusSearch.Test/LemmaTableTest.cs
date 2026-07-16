@@ -247,6 +247,31 @@ public class LemmaTableTest
         Assert.That(Table().LinksOf("xyzzy"), Is.Null);
     }
 
+    /// <summary>The analyzer's transcription rows — a spaced headword written
+    /// solid ('evee' for Cregeen's 'e vee': `univerbated` links and
+    /// `collapsed`-noted respellings) — draw no branch and name no lemma: they
+    /// are machinery for matching run-together text, not forms of the word</summary>
+    [Test]
+    public void TranscriptionRowsDrawNoBranchAndNameNoLemma()
+    {
+        var table = Table(
+            "e vee\tbee.n\tbee\tself\ts.\te vee\t",
+            "evee\tbee.n\tbee\tself\ts.\te vee\tcollapsed",
+            "evee\tbee.n\tbee\tuniverbated\ts.\te vee\t",
+            // a hyphenated lemma's univerbated row names a solid lemma of its own
+            "eveearrys\tmee-arrys.n\tmeearrys\tuniverbated\ts.\te vee-arrys\t");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(table.LinksOf("bee")!.Links,
+                Is.EqualTo(new[] { new LemmaLink("self", "e vee", false) }));
+            // 'meearrys' is no lemma; 'bee' is the only one here
+            Assert.That(table.AllDisplayLemmas, Is.EqualTo(new[] { "bee" }));
+            // the machinery itself is untouched: the solid token still resolves
+            Assert.That(table.CandidatesFor("evee"), Is.EqualTo(new[] { "bee.n" }));
+        });
+    }
+
     /// <summary>The vendored table loads and covers the acceptance forms</summary>
     [Test]
     public void VendoredTableLoads()
@@ -254,7 +279,8 @@ public class LemmaTableTest
         var table = LemmaTable.Instance;
 
         Assert.That(table.FormCount, Is.GreaterThan(39_000));
-        Assert.That(table.AllDisplayLemmas, Has.Count.GreaterThan(15_000));
+        // ~14,100: the lemma column's distinct spellings, transcription rows aside
+        Assert.That(table.AllDisplayLemmas, Has.Count.GreaterThan(13_000));
         // the Phillips supplement's 1610 spellings hang off the classical lemma
         Assert.That(table.LinksOf("dooinney")!.Links,
             Does.Contain(new LemmaLink("phillips", "dwyne", false)));

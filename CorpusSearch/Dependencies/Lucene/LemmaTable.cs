@@ -69,8 +69,9 @@ public class LemmaTable
 
     /// <summary>
     /// Every display lemma the tables link a form to — the `lemma` column's
-    /// distinct spellings (~16,700 with the supplements) — sorted: the file order
-    /// is the generator's, not an alphabet's ('yn nah' is row 2).
+    /// distinct spellings (~14,100 with the supplements, transcription rows
+    /// aside) — sorted: the file order is the generator's, not an alphabet's
+    /// ('yn nah' is row 2).
     /// </summary>
     public IReadOnlyList<string> AllDisplayLemmas { get; }
 
@@ -191,6 +192,9 @@ public class LemmaTable
     // the note column holds space-separated tags ("modern-variant unverified")
     private static bool IsUnverifiedRow(string note) =>
         note.Split(' ').Any(UnverifiedNotes.Contains);
+
+    private static bool HasNoteTag(string note, string tag) =>
+        note.Split(' ').Contains(tag);
 
     /// <summary>
     /// The candidate ids of a form read as a productive clitic contraction:
@@ -392,31 +396,40 @@ public class LemmaTable
                 // not a demutation guess
                 var linkType = columns.Length > 3 ? columns[3] : "self";
                 var note = columns.Length > 6 ? columns[6] : "";
+                var unverifiedRow = IsUnverifiedRow(note);
                 // the lemma tree's rows: every way a form hangs off this display
                 // lemma, deduped per (linkType, form) — a link any row attests
-                // stays verified however many rules also produce it
-                var displayKey = NormalizeForm(displayLemma);
-                if (!linkSets.TryGetValue(displayKey, out var linkSet))
+                // stays verified however many rules also produce it. The
+                // analyzer's transcription rows — a spaced headword written
+                // solid ('evee' for Cregeen's 'e vee': `univerbated` links, and
+                // `collapsed`-noted respellings; for a hyphenated lemma their
+                // lemma column is solid too ('meeaarlooid') — draw no branch
+                // and name no lemma: machinery for matching run-together text,
+                // not forms of the word.
+                if (linkType != "univerbated" && !HasNoteTag(note, "collapsed"))
                 {
-                    linkSets[displayKey] = linkSet = new MutableLinkSet { Lemma = displayLemma };
-                }
-                var unverifiedRow = IsUnverifiedRow(note);
-                if (form == displayKey)
-                {
-                    // the lemma's own row draws no branch, but a hand-asserted one
-                    // (the vocab supplement) makes the root itself a guess
-                    if (linkType == "self")
+                    var displayKey = NormalizeForm(displayLemma);
+                    if (!linkSets.TryGetValue(displayKey, out var linkSet))
                     {
-                        linkSet.SelfSeen = true;
-                        linkSet.SelfVerifiedSeen |= !unverifiedRow;
+                        linkSets[displayKey] = linkSet = new MutableLinkSet { Lemma = displayLemma };
                     }
-                }
-                else
-                {
-                    var linkKey = (linkType, form);
-                    linkSet.Links[linkKey] = linkSet.Links.TryGetValue(linkKey, out var soFar)
-                        ? soFar && unverifiedRow
-                        : unverifiedRow;
+                    if (form == displayKey)
+                    {
+                        // the lemma's own row draws no branch, but a hand-asserted
+                        // one (the vocab supplement) makes the root itself a guess
+                        if (linkType == "self")
+                        {
+                            linkSet.SelfSeen = true;
+                            linkSet.SelfVerifiedSeen |= !unverifiedRow;
+                        }
+                    }
+                    else
+                    {
+                        var linkKey = (linkType, form);
+                        linkSet.Links[linkKey] = linkSet.Links.TryGetValue(linkKey, out var soFar)
+                            ? soFar && unverifiedRow
+                            : unverifiedRow;
+                    }
                 }
                 // the Phillips supplement's via column: the classical spelling
                 // the 1610 form stands for
