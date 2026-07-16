@@ -198,40 +198,45 @@ public class CorpusVocabularyTest
     /// it does not attest the spelling 'yaagh' being asked about the other way —
     /// the hop would answer for the whole paradigm at once</summary>
     [Test]
-    public void AFormIsAttestedByItsOwnSpellingNotItsParadigm()
+    public void AFormIsCountedByItsOwnSpellingNotItsParadigm()
     {
         var vocabulary = Loaded("jaagh");
 
         Assert.Multiple(() =>
         {
-            Assert.That(vocabulary.AttestsForm("jaagh"), Is.True);
-            Assert.That(vocabulary.AttestsForm("yaagh"), Is.False);
+            Assert.That(vocabulary.AttestationsOf("jaagh"), Is.EqualTo(1));
+            Assert.That(vocabulary.AttestationsOf("yaagh"), Is.EqualTo(0));
         });
     }
 
     /// <summary>The lemma table spaces a hyphenated form ('aa-vioghey' is 'aa
-    /// vioghey' there), so the corpus is folded the same way before the two meet</summary>
+    /// vioghey' there), so the corpus is folded the same way before the two meet
+    /// — and two spellings folding together sum: the count is the form's,
+    /// however the texts case or hyphenate it</summary>
     [Test]
-    public void ASpacedFormIsSaidByItsHyphenatedToken()
+    public void ASpacedFormIsCountedByItsHyphenatedTokens()
     {
-        Assert.That(Loaded("aa-vioghey").AttestsForm("aa vioghey"), Is.True);
+        var vocabulary = new CorpusVocabulary(LemmaTable.Instance);
+        vocabulary.Init([("aa-vioghey", 2L), ("Aa-Vioghey", 3L)]);
+
+        Assert.That(vocabulary.AttestationsOf("aa vioghey"), Is.EqualTo(5));
     }
 
     /// <summary>A spaced form of several words is a phrase: read for, not guessed
-    /// at, and unanswered until the read lands</summary>
+    /// at, unanswered until the read lands, and counted by it after</summary>
     [Test]
     public void APhraseFormWaitsForTheCorpusToBeRead()
     {
         var vocabulary = Loaded("er", "n'aase", "ta", "mee");
-        Assert.That(vocabulary.AttestsForm("er n'aase"), Is.Null);
+        Assert.That(vocabulary.AttestationsOf("er n'aase"), Is.Null);
 
-        vocabulary.ScanPhrases(["er n'aase"], ["ta mee er n'aase"]);
-        Assert.That(vocabulary.AttestsForm("er n'aase"), Is.True);
+        vocabulary.ScanPhrases(["er n'aase"], ["ta mee er n'aase", "er n'aase reesht"]);
+        Assert.That(vocabulary.AttestationsOf("er n'aase"), Is.EqualTo(2));
     }
 
     [Test]
-    public void NoFormIsGreyedBeforeTheIndexLoads()
+    public void NoFormIsCountedBeforeTheIndexLoads()
     {
-        Assert.That(new CorpusVocabulary(LemmaTable.Instance).AttestsForm("xyzzy"), Is.True);
+        Assert.That(new CorpusVocabulary(LemmaTable.Instance).AttestationsOf("xyzzy"), Is.Null);
     }
 }

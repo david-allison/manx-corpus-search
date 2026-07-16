@@ -167,6 +167,24 @@ public class LemmaIndexServiceTest
         Assert.That(Service(Table()).Tree("xyzzy"), Is.Null);
     }
 
+    /// <summary>Each node counts how often the corpus says it, by its spelling</summary>
+    [Test]
+    public void TheTreeCountsEachSpellingsAttestations()
+    {
+        var table = Table(
+            "dooinney\tdooinney.n\tdooinney\tself\ts. m.\tdooinney\t",
+            "deiney\tdooinney.n\tdooinney\tinflected\ts. m.\tdooinney\t");
+        var vocabulary = new CorpusVocabulary(table);
+        vocabulary.Init([("dooinney", 4L), ("deiney", 2L)]);
+        var tree = new LemmaIndexService(table, vocabulary).Tree("dooinney")!;
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(tree.Attestations, Is.EqualTo(4));
+            Assert.That(tree.Groups.Single().Forms.Single().Attestations, Is.EqualTo(2));
+        });
+    }
+
     /// <summary>The tree greys by the spelling itself, never the lemma hop: the
     /// corpus saying 'deiney' does not make 'dooinneyyn' a word a text uses</summary>
     [Test]

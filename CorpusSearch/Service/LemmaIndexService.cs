@@ -102,9 +102,10 @@ public class LemmaIndexService(LemmaTable lemmaTable, CorpusVocabulary vocabular
                     .Select(x => new LemmaTreeForm
                     {
                         Form = x.Form,
+                        Attestations = vocabulary.AttestationsOf(x.Form),
                         // an unread phrase is left un-greyed, as the browse
                         // leaves one: greying is a claim
-                        Attested = vocabulary.AttestsForm(x.Form) ?? true,
+                        Attested = (vocabulary.AttestationsOf(x.Form) ?? 1) > 0,
                         Unverified = x.Unverified,
                     })
                     .ToList(),
@@ -113,7 +114,8 @@ public class LemmaIndexService(LemmaTable lemmaTable, CorpusVocabulary vocabular
         return new LemmaTreePage
         {
             Lemma = links.Lemma,
-            Attested = vocabulary.AttestsForm(links.Lemma) ?? true,
+            Attestations = vocabulary.AttestationsOf(links.Lemma),
+            Attested = (vocabulary.AttestationsOf(links.Lemma) ?? 1) > 0,
             Unverified = links.SelfUnverified,
             Groups = groups,
         };
@@ -125,6 +127,9 @@ public class LemmaTreePage
 {
     /// <summary>As the `lemma` column spells it ("aa-aase", "Aachummey")</summary>
     public required string Lemma { get; set; }
+    /// <summary>How often the corpus says the lemma by its own spelling; null
+    /// while not yet known (see <see cref="CorpusVocabulary.AttestationsOf"/>)</summary>
+    public long? Attestations { get; set; }
     /// <summary>Whether the corpus says the lemma by its own spelling — the forms
     /// below answer for the rest of the paradigm</summary>
     public bool Attested { get; set; }
@@ -148,8 +153,12 @@ public class LemmaTreeGroup
 public class LemmaTreeForm
 {
     public required string Form { get; set; }
-    /// <summary>Whether any text says the form by this spelling: no lemma hop,
-    /// which would answer for the whole paradigm at once</summary>
+    /// <summary>How often the corpus says the form by this spelling — no lemma
+    /// hop, which would answer for the whole paradigm at once; null while not
+    /// yet known (a phrase before the corpus has been read for it)</summary>
+    public long? Attestations { get; set; }
+    /// <summary>Whether any text says the form by this spelling: false only
+    /// where <see cref="Attestations"/> is a known 0</summary>
     public bool Attested { get; set; }
     /// <summary>No row attests the link: it was made by rule (a generated
     /// mutation) or hand-asserted (the vocab supplement), and may be wrong</summary>

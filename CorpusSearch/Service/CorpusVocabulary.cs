@@ -32,24 +32,33 @@ public class CorpusVocabulary(LemmaTable lemmaTable)
     /// would walk its paradigm again for each of a browse page's ten thousand.</summary>
     private HashSet<string> attestedLemmas = [];
 
-    /// <summary>The terms again, folded the lemma table's way: the table spaces a
-    /// hyphenated form ('aa-vioghey' is 'aa vioghey' there), so asking whether the
-    /// corpus says a *form* has to fold the corpus to match</summary>
-    private HashSet<string> formTerms = [];
+    /// <summary>How often the corpus says each term, keyed by the lemma table's
+    /// fold: the table spaces a hyphenated form ('aa-vioghey' is 'aa vioghey'
+    /// there), so asking about a *form* has to fold the corpus to match. Two
+    /// terms folding together ('aa-vioghey'/'Aa-vioghey') sum.</summary>
+    private Dictionary<string, long> formAttestations = [];
 
-    /// <summary>The multiword headwords the corpus really says, once
-    /// <see cref="ScanPhrases"/> has read it for them. Null until then, and a
-    /// phrase is met a word at a time in the meantime — the guess that was the
-    /// only answer there was before this existed.</summary>
-    private HashSet<string>? attestedPhrases;
+    /// <summary>How often the corpus says each multiword headword, once
+    /// <see cref="ScanPhrases"/> has read it for them: a phrase it read for and
+    /// never met is 0, one it has not read for is absent. Null until the scan
+    /// lands, and a phrase is met a word at a time in the meantime — the guess
+    /// that was the only answer there was before this existed.</summary>
+    private Dictionary<string, long>? attestedPhrases;
 
     private bool loaded;
 
     public void Init(IEnumerable<(string Term, long Frequency)> termFrequency)
     {
-        terms = termFrequency.Select(x => DocumentLine.NormalizeManx(x.Term)).ToHashSet();
+        terms = [];
+        formAttestations = [];
+        foreach (var (term, frequency) in termFrequency)
+        {
+            var normalized = DocumentLine.NormalizeManx(term);
+            terms.Add(normalized);
+            var folded = LemmaTable.NormalizeForm(normalized);
+            formAttestations[folded] = formAttestations.GetValueOrDefault(folded) + frequency;
+        }
         attestedLemmas = terms.SelectMany(lemmaTable.DisplayLemmasFor).ToHashSet();
-        formTerms = terms.Select(LemmaTable.NormalizeForm).ToHashSet();
         loaded = true;
     }
 
@@ -90,7 +99,7 @@ public class CorpusVocabulary(LemmaTable lemmaTable)
                 opening.Add(words[0]);
             }
         }
-        var found = new HashSet<string>();
+        var found = new Dictionary<string, long>();
         foreach (var line in corpusLines)
         {
             var words = Words(line);
@@ -106,7 +115,7 @@ public class CorpusVocabulary(LemmaTable lemmaTable)
                     var phrase = string.Join(' ', words, i, end - i);
                     if (wanted.Contains(phrase))
                     {
-                        found.Add(phrase);
+                        found[phrase] = found.GetValueOrDefault(phrase) + 1;
                     }
                 }
             }
@@ -159,7 +168,9 @@ public class CorpusVocabulary(LemmaTable lemmaTable)
             // the corpus is read for a phrase, never guessed at: no lemma hop
             // either — a phrase's mutations are not a paradigm the table holds,
             // and the word page's own scan is as literal as this
-            return attestedPhrases?.Contains(string.Join(' ', words));
+            return attestedPhrases == null
+                ? null
+                : attestedPhrases.GetValueOrDefault(string.Join(' ', words)) > 0;
         }
         if (words.Length > 0 && Array.TrueForAll(words, terms.Contains))
         {
@@ -175,30 +186,37 @@ public class CorpusVocabulary(LemmaTable lemmaTable)
     public bool IsAttested(string word) => Attestation(word) ?? true;
 
     /// <summary>
-    /// Whether the corpus says the form by this spelling itself — no lemma hop:
-    /// the lemma tree asks which of a lexeme's spellings the texts use, and the
-    /// hop would answer for the whole paradigm at once. The corpus is folded the
-    /// table's way, so a spaced form is said by its hyphenated token ('aa
-    /// vioghey' by 'aa-vioghey'); a spaced form of several words is a phrase, and
-    /// answered as <see cref="Attestation"/> answers one. Null while not yet known.
+    /// How often the corpus says the form by this spelling itself — no lemma
+    /// hop: the lemma tree asks which of a lexeme's spellings the texts use, and
+    /// the hop would answer for the whole paradigm at once. The corpus is folded
+    /// the table's way, so a spaced form is said by its hyphenated token ('aa
+    /// vioghey' by 'aa-vioghey'), and a spaced form of several words is a phrase,
+    /// counted by the read <see cref="ScanPhrases"/> makes. Null while not yet
+    /// known — before the index loads, or for a phrase before the read lands (a
+    /// hyphenated token's count stands in meanwhile: an undercount beats a
+    /// claim of silence).
     /// </summary>
-    public bool? AttestsForm(string form)
+    public long? AttestationsOf(string form)
     {
-        // an index that never loaded would grey out the whole language
         if (!loaded)
         {
-            return true;
+            return null;
         }
         var folded = LemmaTable.NormalizeForm(form);
         if (folded.Length == 0)
         {
-            return false;
+            return 0;
         }
-        if (formTerms.Contains(folded))
+        var count = formAttestations.GetValueOrDefault(folded);
+        if (!folded.Contains(' '))
         {
-            return true;
+            return count;
         }
-        return folded.Contains(' ') ? attestedPhrases?.Contains(folded) : false;
+        if (attestedPhrases == null)
+        {
+            return count > 0 ? count : null;
+        }
+        return count + attestedPhrases.GetValueOrDefault(folded);
     }
 
     /// <summary>Whether any word the corpus says carries the affix: 'aa-' is
