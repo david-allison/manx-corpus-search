@@ -2,6 +2,7 @@ import { useEffect, useState } from "react"
 import { Link } from "react-router-dom"
 import { dictionaryBrowse } from "../api/DictionaryApi"
 import { DictionaryBooks } from "./DictionaryBooks"
+import { DictionarySamples } from "./DictionarySamples"
 import "./DictionaryLetters.css"
 
 /** The dictionary the letters open. Cregeen is a book with an index and browses
@@ -49,13 +50,9 @@ export const DictionaryLetters = () => {
                     ))}
                 </nav>
             )}
-            {/* the other way in: not a book's index but the corpus search's
-                own — every lemma, and what hangs off each */}
-            <p className="dict-letters-lemmas">
-                <Link to="/dictionary/lemma">
-                    Or the lemma index: every word and its forms, as a tree ›
-                </Link>
-            </p>
+            {/* a reader offered only letters starts at A and meets aa-: the
+                sampler deals a few entries from across the book instead */}
+            <DictionarySamples dict={BROWSE_DICT} />
         </>
     )
 }

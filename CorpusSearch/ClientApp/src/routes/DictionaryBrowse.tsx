@@ -101,6 +101,11 @@ export const DictionaryBrowse = () => {
                             This dictionary has no entries loaded.
                         </p>
                     )}
+
+                    {/* no sampler here: the browse always has a letter open
+                        (the first, if none was asked), and a reader with the
+                        book open is not looking for somewhere to start —
+                        the deal lives on the /dictionary landing alone */}
                     <div
                         className="dict-browse-chapters"
                         aria-label={`Words under ${page.letter}`}

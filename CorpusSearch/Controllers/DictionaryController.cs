@@ -105,6 +105,18 @@ public class DictionaryController(
     }
 
     /// <summary>
+    /// A handful of a dictionary's entries spanning corpus use, unordered — a
+    /// couple common, some middling, one no text says: an invitation to open
+    /// the book anywhere rather than at A.
+    /// </summary>
+    [HttpGet("samples")]
+    public ActionResult<List<DictionarySample>> Samples([FromQuery] string dict, [FromQuery] int count = 6)
+    {
+        var samples = browseService.Samples(dict, count);
+        return samples == null ? new NotFoundResult() : samples;
+    }
+
+    /// <summary>
     /// One page of the lemma index: every lemma the tables link a form to, one
     /// letter at a time, in the browse page's shape.
     /// </summary>

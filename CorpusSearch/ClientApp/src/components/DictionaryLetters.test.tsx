@@ -36,7 +36,7 @@ const respond = (letters: string[]) =>
     )
 
 describe("DictionaryLetters", () => {
-    it("offers the lemma index beside the letters", async () => {
+    it("offers the letters as links into the browse", async () => {
         respond(["A", "B"])
         render(
             <MemoryRouter>
@@ -45,25 +45,18 @@ describe("DictionaryLetters", () => {
         )
 
         expect(await screen.findByRole("link", { name: "A" })).toBeTruthy()
-        expect(
-            screen
-                .getByRole("link", { name: /lemma index/ })
-                .getAttribute("href"),
-        ).toBe("/dictionary/lemma")
+        expect(screen.getByRole("link", { name: "B" })).toBeTruthy()
     })
 
-    it("offers the lemma index even with no letters to show", async () => {
-        // the browse letters come from cregeen.json, downloaded at deploy; the
-        // lemma tables are a submodule and stand on their own
-        respond([])
+    it("offers no word-families line: dropped until it earns its place", async () => {
+        respond(["A"])
         render(
             <MemoryRouter>
                 <DictionaryLetters />
             </MemoryRouter>,
         )
 
-        expect(
-            await screen.findByRole("link", { name: /lemma index/ }),
-        ).toBeTruthy()
+        await screen.findByRole("link", { name: "A" })
+        expect(screen.queryByRole("link", { name: /word families/ })).toBeNull()
     })
 })

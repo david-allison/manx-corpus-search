@@ -66,10 +66,12 @@ const respondWith = (
               ? dictionaries
               : href.includes("/attestations")
                 ? emptyAttestations
-                : {
-                      answering: dictionaries.map((d) => d.slug),
-                      ...page,
-                  }
+                : href.includes("/samples")
+                  ? []
+                  : {
+                        answering: dictionaries.map((d) => d.slug),
+                        ...page,
+                    }
         return Promise.resolve({
             ok: true,
             json: () => Promise.resolve(body),
