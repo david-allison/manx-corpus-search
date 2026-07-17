@@ -242,6 +242,26 @@ public class LemmaIndexServiceTest
         Assert.That(Service(Table()).Tree("xyzzy"), Is.Null);
     }
 
+    /// <summary>A prefix is spelled into its family: Cregeen prints 'aa-' as a
+    /// headword and twenty compounds written with it, and its tree gathers them
+    /// — by spelling, never by rule, so a word merely starting with the same
+    /// letters is not claimed</summary>
+    [Test]
+    public void APrefixGathersTheLemmasSpelledWithIt()
+    {
+        var service = Service(Table(
+            "aa\taa.a\taa-\tself\ta.\taa-\t",
+            "aa ghiennaghtyn\taa-ghiennaghtyn.n\taa-ghiennaghtyn\tself\ts. m.\taa-ghiennaghtyn\t",
+            "aase\taase.n\taase\tself\ts. m.\taase\t"));
+
+        var group = service.Tree("aa-")!.Groups.Single();
+        Assert.Multiple(() =>
+        {
+            Assert.That(group.LinkType, Is.EqualTo("prefixed"));
+            Assert.That(group.Forms.Single().Form, Is.EqualTo("aa-ghiennaghtyn"));
+        });
+    }
+
     /// <summary>A form Cregeen prints but no text uses can say so: the source
     /// rides the node — and only an attested link's, since a guess has nothing
     /// but the generator behind it</summary>

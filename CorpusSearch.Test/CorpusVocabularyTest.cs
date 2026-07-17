@@ -239,4 +239,30 @@ public class CorpusVocabularyTest
     {
         Assert.That(new CorpusVocabulary(LemmaTable.Instance).AttestationsOf("xyzzy"), Is.Null);
     }
+
+    /// <summary>The count must read the affix off the spelling, as
+    /// <see cref="CorpusVocabulary.Attestation"/> does: 'aa-' is counted by its
+    /// carriers, never by the bare word it is spelled like</summary>
+    [Test]
+    public void AnAffixIsCountedByItsCarriers()
+    {
+        var vocabulary = new CorpusVocabulary(LemmaTable.Instance);
+        vocabulary.Init([("aa-vioghey", 2L), ("aa-chionnaghey", 3L), ("aa", 100L)]);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(vocabulary.AttestationsOf("aa-"), Is.EqualTo(5));
+            // the bare word is still its own count
+            Assert.That(vocabulary.AttestationsOf("aa"), Is.EqualTo(100));
+        });
+    }
+
+    [Test]
+    public void ASuffixIsCountedByTheWordsItEnds()
+    {
+        var vocabulary = new CorpusVocabulary(LemmaTable.Instance);
+        vocabulary.Init([("shirveish-ys", 4L), ("ys", 9L)]);
+
+        Assert.That(vocabulary.AttestationsOf("-ys"), Is.EqualTo(4));
+    }
 }
