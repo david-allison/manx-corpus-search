@@ -202,6 +202,13 @@ public class CorpusVocabulary(LemmaTable lemmaTable)
         {
             return null;
         }
+        // an affix is said only by the words carrying it, and the fold below
+        // loses the hyphen that marks it bound: 'an-' must not count the 126
+        // uses of 'an' meaning *their* (see Affix)
+        if (Affix.Is(form))
+        {
+            return AffixAttestations(form);
+        }
         var folded = LemmaTable.NormalizeForm(form);
         if (folded.Length == 0)
         {
@@ -217,6 +224,32 @@ public class CorpusVocabulary(LemmaTable lemmaTable)
             return count > 0 ? count : null;
         }
         return count + attestedPhrases.GetValueOrDefault(folded);
+    }
+
+    /// <summary>How often the corpus says the words carrying the affix — its
+    /// only sayings. A carrier's hyphens fold to spaces in the count table, so
+    /// the prefix's family is the keys opening "aa " ('aa-vioghey' files as
+    /// 'aa vioghey'), and a suffix's the keys closing " ys".</summary>
+    private long AffixAttestations(string affix)
+    {
+        var trimmed = affix.Trim().Replace('‑', '-');
+        var folded = LemmaTable.NormalizeForm(trimmed);
+        if (folded.Length == 0)
+        {
+            return 0;
+        }
+        var prefix = trimmed[^1] == '-';
+        long count = 0;
+        foreach (var (key, uses) in formAttestations)
+        {
+            if (prefix
+                    ? key.StartsWith(folded + " ", StringComparison.Ordinal)
+                    : key.EndsWith(" " + folded, StringComparison.Ordinal))
+            {
+                count += uses;
+            }
+        }
+        return count;
     }
 
     /// <summary>Whether any word the corpus says carries the affix: 'aa-' is

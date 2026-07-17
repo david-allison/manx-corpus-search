@@ -174,6 +174,7 @@ const GROUP_LABELS: Record<string, string> = {
     particle: "With a particle",
     univerbated: "Written as one word",
     phillips: "Phillips (c. 1610) spellings",
+    prefixed: "Written with the prefix",
     undecided: "Undecided",
 }
 

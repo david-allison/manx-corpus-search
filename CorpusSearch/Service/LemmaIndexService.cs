@@ -67,7 +67,7 @@ public class LemmaIndexService(LemmaTable lemmaTable, CorpusVocabulary vocabular
     [
         "self", "inflected", "plural", "compSup", "irregular", "emphatic",
         "contraction", "variant", "mutation", "demutated", "particle",
-        "univerbated", "phillips", "undecided", "override", "typo",
+        "univerbated", "phillips", "prefixed", "undecided", "override", "typo",
     ];
 
     /// <summary>
@@ -92,6 +92,37 @@ public class LemmaIndexService(LemmaTable lemmaTable, CorpusVocabulary vocabular
         var rootKey = LemmaTable.NormalizeForm(links.Lemma);
         var expanded = new HashSet<string> { rootKey };
         var byParent = ParentLookup(rootKey, links.Links);
+        var groups = Grouped(byParent[rootKey].Select(x => (x, byParent)), expanded);
+        // a prefix is spelled into its family: the words the books write with
+        // it hang under it ('aa-' covers aa-ghiennaghtyn) — by spelling, never
+        // by rule, so only the hyphen-spelled compounds are claimed. Suffixes
+        // go without: nothing is spelled '*-ys'.
+        if (links.Lemma.EndsWith('-') || links.Lemma.EndsWith('‑'))
+        {
+            var family = lemmaTable.AllDisplayLemmas
+                .Where(x => x.Length > links.Lemma.Length
+                            && x.StartsWith(links.Lemma, StringComparison.OrdinalIgnoreCase))
+                .OrderBy(DictionaryBrowse.CollationKey, StringComparer.Ordinal)
+                .ThenBy(x => x, StringComparer.Ordinal)
+                .Select(x => new LemmaTreeForm
+                {
+                    Form = x,
+                    Attestations = vocabulary.AttestationsOf(x),
+                    Attested = (vocabulary.AttestationsOf(x) ?? 1) > 0,
+                    Unverified = false,
+                    // each family member is its own printed entry: a greyed
+                    // one still says whose book records it
+                    Source = lemmaTable.LinksOf(x) is { SelfUnverified: false } own
+                             && own.SelfSource.Length > 0
+                        ? own.SelfSource
+                        : null,
+                })
+                .ToList();
+            if (family.Count > 0)
+            {
+                groups.Add(new LemmaTreeGroup { LinkType = "prefixed", Forms = family });
+            }
+        }
         return new LemmaTreePage
         {
             Lemma = links.Lemma,
@@ -101,7 +132,7 @@ public class LemmaIndexService(LemmaTable lemmaTable, CorpusVocabulary vocabular
             Source = links.SelfUnverified || links.SelfSource.Length == 0
                 ? null
                 : links.SelfSource,
-            Groups = Grouped(byParent[rootKey].Select(x => (x, byParent)), expanded),
+            Groups = groups,
         };
     }
 
