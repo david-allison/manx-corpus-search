@@ -93,6 +93,35 @@ public class LemmaIndexService(LemmaTable lemmaTable, CorpusVocabulary vocabular
         var expanded = new HashSet<string> { rootKey };
         var byParent = ParentLookup(rootKey, links.Links);
         var groups = Grouped(byParent[rootKey].Select(x => (x, byParent)), expanded);
+        // upward: the reverse reading of every link some other tree draws
+        // downward, so the graph can be climbed from either end — deiney says
+        // it inflects dooinney, aa-ghiennaghtyn that it is written with aa-
+        var parents = new List<LemmaTreeParent>();
+        foreach (var display in lemmaTable.DisplayLemmasFor(links.Lemma)
+                     .Where(x => LemmaTable.NormalizeForm(x) != rootKey)
+                     .OrderBy(DictionaryBrowse.CollationKey, StringComparer.Ordinal))
+        {
+            var linkTypes = lemmaTable.LinksOf(display)?.Links
+                .Where(x => x.Form == rootKey)
+                .Select(x => x.LinkType)
+                .Distinct()
+                .OrderBy(GroupRank)
+                .ToList();
+            if (linkTypes is { Count: > 0 })
+            {
+                parents.Add(new LemmaTreeParent { Lemma = display, LinkTypes = linkTypes });
+            }
+        }
+        var prefix = lemmaTable.AllDisplayLemmas
+            .Where(x => (x.EndsWith('-') || x.EndsWith('‑'))
+                        && links.Lemma.Length > x.Length
+                        && links.Lemma.StartsWith(x, StringComparison.OrdinalIgnoreCase))
+            .OrderByDescending(x => x.Length)
+            .FirstOrDefault();
+        if (prefix != null)
+        {
+            parents.Add(new LemmaTreeParent { Lemma = prefix, LinkTypes = ["prefixed"] });
+        }
         // a prefix is spelled into its family: the words the books write with
         // it hang under it ('aa-' covers aa-ghiennaghtyn) — by spelling, never
         // by rule, so only the hyphen-spelled compounds are claimed. Suffixes
@@ -132,8 +161,17 @@ public class LemmaIndexService(LemmaTable lemmaTable, CorpusVocabulary vocabular
             Source = links.SelfUnverified || links.SelfSource.Length == 0
                 ? null
                 : links.SelfSource,
+            Parents = parents.Count > 0 ? parents : null,
             Groups = groups,
         };
+    }
+
+    /// <summary>Where a link type files in <see cref="GroupOrder"/>; unknown
+    /// types after every known one</summary>
+    private static int GroupRank(string linkType)
+    {
+        var known = Array.IndexOf(GroupOrder, linkType);
+        return known < 0 ? GroupOrder.Length : known;
     }
 
     /// <summary>Each link filed under the form it derives through: its via where
@@ -155,11 +193,7 @@ public class LemmaIndexService(LemmaTable lemmaTable, CorpusVocabulary vocabular
     {
         return children
             .GroupBy(x => x.Link.LinkType)
-            .OrderBy(g =>
-            {
-                var known = Array.IndexOf(GroupOrder, g.Key);
-                return known < 0 ? GroupOrder.Length : known;
-            })
+            .OrderBy(g => GroupRank(g.Key))
             .ThenBy(g => g.Key, StringComparer.Ordinal)
             .Select(g => new LemmaTreeGroup
             {
@@ -237,7 +271,21 @@ public class LemmaTreePage
     /// "names", ...): what lets a lemma no text uses say a book records it.
     /// Null when nothing does.</summary>
     public string? Source { get; set; }
+    /// <summary>The lemmas this one hangs off, upward — the reverse reading of
+    /// links other trees draw downward ('deiney' inflects dooinney), plus the
+    /// prefix it is spelled with ('aa-ghiennaghtyn' is written with aa-). Null
+    /// at a root nothing claims.</summary>
+    public List<LemmaTreeParent>? Parents { get; set; }
     public required List<LemmaTreeGroup> Groups { get; set; }
+}
+
+/// <summary>A lemma another lemma hangs off, and how</summary>
+public class LemmaTreeParent
+{
+    public required string Lemma { get; set; }
+    /// <summary>The link types read upward ("inflected", "plural"; "prefixed"
+    /// for a spelling parent), in the tree's reading order</summary>
+    public required List<string> LinkTypes { get; set; }
 }
 
 /// <summary>The forms hanging off a lemma by one kind of link</summary>
