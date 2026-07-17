@@ -211,6 +211,32 @@ describe("lemma tree", () => {
         expect(document.querySelectorAll(".dict-lemma-count")).toHaveLength(3)
     })
 
+    it("reads back up: the root names what it hangs off", async () => {
+        respondWith({
+            ...tree,
+            lemma: "aa-ghiennaghtyn",
+            parents: [
+                { lemma: "giennaghtyn", linkTypes: ["inflected", "plural"] },
+                { lemma: "aa-", linkTypes: ["prefixed"] },
+            ],
+        })
+        renderAt("/dictionary/lemma/aa-ghiennaghtyn")
+
+        // a table parent reads as the reverse of the downward chips...
+        const parent = await screen.findByRole("link", {
+            name: "giennaghtyn",
+        })
+        expect(parent.getAttribute("href")).toBe(
+            "/dictionary/lemma/giennaghtyn",
+        )
+        expect(screen.getByText(/inflected · plural/)).toBeTruthy()
+        // ...and the spelling parent as the prefix it is written with
+        expect(
+            screen.getByRole("link", { name: "aa-" }).getAttribute("href"),
+        ).toBe("/dictionary/lemma/aa-")
+        expect(screen.getByText(/Written with the prefix/)).toBeTruthy()
+    })
+
     it("names the book behind a form no text uses", async () => {
         respondWith(tree)
         renderAt("/dictionary/lemma/peiagh")

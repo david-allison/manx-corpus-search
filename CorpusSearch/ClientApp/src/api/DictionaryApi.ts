@@ -441,7 +441,19 @@ export type LemmaTreeResponse = {
     /** the file whose print attests the lemma itself ("cregeen", "names", …):
      * what lets a lemma no text uses say a book records it */
     source?: string | null
+    /** the lemmas this one hangs off, upward — the reverse reading of links
+     * other trees draw downward ('deiney' inflects dooinney), plus the prefix
+     * it is spelled with ('aa-ghiennaghtyn' is written with aa-) */
+    parents?: LemmaTreeParent[] | null
     groups: LemmaTreeGroup[]
+}
+
+/** A lemma another lemma hangs off, and how */
+export type LemmaTreeParent = {
+    lemma: string
+    /** the link types read upward ("inflected", "plural"; "prefixed" for a
+     * spelling parent) */
+    linkTypes: string[]
 }
 
 export type LemmaTreeGroup = {

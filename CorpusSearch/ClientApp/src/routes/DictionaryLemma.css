@@ -17,9 +17,22 @@
     font-size: 15px;
 }
 
+/* what the root hangs off, read above it: the graph climbs both ways */
+.dict-lemma-parent {
+    margin: 0;
+    color: var(--c-muted);
+    font-size: 14px;
+}
+
+.dict-lemma-parent-types {
+    font-style: italic;
+    font-size: 13px;
+}
+
 /* the heading is the tree's root: the trunk below hangs straight off it */
 .dict-lemma-root {
     margin-bottom: 2px;
+    margin-top: 4px;
 }
 
 .dict-lemma-tree,

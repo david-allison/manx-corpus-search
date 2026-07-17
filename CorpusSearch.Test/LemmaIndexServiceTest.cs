@@ -245,9 +245,10 @@ public class LemmaIndexServiceTest
     /// <summary>A prefix is spelled into its family: Cregeen prints 'aa-' as a
     /// headword and twenty compounds written with it, and its tree gathers them
     /// — by spelling, never by rule, so a word merely starting with the same
-    /// letters is not claimed</summary>
+    /// letters is not claimed. And the family reads back up: the compound names
+    /// the prefix it is written with.</summary>
     [Test]
-    public void APrefixGathersTheLemmasSpelledWithIt()
+    public void APrefixAndItsFamilyReadBothWays()
     {
         var service = Service(Table(
             "aa\taa.a\taa-\tself\ta.\taa-\t",
@@ -255,10 +256,38 @@ public class LemmaIndexServiceTest
             "aase\taase.n\taase\tself\ts. m.\taase\t"));
 
         var group = service.Tree("aa-")!.Groups.Single();
+        var compound = service.Tree("aa-ghiennaghtyn")!;
         Assert.Multiple(() =>
         {
             Assert.That(group.LinkType, Is.EqualTo("prefixed"));
             Assert.That(group.Forms.Single().Form, Is.EqualTo("aa-ghiennaghtyn"));
+            // ...and back up
+            var parent = compound.Parents!.Single();
+            Assert.That(parent.Lemma, Is.EqualTo("aa-"));
+            Assert.That(parent.LinkTypes, Is.EqualTo(new[] { "prefixed" }));
+            // a word merely starting with the letters claims no prefix
+            Assert.That(service.Tree("aase")!.Parents, Is.Null);
+        });
+    }
+
+    /// <summary>Every link a tree draws downward reads back up from the other
+    /// end: dooinney shows deiney, so deiney names dooinney</summary>
+    [Test]
+    public void ALemmaNamesTheLemmasItHangsOff()
+    {
+        var service = Service(Table(
+            "dooinney\tdooinney.n\tdooinney\tself\ts. m.\tdooinney\t",
+            "deiney\tdooinney.n\tdooinney\tinflected\ts. m.\tdooinney\t",
+            "deiney\tdooinney.n\tdooinney\tplural\ts. m.\tdeiney\t",
+            "e gheiney\tdeiney.n\tdeiney\tself\ts.\te gheiney\t"));
+
+        var parent = service.Tree("deiney")!.Parents!.Single();
+        Assert.Multiple(() =>
+        {
+            Assert.That(parent.Lemma, Is.EqualTo("dooinney"));
+            Assert.That(parent.LinkTypes, Is.EqualTo(new[] { "inflected", "plural" }));
+            // the top of the family claims nothing above it
+            Assert.That(service.Tree("dooinney")!.Parents, Is.Null);
         });
     }
 

@@ -6,6 +6,7 @@ import {
     lemmaIndex,
     lemmaTree,
     LemmaTreeGroup,
+    LemmaTreeParent,
     LemmaTreeResponse,
 } from "../api/DictionaryApi"
 import { dictionaryWordUrl } from "../utils/DictionaryEntries"
@@ -182,6 +183,49 @@ const FORM_UNVERIFIED_TITLE =
     "Unverified: no dictionary records this form under this lemma. It was " +
     "worked out by rule or asserted by hand, and may be wrong"
 
+/** How a link type reads climbing UP the tree, where the chips above read
+ * down: 'deiney — inflected · plural of dooinney'. Raw type for the rest. */
+const PARENT_LABELS: Record<string, string> = {
+    self: "also entered there",
+    inflected: "inflected",
+    plural: "plural",
+    compSup: "comparative/superlative",
+    irregular: "irregular",
+    emphatic: "emphatic",
+    contraction: "contraction",
+    variant: "variant",
+    mutation: "mutation",
+    demutated: "possible mutation",
+    particle: "with a particle",
+    phillips: "Phillips spelling",
+    undecided: "undecided",
+}
+
+/** The upward reading of the graph: what this lemma hangs off, drawn above
+ * the root so the family can be climbed from either end. */
+const ParentLine = ({ parent }: { parent: LemmaTreeParent }) => (
+    <p className="dict-lemma-parent">
+        {parent.linkTypes.includes("prefixed") ? (
+            <>
+                {"Written with the prefix "}
+                <Link to={treeUrl(parent.lemma)}>{parent.lemma}</Link>
+                {" ›"}
+            </>
+        ) : (
+            <>
+                {"A form of "}
+                <Link to={treeUrl(parent.lemma)}>{parent.lemma}</Link>
+                <span className="dict-lemma-parent-types">
+                    {` — ${parent.linkTypes
+                        .map((type) => PARENT_LABELS[type] ?? type)
+                        .join(" · ")}`}
+                </span>
+                {" ›"}
+            </>
+        )}
+    </p>
+)
+
 /** The reader's name for a source file. Only the book earns a note: the
  * Phillips rows wear their group label already, the names supplement is
  * corpus-driven, and the vocab supplement's rows are guesses with a mark of
@@ -328,6 +372,12 @@ const LemmaTree = ({ lemma }: { lemma: string }) => {
 
             {tree != null && (
                 <>
+                    {/* what the root itself hangs off, drawn above it: the
+                        graph climbs both ways */}
+                    {tree.parents?.map((parent) => (
+                        <ParentLine parent={parent} key={parent.lemma} />
+                    ))}
+
                     {/* the root of the tree: the trunk below hangs off it */}
                     <h1
                         className={
