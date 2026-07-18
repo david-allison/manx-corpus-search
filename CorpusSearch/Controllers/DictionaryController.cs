@@ -15,8 +15,15 @@ namespace CorpusSearch.Controllers;
 public class DictionaryController(
     DictionaryLookupService lookupService, DictionaryHistoryService historyService,
     DictionaryAttestationService attestationService, DictionaryBrowseService browseService,
-    LemmaIndexService lemmaIndexService, CorpusVocabulary vocabulary)
+    LemmaIndexService lemmaIndexService, CorpusVocabulary vocabulary,
+    DictionaryStatsService statsService)
 {
+    /// <summary>The front page's coverage numbers: what share of the corpus the
+    /// books, the recordings and the lemma table can answer for. Counts, with
+    /// the audio trio null until the recordings are read.</summary>
+    [HttpGet("stats")]
+    public DictionaryStats Stats() => statsService.Stats();
+
     /// <summary>
     /// Returns diction
     /// </summary>

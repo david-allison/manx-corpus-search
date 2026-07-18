@@ -615,3 +615,32 @@ export const dictionaryNeighbours = async (
     }
     return (await response.json()) as DictionaryNeighboursResponse
 }
+
+/** The front page's coverage numbers: counts, never percentages — the page
+ * turning a pair into "82.9%" says so beside the pair */
+export type DictionaryStats = {
+    texts: number
+    runningWords: number
+    distinctWords: number
+    books: number
+    entries: number
+    /** distinct corpus words some book answers for */
+    definedWords: number
+    definedRunningWords: number
+    lemmas: number
+    attestedLemmas: number
+    /** null until the server's startup pass has read the recordings */
+    recordings?: number | null
+    audioWords?: number | null
+    audioRunningWords?: number | null
+}
+
+export const dictionaryStats = async (
+    signal?: AbortSignal,
+): Promise<DictionaryStats> => {
+    const response = await fetch("/api/Dictionary/stats", { signal })
+    if (!response.ok) {
+        throw new Error(`dictionary stats failed: ${response.status}`)
+    }
+    return (await response.json()) as DictionaryStats
+}

@@ -38,6 +38,11 @@ public class CorpusVocabulary(LemmaTable lemmaTable)
     /// terms folding together ('aa-vioghey'/'Aa-vioghey') sum.</summary>
     private Dictionary<string, long> formAttestations = [];
 
+    /// <summary>How often the corpus says each distinct word, by the word's own
+    /// spelling rather than the table's fold: what the dictionary's front page
+    /// counts its coverage over, a word at a time with its weight</summary>
+    private Dictionary<string, long> frequencies = [];
+
     /// <summary>How often the corpus says each multiword headword, once
     /// <see cref="ScanPhrases"/> has read it for them: a phrase it read for and
     /// never met is 0, one it has not read for is absent. Null until the scan
@@ -51,10 +56,12 @@ public class CorpusVocabulary(LemmaTable lemmaTable)
     {
         terms = [];
         formAttestations = [];
+        frequencies = [];
         foreach (var (term, frequency) in termFrequency)
         {
             var normalized = DocumentLine.NormalizeManx(term);
             terms.Add(normalized);
+            frequencies[normalized] = frequencies.GetValueOrDefault(normalized) + frequency;
             var folded = LemmaTable.NormalizeForm(normalized);
             formAttestations[folded] = formAttestations.GetValueOrDefault(folded) + frequency;
         }
@@ -251,6 +258,14 @@ public class CorpusVocabulary(LemmaTable lemmaTable)
         }
         return count;
     }
+
+    /// <summary>Every distinct word the corpus says with how often it says it,
+    /// as <see cref="Init"/> read them in</summary>
+    public IEnumerable<(string Term, long Frequency)> TermFrequencies =>
+        frequencies.Select(x => (x.Key, x.Value));
+
+    /// <summary>How many of the table's lemmas some text attests</summary>
+    public int AttestedLemmaCount => attestedLemmas.Count;
 
     /// <summary>Every distinct word the corpus says spelled with the prefix
     /// ('aa-' → aa-chroo): a compound needs no book to be real — the texts
