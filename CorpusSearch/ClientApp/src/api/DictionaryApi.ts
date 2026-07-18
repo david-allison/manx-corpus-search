@@ -517,6 +517,10 @@ export type LemmaTreeForm = {
      * for an unverified link — only the generator is behind one — and for the
      * treebank's closed-class paradigm rows, which no book may claim */
     source?: string | null
+    /** the phrase a particle row derives through ("e gheiney"): drawn as the
+     * row itself, and what `attestations` counts — the bare form's count
+     * answers for every particle at once. Absent on every other link type. */
+    via?: string | null
     /** what hangs off this form in turn: forms deriving through it ('pyaghyn'
      * inflects the variant 'pyagh'), and — where it heads a lexeme of its own
      * ('deiney' under dooinney) — that lexeme's tree. Absent at a leaf, and at

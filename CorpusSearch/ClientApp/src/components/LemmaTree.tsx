@@ -143,6 +143,11 @@ const TreeGroups = ({
                 <ul>
                     {group.forms.map((form) => (
                         <li key={form.form}>
+                            {/* a particle row is the phrase itself ('e
+                                gheiney'), counted as the phrase: the bare
+                                form's count answers for every particle at
+                                once, and 'With a particle' alone never says
+                                which. The link still opens the form's page. */}
                             <Link
                                 className={
                                     form.attested
@@ -150,13 +155,15 @@ const TreeGroups = ({
                                         : "dict-unattested"
                                 }
                                 title={
-                                    form.attested
-                                        ? undefined
-                                        : `${form.form} — by this spelling, in no text in the corpus`
+                                    form.via
+                                        ? `The form ${form.form}, after its particle${form.attested ? "" : " — in no text in the corpus"}`
+                                        : form.attested
+                                          ? undefined
+                                          : `${form.form} — by this spelling, in no text in the corpus`
                                 }
                                 to={dictionaryWordUrl(form.form)}
                             >
-                                {form.form}
+                                {form.via ?? form.form}
                             </Link>
                             <Count attestations={form.attestations} />
                             <SourceNote

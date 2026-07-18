@@ -185,6 +185,37 @@ public class LemmaIndexServiceTest
             var gheiney = eGheiney.Groups!.Single().Forms.Single();
             Assert.That(gheiney.Form, Is.EqualTo("gheiney"));
             Assert.That(eGheiney.Groups!.Single().LinkType, Is.EqualTo("particle"));
+            // 'With a particle' alone never says which: the row carries its
+            // phrase, and every other link type carries none
+            Assert.That(gheiney.Via, Is.EqualTo("e gheiney"));
+            Assert.That(deiney.Via, Is.Null);
+        });
+    }
+
+    /// <summary>The bare spelling rides after any particle at once, so its
+    /// count answers for all of them together: a particle row is counted by
+    /// its phrase, and only its phrase</summary>
+    [Test]
+    public void AParticleRowIsCountedByItsPhrase()
+    {
+        var table = Table(
+            "dooinney\tdooinney.n\tdooinney\tself\ts. m.\tdooinney\t",
+            "gheiney\tdooinney.n\tdooinney\tparticle\ts.\te gheiney\t");
+        var vocabulary = new CorpusVocabulary(table);
+        // 'gheiney' is said three times, but after this particle only once
+        vocabulary.Init([("ta", 5), ("e", 5), ("gheiney", 3)]);
+        vocabulary.ScanPhrases(["e gheiney"],
+            ["ta e gheiney ayn", "gheiney as gheiney"]);
+        var service = new LemmaIndexService(table, vocabulary);
+
+        var row = service.Tree("dooinney")!
+            .Groups.Single(g => g.LinkType == "particle").Forms.Single();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(row.Via, Is.EqualTo("e gheiney"));
+            Assert.That(row.Attestations, Is.EqualTo(1));
+            Assert.That(row.Attested, Is.True);
         });
     }
 

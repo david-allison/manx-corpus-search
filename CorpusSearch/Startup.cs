@@ -270,6 +270,10 @@ public class Startup(IConfiguration configuration)
                     // the lemma tables' forms ride along: the lemma tree greys a
                     // multiword form ('er n'aase') by the same read of the corpus
                     .Concat(LemmaTable.Instance.AllForms)
+                    // and the particle phrases ('e gheiney'), which are vias
+                    // rather than forms: the tree counts a particle row by its
+                    // phrase, not by the bare spelling
+                    .Concat(LemmaTable.Instance.ParticlePhrases)
                     .ToList();
                 var scan = Task.Run(() =>
                     vocabulary.ScanPhrases(headwords, CorpusLines(workService, searcher)));
