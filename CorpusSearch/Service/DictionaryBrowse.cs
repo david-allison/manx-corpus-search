@@ -91,8 +91,12 @@ public static class DictionaryBrowse
     /// </summary>
     /// <param name="attested">Whether the corpus uses a word; everything is taken
     /// as used when nothing is passed, so a caller with no index greys nothing</param>
+    /// <param name="sourceOf">names the file whose print attests a word the
+    /// corpus never says ("cregeen"): the lemma index's voucher for its greyed
+    /// rows. Only asked about the greyed — an attested word needs none.</param>
     public static IReadOnlyList<BrowseChapter> Chapters(
-        IEnumerable<string> headwords, Func<string, bool>? attested = null)
+        IEnumerable<string> headwords, Func<string, bool>? attested = null,
+        Func<string, string?>? sourceOf = null)
     {
         var chapters = new List<BrowseChapter>();
         foreach (var headword in headwords)
@@ -108,10 +112,12 @@ public static class DictionaryBrowse
             {
                 continue;
             }
+            var isAttested = attested?.Invoke(headword) ?? true;
             words.Add(new BrowseWord
             {
                 Word = headword,
-                Attested = attested?.Invoke(headword) ?? true,
+                Attested = isAttested,
+                Source = isAttested ? null : sourceOf?.Invoke(headword),
             });
         }
         return chapters;
@@ -154,6 +160,13 @@ public class BrowseWord
     /// <summary>False where no text we hold uses the word: a dictionary lists what
     /// the language can say, and this is what it has said</summary>
     public required bool Attested { get; set; }
+
+    /// <summary>The file whose print attests a word the corpus never says
+    /// ("cregeen"): the lemma index's voucher for its greyed rows, which
+    /// without it read as phantoms when in fact a book prints them. Null
+    /// where the corpus speaks for the word, and on the book indexes, whose
+    /// every word is the book's own.</summary>
+    public string? Source { get; set; }
 }
 
 /// <summary>One entry of the browse sampler: a way into the book that is not

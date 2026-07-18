@@ -417,6 +417,10 @@ export type BrowseWord = {
     word: string
     /** false where no text we hold uses the word */
     attested: boolean
+    /** the file whose print attests a word the corpus never says ("cregeen"):
+     * the lemma index's voucher for its greyed rows. Absent where the corpus
+     * speaks for the word, and on the book indexes. */
+    source?: string | null
 }
 
 /** @param at a letter ("a"), or a prefix ("aal") from a link made when a prefix

@@ -96,8 +96,9 @@ const SOURCE_NAMES: Record<string, string> = { cregeen: "Cregeen" }
 /** Names the book behind a node no text uses. Greyed, it would otherwise read
  * as a phantom — when in fact Cregeen prints it, and only the corpus is
  * silent. An attested node needs no vouching, and a guess names no book (the
- * server sends no source for one). */
-const SourceNote = ({
+ * server sends no source for one). Shared with the lemma index, whose greyed
+ * rows make the same claim. */
+export const SourceNote = ({
     form,
     attested,
     source,

@@ -234,6 +234,30 @@ public class LemmaIndexServiceTest
         });
     }
 
+    /// <summary>A lemma no text uses still stands in a book: the index names
+    /// the book ("cregeen"), as the tree does, or the grey reads as a
+    /// phantom. The corpus speaks for an attested lemma itself.</summary>
+    [Test]
+    public void TheIndexNamesTheBookBehindANeverSaidLemma()
+    {
+        var tsv = "form\tlemmaId\tlemma\tlinkType\tpos\tvia\tnote\n"
+                  + "aase\taase.n\taase\tself\ts. m.\taase\t\n"
+                  + "aalin\taalin.a\taalin\tself\ta.\taalin\t";
+        var table = LemmaTable.Load([((TextReader)new StringReader(tsv), "cregeen")]);
+        var vocabulary = new CorpusVocabulary(table);
+        vocabulary.Init([("aase", 5)]);
+        var service = new LemmaIndexService(table, vocabulary);
+
+        var words = service.Index(null).Chapters.SelectMany(x => x.Words).ToList();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(words.Single(x => x.Word == "aalin").Source, Is.EqualTo("cregeen"));
+            Assert.That(words.Single(x => x.Word == "aalin").Attested, Is.False);
+            Assert.That(words.Single(x => x.Word == "aase").Source, Is.Null);
+        });
+    }
+
     /// <summary>Phillips spells the bare form, not the phrase: 'gene'
     /// derives through gheiney, so it hangs off gheiney's own row. The
     /// phrase row is a leaf — a phrase hosts nothing — and the guess row
