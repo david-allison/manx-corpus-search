@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Link } from "react-router-dom"
 import {
     dictionariesAlreadyKnown,
@@ -48,6 +48,15 @@ export const DictionaryScope = ({
         return () => abort.abort()
     }, [dictionaries])
 
+    // the chosen book must be seen to be chosen: on a phone the row scrolls
+    // sideways, and the active tab may sit past its edge
+    const nav = useRef<HTMLElement>(null)
+    useEffect(() => {
+        nav.current
+            ?.querySelector(".dict-scope-link.active")
+            ?.scrollIntoView({ block: "nearest", inline: "nearest" })
+    }, [dict, dictionaries])
+
     // the picker offers nothing until it knows what there is to pick, but it
     // holds its row: coming back with a height would shove the page down
     if (dictionaries == null) {
@@ -65,31 +74,54 @@ export const DictionaryScope = ({
         answering != null &&
         (slug == null ? answering.length === 0 : !answering.includes(slug))
 
-    const linkTo = (slug: string | undefined, name: string) => (
-        <Link
-            key={slug ?? ""}
-            className={[
-                "dict-scope-link",
-                slug === dict ? "active" : "",
-                isEmpty(slug) ? "dict-scope-empty" : "",
-            ]
-                .filter(Boolean)
-                .join(" ")}
-            aria-current={slug === dict ? "page" : undefined}
-            // the grey is a colour, and a colour is not something every reader
-            // gets: the link says the same thing in words
-            title={
-                isEmpty(slug) ? `Nothing for “${word}” in ${name}` : undefined
-            }
-            to={dictionaryWordUrl(word, slug)}
-            // the same word through another book's lens: a view switch, so it
-            // replaces rather than stacks — Back should leave the word, not
-            // replay the tabs
-            replace
-        >
-            {name}
-        </Link>
-    )
+    const linkTo = (slug: string | undefined, name: string) => {
+        // a phone has no room for "Manx to English" twice over: the direction
+        // shortens to M2E there, and the full name stays for a mouse and for
+        // a screen reader alike
+        const short = name
+            .replace("Manx to English", "M2E")
+            .replace("English to Manx", "E2M")
+        return (
+            <Link
+                key={slug ?? ""}
+                className={[
+                    "dict-scope-link",
+                    slug === dict ? "active" : "",
+                    isEmpty(slug) ? "dict-scope-empty" : "",
+                ]
+                    .filter(Boolean)
+                    .join(" ")}
+                aria-current={slug === dict ? "page" : undefined}
+                aria-label={short === name ? undefined : name}
+                // the grey is a colour, and a colour is not something every reader
+                // gets: the link says the same thing in words
+                title={
+                    isEmpty(slug)
+                        ? `Nothing for “${word}” in ${name}`
+                        : undefined
+                }
+                to={dictionaryWordUrl(word, slug)}
+                // the same word through another book's lens: a view switch, so it
+                // replaces rather than stacks — Back should leave the word, not
+                // replay the tabs
+                replace
+            >
+                {short === name ? (
+                    name
+                ) : (
+                    <>
+                        <span className="dict-scope-name-full">{name}</span>
+                        <span
+                            className="dict-scope-name-short"
+                            aria-hidden="true"
+                        >
+                            {short}
+                        </span>
+                    </>
+                )}
+            </Link>
+        )
+    }
 
     return (
         <nav className="dict-scope" aria-label="Dictionary">
