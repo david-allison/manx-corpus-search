@@ -24,6 +24,8 @@ import {
 import { UnverifiedMark } from "../components/UnverifiedMark"
 import { DictionaryScope } from "../components/DictionaryScope"
 import { DictionaryLetters } from "../components/DictionaryLetters"
+import { DictionaryCoverage } from "../components/DictionaryCoverage"
+import { isDictionaryHost } from "../utils/Host"
 import { WordSearch } from "../components/WordSearch"
 import { HeadwordNav } from "../components/HeadwordNav"
 import {
@@ -375,6 +377,9 @@ export const Dictionary = () => {
             />
 
             {!word && <DictionaryLetters />}
+            {/*the dictionary host's landing doubles as the front door: the
+               coverage numbers close it, as the context they are*/}
+            {!word && isDictionaryHost() && <DictionaryCoverage />}
 
             {word && (
                 <DictionaryScope

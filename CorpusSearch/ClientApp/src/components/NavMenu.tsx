@@ -28,7 +28,7 @@ export const NavMenu = (props: { onRefreshState: () => void }) => {
             <div className="site-header-inner">
                 <Link
                     replace
-                    to={dictionaryHost ? "/dictionary" : "/"}
+                    to="/"
                     className="brand"
                     onClick={dictionaryHost ? undefined : onGoHome}
                 >

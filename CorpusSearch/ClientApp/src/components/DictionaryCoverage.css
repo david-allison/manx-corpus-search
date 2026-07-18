@@ -1,0 +1,65 @@
+/* the coverage under the dictionary's front door: the numbers counted out
+   loud, a small bar drawing each share, the counts beside it */
+.dict-coverage {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 22px 18px;
+    max-width: 620px;
+    margin: 34px auto 0;
+    padding-top: 22px;
+    border-top: 1px solid var(--c-border-meta);
+    text-align: center;
+}
+
+@media (max-width: 600px) {
+    .dict-coverage {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+.dict-coverage-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+}
+
+.dict-coverage-number {
+    font-family: Georgia, serif;
+    font-size: 30px;
+    color: var(--c-heading);
+}
+
+.dict-coverage-label {
+    font-size: 13.5px;
+    color: var(--c-ink);
+}
+
+.dict-coverage-track {
+    display: block;
+    width: 170px;
+    height: 5px;
+    margin-top: 3px;
+    border-radius: 3px;
+    background: var(--c-border-meta);
+    overflow: hidden;
+}
+
+.dict-coverage-fill {
+    display: block;
+    height: 100%;
+    border-radius: 3px;
+    background: var(--c-accent);
+}
+
+.dict-coverage-detail {
+    font-size: 12px;
+    color: var(--c-muted);
+}
+
+.dict-coverage-corpus {
+    margin: 26px 0 0;
+    font-size: 12.5px;
+    color: var(--c-muted);
+    text-align: center;
+}

@@ -94,6 +94,7 @@ public class Startup(IConfiguration configuration)
         services.AddSingleton<CorpusVocabulary>();
         services.AddSingleton<DictionaryBrowseService>();
         services.AddSingleton<LemmaIndexService>();
+        services.AddSingleton<DictionaryStatsService>();
         services.AddSingleton<WorkService>();
         services.AddSingleton<DocumentSearchService>();
         services.AddSingleton<NewspaperSourceEnricher>();
@@ -269,6 +270,16 @@ public class Startup(IConfiguration configuration)
             try
             {
                 var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+                // the recordings first: a couple of dozen documents against the
+                // corpus's hundreds, and the front page's audio numbers wait on
+                // nothing else
+                var stats = services.GetRequiredService<DictionaryStatsService>();
+                var recordings = (await workService.GetAll())
+                    .Where(x => x.Name.StartsWith("🎥")).ToList();
+                stats.InitAudio(recordings.Count, recordings
+                    .SelectMany(x => searcher.AllLines(x.Ident)
+                        .Where(l => l.IsManxLanguage)
+                        .Select(l => l.NormalizedStatsManx)));
                 var headwords = services.GetServices<ISearchDictionary>()
                     .SelectMany(x => x.Headwords)
                     // the lemma tables' forms ride along: the lemma tree greys a

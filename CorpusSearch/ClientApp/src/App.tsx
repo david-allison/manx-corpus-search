@@ -11,6 +11,7 @@ import { BitPlayer } from "./routes/BitPlayer"
 import { Contributions } from "./routes/Contributions"
 import { NotFound } from "./routes/NotFound"
 import { useTappableAbbrs } from "./hooks/useTappableAbbrs"
+import { isDictionaryHost } from "./utils/Host"
 import "./custom.css"
 
 export const App = () => {
@@ -26,7 +27,18 @@ export const App = () => {
                URL changes*/}
             <ErrorBoundary resetOn={location.pathname}>
                 <Routes>
-                    <Route path="/" element={<Home key={k} />} />
+                    {/*the dictionary host's front door is the dictionary
+                       itself; the corpus's stays the search*/}
+                    <Route
+                        path="/"
+                        element={
+                            isDictionaryHost() ? (
+                                <Dictionary />
+                            ) : (
+                                <Home key={k} />
+                            )
+                        }
+                    />
                     {/*experimental: the teanglann-style dictionary page. Any
                        sub-route added here must also be added to
                        Infrastructure/SpaRouteGuard.cs, or it 404s in production*/}
