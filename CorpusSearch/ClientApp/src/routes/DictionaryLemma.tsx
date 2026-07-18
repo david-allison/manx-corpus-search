@@ -69,7 +69,12 @@ const LemmaIndex = ({ at }: { at?: string | null }) => {
 
             {page != null && (
                 <>
-                    <h1 className="dict-page-word">Lemmas</h1>
+                    <h1 className="dict-page-word">
+                        Lemmas
+                        <span className="attest-experimental">
+                            experimental &amp; incomplete
+                        </span>
+                    </h1>
                     <p className="dict-lemma-note">
                         The words the corpus search groups spellings under,
                         whatever form a text uses. Open one for its forms.

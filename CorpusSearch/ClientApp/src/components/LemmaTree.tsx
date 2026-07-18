@@ -292,7 +292,12 @@ export const WordFamily = ({ lemmas }: { lemmas: string[] }) => {
     }
     return (
         <section className="dict-page-group">
-            <h3 className="dict-page-dictionary">Word family</h3>
+            <h3 className="dict-page-dictionary">
+                Word family
+                <span className="attest-experimental">
+                    experimental &amp; incomplete
+                </span>
+            </h3>
             {trees.map((tree) => (
                 <EmbeddedTree key={tree.lemma} tree={tree} />
             ))}
@@ -375,6 +380,11 @@ export const LemmaTree = ({ lemma }: { lemma: string }) => {
                                 "wrong"
                             }
                         />
+                        {/* the tree is as experimental as the corpus walk,
+                            and says so the same way */}
+                        <span className="attest-experimental">
+                            experimental &amp; incomplete
+                        </span>
                     </h1>
 
                     {tree.groups.length === 0 && (
