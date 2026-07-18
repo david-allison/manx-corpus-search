@@ -260,23 +260,14 @@ export const AttestationWalker = ({
     // another word is another walk: its popup must not outlive the page it
     // was opened from
     useEffect(() => setHeard(null), [word])
-    // The walk reserves the tallest step it has shown. Steps differ in height
-    // (a text may use one reading or three), and a reader scrolled to the foot
-    // of the page is held at the bottom by the browser: shortening the page
-    // under them slides everything, arrows included, mid-click. Growing is
-    // harmless, so only the floor is held.
+    // The walk holds its height while an answer is on its way. Steps differ
+    // in height (a text may use one reading or three), and a reader scrolled
+    // to the foot of the page is held at the bottom by the browser:
+    // shortening the page under them slides everything, arrows included,
+    // mid-click. The floor lifts once the answer is on screen — the held
+    // space is for the wait, not after it.
     const body = useRef<HTMLDivElement>(null)
     const [reserved, setReserved] = useState(0)
-
-    useLayoutEffect(() => {
-        const height = body.current?.getBoundingClientRect().height ?? 0
-        if (height > reserved) {
-            setReserved(height)
-        }
-    }, [lines, open, reserved])
-
-    // another word is another walk: it should not inherit this one's floor
-    useEffect(() => setReserved(0), [word])
 
     useEffect(() => {
         // the word before's walk is not blanked first. This section is the tallest
@@ -367,13 +358,6 @@ export const AttestationWalker = ({
         return () => abort.abort()
     }, [word, currentIdent, open, walked, walkLemma])
 
-    const hasWalk = walk != null && walk.documents.length > 0 && current != null
-    // the band is this word's or nothing; the walk may still be the last word's,
-    // and holds its place while this one's is fetched
-    if (!hasWalk && !hasAttestation(history)) {
-        return null
-    }
-
     // the uses on screen belong to the step we are on, and to its tab's
     // reading, only once they arrive
     const fresh =
@@ -381,6 +365,26 @@ export const AttestationWalker = ({
         lines != null &&
         lines.ident === currentIdent &&
         (lines.lemma ?? null) === (walk?.lemma ?? null)
+
+    useLayoutEffect(() => {
+        const height = body.current?.getBoundingClientRect().height ?? 0
+        if (fresh) {
+            // the answer owns the screen: the floor follows it down as well
+            // as up, so a short entry contracts once it has loaded
+            if (height !== reserved) {
+                setReserved(height)
+            }
+        } else if (height > reserved) {
+            setReserved(height)
+        }
+    }, [lines, open, reserved, fresh])
+
+    const hasWalk = walk != null && walk.documents.length > 0 && current != null
+    // the band is this word's or nothing; the walk may still be the last word's,
+    // and holds its place while this one's is fetched
+    if (!hasWalk && !hasAttestation(history)) {
+        return null
+    }
 
     /* Always a tab, even for the ~96% of words with one reading (and for the
        walk of a spelling, whose one tab is the spelling): the tab is the
@@ -533,8 +537,10 @@ export const AttestationWalker = ({
                         id="attest-body"
                         ref={body}
                         hidden={!open}
+                        // held only while the step's answer is on its way:
+                        // once it is on screen, the section takes its size
                         style={
-                            open && reserved
+                            open && reserved && !fresh
                                 ? { minHeight: reserved }
                                 : undefined
                         }
