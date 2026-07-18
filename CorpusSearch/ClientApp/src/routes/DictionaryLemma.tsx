@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Link, useParams, useSearchParams } from "react-router-dom"
 import { CircularProgress } from "@mui/material"
 import { DictionaryBrowseResponse, lemmaIndex } from "../api/DictionaryApi"
@@ -14,6 +14,7 @@ import {
     visibleChapters,
 } from "../components/UnattestedFilter"
 import { WordSearch } from "../components/WordSearch"
+import { useActiveInRow } from "../hooks/useActiveInRow"
 import { useDictionaryHead } from "../hooks/useDictionaryHead"
 import "./DictionaryBrowse.css"
 import "./DictionaryLemma.css"
@@ -27,20 +28,26 @@ const Bar = ({
     items: string[]
     active?: string | null
     ariaLabel: string
-}) => (
-    <nav className="dict-browse-bar" aria-label={ariaLabel}>
-        {items.map((item) => (
-            <Link
-                key={item}
-                to={lemmaIndexUrl(item)}
-                className={item === active ? "active" : undefined}
-                aria-current={item === active ? "page" : undefined}
-            >
-                {item}
-            </Link>
-        ))}
-    </nav>
-)
+}) => {
+    // the open letter must be seen to be open: on a phone the bar scrolls,
+    // and the far letters sit past its edge — the bar's own scroll only
+    const nav = useRef<HTMLElement>(null)
+    useActiveInRow(nav, active)
+    return (
+        <nav className="dict-browse-bar" aria-label={ariaLabel} ref={nav}>
+            {items.map((item) => (
+                <Link
+                    key={item}
+                    to={lemmaIndexUrl(item)}
+                    className={item === active ? "active" : undefined}
+                    aria-current={item === active ? "page" : undefined}
+                >
+                    {item}
+                </Link>
+            ))}
+        </nav>
+    )
+}
 
 /** One letter of the lemma index, whole: the same adaptive chapters the
  * dictionary browse files its headwords under, over every lemma the tables

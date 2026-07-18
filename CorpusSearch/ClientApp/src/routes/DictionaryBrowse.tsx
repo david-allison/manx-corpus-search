@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Link, useParams } from "react-router-dom"
 import { CircularProgress } from "@mui/material"
 import {
@@ -13,6 +13,7 @@ import {
     visibleChapters,
 } from "../components/UnattestedFilter"
 import { WordSearch } from "../components/WordSearch"
+import { useActiveInRow } from "../hooks/useActiveInRow"
 import { useDictionaryHead } from "../hooks/useDictionaryHead"
 import "./DictionaryBrowse.css"
 
@@ -33,20 +34,26 @@ const Bar = ({
     active?: string | null
     dict: string
     ariaLabel: string
-}) => (
-    <nav className="dict-browse-bar" aria-label={ariaLabel}>
-        {items.map((item) => (
-            <Link
-                key={item}
-                to={browseUrl(dict, item)}
-                className={item === active ? "active" : undefined}
-                aria-current={item === active ? "page" : undefined}
-            >
-                {item}
-            </Link>
-        ))}
-    </nav>
-)
+}) => {
+    // the open letter must be seen to be open: on a phone the bar scrolls,
+    // and Ô sits past its edge — the bar's own scroll, never the page's
+    const nav = useRef<HTMLElement>(null)
+    useActiveInRow(nav, active)
+    return (
+        <nav className="dict-browse-bar" aria-label={ariaLabel} ref={nav}>
+            {items.map((item) => (
+                <Link
+                    key={item}
+                    to={browseUrl(dict, item)}
+                    className={item === active ? "active" : undefined}
+                    aria-current={item === active ? "page" : undefined}
+                >
+                    {item}
+                </Link>
+            ))}
+        </nav>
+    )
+}
 
 /** The dictionary as a book you can open at a letter: the whole letter, its
  * headwords under the three-letter prefixes they file under.

@@ -30,6 +30,34 @@
     border-bottom: 2px solid transparent;
 }
 
+@media (max-width: 600px) {
+    /* Phil Kelly runs to 28 letters (Ê and Ô close the alphabet), and a
+       wrapped bar buries the words under a block of capitals. One row
+       instead, broken out of the page's margins to the screen's edge, and
+       scrolled sideways past that — no scrollbar, the clipped letter at the
+       edge being the hint, as the scope tabs do it. */
+    /* full bleed: out past the dict-page's 12px and the page-main gutter
+       both, to the screen's own edge, as the video dock breaks out */
+    .dict-browse-bar {
+        flex-wrap: nowrap;
+        justify-content: flex-start;
+        overflow-x: auto;
+        scrollbar-width: none;
+        margin-left: calc(-12px - var(--page-gutter, 24px));
+        margin-right: calc(-12px - var(--page-gutter, 24px));
+        padding-left: calc(12px + var(--page-gutter, 24px));
+        padding-right: calc(12px + var(--page-gutter, 24px));
+    }
+
+    .dict-browse-bar::-webkit-scrollbar {
+        display: none;
+    }
+
+    .dict-browse-bar a {
+        flex: none;
+    }
+}
+
 .dict-browse-bar a.active {
     color: var(--c-accent);
     border-bottom-color: var(--c-accent);
