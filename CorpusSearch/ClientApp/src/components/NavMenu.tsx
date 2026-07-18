@@ -1,10 +1,14 @@
 import { MouseEvent } from "react"
 import { Link, useLocation, useNavigate } from "react-router-dom"
 import corpusIcon from "../assets/corpus-search-icon.png"
+import { isDictionaryHost } from "../utils/Host"
 
 export const NavMenu = (props: { onRefreshState: () => void }) => {
     const navigation = useNavigate()
     const location = useLocation()
+    // on the dictionary's own host the corpus links stand down: the brand
+    // opens the dictionary, and only Translations rides along
+    const dictionaryHost = isDictionaryHost()
 
     const onGoHome = (e: MouseEvent) => {
         if (location.pathname == "/") {
@@ -22,20 +26,36 @@ export const NavMenu = (props: { onRefreshState: () => void }) => {
     return (
         <header className="site-header">
             <div className="site-header-inner">
-                <Link replace to={"/"} className="brand" onClick={onGoHome}>
+                <Link
+                    replace
+                    to={dictionaryHost ? "/dictionary" : "/"}
+                    className="brand"
+                    onClick={dictionaryHost ? undefined : onGoHome}
+                >
                     <img src={corpusIcon} alt="Gaelg Corpus Search" />
                     <span className="brand-lockup">
                         <span className="brand-name">Gaelg</span>
-                        <span className="brand-sub">CORPUS SEARCH</span>
+                        <span className="brand-sub">
+                            {dictionaryHost ? "DICTIONARY" : "CORPUS SEARCH"}
+                        </span>
                     </span>
                 </Link>
                 <nav className="site-nav">
-                    {/*Not a NavLink as we want to replace*/}
-                    <Link replace className="active" onClick={onGoHome} to="/">
-                        Home
-                    </Link>
-                    <a href="/Dictionary/Cregeen">Dictionary</a>
-                    <a href="/Browse">Browse All</a>
+                    {!dictionaryHost && (
+                        <>
+                            {/*Not a NavLink as we want to replace*/}
+                            <Link
+                                replace
+                                className="active"
+                                onClick={onGoHome}
+                                to="/"
+                            >
+                                Home
+                            </Link>
+                            <a href="/Dictionary/Cregeen">Dictionary</a>
+                            <a href="/Browse">Browse All</a>
+                        </>
+                    )}
                     <a
                         href="https://www.learnmanx.com/resources/translations/"
                         target="_blank"

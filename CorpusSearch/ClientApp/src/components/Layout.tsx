@@ -1,6 +1,7 @@
 import { ReactNode } from "react"
 import { Link } from "react-router-dom"
 import { NavMenu } from "./NavMenu"
+import { isDictionaryHost } from "../utils/Host"
 
 export const Layout = (props: {
     onRefresh: () => void
@@ -27,8 +28,11 @@ const SiteFooter = () => (
                 rel="noreferrer"
             >
                 David Allison
-            </a>{" "}
-            · A Manx Language Research Group project
+            </a>
+            {/* the project credit belongs to the corpus site's front door */}
+            {!isDictionaryHost() && (
+                <> · A Manx Language Research Group project</>
+            )}
             <br />
             With thanks to <Link to="/contributions">
                 all the volunteers
