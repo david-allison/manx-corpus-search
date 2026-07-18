@@ -113,6 +113,13 @@
     font-size: 13px;
 }
 
+/* the walker's beta badge, worn in the tree's flex headings: pushed to the
+   row's far edge, where the walker floats its own */
+.dict-page-word .attest-experimental {
+    margin-left: auto;
+    float: none;
+}
+
 @media (max-width: 600px) {
     /* a deep chain (dooinney → deiney → e gheiney → gheiney) must not walk
        off a phone: shallower steps, same shape */
