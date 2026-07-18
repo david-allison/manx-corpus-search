@@ -882,6 +882,24 @@ public class DictionaryLookupServiceTest
         });
     }
 
+    /// <summary>Kelly prints its headwords in capitals: the box offers the plain
+    /// spelling wherever any book writes one - whoever came first - and lowers a
+    /// word only ever printed shouting</summary>
+    [Test]
+    public void SuggestionsDoNotShoutKellysCapitals()
+    {
+        var service = new DictionaryLookupService(
+            [
+                new FakeDictionary("Kelly", ["MOOARANE", "MOOIR"]),
+                new FakeDictionary("Phil", ["mooarane"]),
+            ],
+            NoLemmas, LemmaResolver.Empty);
+        var vocabulary = Vocabulary();
+
+        Assert.That(Suggested(service, "moo", vocabulary),
+            Is.EqualTo(new[] { "mooarane", "mooir" }));
+    }
+
     private class FakeDictionary : ISearchDictionary
     {
         private readonly List<(List<string> Words, string PrimaryWord)> entries;

@@ -435,8 +435,7 @@ public class DictionaryLookupService(IEnumerable<ISearchDictionary> dictionarySe
 
     private List<(string Norm, string Word)> BuildSuggestPool()
     {
-        var seen = new HashSet<string>();
-        var pool = new List<(string Norm, string Word)>();
+        var byNorm = new Dictionary<string, string>();
         var words = dictionaryServices
             .Where(d => d.QueryLanguages.Contains("gv"))
             .SelectMany(d => d.AllWords)
@@ -444,12 +443,25 @@ public class DictionaryLookupService(IEnumerable<ISearchDictionary> dictionarySe
         foreach (var word in words)
         {
             var norm = LemmaTable.NormalizeForm(word);
-            if (norm.Length == 0 || !seen.Add(norm))
+            if (norm.Length == 0)
             {
                 continue;
             }
-            pool.Add((norm, word));
+            // the first book's spelling stands - except that a spelling with
+            // lowercase in it beats one without, whoever came first: Kelly
+            // prints its headwords in capitals, and the box should offer
+            // 'mooarane', never MOOARANE, when another book writes it plainly
+            if (!byNorm.TryGetValue(norm, out var kept)
+                || (!kept.Any(char.IsLower) && word.Any(char.IsLower)))
+            {
+                byNorm[norm] = word;
+            }
         }
+        var pool = byNorm
+            // a word only ever printed shouting is lowered
+            .Select(x => (Norm: x.Key,
+                Word: x.Value.Any(char.IsLower) ? x.Value : x.Value.ToLowerInvariant()))
+            .ToList();
         pool.Sort((a, b) => string.CompareOrdinal(a.Norm, b.Norm));
         return pool;
     }
