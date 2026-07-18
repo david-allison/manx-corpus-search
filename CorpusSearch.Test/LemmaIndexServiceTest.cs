@@ -174,7 +174,7 @@ public class LemmaIndexServiceTest
             "dooinney\tdooinney.n\tdooinney\tself\ts. m.\tdooinney\t",
             "deiney\tdooinney.n\tdooinney\tinflected\ts. m.\tdooinney\t",
             "e gheiney\tdeiney.n\tdeiney\tself\ts.\te gheiney\t",
-            "gheiney\tdeiney.n\tdeiney\tparticle\ts.\te gheiney\t"));
+            "gheiney\tdeiney.n\tdeiney\tdemutated\ts.\te gheiney\t"));
 
         var deiney = service.Tree("dooinney")!.Groups.Single().Forms.Single();
         Assert.Multiple(() =>
@@ -184,11 +184,133 @@ public class LemmaIndexServiceTest
             Assert.That(eGheiney.Form, Is.EqualTo("e gheiney"));
             var gheiney = eGheiney.Groups!.Single().Forms.Single();
             Assert.That(gheiney.Form, Is.EqualTo("gheiney"));
-            Assert.That(eGheiney.Groups!.Single().LinkType, Is.EqualTo("particle"));
-            // 'With a particle' alone never says which: the row carries its
-            // phrase, and every other link type carries none
-            Assert.That(gheiney.Via, Is.EqualTo("e gheiney"));
+            Assert.That(eGheiney.Groups!.Single().LinkType, Is.EqualTo("demutated"));
             Assert.That(deiney.Via, Is.Null);
+        });
+    }
+
+    /// <summary>Cregeen's entry 'e haaght' is itself the particle phrase: a
+    /// particle row filing under it would say the entry over again, count
+    /// and all, and is not drawn</summary>
+    [Test]
+    public void AParticleRowUnderItsOwnPhraseIsNotDrawn()
+    {
+        var service = Service(Table(
+            "aaght\taaght.n\taaght\tself\ts. m.\taaght\t",
+            "e haaght\taaght.n\taaght\tself\ts.\te haaght\t",
+            "haaght\taaght.n\taaght\tparticle\ts.\te haaght\t"));
+
+        var groups = service.Tree("aaght")!.Groups;
+
+        Assert.Multiple(() =>
+        {
+            var entry = groups.Single(g => g.LinkType == "self").Forms.Single();
+            Assert.That(entry.Form, Is.EqualTo("e haaght"));
+            // nothing beneath it: the phrase row would only echo it
+            Assert.That(entry.Groups, Is.Null);
+            Assert.That(groups.Any(g => g.LinkType == "particle"), Is.False);
+        });
+    }
+
+    /// <summary>'deiney' is inflected AND plural of dooinney — two links in
+    /// the tables, one word to the reader: one row, under the best-ranked
+    /// group, the other way named on it</summary>
+    [Test]
+    public void AFormLinkedTwoWaysDrawsOnce()
+    {
+        var service = Service(Table(
+            "dooinney\tdooinney.n\tdooinney\tself\ts. m.\tdooinney\t",
+            "deiney\tdooinney.n\tdooinney\tinflected\ts. m.\tdooinney\t",
+            "deiney\tdooinney.n\tdooinney\tplural\ts. m.\tdeiney\t"));
+
+        var groups = service.Tree("dooinney")!.Groups;
+
+        Assert.Multiple(() =>
+        {
+            var row = groups.Single().Forms.Single();
+            Assert.That(groups.Single().LinkType, Is.EqualTo("inflected"));
+            Assert.That(row.Form, Is.EqualTo("deiney"));
+            Assert.That(row.AlsoLinkedAs, Is.EqualTo(new[] { "plural" }));
+        });
+    }
+
+    /// <summary>Phillips spells the bare form, not the phrase: 'gene'
+    /// derives through gheiney, so it hangs off gheiney's own row. The
+    /// phrase row is a leaf — a phrase hosts nothing — and the guess row
+    /// survives beside it exactly when it has a family to carry.</summary>
+    [Test]
+    public void TheFormsFamilyHangsOffTheFormNotThePhrase()
+    {
+        var service = Service(Table(
+            "dooinney\tdooinney.n\tdooinney\tself\ts. m.\tdooinney\t",
+            "gheiney\tdooinney.n\tdooinney\tparticle\ts.\te gheiney\t",
+            "gheiney\tdooinney.n\tdooinney\tdemutated\ts. m.\te gheiney\t",
+            "gene\tdooinney.n\tdooinney\tphillips\ts.\tgheiney\tphillips-1610"));
+
+        var groups = service.Tree("dooinney")!.Groups;
+
+        Assert.Multiple(() =>
+        {
+            // the particle phrase attests the mutation, so the bare row is
+            // no longer merely "possible": it files under Mutations
+            Assert.That(groups.Select(x => x.LinkType),
+                Is.EqualTo(new[] { "mutation", "particle" }));
+            var bare = groups.Single(x => x.LinkType == "mutation").Forms.Single();
+            Assert.That(bare.Form, Is.EqualTo("gheiney"));
+            Assert.That(bare.Groups!.Single().LinkType, Is.EqualTo("phillips"));
+            Assert.That(bare.Groups!.Single().Forms.Single().Form, Is.EqualTo("gene"));
+            var phrase = groups.Single(x => x.LinkType == "particle").Forms.Single();
+            Assert.That(phrase.Via, Is.EqualTo("e gheiney"));
+            Assert.That(phrase.Groups, Is.Null);
+        });
+    }
+
+    /// <summary>The same, nested: under Cregeen's entry 'e gheiney' the
+    /// particle row is an echo and is not drawn, but its print-standing
+    /// remains — the bare form's row reads Mutations, not Possible</summary>
+    [Test]
+    public void APrintedPhraseUpgradesTheGuessBeneathIt()
+    {
+        var service = Service(Table(
+            "deiney\tdeiney.n\tdeiney\tself\ts.\tdeiney\t",
+            "e gheiney\tdeiney.n\tdeiney\tself\ts.\te gheiney\t",
+            "gheiney\tdeiney.n\tdeiney\tparticle\ts.\te gheiney\t",
+            "gheiney\tdeiney.n\tdeiney\tdemutated\ts. m.\te gheiney\t",
+            "gene\tdeiney.n\tdeiney\tphillips\ts.\tgheiney\tphillips-1610"));
+
+        var entry = service.Tree("deiney")!
+            .Groups.Single(g => g.LinkType == "self").Forms.Single();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(entry.Form, Is.EqualTo("e gheiney"));
+            Assert.That(entry.Groups!.Select(g => g.LinkType),
+                Is.EqualTo(new[] { "mutation" }));
+            var bare = entry.Groups!.Single().Forms.Single();
+            Assert.That(bare.Form, Is.EqualTo("gheiney"));
+            Assert.That(bare.Groups!.Single().Forms.Single().Form, Is.EqualTo("gene"));
+        });
+    }
+
+    /// <summary>A lone childless guess beside the form's particle row says
+    /// nothing the phrase does not: it is dropped, not demoted</summary>
+    [Test]
+    public void AGuessYieldsToARealLinkBesideIt()
+    {
+        var service = Service(Table(
+            "dooinney\tdooinney.n\tdooinney\tself\ts. m.\tdooinney\t",
+            "gheiney\tdooinney.n\tdooinney\tparticle\ts.\te gheiney\t",
+            "gheiney\tdooinney.n\tdooinney\tdemutated\ts. m.\te gheiney\t"));
+
+        var groups = service.Tree("dooinney")!.Groups;
+
+        Assert.Multiple(() =>
+        {
+            var row = groups.Single().Forms.Single();
+            Assert.That(groups.Single().LinkType, Is.EqualTo("particle"));
+            Assert.That(row.Via, Is.EqualTo("e gheiney"));
+            // dropped, not demoted: the guess is not worth naming beside print
+            Assert.That(row.AlsoLinkedAs, Is.Null);
         });
     }
 

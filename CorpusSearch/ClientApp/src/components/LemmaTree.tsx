@@ -77,7 +77,7 @@ const ParentLine = ({ parent }: { parent: LemmaTreeParent }) => (
                 {"A form of "}
                 <Link to={lemmaTreeUrl(parent.lemma)}>{parent.lemma}</Link>
                 <span className="dict-lemma-parent-types">
-                    {` — ${parent.linkTypes
+                    {`: ${parent.linkTypes
                         .map((type) => PARENT_LABELS[type] ?? type)
                         .join(" · ")}`}
                 </span>
@@ -156,16 +156,28 @@ const TreeGroups = ({
                                 }
                                 title={
                                     form.via
-                                        ? `The form ${form.form}, after its particle${form.attested ? "" : " — in no text in the corpus"}`
+                                        ? `The form ${form.form}, after its particle${form.attested ? "" : "; in no text in the corpus"}`
                                         : form.attested
                                           ? undefined
-                                          : `${form.form} — by this spelling, in no text in the corpus`
+                                          : `${form.form}: by this spelling, in no text in the corpus`
                                 }
                                 to={dictionaryWordUrl(form.form)}
                             >
                                 {form.via ?? form.form}
                             </Link>
                             <Count attestations={form.attestations} />
+                            {/* the other ways the same form is linked: one
+                                row, however many links the tables hold */}
+                            {form.alsoLinkedAs?.length ? (
+                                <span className="dict-lemma-also">
+                                    {` · also ${form.alsoLinkedAs
+                                        .map(
+                                            (type) =>
+                                                PARENT_LABELS[type] ?? type,
+                                        )
+                                        .join(" · ")}`}
+                                </span>
+                            ) : null}
                             <SourceNote
                                 form={form.form}
                                 attested={form.attested}
@@ -215,7 +227,7 @@ const EmbeddedTree = ({ tree }: { tree: LemmaTreeResponse }) => (
             title={
                 tree.attested
                     ? undefined
-                    : `${tree.lemma} — by this spelling, in no text in the corpus`
+                    : `${tree.lemma}: by this spelling, in no text in the corpus`
             }
         >
             {tree.lemma}
@@ -344,7 +356,7 @@ export const LemmaTree = ({ lemma }: { lemma: string }) => {
                         title={
                             tree.attested
                                 ? undefined
-                                : `${tree.lemma} — by this spelling, in no text in the corpus`
+                                : `${tree.lemma}: by this spelling, in no text in the corpus`
                         }
                     >
                         {tree.lemma}

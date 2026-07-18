@@ -105,6 +105,14 @@
     font-weight: normal;
 }
 
+/* the other ways one form is linked ('· also plural'): one row, however
+   many links the tables hold */
+.dict-lemma-also {
+    color: var(--c-muted);
+    font-style: italic;
+    font-size: 13px;
+}
+
 @media (max-width: 600px) {
     /* a deep chain (dooinney → deiney → e gheiney → gheiney) must not walk
        off a phone: shallower steps, same shape */
