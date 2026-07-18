@@ -45,14 +45,18 @@ describe("DictionaryCoverage", () => {
         expect(
             screen.getByText(/40,000 of 50,000 distinct words \(80\.0%\)/),
         ).toBeTruthy()
-        // the audio card wears the icon in its title
-        expect(screen.getByText("🔊 75.1%")).toBeTruthy()
+        // the audio card wears the icon in its title, and counts distinct
+        // words: a token-weighted share would dress the recordings' handful
+        // of common words up as most of the corpus
+        expect(screen.getByText("🔊 15.0%")).toBeTruthy()
         const audio = screen.getByRole("progressbar", {
-            name: "heard spoken",
+            name: "of the corpus's words can be heard spoken",
         })
-        expect(audio.getAttribute("aria-valuenow")).toBe("75.1")
+        expect(audio.getAttribute("aria-valuenow")).toBe("15")
         expect(
-            screen.getByText(/7,500 distinct words said across 23 recordings/),
+            screen.getByText(
+                /7,500 of 50,000 distinct words, across 23 recordings/,
+            ),
         ).toBeTruthy()
         // the lemma table, the books, and the corpus measured against
         expect(screen.getByText("75.0%")).toBeTruthy()
