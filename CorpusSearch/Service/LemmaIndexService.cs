@@ -10,7 +10,8 @@ namespace CorpusSearch.Service;
 /// as an index you can open at a letter, and — for one lemma — the tree of its
 /// forms, grouped by how each hangs off it.
 /// </summary>
-public class LemmaIndexService(LemmaTable lemmaTable, CorpusVocabulary vocabulary)
+public class LemmaIndexService(LemmaTable lemmaTable, CorpusVocabulary vocabulary,
+    IEnumerable<ISearchDictionary>? dictionaryServices = null)
 {
     // ordered the reader's way (collation), not the accessor's (ordinal, which
     // files 'Aachummey' among the capitals) — the chapters chunk in given order,
@@ -131,26 +132,50 @@ public class LemmaIndexService(LemmaTable lemmaTable, CorpusVocabulary vocabular
         {
             parents.Add(new LemmaTreeParent { Lemma = prefix, LinkTypes = ["prefixed"] });
         }
-        // a prefix is spelled into its family: the words the books write with
-        // it hang under it ('aa-' covers aa-ghiennaghtyn) — by spelling, never
-        // by rule, so only the hyphen-spelled compounds are claimed. Suffixes
-        // go without: nothing is spelled '*-ys'.
+        // a prefix is spelled into its family, and spelling — never the
+        // lemma table's say-so — is the whole relationship: the family is
+        // whatever is written with it. The books' headwords and the corpus's
+        // own words join the table's lemmas ('aa-chroo' is in no book and no
+        // table, and Wilson's Sermons says it all the same); the table goes
+        // first, its spellings being the display ones and its rows carrying
+        // the source. Only hyphen-spelled compounds are claimed, and
+        // suffixes go without: nothing is spelled '*-ys'.
         if (links.Lemma.EndsWith('-') || links.Lemma.EndsWith('‑'))
         {
-            var family = lemmaTable.AllDisplayLemmas
-                .Where(x => x.Length > links.Lemma.Length
-                            && x.StartsWith(links.Lemma, StringComparison.OrdinalIgnoreCase))
-                .OrderBy(DictionaryBrowse.CollationKey, StringComparer.Ordinal)
-                .ThenBy(x => x, StringComparer.Ordinal)
+            var family = lemmaTable.AllDisplayLemmas.Select(x => (Form: x, Table: true))
+                .Concat((dictionaryServices ?? [])
+                    .Where(d => d.QueryLanguages.Contains("gv"))
+                    .SelectMany(d => d.AllWords)
+                    .Concat(vocabulary.TermsStartingWith(links.Lemma))
+                    // fewest capitals first, so a word the corpus says in
+                    // lowercase outranks the same word as Kelly shouts it
+                    .OrderBy(t => t.Count(char.IsUpper))
+                    .ThenBy(t => t, StringComparer.Ordinal)
+                    .Select(x => (Form: x, Table: false)))
+                .Where(x => x.Form.Length > links.Lemma.Length
+                            // a phrase's opening word may carry the prefix, but
+                            // the phrase is no compound: the word alone is family
+                            && !x.Form.Contains(' ')
+                            && x.Form.StartsWith(links.Lemma, StringComparison.OrdinalIgnoreCase))
+                .GroupBy(x => x.Form.ToLowerInvariant())
+                .Select(g => (
+                    // the table's spelling stands where it has one; a word only
+                    // ever printed in Kelly's capitals is lowered
+                    Form: g.Select(x => x.Form).FirstOrDefault(f => f.Any(char.IsLower)) ?? g.Key,
+                    Table: g.Any(x => x.Table)))
+                .OrderBy(x => DictionaryBrowse.CollationKey(x.Form), StringComparer.Ordinal)
+                .ThenBy(x => x.Form, StringComparer.Ordinal)
                 .Select(x => new LemmaTreeForm
                 {
-                    Form = x,
-                    Attestations = vocabulary.AttestationsOf(x),
-                    Attested = (vocabulary.AttestationsOf(x) ?? 1) > 0,
-                    Unverified = false,
-                    // each family member is its own printed entry: a greyed
+                    Form = x.Form,
+                    Attestations = vocabulary.AttestationsOf(x.Form),
+                    Attested = (vocabulary.AttestationsOf(x.Form) ?? 1) > 0,
+                    // a member the table never linked is gathered by spelling
+                    // alone: derived, and said to be
+                    Unverified = !x.Table,
+                    // each table member is its own printed entry: a greyed
                     // one still says whose book records it
-                    Source = lemmaTable.LinksOf(x) is { SelfUnverified: false } own
+                    Source = lemmaTable.LinksOf(x.Form) is { SelfUnverified: false } own
                              && own.SelfSource.Length > 0
                         ? own.SelfSource
                         : null,

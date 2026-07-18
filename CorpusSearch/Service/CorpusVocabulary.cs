@@ -252,6 +252,14 @@ public class CorpusVocabulary(LemmaTable lemmaTable)
         return count;
     }
 
+    /// <summary>Every distinct word the corpus says spelled with the prefix
+    /// ('aa-' → aa-chroo): a compound needs no book to be real — the texts
+    /// coin them freely, and a prefix's family is whatever is spelled with
+    /// it</summary>
+    public IEnumerable<string> TermsStartingWith(string prefix) =>
+        terms.Where(t => t.Length > prefix.Length
+                         && t.StartsWith(prefix, StringComparison.OrdinalIgnoreCase));
+
     /// <summary>Whether any word the corpus says carries the affix: 'aa-' is
     /// attested by 'aa-vioghey', which is the only way an affix ever is</summary>
     private bool CarriedByATerm(string affix)
