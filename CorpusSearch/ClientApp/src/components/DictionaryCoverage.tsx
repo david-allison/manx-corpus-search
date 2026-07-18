@@ -56,8 +56,10 @@ const Card = ({
  * page makes: not that a book is large, but that the word met in a text will
  * probably have an entry - the distinct-words pair rides beneath, where the
  * long tail of one-off spellings and names tells its own story. The audio
- * card waits for the server's read of the recordings rather than claim a
- * zero. */
+ * card counts distinct words instead: the recordings saying 'as' does not
+ * make two million tokens hearable, and a token-weighted share dressed 23
+ * recordings up as three-quarters of the corpus. It also waits for the
+ * server's read of the recordings rather than claim a zero. */
 export const DictionaryCoverage = () => {
     const [stats, setStats] = useState<DictionaryStats | null>(null)
 
@@ -105,17 +107,14 @@ export const DictionaryCoverage = () => {
                 {audioRead ? (
                     <Card
                         number={`🔊 ${percent(
-                            stats.audioRunningWords!,
-                            stats.runningWords,
-                        )}`}
-                        label="heard spoken"
-                        value={share(
-                            stats.audioRunningWords!,
-                            stats.runningWords,
-                        )}
-                        detail={`${count(
                             stats.audioWords!,
-                        )} distinct words said across ${stats.recordings} recordings`}
+                            stats.distinctWords,
+                        )}`}
+                        label="of the corpus's words can be heard spoken"
+                        value={share(stats.audioWords!, stats.distinctWords)}
+                        detail={`${count(stats.audioWords!)} of ${count(
+                            stats.distinctWords,
+                        )} distinct words, across ${stats.recordings} recordings`}
                     />
                 ) : (
                     <Card
