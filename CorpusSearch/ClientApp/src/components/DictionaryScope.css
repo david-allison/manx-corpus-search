@@ -62,3 +62,36 @@
 .dict-scope-waiting {
     min-height: 21px;
 }
+
+/* the shortened direction ("M → E") exists only for the phone row below */
+.dict-scope-name-short {
+    display: none;
+}
+
+@media (max-width: 600px) {
+    /* a phone has no room for four book names: the directions shorten to
+       arrows, and the row scrolls sideways rather than stacking — with no
+       scrollbar, a clipped name at the edge being the hint that there is
+       more */
+    .dict-scope {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        scrollbar-width: none;
+    }
+
+    .dict-scope::-webkit-scrollbar {
+        display: none;
+    }
+
+    .dict-scope-link {
+        flex: none;
+    }
+
+    .dict-scope-name-full {
+        display: none;
+    }
+
+    .dict-scope-name-short {
+        display: inline;
+    }
+}

@@ -235,7 +235,11 @@ describe("Dictionary page", () => {
             renderAt("/dictionary/caag")
             await screen.findByText(/a forelock/)
 
-            const kelly = within(scope()).getByText("J Kelly Manx to English")
+            // by role: the link's text is two spans now (the full name and
+            // its phone-width "M → E"), and the accessible name is the full one
+            const kelly = within(scope()).getByRole("link", {
+                name: "J Kelly Manx to English",
+            })
             expect(kelly.className).toContain("dict-scope-empty")
             // the grey is a colour, and not every reader gets one
             expect(kelly.getAttribute("title")).toBe(
@@ -255,7 +259,7 @@ describe("Dictionary page", () => {
             // reader is entitled to see that for themselves
             expect(
                 within(scope())
-                    .getByText("J Kelly Manx to English")
+                    .getByRole("link", { name: "J Kelly Manx to English" })
                     .getAttribute("href"),
             ).toBe("/dictionary/in/kelly-m2e/caag")
         })
