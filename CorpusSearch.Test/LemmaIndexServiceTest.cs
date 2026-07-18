@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using CorpusSearch.Dependencies.Lucene;
@@ -445,6 +446,53 @@ public class LemmaIndexServiceTest
             // a word merely starting with the letters claims no prefix
             Assert.That(service.Tree("aase")!.Parents, Is.Null);
         });
+    }
+
+    /// <summary>Spelling, not the lemma table, is a prefix's whole relationship,
+    /// so the family takes in whatever is written with it: the corpus coins
+    /// compounds no book lists ('aa-chroo' is Wilson's, not Cregeen's), and the
+    /// books print compounds the table never linked. A member the table never
+    /// linked is derived and marked so; where two sources write the same word,
+    /// the table's spelling stands, and a word only ever printed in Kelly's
+    /// capitals is lowered.</summary>
+    [Test]
+    public void APrefixFamilyTakesTheBooksAndTheCorpusIn()
+    {
+        var table = Table(
+            "aa\taa.a\taa-\tself\ta.\taa-\t",
+            "aa ghiennaghtyn\taa-ghiennaghtyn.n\taa-ghiennaghtyn\tself\ts. m.\taa-ghiennaghtyn\t");
+        var vocabulary = new CorpusVocabulary(table);
+        vocabulary.Init([("aa-chroo", 2), ("aase", 40)]);
+        var service = new LemmaIndexService(table, vocabulary,
+            [new StubDictionary(["AA-CHOORSAL", "Aa-ghiennaghtyn", "aa-chummey eddin", "aase"])]);
+
+        var family = service.Tree("aa-")!.Groups.Single().Forms;
+        Assert.Multiple(() =>
+        {
+            // the book's compound, the corpus's coinage, the table's row.
+            // 'aase', said and printed both, claims nothing (no hyphen, no
+            // prefix), and the phrase opening 'aa-chummey' is no compound
+            Assert.That(family.Select(x => x.Form),
+                Is.EqualTo(new[] { "aa-choorsal", "aa-chroo", "aa-ghiennaghtyn" }));
+            // the derived members say so; the table's own row does not
+            Assert.That(family.Select(x => x.Unverified),
+                Is.EqualTo(new[] { true, true, false }));
+            Assert.That(family.Single(x => x.Form == "aa-chroo").Attestations, Is.EqualTo(2));
+        });
+    }
+
+    /// <summary>A book that answers for its word list and nothing else: all a
+    /// prefix's family asks of a dictionary</summary>
+    private sealed class StubDictionary(string[] words) : ISearchDictionary
+    {
+        public string Identifier => "Stub";
+        public string Slug => "stub";
+        public List<string> QueryLanguages => ["gv"];
+        public bool LinkToDictionary => false;
+        public IEnumerable<DictionarySummary> GetSummaries(string query, bool basic = false) => [];
+        public bool ContainsWord(string word) => words.Contains(word);
+        public IEnumerable<string> AllWords => words;
+        public IReadOnlyList<string> Headwords => words;
     }
 
     /// <summary>Every link a tree draws downward reads back up from the other
