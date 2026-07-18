@@ -1,0 +1,167 @@
+/* the word said out loud: the recording popup (AudioAttestationModal.tsx) */
+.audio-attest-title {
+    margin: 0;
+    font-family: Georgia, serif;
+    font-size: 1.4rem;
+    color: #33454d;
+}
+
+.audio-attest-source {
+    margin: 2px 0 12px;
+    color: var(--c-secondary, #5a6b72);
+    font-size: 0.9rem;
+}
+
+.audio-attest-year {
+    margin-left: 8px;
+    font-size: 0.85em;
+}
+
+.audio-attest-loading {
+    display: flex;
+    justify-content: center;
+    padding: 16px 0;
+}
+
+/* three columns, a table's discipline: an arrow gutter each side with
+   nothing above or below it, and everything the popup says in the middle */
+.audio-attest-layout {
+    display: grid;
+    grid-template-columns: 38px minmax(0, 1fr) 38px;
+    column-gap: 12px;
+    align-items: center;
+}
+
+/* the gutter holds its width whether or not an edge has an arrow to offer,
+   so the content does not shuffle sideways as the reader leafs */
+.audio-attest-gutter {
+    display: flex;
+    justify-content: center;
+}
+
+/* the way to the neighbouring recordings: large arrows, a lightbox's
+   controls — the reader is leafing through the recordings that say the word */
+.audio-attest-nav {
+    width: 38px;
+    height: 38px;
+    border: none;
+    border-radius: 50%;
+    background: var(--c-surface, #fff);
+    opacity: 0.9;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+    font-size: 26px;
+    line-height: 1;
+    color: var(--c-link);
+    cursor: pointer;
+}
+
+.audio-attest-nav:hover:enabled {
+    opacity: 1;
+}
+
+/* the edge: the arrow stays put, greyed and flat, so the row never claims
+   there was nothing here to press */
+.audio-attest-nav:disabled {
+    color: var(--c-secondary, #5a6b72);
+    opacity: 0.35;
+    box-shadow: none;
+    cursor: default;
+}
+
+.audio-attest-nav:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+}
+
+/* which recording of how many: beside the source, for a reader mid-leaf */
+.audio-attest-position {
+    margin-left: 8px;
+    font-size: 0.85em;
+}
+
+/* compact on purpose: these are films only nominally — the audio is the
+   point, so the player stays small and the lines of dialog keep the room */
+.audio-attest-video {
+    margin-bottom: 12px;
+}
+
+.audio-attest-video .youtube-container {
+    max-width: 280px;
+    padding-bottom: min(56.25%, calc(280px * 0.5625));
+    margin: 0 auto;
+}
+
+.audio-attest-lines {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.audio-attest-lines > li {
+    padding: 8px 0;
+    border-top: 1px solid var(--c-border-input, #e0e0e0);
+}
+
+/* the whole line is the control that plays it — when it has a moment to
+   play from; an untimed line is the same shape without the invitation */
+.audio-attest-line {
+    display: block;
+    width: 100%;
+    text-align: left;
+    border: none;
+    background: none;
+    padding: 0;
+    font: inherit;
+    color: inherit;
+}
+
+button.audio-attest-line {
+    cursor: pointer;
+}
+
+button.audio-attest-line:hover .audio-attest-manx {
+    color: var(--c-link);
+}
+
+button.audio-attest-line:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+}
+
+.audio-attest-time {
+    color: var(--c-link);
+    margin-right: 8px;
+    white-space: nowrap;
+}
+
+/* an untimed line's clock: the transcript wrote none down, and a muted ??:??
+   says so where a note above the list would read as the popup apologising */
+.audio-attest-time-unknown {
+    color: var(--c-secondary, #5a6b72);
+}
+
+.audio-attest-speaker {
+    color: var(--c-secondary, #5a6b72);
+    font-size: 0.85em;
+    margin-right: 8px;
+}
+
+.audio-attest-manx {
+    font-family: Georgia, serif;
+}
+
+.audio-attest-english {
+    margin-top: 2px;
+    color: var(--c-secondary, #5a6b72);
+    font-size: 0.9rem;
+}
+
+.audio-attest-none {
+    color: var(--c-secondary, #5a6b72);
+    font-size: 0.9rem;
+}
+
+.audio-attest-more {
+    margin: 12px 0 0;
+    font-size: 0.9rem;
+}

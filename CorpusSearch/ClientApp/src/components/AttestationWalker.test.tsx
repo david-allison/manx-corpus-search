@@ -76,6 +76,35 @@ const respondWith = (uses: unknown) =>
 
 const respond = () => respondWith(lines)
 
+/** the walk again, with two recordings among its texts */
+const respondWithRecordings = () =>
+    fetchMock.mockImplementation((url) =>
+        Promise.resolve({
+            ok: true,
+            json: () =>
+                Promise.resolve(
+                    hrefOf(url).includes("/attestations/")
+                        ? lines
+                        : {
+                              ...walk,
+                              documents: [
+                                  ...walk.documents,
+                                  {
+                                      ident: "YouTube-SV",
+                                      title: "🎥 Skeealyn Vannin",
+                                      year: 1948,
+                                  },
+                                  {
+                                      ident: "YouTube-NM",
+                                      title: "🎥 Ned Maddrell",
+                                      year: 1975,
+                                  },
+                              ],
+                          },
+                ),
+        } as Response),
+    )
+
 /** one step's uses, with `groups` swapped for the reading(s) under test */
 const withGroups = (
     useCount: number,
@@ -88,9 +117,9 @@ const withGroups = (
 
 /** the walk's own tests: the first-seen band it hosts has its own file, and
  * an unattested history keeps it out of the way here */
-const renderWalker = (word = "aase") =>
+const renderWalker = (word = "aase", search = "") =>
     render(
-        <MemoryRouter initialEntries={[`/dictionary/${word}`]}>
+        <MemoryRouter initialEntries={[`/dictionary/${word}${search}`]}>
             <AttestationWalker word={word} history={null} classes={[]} />
         </MemoryRouter>,
     )
@@ -323,6 +352,110 @@ describe("AttestationWalker", () => {
             .map(([u]) => hrefOf(u))
             .find((u) => u.includes("/attestations/Psalms1610"))
         expect(stepCall).toContain("lemma=aase")
+    })
+
+    it("links a transcribed line to its moment in the recording", async () => {
+        respondWith(
+            withGroups(9, [
+                {
+                    lines: [
+                        {
+                            ...lines.groups[0].lines[0],
+                            subStart: 12.9,
+                        },
+                    ],
+                },
+            ]),
+        )
+        renderWalker()
+        await screen.findByText("Daase")
+
+        // the whole line is the control — Manx, timestamp and all — and it
+        // opens the listening popup at its own moment: the page, and the
+        // walk, stay where the reader left them
+        const line = screen.getByTitle("Hear this line")
+        expect(line.textContent).toBe("Daase yn billey▶ 0:12")
+        fireEvent.click(line)
+
+        expect(
+            (
+                await screen.findByRole("link", { name: "Full document ›" })
+            ).getAttribute("href"),
+        ).toBe("/docs/Psalms1610?line=2")
+    })
+
+    it("offers no play link where the text is not a recording", async () => {
+        respond()
+        renderWalker()
+        await screen.findByText("Daase")
+
+        expect(screen.queryByRole("button", { name: /▶/ })).toBeNull()
+    })
+
+    /** Skeealyn Vannin Track 12's transcript wrote no clock down: its lines
+     * still open the popup, which plays the recording from the start */
+    it("a recording's untimed line still opens the popup", async () => {
+        respondWith({ ...lines, title: "🎥 Skeealyn Vannin" })
+        renderWalker()
+        await screen.findByText("Daase")
+
+        const line = screen.getByTitle("Hear this line")
+        expect(line.textContent).toBe("Daase yn billey▶ ??:??")
+        fireEvent.click(line)
+
+        expect(
+            (
+                await screen.findByRole("link", { name: "Full document ›" })
+            ).getAttribute("href"),
+        ).toBe("/docs/Psalms1610?line=2")
+    })
+
+    it("offers an audio tab when recordings use the word", async () => {
+        respondWithRecordings()
+        renderWalker()
+        await screen.findByText("Daase")
+
+        expect(
+            screen
+                .getByRole("link", { name: "🔊 audio ×2" })
+                .getAttribute("href"),
+        ).toBe("/dictionary/aase?audio=1")
+    })
+
+    it("walks only the recordings under the audio tab", async () => {
+        respondWithRecordings()
+        renderWalker("aase", "?audio=1")
+        await screen.findByText(/2 recordings, 1948–1975/)
+
+        // the earliest recording leads, and the stepper cycles recordings:
+        // the next step is the 1975 tape, never the 1707 text
+        expect(screen.getByRole("link", { name: "🎥 Skeealyn Vannin" }))
+        expect(
+            screen.getByRole("link", { name: "1975 ›" }).getAttribute("href"),
+        ).toBe("/dictionary/aase?audio=1&at=YouTube-NM")
+        expect(screen.queryByRole("link", { name: /1707/ })).toBeNull()
+    })
+
+    it("makes the reading a way back out of the audio tab", async () => {
+        respondWithRecordings()
+        renderWalker("aase", "?audio=1")
+        await screen.findByText(/2 recordings/)
+
+        // the audio tab is the caption now, and the reading is a link again
+        expect(document.querySelector(".attest-tab-active")?.textContent).toBe(
+            "🔊 audio ×2",
+        )
+        expect(
+            screen.getByRole("link", { name: "aase" }).getAttribute("href"),
+        ).toBe("/dictionary/aase?reading=aase")
+    })
+
+    it("offers no audio tab when no recording uses the word", async () => {
+        respond()
+        renderWalker()
+        await screen.findByText("Daase")
+
+        expect(screen.queryByRole("link", { name: /audio/ })).toBeNull()
     })
 
     it("walks an ambiguous word one reading at a time, first tab first", async () => {

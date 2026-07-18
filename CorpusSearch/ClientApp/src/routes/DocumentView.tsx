@@ -194,6 +194,10 @@ export const DocumentView = () => {
     const q = new URLSearchParams(location.search).get("q")
     // a verse deep link: the canonical key ("psalms.23.1") of a line to land on
     const refParam = new URLSearchParams(location.search).get("ref")
+    // a line deep link: a row to land on by csvLineNumber — how the dictionary's
+    // attestation walk opens a recording at one of its uses. By row rather than
+    // reference, since transcripts have no verse canon.
+    const lineParam = new URLSearchParams(location.search).get("line")
 
     const [value, setValue] = useState(q ?? "*")
     // initially set when following a result of a corpus search with options enabled
@@ -287,10 +291,18 @@ export const DocumentView = () => {
         return () => clearTimeout(timer)
     }, [value, searchEnglish, searchManx, docIdent, options])
 
-    // a ?ref= deep link's target row: the verse itself, or (crossing between a
-    // verse-level and a chapter-level version) the first line of its chapter
+    // a deep link's target row: ?line= names it outright; ?ref= finds the
+    // verse itself, or (crossing between a verse-level and a chapter-level
+    // version) the first line of its chapter
     const targetLine = (() => {
-        if (refParam == null || searchWorkResponse == null) {
+        if (searchWorkResponse == null) {
+            return undefined
+        }
+        if (lineParam != null) {
+            const lineNumber = Number(lineParam)
+            return Number.isFinite(lineNumber) ? lineNumber : undefined
+        }
+        if (refParam == null) {
             return undefined
         }
         const lines = searchWorkResponse.results

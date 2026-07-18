@@ -150,6 +150,85 @@ public class DictionaryAttestationServiceTest : QueryBase
         Assert.That(highlighted, Is.EqualTo(new[] { "Daase" }));
     }
 
+    /// <summary>A use in a recording is a moment as much as a line: the
+    /// timestamps must survive the per-document query, or the walk's play
+    /// link has nothing to cue the video to</summary>
+    [Test]
+    public void ATranscribedLineKeepsItsTimestamps()
+    {
+        var document = new TestDocument("Recording", new DateTime(1948, 1, 1));
+        workService.AddWork(document);
+        luceneIndex.Add(document, [
+            new DocumentLine
+            {
+                Manx = "Ta mee aase", English = "", CsvLineNumber = 2,
+                SubStart = 9.5, SubEnd = 11.4,
+            },
+        ]);
+
+        var line = Service().InDocument("aase", "Recording").Result!
+            .Groups.Single(x => x.LemmaIds.Contains("aase.v")).Lines.Single();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(line.SubStart, Is.EqualTo(9.5));
+            Assert.That(line.SubEnd, Is.EqualTo(11.4));
+        });
+    }
+
+    /// <summary>The walk says whether a recording's transcript carries its
+    /// clock: the word page's audio link prefers a recording it can jump
+    /// into, and print is not asked the question at all</summary>
+    [Test]
+    public void ARecordingSaysWhetherItsTranscriptIsTimed()
+    {
+        var timedDoc = new TestDocument("🎥 Timed", new DateTime(1948, 1, 1));
+        workService.AddWork(timedDoc);
+        luceneIndex.Add(timedDoc, [
+            new DocumentLine
+            {
+                Manx = "Ta mee aase", English = "", CsvLineNumber = 2,
+                SubStart = 9.5, SubEnd = 11.4,
+            },
+        ]);
+        var untimedDoc = new TestDocument("🎥 Untimed", new DateTime(1952, 1, 1));
+        workService.AddWork(untimedDoc);
+        luceneIndex.Add(untimedDoc, [
+            new DocumentLine { Manx = "Daase yn billey", English = "", CsvLineNumber = 2 },
+        ]);
+        AddDated("Print", 1748, "Ta mee aase");
+
+        var walk = Service().Attestations("aase");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(walk.Documents.Single(x => x.Ident == "🎥 Timed").Timed, Is.True);
+            Assert.That(walk.Documents.Single(x => x.Ident == "🎥 Untimed").Timed, Is.False);
+            Assert.That(walk.Documents.Single(x => x.Ident == "Print").Timed, Is.Null);
+        });
+    }
+
+    /// <summary>The spelling fallback keeps them too: a word the lemma table
+    /// does not know is still heard</summary>
+    [Test]
+    public void ASpellingWalkKeepsTimestampsToo()
+    {
+        var document = new TestDocument("Recording", new DateTime(1948, 1, 1));
+        workService.AddWork(document);
+        luceneIndex.Add(document, [
+            new DocumentLine
+            {
+                Manx = "Ta angaish orrym", English = "", CsvLineNumber = 2,
+                SubStart = 3.2, SubEnd = 6.0,
+            },
+        ]);
+
+        var line = Service().InDocument("angaish", "Recording").Result!
+            .Groups.Single().Lines.Single();
+
+        Assert.That(line.SubStart, Is.EqualTo(3.2));
+    }
+
     /// <summary>The walk is a taste of the evidence, not a concordance: a text
     /// using a word a hundred times must not make the section unreadable</summary>
     [Test]

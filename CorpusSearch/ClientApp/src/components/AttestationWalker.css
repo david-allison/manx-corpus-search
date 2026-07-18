@@ -190,6 +190,18 @@ a.attest-tab {
     margin-top: 2px;
 }
 
+/* the timestamp under a recording's line: the line and it are one control,
+   and this is the part wearing a link's colours to say so. A step up from the
+   surrounding metadata's 12px — audio is the rarest evidence the walk holds,
+   and the one control here that makes sound. */
+.attest-line-play {
+    display: block;
+    margin-top: 2px;
+    font-family: var(--font-ui);
+    font-size: 14px;
+    color: var(--c-link);
+}
+
 .attest-loading {
     color: var(--c-accent);
     font-size: 13px;

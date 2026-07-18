@@ -19,10 +19,25 @@ const mockPlayer = vi.hoisted(() => ({
     getCurrentTime: vi.fn((): number | null => null),
 }))
 
+/** what the table asked of the player, startSeconds included */
+const mockYouTuberProps = vi.hoisted(
+    (): { videoId?: string; startSeconds?: number } => ({}),
+)
+
 vi.mock("./YouTuber", async () => {
     const { useImperativeHandle } = await import("react")
-    const MockYouTuber = ({ ref }: { videoId: string; ref?: Ref<Player> }) => {
+    const MockYouTuber = ({
+        videoId,
+        startSeconds,
+        ref,
+    }: {
+        videoId: string
+        startSeconds?: number
+        ref?: Ref<Player>
+    }) => {
         useImperativeHandle(ref, () => mockPlayer)
+        mockYouTuberProps.videoId = videoId
+        mockYouTuberProps.startSeconds = startSeconds
         return null
     }
     return { default: MockYouTuber }
@@ -264,6 +279,46 @@ describe("ComparisonTable video (#200)", () => {
             await vi.advanceTimersByTimeAsync(300)
         })
         expect(container.querySelector(".doc-row-playing")).not.toBeNull()
+    })
+})
+
+describe("a ?line= deep link into a recording", () => {
+    const lines = [
+        line({ manx: "moghrey mie", csvLineNumber: 1, subStart: 0, subEnd: 5 }),
+        line({
+            manx: "breck sailjey",
+            csvLineNumber: 3,
+            subStart: 9.5,
+            subEnd: 11.4,
+        }),
+    ]
+    const renderWithTarget = (targetLine?: number) =>
+        renderTable(lines, {
+            response: {
+                ...response(lines),
+                source: "https://www.youtube.com/watch?v=abc123",
+            },
+            targetLine,
+        })
+
+    beforeEach(() => {
+        mockYouTuberProps.videoId = undefined
+        mockYouTuberProps.startSeconds = undefined
+    })
+
+    it("cues the video at the target line's moment", () => {
+        renderWithTarget(3)
+        expect(mockYouTuberProps.startSeconds).toBe(9.5)
+    })
+
+    it("cues nothing without a target: playback starts at the top", () => {
+        renderWithTarget(undefined)
+        expect(mockYouTuberProps.startSeconds).toBeUndefined()
+    })
+
+    it("cues nothing when the target names no line of the document", () => {
+        renderWithTarget(99)
+        expect(mockYouTuberProps.startSeconds).toBeUndefined()
     })
 })
 
