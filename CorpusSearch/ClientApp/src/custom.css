@@ -121,3 +121,37 @@ a.dict-unattested,
 .dict-unattested {
     color: var(--c-muted);
 }
+
+/* ============ Tappable abbreviations ============ */
+/* <abbr title> speaks only to a mouse: hover has no finger. A tap opens the
+   title as a bubble instead (abbr-open, toggled by useTappableAbbrs); desktop
+   keeps the native hover tooltip. The bubble resets every inherited style —
+   it may open inside a serif heading or an italic label, and it is neither. */
+abbr[title] {
+    position: relative;
+    cursor: help;
+}
+
+abbr.abbr-open::after {
+    content: attr(title);
+    position: absolute;
+    left: 0;
+    top: calc(100% + 4px);
+    z-index: 40;
+    width: max-content;
+    max-width: min(280px, 75vw);
+    padding: 6px 10px;
+    border-radius: 4px;
+    background: var(--c-ink, #33454d);
+    color: var(--c-page-bg, #fffdf7);
+    font-family: var(--font-ui);
+    font-size: 12px;
+    font-style: normal;
+    font-weight: normal;
+    letter-spacing: normal;
+    text-transform: none;
+    white-space: normal;
+    text-align: left;
+    line-height: 1.4;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+}
