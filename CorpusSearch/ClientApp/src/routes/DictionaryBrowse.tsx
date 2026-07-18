@@ -53,6 +53,12 @@ export const DictionaryBrowse = () => {
     const [page, setPage] = useState<DictionaryBrowseResponse | null>(null)
     const [failed, setFailed] = useState(false)
 
+    // a letter opens at its top: the bar that turned to it repeats at the
+    // foot of a long letter, and the next should not open at its own foot
+    useEffect(() => {
+        window.scrollTo(0, 0)
+    }, [dict, at])
+
     useEffect(() => {
         setPage(null)
         setFailed(false)
