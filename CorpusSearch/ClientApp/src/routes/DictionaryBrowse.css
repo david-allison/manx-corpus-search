@@ -1,14 +1,32 @@
 /* the dictionary's index: the letters, then the whole letter in its chapters.
    The bar wears the Razor Cregeen browser's look (site-design.css
    .dict-letters), which only the server-rendered pages load. */
+/* one row across the page's whole width, as the landing letters go: Phil
+   Kelly runs to 28 letters (Ê and Ô close the alphabet), and a wrapped bar
+   buries the words under a block of capitals. Out of the dict-page column to
+   the page-main gutters, wherever the viewport puts them */
 .dict-browse-bar {
     display: flex;
-    justify-content: center;
     gap: 4px;
-    flex-wrap: wrap;
-    margin: 14px 0;
+    margin: 14px calc(50% - 50vw + var(--page-gutter, 24px));
     padding-bottom: 10px;
     border-bottom: 1px solid var(--c-border-meta);
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+
+.dict-browse-bar::-webkit-scrollbar {
+    display: none;
+}
+
+/* centred while the row has room, honestly scrolled once it hasn't: auto
+   margins give way where justify-content would clip the A off the start */
+.dict-browse-bar a:first-child {
+    margin-left: auto;
+}
+
+.dict-browse-bar a:last-child {
+    margin-right: auto;
 }
 
 /* the copy at the foot of the page: its rule reads as the end of the words
@@ -22,6 +40,7 @@
 }
 
 .dict-browse-bar a {
+    flex: none;
     font-family: Georgia, serif;
     font-size: 17px;
     text-decoration: none;
@@ -31,30 +50,13 @@
 }
 
 @media (max-width: 600px) {
-    /* Phil Kelly runs to 28 letters (Ê and Ô close the alphabet), and a
-       wrapped bar buries the words under a block of capitals. One row
-       instead, broken out of the page's margins to the screen's edge, and
-       scrolled sideways past that — no scrollbar, the clipped letter at the
-       edge being the hint, as the scope tabs do it. */
-    /* full bleed: out past the dict-page's 12px and the page-main gutter
-       both, to the screen's own edge, as the video dock breaks out */
+    /* to the screen's own edge, the clipped letter being the hint to
+       scroll sideways, as the scope tabs do it */
     .dict-browse-bar {
-        flex-wrap: nowrap;
-        justify-content: flex-start;
-        overflow-x: auto;
-        scrollbar-width: none;
-        margin-left: calc(-12px - var(--page-gutter, 24px));
-        margin-right: calc(-12px - var(--page-gutter, 24px));
-        padding-left: calc(12px + var(--page-gutter, 24px));
-        padding-right: calc(12px + var(--page-gutter, 24px));
-    }
-
-    .dict-browse-bar::-webkit-scrollbar {
-        display: none;
-    }
-
-    .dict-browse-bar a {
-        flex: none;
+        margin-left: calc(50% - 50vw);
+        margin-right: calc(50% - 50vw);
+        padding-left: var(--page-gutter, 24px);
+        padding-right: var(--page-gutter, 24px);
     }
 }
 
