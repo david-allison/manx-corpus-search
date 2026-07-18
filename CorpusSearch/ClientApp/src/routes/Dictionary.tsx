@@ -248,6 +248,13 @@ export const Dictionary = () => {
         return () => abort.abort()
     }, [word])
 
+    // a new word opens at its top: the link that brought you here may sit at
+    // the foot of a long page — the word family, a walk step — and the next
+    // word's heading must not arrive off-screen
+    useEffect(() => {
+        window.scrollTo(0, 0)
+    }, [word, dict])
+
     const page = shown?.page ?? null
     /** Whether what is on screen is this word's yet: the URL changes on the click,
      * the entries a moment later, and until they agree the page is the last

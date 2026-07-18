@@ -149,6 +149,11 @@ export const DictionaryLemma = () => {
     const [params] = useSearchParams()
     const at = params.get("at")
 
+    // a tree opens at its root: the link into it may sit deep in another tree
+    useEffect(() => {
+        window.scrollTo(0, 0)
+    }, [lemma, at])
+
     return (
         <div className="dict-page">
             {/* a reader who knows the word they want should not have to find
