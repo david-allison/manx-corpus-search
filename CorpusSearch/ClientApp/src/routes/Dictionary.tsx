@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useReducer, useState } from "react"
+import { Fragment, useEffect, useMemo, useReducer, useState } from "react"
 import { Link, useParams } from "react-router-dom"
 import { CircularProgress } from "@mui/material"
 import {
@@ -34,6 +34,7 @@ import { VerseVersionsModal } from "../components/VerseVersionsModal"
 import { AudioAttestationModal } from "../components/AudioAttestationModal"
 import { useWordHistory } from "../hooks/useWordHistory"
 import { AttestationWalker } from "../components/AttestationWalker"
+import { WordFamily } from "../components/LemmaTree"
 import "./Dictionary.css"
 
 /** "learnmanx.com" from the source URL, for the audio credit's second line */
@@ -285,6 +286,15 @@ export const Dictionary = () => {
      * the click and the fetch */
     const heardDocs = heard != null && heard.word === word ? heard : null
 
+    /** The word's readings, each the root of a family tree: what the "Word
+     * family" section at the end of the page draws. Deduped — the history
+     * lists a reading once per source it knows it from — and memoized, so the
+     * section's fetch keys on the readings rather than on every render. */
+    const familyLemmas = useMemo(
+        () => [...new Set(history?.lemmas ?? [])],
+        [history],
+    )
+
     const header = (
         <div className="dict-page-header">
             <h1
@@ -516,6 +526,14 @@ export const Dictionary = () => {
                             </>
                         )}
                     </p>
+                )}
+
+                {/* the word's whole family ends the page, above the way out
+                    to the corpus: every form the corpus search groups with
+                    it, one tree per reading — the same trees the lemma pages
+                    draw, brought to where the reader already is */}
+                {word && !stale && page != null && !page.isSuggestionTier && (
+                    <WordFamily lemmas={familyLemmas} />
                 )}
 
                 {/* A word no text says has nothing to find: the offer would promise
