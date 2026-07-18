@@ -461,10 +461,13 @@ export const AttestationWalker = ({
                                 {lemma}
                             </span>
                         ) : (
+                            // replace, as every same-page view switch here
+                            // does: flipping tabs is not travelling
                             <Link
                                 key={lemma}
                                 className="attest-tab"
                                 to={`${pathname}?reading=${encodeURIComponent(lemma)}`}
+                                replace
                             >
                                 {lemma}
                             </Link>
@@ -485,6 +488,7 @@ export const AttestationWalker = ({
                                 className="attest-tab"
                                 to={audioTabTo()}
                                 title="Only the recordings, oldest first"
+                                replace
                             >
                                 {`🔊 audio${audioDocs.length > 1 ? ` ×${audioDocs.length.toLocaleString()}` : ""}`}
                             </Link>

@@ -82,6 +82,10 @@ export const DictionaryScope = ({
                 isEmpty(slug) ? `Nothing for “${word}” in ${name}` : undefined
             }
             to={dictionaryWordUrl(word, slug)}
+            // the same word through another book's lens: a view switch, so it
+            // replaces rather than stacks — Back should leave the word, not
+            // replay the tabs
+            replace
         >
             {name}
         </Link>
