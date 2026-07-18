@@ -13,7 +13,12 @@ export type PrevNextTarget = {
 }
 
 /** Previous/next arrows around a label, as links rather than buttons: each step
- * is a place you can bookmark, share and go back to.
+ * is a place you can bookmark and share.
+ *
+ * The steps replace the history entry rather than stacking one each: a reader
+ * skims dozens of entries at a time, and Back should leave the skim in one
+ * press, not replay it backwards. The arrows themselves are the step-wise
+ * undo the history no longer keeps.
  *
  * `farPrevious`/`farNext` are the outer skip steps, past whatever the caller
  * wants skipped. They carry no label — only an arrow and a tooltip — because the
@@ -47,6 +52,7 @@ export const PrevNextLinks = ({
                 to={previous.to}
                 title={previous.title ?? previous.label}
                 rel="prev"
+                replace
             >
                 {"‹ "}
                 {previous.label}
@@ -64,6 +70,7 @@ export const PrevNextLinks = ({
                 to={next.to}
                 title={next.title ?? next.label}
                 rel="next"
+                replace
             >
                 {next.label}
                 {" ›"}
@@ -95,6 +102,7 @@ const Skip = ({
             className="prev-next-link prev-next-skip"
             to={target.to}
             title={target.title ?? target.label}
+            replace
         >
             {arrow}
         </Link>
