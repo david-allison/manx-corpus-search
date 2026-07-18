@@ -521,6 +521,10 @@ export type LemmaTreeForm = {
      * row itself, and what `attestations` counts — the bare form's count
      * answers for every particle at once. Absent on every other link type. */
     via?: string | null
+    /** the other ways the same form is linked at this level ("plural" on the
+     * row 'Inflected forms' files deiney under): one row however many links,
+     * the best-ranked drawing it and the rest named here */
+    alsoLinkedAs?: string[] | null
     /** what hangs off this form in turn: forms deriving through it ('pyaghyn'
      * inflects the variant 'pyagh'), and — where it heads a lexeme of its own
      * ('deiney' under dooinney) — that lexeme's tree. Absent at a leaf, and at

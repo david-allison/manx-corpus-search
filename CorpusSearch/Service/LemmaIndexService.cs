@@ -92,7 +92,9 @@ public class LemmaIndexService(LemmaTable lemmaTable, CorpusVocabulary vocabular
         var rootKey = LemmaTable.NormalizeForm(links.Lemma);
         var expanded = new HashSet<string> { rootKey };
         var byParent = ParentLookup(rootKey, links.Links);
-        var groups = Grouped(byParent[rootKey].Select(x => (x, byParent)), expanded);
+        var groups = Grouped(
+            byParent[rootKey].Select(x => (x, byParent)),
+            expanded, links.Lemma);
         // upward: the reverse reading of every link some other tree draws
         // downward, so the graph can be climbed from either end — deiney says
         // it inflects dooinney, aa-ghiennaghtyn that it is written with aa-
@@ -174,6 +176,13 @@ public class LemmaIndexService(LemmaTable lemmaTable, CorpusVocabulary vocabular
         return known < 0 ? GroupOrder.Length : known;
     }
 
+    /// <summary>Whether a child link would only say its parent over again: a
+    /// particle row files under its phrase, and where the phrase is itself
+    /// the entry above ('e haaght' under Cregeen's entry 'e haaght'), the row
+    /// repeats that entry, count and all</summary>
+    private static bool EchoesParent(LemmaLink link, string parentForm) =>
+        link.LinkType == "particle" && link.Via == parentForm;
+
     /// <summary>Each link filed under the form it derives through: its via where
     /// that names another of the lemma's own forms, the lemma itself otherwise
     /// (a via naming no form here would dangle, so it hangs off the root)</summary>
@@ -186,26 +195,84 @@ public class LemmaIndexService(LemmaTable lemmaTable, CorpusVocabulary vocabular
     }
 
     /// <summary>Children as branches: grouped by link type in reading order,
-    /// each form once per way it is linked, in collation order within</summary>
+    /// one row per form, in collation order within.
+    ///
+    /// One row however many ways the form is linked: 'deiney' is inflected AND
+    /// plural of dooinney — two links in the tables, one word to the reader,
+    /// and drawing it twice read as two. The best-ranked link draws the row
+    /// and the others ride on it (<see cref="LemmaTreeForm.AlsoLinkedAs"/>).
+    ///
+    /// A particle row stands apart from that merge: it is the phrase's row
+    /// ('e gheiney ×85'), not the form's, and it hosts nothing — the form's
+    /// own family (its Phillips spellings) derives from the bare form, never
+    /// from its use after a particle. The bare form's row is the demutation
+    /// guess where that is all the tables hold, kept when there is a family
+    /// to carry and dropped when it would only echo the phrase beside it.</summary>
     private List<LemmaTreeGroup> Grouped(
         IEnumerable<(LemmaLink Link, ILookup<string, LemmaLink> ByParent)> children,
-        HashSet<string> expanded)
+        HashSet<string> expanded, string parentForm)
     {
-        return children
-            .GroupBy(x => x.Link.LinkType)
+        var all = children
+            // the same (link type, form) can arrive from both the via rows
+            // and a nested lexeme's own: one node
+            .GroupBy(x => (x.Link.LinkType, x.Link.Form))
+            .Select(x => x.First())
+            .ToList();
+        // every particle link, echoes included: an undrawn phrase row still
+        // vouches for the form's mutation and still covers a childless guess
+        var particles = all.Where(x => x.Link.LinkType == "particle").ToList();
+        var rows = all
+            .Where(x => x.Link.LinkType != "particle")
+            .GroupBy(x => x.Link.Form)
+            .Select(forms =>
+            {
+                var links = forms
+                    .OrderBy(x => GroupRank(x.Link.LinkType))
+                    .ThenBy(x => x.Link.LinkType, StringComparer.Ordinal)
+                    .ToList();
+                if (links.Count > 1)
+                {
+                    // a guess is not another fact about the form, only a
+                    // worse claim to the same one
+                    links.RemoveAll(x => x.Link.LinkType == "demutated");
+                }
+                return (Primary: links[0],
+                    Also: links.Skip(1).Select(x => x.Link.LinkType).ToList());
+            })
+            // a lone childless guess beside the form's particle row says
+            // nothing the phrase does not: dropped. With a family to carry
+            // (gheiney holds the Phillips 'gene') it stays — the phrase
+            // cannot carry it.
+            .Where(x => x.Primary.Link.LinkType != "demutated"
+                        || x.Primary.ByParent[x.Primary.Link.Form].Any()
+                        || !particles.Any(p => p.Link.Form == x.Primary.Link.Form))
+            // a mutation the book prints is not merely possible: the particle
+            // phrase ('e gheiney') attests it, so the surviving row files
+            // under Mutations — the hedge is kept for forms only the
+            // generator vouches for
+            .Select(x => x.Primary.Link.LinkType == "demutated"
+                         && particles.Any(p => p.Link.Form == x.Primary.Link.Form)
+                ? (Primary: (Link: x.Primary.Link with { LinkType = "mutation" },
+                        x.Primary.ByParent), x.Also)
+                : x)
+            .ToList();
+        rows.AddRange(particles
+            // a particle row filing under its own phrase would say the entry
+            // above over again, count and all: not drawn — though it still
+            // counted above, as the mutation's voucher
+            .Where(x => !EchoesParent(x.Link, parentForm))
+            .Select(x => (Primary: x, Also: new List<string>())));
+        return rows
+            .GroupBy(x => x.Primary.Link.LinkType)
             .OrderBy(g => GroupRank(g.Key))
             .ThenBy(g => g.Key, StringComparer.Ordinal)
             .Select(g => new LemmaTreeGroup
             {
                 LinkType = g.Key,
                 Forms = g
-                    // the same (link type, form) can arrive from both the via
-                    // rows and a nested lexeme's own: one node
-                    .GroupBy(x => x.Link.Form)
-                    .Select(x => x.First())
-                    .OrderBy(x => DictionaryBrowse.CollationKey(x.Link.Form), StringComparer.Ordinal)
-                    .ThenBy(x => x.Link.Form, StringComparer.Ordinal)
-                    .Select(x => Node(x.Link, x.ByParent, expanded))
+                    .OrderBy(x => DictionaryBrowse.CollationKey(x.Primary.Link.Form), StringComparer.Ordinal)
+                    .ThenBy(x => x.Primary.Link.Form, StringComparer.Ordinal)
+                    .Select(x => Node(x.Primary.Link, x.Primary.ByParent, expanded, x.Also))
                     .ToList(),
             })
             .ToList();
@@ -215,10 +282,22 @@ public class LemmaIndexService(LemmaTable lemmaTable, CorpusVocabulary vocabular
     /// been drawn already: a form met again (a shared intermediate, or a
     /// book-true cycle) is a leaf the second time, not a circle</summary>
     private LemmaTreeForm Node(
-        LemmaLink link, ILookup<string, LemmaLink> byParent, HashSet<string> expanded)
+        LemmaLink link, ILookup<string, LemmaLink> byParent, HashSet<string> expanded,
+        IReadOnlyList<string>? alsoLinkedAs = null)
     {
+        // a particle row's via is the phrase itself ('e gheiney'): the one
+        // link type whose whole point — which particle — the form alone
+        // cannot say. Elsewhere the via is structure, already drawn as the
+        // nesting.
+        var particlePhrase = link.LinkType == "particle" && link.Via.Length > 0
+            ? link.Via
+            : null;
         List<LemmaTreeGroup>? groups = null;
-        if (expanded.Add(link.Form))
+        // a particle row is the phrase, and a phrase hosts nothing: the form's
+        // own family derives from the bare form, never from its use after a
+        // particle — so this row is always a leaf, and must not spend the
+        // form's one expansion either
+        if (particlePhrase == null && expanded.Add(link.Form))
         {
             // the rows of the enclosing lemma that derive through this form...
             var children = byParent[link.Form].Select(x => (x, byParent));
@@ -233,16 +312,9 @@ public class LemmaIndexService(LemmaTable lemmaTable, CorpusVocabulary vocabular
                 var ownByParent = ParentLookup(link.Form, own.Links);
                 children = children.Concat(ownByParent[link.Form].Select(x => (x, ownByParent)));
             }
-            var built = Grouped(children, expanded);
+            var built = Grouped(children, expanded, link.Form);
             groups = built.Count > 0 ? built : null;
         }
-        // a particle row's via is the phrase itself ('e gheiney'): the one
-        // link type whose whole point — which particle — the form alone
-        // cannot say. Elsewhere the via is structure, already drawn as the
-        // nesting.
-        var particlePhrase = link.LinkType == "particle" && link.Via.Length > 0
-            ? link.Via
-            : null;
         // and the phrase is what the row counts: the bare spelling rides
         // after any particle at once, and its count answers for all of them
         // together, not for this one
@@ -259,6 +331,7 @@ public class LemmaIndexService(LemmaTable lemmaTable, CorpusVocabulary vocabular
             // only the generator behind it, and names no book
             Source = link.Unverified || link.Source.Length == 0 ? null : link.Source,
             Via = particlePhrase,
+            AlsoLinkedAs = alsoLinkedAs is { Count: > 0 } ? alsoLinkedAs.ToList() : null,
             Groups = groups,
         };
     }
@@ -334,6 +407,12 @@ public class LemmaTreeForm
     /// every other link type, whose via is structure the nesting already
     /// draws.</summary>
     public string? Via { get; set; }
+
+    /// <summary>The other ways the same form is linked at this level
+    /// ("plural" on the row 'Inflected forms' files deiney under): one row
+    /// however many links, the best-ranked drawing it and the rest named
+    /// here. Null where the row's group says it all.</summary>
+    public List<string>? AlsoLinkedAs { get; set; }
     /// <summary>What hangs off this form in turn: rows deriving through it, and
     /// — where it heads a lexeme of its own — that lexeme's tree. Null at a
     /// leaf, and at a form the tree has already drawn (a book-true cycle's
