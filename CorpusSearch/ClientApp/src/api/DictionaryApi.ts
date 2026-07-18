@@ -208,6 +208,36 @@ export const dictionaryHistory = async (
     return (await response.json()) as DictionaryHistoryResponse
 }
 
+/** What the look-up box offers mid-keystroke */
+export type DictionarySuggestions = {
+    words: {
+        word: string
+        /** whether any corpus text says it: the box greys the never-said,
+         * as every index does */
+        attested: boolean
+    }[]
+    /** near spellings rather than completions: nothing the books hold begins
+     * with what was typed, and the box says so */
+    fuzzy: boolean
+}
+
+/** A few completions for the look-up box, commonest first; near spellings
+ * when nothing completes */
+export const dictionarySuggest = async (
+    q: string,
+    signal?: AbortSignal,
+): Promise<DictionarySuggestions> => {
+    const params = new URLSearchParams({ q })
+    const response = await fetch(
+        `/api/Dictionary/suggest?${params.toString()}`,
+        { signal },
+    )
+    if (!response.ok) {
+        throw new Error(`suggest failed: ${response.status}`)
+    }
+    return (await response.json()) as DictionarySuggestions
+}
+
 /** The corpus documents attesting a word's lexeme, oldest first (experimental) */
 export type DictionaryAttestationsResponse = {
     word: string

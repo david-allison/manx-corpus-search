@@ -39,15 +39,65 @@
     box-shadow: var(--focus-ring) inset;
 }
 
+/* the input and the offers beneath it share a column, so the list hangs
+   exactly under the box whatever sits either side of it */
+.dict-search-box {
+    position: relative;
+    flex: 1;
+    display: flex;
+}
+
 .dict-page-search input {
     flex: 1;
+    min-width: 0;
     padding: 8px 12px;
     font-size: 16px;
     border: 1px solid var(--c-border-meta);
     border-radius: 4px;
 }
 
-.dict-page-search button {
+/* a handful of completions, floated under the box: an offer, not a page */
+.dict-search-suggest {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    z-index: 20;
+    padding: 4px 0;
+    background: var(--c-surface);
+    border: 1px solid var(--c-border-input);
+    border-radius: 4px;
+    box-shadow: var(--shadow-card);
+}
+
+/* the near-spelling admission: the words below are guesses, not matches */
+.dict-search-suggest-note {
+    margin: 2px 12px 4px;
+    font-size: 12px;
+    color: var(--c-muted);
+}
+
+.dict-search-suggest-word {
+    display: block;
+    width: 100%;
+    text-align: left;
+    border: none;
+    background: none;
+    padding: 6px 12px;
+    font-family: Georgia, serif;
+    font-size: 16px;
+    color: var(--c-ink);
+    cursor: pointer;
+}
+
+.dict-search-suggest-word:hover,
+.dict-search-suggest-active {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+/* the Look up button only: the suggestion rows beneath the input are buttons
+   too, and must not wear its outline */
+.dict-page-search > button {
     padding: 8px 16px;
     border: 1px solid var(--c-accent);
     border-radius: 4px;
@@ -56,6 +106,6 @@
     cursor: pointer;
 }
 
-.dict-page-search button:hover {
+.dict-page-search > button:hover {
     background: rgba(0, 0, 0, 0.05);
 }

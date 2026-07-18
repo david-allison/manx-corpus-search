@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -27,6 +28,17 @@ public class DictionaryController(
     public IEnumerable<DictionarySummary> Get([FromQuery] string lang, [FromQuery] string word, [FromQuery] string? context = null)
     {
         return lookupService.Lookup(lang, word, context);
+    }
+
+    /// <summary>
+    /// A few completions for the look-up box, commonest first — or, when
+    /// nothing the books hold begins with what was typed, near spellings said
+    /// to be that. Capped small: the box offers a next keystroke, not an index.
+    /// </summary>
+    [HttpGet("suggest")]
+    public DictionarySuggestions Suggest([FromQuery] string q = "", [FromQuery] int count = 6)
+    {
+        return lookupService.Suggest(q, Math.Clamp(count, 1, 10), vocabulary);
     }
 
     /// <summary>

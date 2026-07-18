@@ -1,9 +1,16 @@
-import { FormEvent, useEffect, useState } from "react"
+import { FormEvent, KeyboardEvent, useEffect, useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
+import { dictionarySuggest, DictionarySuggestions } from "../api/DictionaryApi"
 import { dictionaryWordUrl } from "../utils/DictionaryEntries"
 import "./WordSearch.css"
 
 /** The dictionary's look-up box: type a word, get its page.
+ *
+ * Typing offers a handful of completions beneath the box, commonest first —
+ * or, when nothing the books hold begins with what was typed, near spellings,
+ * said to be that. A handful only: the box is offering a next keystroke, not
+ * an index. The box starts on the page's own word, which needs no completing:
+ * the offers begin when the reader edits.
  *
  * Keeps the scope the reader is already in — a word looked up from inside
  * Cregeen opens in Cregeen, rather than quietly widening to every book.
@@ -31,11 +38,73 @@ export const WordSearch = ({
     // the word you are looking at, not the one you arrived by
     useEffect(() => setQuery(word ?? ""), [word])
 
+    const [suggest, setSuggest] = useState<DictionarySuggestions | null>(null)
+    const [open, setOpen] = useState(false)
+    const [active, setActive] = useState(-1)
+
+    const typed = query.trim()
+    // the page's own word needs no completing
+    const settled = typed === (word ?? "").trim()
+
+    useEffect(() => {
+        setActive(-1)
+        if (!typed || settled) {
+            setSuggest(null)
+            setOpen(false)
+            return
+        }
+        const abort = new AbortController()
+        // a keystroke waits for the typing to settle
+        const timer = setTimeout(() => {
+            dictionarySuggest(typed, abort.signal)
+                .then((result) => {
+                    setSuggest(result)
+                    setOpen(true)
+                })
+                .catch((e) => {
+                    // no offers is a quieter box, never a broken one
+                    if (!abort.signal.aborted) console.warn(e)
+                })
+        }, 150)
+        return () => {
+            clearTimeout(timer)
+            abort.abort()
+        }
+    }, [typed, settled])
+
+    const pick = (target: string) => {
+        setOpen(false)
+        setQuery(target)
+        void navigate(dictionaryWordUrl(target, dict))
+    }
+
     const onSubmit = (event: FormEvent) => {
         event.preventDefault()
-        const trimmed = query.trim()
-        if (trimmed) {
-            void navigate(dictionaryWordUrl(trimmed, dict))
+        if (open && active >= 0 && suggest?.words[active] != null) {
+            pick(suggest.words[active].word)
+            return
+        }
+        if (typed) {
+            setOpen(false)
+            void navigate(dictionaryWordUrl(typed, dict))
+        }
+    }
+
+    const shown = open && suggest != null && suggest.words.length > 0
+
+    const onKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+        if (!shown) {
+            return
+        }
+        const count = suggest.words.length
+        if (event.key === "ArrowDown") {
+            event.preventDefault()
+            setActive((index) => (index + 1) % count)
+        } else if (event.key === "ArrowUp") {
+            event.preventDefault()
+            setActive((index) => (index <= 0 ? count - 1 : index - 1))
+        } else if (event.key === "Escape") {
+            setOpen(false)
         }
     }
 
@@ -72,12 +141,70 @@ export const WordSearch = ({
                     </svg>
                 </Link>
             )}
-            <input
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Look up a Manx word…"
-                aria-label="Look up a Manx word"
-            />
+            <div className="dict-search-box">
+                <input
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    onKeyDown={onKeyDown}
+                    onFocus={() => {
+                        if (suggest != null && !settled) setOpen(true)
+                    }}
+                    onBlur={() => setOpen(false)}
+                    placeholder="Look up a Manx word…"
+                    aria-label="Look up a Manx word"
+                    role="combobox"
+                    aria-expanded={shown}
+                    aria-controls="dict-search-suggest"
+                    aria-activedescendant={
+                        shown && active >= 0
+                            ? `dict-search-suggest-${active.toString()}`
+                            : undefined
+                    }
+                />
+                {shown && (
+                    <div
+                        className="dict-search-suggest"
+                        id="dict-search-suggest"
+                        role="listbox"
+                        aria-label="Suggested entries"
+                    >
+                        {suggest.fuzzy && (
+                            <p className="dict-search-suggest-note">
+                                Nothing begins with “{typed}” — near spellings:
+                            </p>
+                        )}
+                        {suggest.words.map((entry, index) => (
+                            <button
+                                type="button"
+                                role="option"
+                                id={`dict-search-suggest-${index.toString()}`}
+                                aria-selected={index === active}
+                                key={entry.word}
+                                className={[
+                                    "dict-search-suggest-word",
+                                    index === active
+                                        ? "dict-search-suggest-active"
+                                        : "",
+                                    entry.attested ? "" : "dict-unattested",
+                                ]
+                                    .filter(Boolean)
+                                    .join(" ")}
+                                title={
+                                    entry.attested
+                                        ? undefined
+                                        : `${entry.word} — in no text in the corpus: a dictionary word`
+                                }
+                                // mousedown, not click alone: the input's blur
+                                // would close the list before a click landed
+                                onMouseDown={(e) => e.preventDefault()}
+                                onClick={() => pick(entry.word)}
+                            >
+                                {entry.word}
+                            </button>
+                        ))}
+                    </div>
+                )}
+            </div>
             <button type="submit">Look up</button>
         </form>
     )
