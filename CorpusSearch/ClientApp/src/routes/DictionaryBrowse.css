@@ -91,3 +91,19 @@
         margin-bottom: 3px;
     }
 }
+
+/* the never-said filter, doubling as the key to the grey (UnattestedFilter):
+   off to the right, an aside on the listing rather than a heading over it */
+.dict-browse-filter {
+    display: block;
+    text-align: right;
+    margin: 0 0 12px;
+    font-size: 13px;
+    color: var(--c-muted);
+    cursor: pointer;
+}
+
+.dict-browse-filter input {
+    margin-right: 4px;
+    vertical-align: -1px;
+}

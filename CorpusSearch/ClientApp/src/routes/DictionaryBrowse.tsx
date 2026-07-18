@@ -7,6 +7,11 @@ import {
 } from "../api/DictionaryApi"
 import { dictionaryWordUrl } from "../utils/DictionaryEntries"
 import { DictionaryBooks } from "../components/DictionaryBooks"
+import {
+    UnattestedFilter,
+    useHideUnattested,
+    visibleChapters,
+} from "../components/UnattestedFilter"
 import { WordSearch } from "../components/WordSearch"
 import "./DictionaryBrowse.css"
 
@@ -52,6 +57,7 @@ export const DictionaryBrowse = () => {
     const { dict = "", at } = useParams()
     const [page, setPage] = useState<DictionaryBrowseResponse | null>(null)
     const [failed, setFailed] = useState(false)
+    const [hideUnattested, setHideUnattested] = useHideUnattested()
 
     // a letter opens at its top: the bar that turned to it repeats at the
     // foot of a long letter, and the next should not open at its own foot
@@ -108,6 +114,13 @@ export const DictionaryBrowse = () => {
                         </p>
                     )}
 
+                    {page.letters.length > 0 && (
+                        <UnattestedFilter
+                            hidden={hideUnattested}
+                            onChange={setHideUnattested}
+                        />
+                    )}
+
                     {/* no sampler here: the browse always has a letter open
                         (the first, if none was asked), and a reader with the
                         book open is not looking for somewhere to start —
@@ -119,48 +132,54 @@ export const DictionaryBrowse = () => {
                         {/* the key repeats where the book doubles back, so a
                             chapter is keyed by where it sits rather than by its
                             name (DictionaryBrowse.Chapters) */}
-                        {page.chapters.map((chapter, index) => (
-                            <div
-                                className="dict-browse-chapter"
-                                key={`${chapter.key}-${index}`}
-                            >
-                                <span className="dict-browse-key">
-                                    {chapter.key}
-                                </span>
-                                <p className="dict-browse-words">
-                                    {chapter.words.map((entry, position) => (
-                                        <span key={`${entry.word}-${position}`}>
-                                            {position > 0 && (
+                        {visibleChapters(page.chapters, hideUnattested).map(
+                            (chapter, index) => (
+                                <div
+                                    className="dict-browse-chapter"
+                                    key={`${chapter.key}-${index}`}
+                                >
+                                    <span className="dict-browse-key">
+                                        {chapter.key}
+                                    </span>
+                                    <p className="dict-browse-words">
+                                        {chapter.words.map(
+                                            (entry, position) => (
                                                 <span
-                                                    className="dict-browse-sep"
-                                                    aria-hidden="true"
+                                                    key={`${entry.word}-${position}`}
                                                 >
-                                                    {" · "}
+                                                    {position > 0 && (
+                                                        <span
+                                                            className="dict-browse-sep"
+                                                            aria-hidden="true"
+                                                        >
+                                                            {" · "}
+                                                        </span>
+                                                    )}
+                                                    <Link
+                                                        className={
+                                                            entry.attested
+                                                                ? undefined
+                                                                : "dict-unattested"
+                                                        }
+                                                        title={
+                                                            entry.attested
+                                                                ? undefined
+                                                                : `${entry.word}: in no text in the corpus`
+                                                        }
+                                                        to={dictionaryWordUrl(
+                                                            entry.word,
+                                                            page.slug,
+                                                        )}
+                                                    >
+                                                        {entry.word}
+                                                    </Link>
                                                 </span>
-                                            )}
-                                            <Link
-                                                className={
-                                                    entry.attested
-                                                        ? undefined
-                                                        : "dict-unattested"
-                                                }
-                                                title={
-                                                    entry.attested
-                                                        ? undefined
-                                                        : `${entry.word}: in no text in the corpus`
-                                                }
-                                                to={dictionaryWordUrl(
-                                                    entry.word,
-                                                    page.slug,
-                                                )}
-                                            >
-                                                {entry.word}
-                                            </Link>
-                                        </span>
-                                    ))}
-                                </p>
-                            </div>
-                        ))}
+                                            ),
+                                        )}
+                                    </p>
+                                </div>
+                            ),
+                        )}
                     </div>
 
                     {/* the letters again, so a reader at the foot of a long page

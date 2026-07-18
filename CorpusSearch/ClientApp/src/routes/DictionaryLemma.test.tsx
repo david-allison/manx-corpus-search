@@ -1,5 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
-import { cleanup, render, screen, waitFor } from "@testing-library/react"
+import {
+    cleanup,
+    fireEvent,
+    render,
+    screen,
+    waitFor,
+} from "@testing-library/react"
 import { MemoryRouter, Route, Routes } from "react-router-dom"
 import { DictionaryLemma } from "./DictionaryLemma"
 import {
@@ -10,7 +16,12 @@ import {
 const fetchMock = vi.fn<typeof fetch>()
 vi.stubGlobal("fetch", fetchMock)
 
-beforeEach(() => fetchMock.mockReset())
+beforeEach(() => {
+    fetchMock.mockReset()
+    // the never-said filter is remembered: one test's choice must not
+    // grey out another's expectations
+    localStorage.clear()
+})
 afterEach(cleanup)
 
 const index: DictionaryBrowseResponse = {
@@ -131,6 +142,23 @@ describe("lemma index", () => {
         expect(
             screen.getByRole("link", { name: "aase" }).className,
         ).not.toContain("dict-unattested")
+    })
+
+    it("can hide the greyed words, and the checkbox is their key", async () => {
+        respondWith(index)
+        renderAt("/dictionary/lemma")
+        await screen.findByRole("link", { name: "aasit" })
+
+        // the label wears the very grey it explains
+        const filter = screen.getByText("unattested words")
+        expect(filter.className).toContain("dict-unattested")
+        fireEvent.click(screen.getByRole("checkbox"))
+
+        expect(screen.queryByRole("link", { name: "aasit" })).toBeNull()
+        expect(screen.getByRole("link", { name: "aase" })).toBeTruthy()
+
+        fireEvent.click(screen.getByRole("checkbox"))
+        expect(await screen.findByRole("link", { name: "aasit" })).toBeTruthy()
     })
 
     it("asks for the letter on the query string, and marks it in the bar", async () => {

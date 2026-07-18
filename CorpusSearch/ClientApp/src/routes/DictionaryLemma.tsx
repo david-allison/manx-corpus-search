@@ -8,6 +8,11 @@ import {
     lemmaIndexUrl,
     lemmaTreeUrl,
 } from "../components/LemmaTree"
+import {
+    UnattestedFilter,
+    useHideUnattested,
+    visibleChapters,
+} from "../components/UnattestedFilter"
 import { WordSearch } from "../components/WordSearch"
 import "./DictionaryBrowse.css"
 import "./DictionaryLemma.css"
@@ -42,6 +47,7 @@ const Bar = ({
 const LemmaIndex = ({ at }: { at?: string | null }) => {
     const [page, setPage] = useState<DictionaryBrowseResponse | null>(null)
     const [failed, setFailed] = useState(false)
+    const [hideUnattested, setHideUnattested] = useHideUnattested()
 
     useEffect(() => {
         setPage(null)
@@ -91,57 +97,73 @@ const LemmaIndex = ({ at }: { at?: string | null }) => {
                             No lemmas are loaded.
                         </p>
                     )}
+                    {page.letters.length > 0 && (
+                        <UnattestedFilter
+                            hidden={hideUnattested}
+                            onChange={setHideUnattested}
+                        />
+                    )}
                     <div
                         className="dict-browse-chapters dict-lemma-chapters"
                         aria-label={`Lemmas under ${page.letter}`}
                     >
-                        {page.chapters.map((chapter, index) => (
-                            <div
-                                className="dict-browse-chapter"
-                                key={`${chapter.key}-${index}`}
-                            >
-                                <span className="dict-browse-key">
-                                    {chapter.key}
-                                </span>
-                                <p className="dict-browse-words">
-                                    {chapter.words.map((entry, position) => (
-                                        <span key={`${entry.word}-${position}`}>
-                                            {position > 0 && (
+                        {visibleChapters(page.chapters, hideUnattested).map(
+                            (chapter, index) => (
+                                <div
+                                    className="dict-browse-chapter"
+                                    key={`${chapter.key}-${index}`}
+                                >
+                                    <span className="dict-browse-key">
+                                        {chapter.key}
+                                    </span>
+                                    <p className="dict-browse-words">
+                                        {chapter.words.map(
+                                            (entry, position) => (
                                                 <span
-                                                    className="dict-browse-sep"
-                                                    aria-hidden="true"
+                                                    key={`${entry.word}-${position}`}
                                                 >
-                                                    {" · "}
-                                                </span>
-                                            )}
-                                            <Link
-                                                className={
-                                                    entry.attested
-                                                        ? undefined
-                                                        : "dict-unattested"
-                                                }
-                                                title={
-                                                    entry.attested
-                                                        ? undefined
-                                                        : `${entry.word}: in no text in the corpus`
-                                                }
-                                                to={lemmaTreeUrl(entry.word)}
-                                            >
-                                                {entry.word}
-                                            </Link>
-                                            {/* the book behind a never-said
+                                                    {position > 0 && (
+                                                        <span
+                                                            className="dict-browse-sep"
+                                                            aria-hidden="true"
+                                                        >
+                                                            {" · "}
+                                                        </span>
+                                                    )}
+                                                    <Link
+                                                        className={
+                                                            entry.attested
+                                                                ? undefined
+                                                                : "dict-unattested"
+                                                        }
+                                                        title={
+                                                            entry.attested
+                                                                ? undefined
+                                                                : `${entry.word}: in no text in the corpus`
+                                                        }
+                                                        to={lemmaTreeUrl(
+                                                            entry.word,
+                                                        )}
+                                                    >
+                                                        {entry.word}
+                                                    </Link>
+                                                    {/* the book behind a never-said
                                                 lemma: greyed without it, the
                                                 row reads as a phantom */}
-                                            <SourceNote
-                                                form={entry.word}
-                                                attested={entry.attested}
-                                                source={entry.source}
-                                            />
-                                        </span>
-                                    ))}
-                                </p>
-                            </div>
-                        ))}
+                                                    <SourceNote
+                                                        form={entry.word}
+                                                        attested={
+                                                            entry.attested
+                                                        }
+                                                        source={entry.source}
+                                                    />
+                                                </span>
+                                            ),
+                                        )}
+                                    </p>
+                                </div>
+                            ),
+                        )}
                     </div>
 
                     {/* the letters again, as the browse repeats them: a reader
