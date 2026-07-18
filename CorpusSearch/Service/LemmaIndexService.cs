@@ -55,7 +55,14 @@ public class LemmaIndexService(LemmaTable lemmaTable, CorpusVocabulary vocabular
         page.Chapters = DictionaryBrowse
             .Chapters(
                 lemmas.Where(x => DictionaryBrowse.LetterOf(x) == letter),
-                vocabulary.IsAttested)
+                vocabulary.IsAttested,
+                // a lemma no text uses still stands in a book: name it, as
+                // the tree names it, or the grey reads as a phantom
+                lemma => lemmaTable.LinksOf(lemma) is
+                         { SelfUnverified: false } links
+                         && links.SelfSource.Length > 0
+                    ? links.SelfSource
+                    : null)
             .ToList();
         return page;
     }

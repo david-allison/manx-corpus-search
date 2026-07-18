@@ -2,7 +2,12 @@ import { useEffect, useState } from "react"
 import { Link, useParams, useSearchParams } from "react-router-dom"
 import { CircularProgress } from "@mui/material"
 import { DictionaryBrowseResponse, lemmaIndex } from "../api/DictionaryApi"
-import { LemmaTree, lemmaIndexUrl, lemmaTreeUrl } from "../components/LemmaTree"
+import {
+    LemmaTree,
+    SourceNote,
+    lemmaIndexUrl,
+    lemmaTreeUrl,
+} from "../components/LemmaTree"
 import { WordSearch } from "../components/WordSearch"
 import "./DictionaryBrowse.css"
 import "./DictionaryLemma.css"
@@ -119,6 +124,14 @@ const LemmaIndex = ({ at }: { at?: string | null }) => {
                                             >
                                                 {entry.word}
                                             </Link>
+                                            {/* the book behind a never-said
+                                                lemma: greyed without it, the
+                                                row reads as a phantom */}
+                                            <SourceNote
+                                                form={entry.word}
+                                                attested={entry.attested}
+                                                source={entry.source}
+                                            />
                                         </span>
                                     ))}
                                 </p>
