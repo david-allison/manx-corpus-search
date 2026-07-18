@@ -96,6 +96,11 @@ jobs:
           node-version: 20
       - run: npm ci
       - run: npx playwright install --with-deps chromium
+      # the books are downloaded artifacts, never tracked files: without
+      # cregeen.json the dictionary loads silently empty, and the browse
+      # spec meets a letter with no chapters
+      - run: ../tools/download_cregeen.sh && ../tools/download_kelly_m2e.sh
+        working-directory: CorpusSearch/Resources
       - run: npm run e2e
       - uses: actions/upload-artifact@v7
         if: failure()

@@ -14,6 +14,7 @@ import {
     visibleChapters,
 } from "../components/UnattestedFilter"
 import { WordSearch } from "../components/WordSearch"
+import { useDictionaryHead } from "../hooks/useDictionaryHead"
 import "./DictionaryBrowse.css"
 import "./DictionaryLemma.css"
 
@@ -193,6 +194,9 @@ export const DictionaryLemma = () => {
     useEffect(() => {
         window.scrollTo(0, 0)
     }, [lemma, at])
+
+    // the tab names the family being read, or the index of them all
+    useDictionaryHead(lemma ? `Word family: ${lemma}` : "Lemmas")
 
     return (
         <div className="dict-page">

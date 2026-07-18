@@ -13,6 +13,7 @@ import {
     visibleChapters,
 } from "../components/UnattestedFilter"
 import { WordSearch } from "../components/WordSearch"
+import { useDictionaryHead } from "../hooks/useDictionaryHead"
 import "./DictionaryBrowse.css"
 
 const browseUrl = (dict: string, at?: string) =>
@@ -64,6 +65,15 @@ export const DictionaryBrowse = () => {
     useEffect(() => {
         window.scrollTo(0, 0)
     }, [dict, at])
+
+    // the tab names the book and the letter open in it
+    useDictionaryHead(
+        page == null
+            ? null
+            : page.letter
+              ? `${page.dictionary}: ${page.letter}`
+              : page.dictionary,
+    )
 
     useEffect(() => {
         setPage(null)

@@ -33,6 +33,7 @@ import {
 import { VerseVersionsModal } from "../components/VerseVersionsModal"
 import { AudioAttestationModal } from "../components/AudioAttestationModal"
 import { useWordHistory } from "../hooks/useWordHistory"
+import { useDictionaryHead } from "../hooks/useDictionaryHead"
 import { AttestationWalker } from "../components/AttestationWalker"
 import { WordFamily } from "../components/LemmaTree"
 import "./Dictionary.css"
@@ -254,6 +255,9 @@ export const Dictionary = () => {
     useEffect(() => {
         window.scrollTo(0, 0)
     }, [word, dict])
+
+    // the tab names the word being read; the landing names the feature
+    useDictionaryHead(word ?? "Dictionary")
 
     const page = shown?.page ?? null
     /** Whether what is on screen is this word's yet: the URL changes on the click,

@@ -739,6 +739,24 @@ describe("Dictionary page", () => {
         expect(screen.queryByText("Word family")).toBeNull()
     })
 
+    it("names the tab after the word, and asks not to be indexed yet", async () => {
+        respondWith({
+            word: "billey",
+            isSuggestionTier: false,
+            attested: true,
+            groups: [],
+        })
+        renderAt("/dictionary/billey")
+        await screen.findByText("All dictionaries")
+
+        expect(document.title).toBe("billey | Manx Corpus Search")
+        expect(
+            document
+                .querySelector('meta[name="robots"]')
+                ?.getAttribute("content"),
+        ).toBe("noindex")
+    })
+
     it("offers no audio in the title when no recording uses the word", async () => {
         respondWith({
             word: "billey",
