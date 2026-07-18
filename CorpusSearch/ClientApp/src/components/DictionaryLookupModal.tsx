@@ -143,7 +143,7 @@ const PhillipsBridge = ({
 const PluralNote = ({ summary }: { summary: DictionaryResponse[number] }) =>
     summary.plurals?.length ? (
         <span className="dict-popup-plural">
-            {" — "}
+            {", "}
             <abbr className="dict-abbr" title="plural">
                 pl.
             </abbr>{" "}
@@ -279,7 +279,7 @@ export const DictionaryLookupModal = (props: DictionaryLookupState) => {
                         // it can never read as an entry for the tapped word
                         <div className="dict-popup-suggestions">
                             <p className="dict-popup-suggestions-note">
-                                Nothing found for “{word}” — near spellings:
+                                Nothing found for “{word}”. Near spellings:
                             </p>
                             {groupByDictionary(summaries).map(
                                 ([dictionaryName, entries]) => (

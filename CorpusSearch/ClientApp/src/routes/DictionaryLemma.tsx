@@ -113,7 +113,7 @@ const LemmaIndex = ({ at }: { at?: string | null }) => {
                                                 title={
                                                     entry.attested
                                                         ? undefined
-                                                        : `${entry.word} — in no text in the corpus`
+                                                        : `${entry.word}: in no text in the corpus`
                                                 }
                                                 to={lemmaTreeUrl(entry.word)}
                                             >

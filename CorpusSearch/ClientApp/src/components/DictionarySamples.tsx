@@ -45,7 +45,7 @@ export const DictionarySamples = ({ dict }: { dict: string }) => {
                             title={
                                 sample.attested
                                     ? undefined
-                                    : `${sample.word} — in no text in the corpus: a dictionary word`
+                                    : `${sample.word} is in no text in the corpus: a dictionary word`
                             }
                             to={dictionaryWordUrl(sample.word)}
                         >
