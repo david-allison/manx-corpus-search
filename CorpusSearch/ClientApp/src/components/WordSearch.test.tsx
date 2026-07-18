@@ -162,7 +162,7 @@ describe("WordSearch suggestions", () => {
 
         type("dooiney")
 
-        expect(await screen.findByText(/near spellings/)).toBeTruthy()
+        expect(await screen.findByText(/Near spellings/)).toBeTruthy()
     })
 
     it("puts the offers away on Escape", async () => {

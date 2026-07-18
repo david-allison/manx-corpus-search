@@ -21,7 +21,7 @@ export const useDocumentHeadElements = (
         const year = yearLabel ? ` (${yearLabel})` : ""
         description?.setAttribute(
             "content",
-            `“${title}”${year} — Manx and English parallel text from the Manx corpus.`,
+            `“${title}”${year}: Manx and English parallel text from the Manx corpus.`,
         )
 
         const canonical = document.createElement("link")

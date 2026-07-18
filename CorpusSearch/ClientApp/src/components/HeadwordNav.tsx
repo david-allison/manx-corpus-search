@@ -55,7 +55,7 @@ export const HeadwordNav = ({
             ? {
                   to: dictionaryWordUrl(to, dict),
                   label: to,
-                  title: attested ? to : `${to} — in no text in the corpus`,
+                  title: attested ? to : `${to}: in no text in the corpus`,
                   muted: !attested,
               }
             : null
@@ -67,7 +67,7 @@ export const HeadwordNav = ({
             ? {
                   to: dictionaryWordUrl(to, dict),
                   label: to,
-                  title: `${to} — the nearest word the corpus uses`,
+                  title: `The nearest word the corpus uses`,
               }
             : null
 

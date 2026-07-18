@@ -147,7 +147,7 @@ export const DictionaryBrowse = () => {
                                                 title={
                                                     entry.attested
                                                         ? undefined
-                                                        : `${entry.word} — in no text in the corpus`
+                                                        : `${entry.word}: in no text in the corpus`
                                                 }
                                                 to={dictionaryWordUrl(
                                                     entry.word,

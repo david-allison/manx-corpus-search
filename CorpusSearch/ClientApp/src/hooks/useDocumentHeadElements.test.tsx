@@ -53,7 +53,7 @@ describe("useDocumentHeadElements", () => {
             useDocumentHeadElements("Yn-Nollick", "Yn Nollick", "1899"),
         )
         expect(description()).toBe(
-            "“Yn Nollick” (1899) — Manx and English parallel text from the Manx corpus.",
+            "“Yn Nollick” (1899): Manx and English parallel text from the Manx corpus.",
         )
     })
 
@@ -62,7 +62,7 @@ describe("useDocumentHeadElements", () => {
             useDocumentHeadElements("Yn-Nollick", "Yn Nollick", ""),
         )
         expect(description()).toBe(
-            "“Yn Nollick” — Manx and English parallel text from the Manx corpus.",
+            "“Yn Nollick”: Manx and English parallel text from the Manx corpus.",
         )
     })
 

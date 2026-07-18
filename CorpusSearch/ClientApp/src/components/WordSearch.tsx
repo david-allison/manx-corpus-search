@@ -170,7 +170,7 @@ export const WordSearch = ({
                     >
                         {suggest.fuzzy && (
                             <p className="dict-search-suggest-note">
-                                Nothing begins with “{typed}” — near spellings:
+                                Nothing begins with “{typed}”. Near spellings:
                             </p>
                         )}
                         {suggest.words.map((entry, index) => (
@@ -192,7 +192,7 @@ export const WordSearch = ({
                                 title={
                                     entry.attested
                                         ? undefined
-                                        : `${entry.word} — in no text in the corpus: a dictionary word`
+                                        : `${entry.word} is in no text in the corpus: a dictionary word`
                                 }
                                 // mousedown, not click alone: the input's blur
                                 // would close the list before a click landed
