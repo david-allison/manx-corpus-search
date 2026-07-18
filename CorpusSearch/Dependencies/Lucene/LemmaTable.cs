@@ -91,6 +91,17 @@ public class LemmaTable
         return candidatesByForm.TryGetValue(NormalizeForm(form), out var ids) ? ids : [];
     }
 
+    /// <summary>Every phrase a particle link derives through ('e gheiney',
+    /// 'dy aa-vioghey'): what the corpus phrase read must include, so the
+    /// lemma tree can count a particle row by its phrase — the bare form
+    /// rides after any particle at once, and its count answers for all of
+    /// them together</summary>
+    public IEnumerable<string> ParticlePhrases =>
+        linkSetsByDisplay.Values
+            .SelectMany(x => x.Links)
+            .Where(x => x.LinkType == "particle" && x.Via.Contains(' '))
+            .Select(x => x.Via);
+
     /// <summary>Whether <paramref name="value"/> is a lemma id itself ("aase.v"): a query
     /// for one skips form resolution</summary>
     public bool IsLemmaId(string value) => lemmaIds.Contains(value);

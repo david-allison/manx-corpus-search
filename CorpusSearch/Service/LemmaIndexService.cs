@@ -236,17 +236,29 @@ public class LemmaIndexService(LemmaTable lemmaTable, CorpusVocabulary vocabular
             var built = Grouped(children, expanded);
             groups = built.Count > 0 ? built : null;
         }
+        // a particle row's via is the phrase itself ('e gheiney'): the one
+        // link type whose whole point — which particle — the form alone
+        // cannot say. Elsewhere the via is structure, already drawn as the
+        // nesting.
+        var particlePhrase = link.LinkType == "particle" && link.Via.Length > 0
+            ? link.Via
+            : null;
+        // and the phrase is what the row counts: the bare spelling rides
+        // after any particle at once, and its count answers for all of them
+        // together, not for this one
+        var counted = particlePhrase ?? link.Form;
         return new LemmaTreeForm
         {
             Form = link.Form,
-            Attestations = vocabulary.AttestationsOf(link.Form),
+            Attestations = vocabulary.AttestationsOf(counted),
             // an unread phrase is left un-greyed, as the browse leaves one:
             // greying is a claim
-            Attested = (vocabulary.AttestationsOf(link.Form) ?? 1) > 0,
+            Attested = (vocabulary.AttestationsOf(counted) ?? 1) > 0,
             Unverified = link.Unverified,
             // provenance belongs to the attestation: an unverified link has
             // only the generator behind it, and names no book
             Source = link.Unverified || link.Source.Length == 0 ? null : link.Source,
+            Via = particlePhrase,
             Groups = groups,
         };
     }
@@ -316,6 +328,12 @@ public class LemmaTreeForm
     /// unverified link — only the generator is behind one — and for the
     /// treebank's closed-class paradigm rows, which no book may claim.</summary>
     public string? Source { get; set; }
+
+    /// <summary>The phrase a particle row derives through ("e gheiney"): the
+    /// particle itself, which the form and its group name cannot say. Null on
+    /// every other link type, whose via is structure the nesting already
+    /// draws.</summary>
+    public string? Via { get; set; }
     /// <summary>What hangs off this form in turn: rows deriving through it, and
     /// — where it heads a lexeme of its own — that lexeme's tree. Null at a
     /// leaf, and at a form the tree has already drawn (a book-true cycle's
