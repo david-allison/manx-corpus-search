@@ -10,11 +10,14 @@ import { DocumentView } from "./routes/DocumentView"
 import { BitPlayer } from "./routes/BitPlayer"
 import { Contributions } from "./routes/Contributions"
 import { NotFound } from "./routes/NotFound"
+import { useTappableAbbrs } from "./hooks/useTappableAbbrs"
 import "./custom.css"
 
 export const App = () => {
     const [k, onRefresh] = useReducer((x) => x + 1, 1)
     const location = useLocation()
+    // a printed abbreviation explains itself on hover; a tap does it for hands
+    useTappableAbbrs()
 
     return (
         <Layout onRefresh={onRefresh}>
