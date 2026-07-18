@@ -6,6 +6,7 @@ import {
     dictionaryList,
 } from "../api/DictionaryApi"
 import { dictionaryWordUrl } from "../utils/DictionaryEntries"
+import { useActiveInRow } from "../hooks/useActiveInRow"
 import "./DictionaryScope.css"
 
 /** Which dictionary the word page is showing: every source at once, or one on
@@ -49,13 +50,10 @@ export const DictionaryScope = ({
     }, [dictionaries])
 
     // the chosen book must be seen to be chosen: on a phone the row scrolls
-    // sideways, and the active tab may sit past its edge
+    // sideways, and the active tab may sit past its edge — the row's own
+    // scroll only, never the page's
     const nav = useRef<HTMLElement>(null)
-    useEffect(() => {
-        nav.current
-            ?.querySelector(".dict-scope-link.active")
-            ?.scrollIntoView({ block: "nearest", inline: "nearest" })
-    }, [dict, dictionaries])
+    useActiveInRow(nav, dictionaries == null ? null : dict)
 
     // the picker offers nothing until it knows what there is to pick, but it
     // holds its row: coming back with a height would shove the page down
