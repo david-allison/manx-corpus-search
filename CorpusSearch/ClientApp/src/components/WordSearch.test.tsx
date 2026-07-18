@@ -1,8 +1,21 @@
-import { afterEach, describe, expect, it } from "vitest"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { cleanup, fireEvent, render, screen } from "@testing-library/react"
 import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom"
 import { WordSearch } from "./WordSearch"
 
+const fetchMock = vi.fn<typeof fetch>()
+vi.stubGlobal("fetch", fetchMock)
+
+const respond = (suggestions: unknown) =>
+    fetchMock.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve(suggestions),
+    } as Response)
+
+beforeEach(() => {
+    fetchMock.mockReset()
+    respond({ words: [], fuzzy: false })
+})
 afterEach(cleanup)
 
 const Where = () => <span data-testid="at">{useLocation().pathname}</span>
@@ -88,5 +101,87 @@ describe("WordSearch", () => {
         // the index itself is already there
         renderSearch({})
         expect(screen.queryByLabelText("Back to the index")).toBeNull()
+    })
+})
+
+describe("WordSearch suggestions", () => {
+    const twoWords = {
+        words: [
+            { word: "dy", attested: true },
+            { word: "dooinney", attested: true },
+        ],
+        fuzzy: false,
+    }
+
+    const type = (value: string) =>
+        fireEvent.change(screen.getByLabelText("Look up a Manx word"), {
+            target: { value },
+        })
+
+    it("offers a few entries while typing, tappable into their pages", async () => {
+        respond(twoWords)
+        renderSearch({})
+
+        type("d")
+
+        expect(await screen.findByRole("option", { name: "dy" })).toBeTruthy()
+        fireEvent.click(screen.getByRole("option", { name: "dooinney" }))
+        expect(at()).toBe("/dictionary/dooinney")
+    })
+
+    it("walks the offers with the arrows and takes the marked one", async () => {
+        respond(twoWords)
+        renderSearch({})
+        const input = screen.getByLabelText("Look up a Manx word")
+        type("d")
+        await screen.findByRole("option", { name: "dy" })
+
+        fireEvent.keyDown(input, { key: "ArrowDown" })
+        fireEvent.keyDown(input, { key: "ArrowDown" })
+        fireEvent.click(screen.getByRole("button", { name: "Look up" }))
+
+        expect(at()).toBe("/dictionary/dooinney")
+    })
+
+    it("greys an offer no text says", async () => {
+        respond({
+            words: [{ word: "ynrican", attested: false }],
+            fuzzy: false,
+        })
+        renderSearch({})
+
+        type("ynr")
+
+        const offer = await screen.findByRole("option", { name: "ynrican" })
+        expect(offer.className).toContain("dict-unattested")
+    })
+
+    it("says when the offers are near spellings, not matches", async () => {
+        respond({ words: [{ word: "dooinney", attested: true }], fuzzy: true })
+        renderSearch({})
+
+        type("dooiney")
+
+        expect(await screen.findByText(/near spellings/)).toBeTruthy()
+    })
+
+    it("puts the offers away on Escape", async () => {
+        respond(twoWords)
+        renderSearch({})
+        const input = screen.getByLabelText("Look up a Manx word")
+        type("d")
+        await screen.findByRole("option", { name: "dy" })
+
+        fireEvent.keyDown(input, { key: "Escape" })
+
+        expect(screen.queryByRole("option")).toBeNull()
+    })
+
+    it("offers nothing for the page's own word: it needs no completing", async () => {
+        renderSearch({ word: "caag" })
+
+        // past the debounce: nothing was even asked
+        await new Promise((resolve) => setTimeout(resolve, 250))
+        expect(fetchMock).not.toHaveBeenCalled()
     })
 })

@@ -806,6 +806,82 @@ public class DictionaryLookupServiceTest
         });
     }
 
+    private static CorpusVocabulary Vocabulary(params (string Term, long Frequency)[] terms)
+    {
+        var vocabulary = new CorpusVocabulary(NoLemmas);
+        vocabulary.Init(terms);
+        return vocabulary;
+    }
+
+    private static List<string> Suggested(
+        DictionaryLookupService service, string typed, CorpusVocabulary vocabulary, int count = 6)
+    {
+        return service.Suggest(typed, count, vocabulary).Words.Select(x => x.Word).ToList();
+    }
+
+    /// <summary>The box offers a next keystroke: the commonest words are the
+    /// likelier errand, so they lead</summary>
+    [Test]
+    public void SuggestsCompletionsCommonestFirst()
+    {
+        var service = Service("dooinney", "dy", "dooar", "goll");
+        var vocabulary = Vocabulary(("dy", 1000), ("dooinney", 40), ("dooar", 3));
+
+        Assert.That(Suggested(service, "d", vocabulary),
+            Is.EqualTo(new[] { "dy", "dooinney", "dooar" }));
+    }
+
+    [Test]
+    public void TheWordItselfLeadsItsCompletions()
+    {
+        var service = Service("dy", "dy jarroo");
+        var vocabulary = Vocabulary(("dy", 5));
+
+        Assert.That(Suggested(service, "dy", vocabulary).First(), Is.EqualTo("dy"));
+    }
+
+    [Test]
+    public void SuggestionsAreAHandfulHoweverManyComplete()
+    {
+        var service = Service("baa", "bab", "bac", "bad", "bae", "baf", "bag", "bah");
+        var vocabulary = Vocabulary();
+
+        Assert.That(Suggested(service, "ba", vocabulary, count: 6), Has.Count.EqualTo(6));
+    }
+
+    /// <summary>Nothing the books hold begins with the typo: the near spellings
+    /// the total-miss page would offer stand in, and say what they are</summary>
+    [Test]
+    public void FallsBackToNearSpellingsWhenNothingCompletes()
+    {
+        var service = Service("dooinney");
+        var vocabulary = Vocabulary(("dooinney", 5));
+
+        var result = service.Suggest("dooiney", 6, vocabulary);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.Fuzzy, Is.True);
+            Assert.That(result.Words.Select(x => x.Word), Is.EqualTo(new[] { "dooinney" }));
+        });
+    }
+
+    /// <summary>The box greys the never-said, as every index does</summary>
+    [Test]
+    public void SuggestionsSayWhetherAnyTextSaysThem()
+    {
+        var service = Service("dy", "dooinney");
+        var vocabulary = Vocabulary(("dy", 1000));
+
+        var words = service.Suggest("d", 6, vocabulary).Words;
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(words.Single(x => x.Word == "dy").Attested, Is.True);
+            Assert.That(words.Single(x => x.Word == "dooinney").Attested, Is.False);
+        });
+    }
+
     private class FakeDictionary : ISearchDictionary
     {
         private readonly List<(List<string> Words, string PrimaryWord)> entries;

@@ -372,6 +372,108 @@ public class DictionaryLookupService(IEnumerable<ISearchDictionary> dictionarySe
         return prev[b.Length];
     }
 
+    /// <summary>
+    /// A few entries for a reader mid-keystroke: every headword beginning with
+    /// what they have typed, commonest first — or, when nothing does, the near
+    /// spellings the total-miss page would offer, said to be that. A handful
+    /// only: the box is offering a next keystroke, not an index.
+    /// </summary>
+    /// <param name="vocabulary">ranks the completions (a common word is the
+    /// likelier errand) and greys the never-said, as every index does</param>
+    public DictionarySuggestions Suggest(string query, int count, CorpusVocabulary vocabulary)
+    {
+        var norm = LemmaTable.NormalizeForm(query);
+        if (norm.Length == 0)
+        {
+            return new DictionarySuggestions { Words = [] };
+        }
+        var pool = suggestPool ??= BuildSuggestPool();
+        var matches = new List<(string Norm, string Word)>();
+        for (var i = LowerBound(pool, norm);
+             i < pool.Count && pool[i].Norm.StartsWith(norm, StringComparison.Ordinal);
+             i++)
+        {
+            matches.Add(pool[i]);
+        }
+        if (matches.Count == 0)
+        {
+            return new DictionarySuggestions
+            {
+                Words = NearMatches(query)
+                    .Take(count)
+                    .Select(word => new DictionarySuggestion
+                    {
+                        Word = word,
+                        Attested = vocabulary.IsAttested(word),
+                    })
+                    .ToList(),
+                Fuzzy = true,
+            };
+        }
+        return new DictionarySuggestions
+        {
+            Words = matches
+                // the word itself leads its completions
+                .OrderByDescending(x => x.Norm == norm)
+                .ThenByDescending(x => vocabulary.AttestationsOf(x.Word) ?? 0)
+                .ThenBy(x => x.Word, StringComparer.InvariantCultureIgnoreCase)
+                .Take(count)
+                .Select(x => new DictionarySuggestion
+                {
+                    Word = x.Word,
+                    Attested = vocabulary.IsAttested(x.Word),
+                })
+                .ToList(),
+        };
+    }
+
+    /// <summary>Every gv headword (and the names supplement's display lemmas)
+    /// sorted by normalized form: the suggest box's prefix range. Phrases ride
+    /// along — half of Phil Kelly is phrases, and a phrase completes like any
+    /// word. Built on the first keystroke asked about.</summary>
+    private List<(string Norm, string Word)>? suggestPool;
+
+    private List<(string Norm, string Word)> BuildSuggestPool()
+    {
+        var seen = new HashSet<string>();
+        var pool = new List<(string Norm, string Word)>();
+        var words = dictionaryServices
+            .Where(d => d.QueryLanguages.Contains("gv"))
+            .SelectMany(d => d.AllWords)
+            .Concat(lemmaTable.NameDisplayLemmas);
+        foreach (var word in words)
+        {
+            var norm = LemmaTable.NormalizeForm(word);
+            if (norm.Length == 0 || !seen.Add(norm))
+            {
+                continue;
+            }
+            pool.Add((norm, word));
+        }
+        pool.Sort((a, b) => string.CompareOrdinal(a.Norm, b.Norm));
+        return pool;
+    }
+
+    /// <summary>The first pool index at or after <paramref name="norm"/> in
+    /// ordinal order: where its completions start</summary>
+    private static int LowerBound(List<(string Norm, string Word)> pool, string norm)
+    {
+        int low = 0, high = pool.Count;
+        while (low < high)
+        {
+            var mid = (low + high) / 2;
+            if (string.CompareOrdinal(pool[mid].Norm, norm) < 0)
+            {
+                low = mid + 1;
+            }
+            else
+            {
+                high = mid;
+            }
+        }
+        return low;
+    }
+
     /// <summary>Entries synthesized from the lemma table's name metadata (the
     /// names.tsv pos column): the selection's own name at depth 0, the name a
     /// mutated spelling belongs to ('Yudah' -> Judah) at depth 1</summary>
@@ -752,6 +854,26 @@ public class DictionaryLookupService(IEnumerable<ISearchDictionary> dictionarySe
             .GroupBy(x => (x.PrimaryWord, x.Summary))
             .Select(x => x.First())
             .ToList();
+}
+
+/// <summary>What the look-up box offers mid-keystroke</summary>
+public class DictionarySuggestions
+{
+    public required List<DictionarySuggestion> Words { get; set; }
+
+    /// <summary>The words are near spellings rather than completions: nothing
+    /// the books hold begins with what was typed, and the box should say so
+    /// rather than pass a guess off as a match</summary>
+    public bool Fuzzy { get; set; }
+}
+
+public class DictionarySuggestion
+{
+    public required string Word { get; set; }
+
+    /// <summary>Whether any corpus text says it: the box greys the never-said,
+    /// as every index does</summary>
+    public bool Attested { get; set; }
 }
 
 /// <summary>One token of a line in the dictionary-coverage debug view</summary>
