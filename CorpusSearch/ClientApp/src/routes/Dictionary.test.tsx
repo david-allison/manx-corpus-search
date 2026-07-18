@@ -645,6 +645,96 @@ describe("Dictionary page", () => {
         expect(audio.getAttribute("title")).toContain("SA0001")
     })
 
+    it("closes the entries with the word's family tree", async () => {
+        fetchMock.mockImplementation((url) => {
+            const href = hrefOf(url)
+            const body = href.includes("/history")
+                ? { ...usedOnce, lemmas: ["aase"] }
+                : href.includes("/dictionaries")
+                  ? dictionaries
+                  : href.includes("/attestations")
+                    ? emptyAttestations
+                    : href.includes("/samples")
+                      ? []
+                      : href.includes("/lemma?")
+                        ? {
+                              lemma: "aase",
+                              attested: true,
+                              groups: [
+                                  {
+                                      linkType: "inflected",
+                                      forms: [
+                                          { form: "daase", attested: true },
+                                      ],
+                                  },
+                              ],
+                              parents: [],
+                          }
+                        : {
+                              answering: dictionaries.map((d) => d.slug),
+                              word: "aase",
+                              isSuggestionTier: false,
+                              attested: true,
+                              groups: [],
+                          }
+            return Promise.resolve({
+                ok: true,
+                json: () => Promise.resolve(body),
+            } as Response)
+        })
+        renderAt("/dictionary/aase")
+
+        expect(await screen.findByText("Word family")).toBeTruthy()
+        expect(await screen.findByText("Inflected forms")).toBeTruthy()
+        expect(
+            screen.getByRole("link", { name: "daase" }).getAttribute("href"),
+        ).toBe("/dictionary/daase")
+    })
+
+    it("draws no family section for a reading with nothing hanging off it", async () => {
+        fetchMock.mockImplementation((url) => {
+            const href = hrefOf(url)
+            const body = href.includes("/history")
+                ? { ...usedOnce, lemmas: ["aase"] }
+                : href.includes("/dictionaries")
+                  ? dictionaries
+                  : href.includes("/attestations")
+                    ? emptyAttestations
+                    : href.includes("/samples")
+                      ? []
+                      : href.includes("/lemma?")
+                        ? {
+                              lemma: "aase",
+                              attested: true,
+                              groups: [],
+                              parents: [],
+                          }
+                        : {
+                              answering: dictionaries.map((d) => d.slug),
+                              word: "aase",
+                              isSuggestionTier: false,
+                              attested: true,
+                              groups: [],
+                          }
+            return Promise.resolve({
+                ok: true,
+                json: () => Promise.resolve(body),
+            } as Response)
+        })
+        renderAt("/dictionary/aase")
+
+        await screen.findByText("All dictionaries")
+        // the bare tree was fetched and found empty: no heading over nothing
+        await waitFor(() =>
+            expect(
+                fetchMock.mock.calls
+                    .map(([u]) => hrefOf(u))
+                    .some((u) => u.includes("/lemma?")),
+            ).toBe(true),
+        )
+        expect(screen.queryByText("Word family")).toBeNull()
+    })
+
     it("offers no audio in the title when no recording uses the word", async () => {
         respondWith({
             word: "billey",
