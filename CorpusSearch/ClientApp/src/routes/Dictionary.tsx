@@ -2,6 +2,8 @@ import { Fragment, useEffect, useReducer, useState } from "react"
 import { Link, useParams } from "react-router-dom"
 import { CircularProgress } from "@mui/material"
 import {
+    AttestationDocument,
+    dictionaryAttestations,
     dictionaryPage,
     DictionaryPageResponse,
     Summary,
@@ -29,6 +31,7 @@ import {
     MultidictLink,
 } from "../components/MultidictLink"
 import { VerseVersionsModal } from "../components/VerseVersionsModal"
+import { AudioAttestationModal } from "../components/AudioAttestationModal"
 import { useWordHistory } from "../hooks/useWordHistory"
 import { AttestationWalker } from "../components/AttestationWalker"
 import "./Dictionary.css"
@@ -176,6 +179,18 @@ export const Dictionary = () => {
     const [asked, askAgain] = useReducer((x: number) => x + 1, 0)
     // a tapped scripture citation: the verse's other-versions popup
     const [citationKey, setCitationKey] = useState<string | null>(null)
+    // the recordings using the word (the 🎥 name marks audio documents), with
+    // the word they answer for: the title's "audio" link and the popup behind
+    // it. Asked beside the page rather than lifted from the walk — the walk
+    // is one reading's at a time, and the title speaks for the word.
+    const [heard, setHeard] = useState<{
+        word: string
+        docs: AttestationDocument[]
+        /** the recording the link opens: the earliest whose transcript can be
+         * jumped into, or — only when there is no such thing — an untimed one */
+        lead: AttestationDocument
+    } | null>(null)
+    const [heardOpen, setHeardOpen] = useState(false)
     // keyed on the word alone, so it runs beside the lookup rather than after
     // it: the first-attestation band heads the page. A total miss discards it.
     // The corpus does not know which dictionary you came in through, so the
@@ -203,6 +218,34 @@ export const Dictionary = () => {
             })
         return () => abort.abort()
     }, [word, dict, asked])
+
+    useEffect(() => {
+        setHeardOpen(false)
+        if (!word) {
+            setHeard(null)
+            return
+        }
+        const abort = new AbortController()
+        dictionaryAttestations(word, undefined, abort.signal)
+            .then((walk) => {
+                const docs = walk.documents.filter((d) =>
+                    d.title.startsWith("🎥"),
+                )
+                // the link leads with a recording it can jump into: an untimed
+                // transcript (Skeealyn Vannin Track 12) plays only from the
+                // top, so it leads only when it is the only recording there is
+                const lead = docs.find((d) => d.timed !== false) ?? docs[0]
+                // an answer either way: the last word's recordings must not
+                // linger on a word nothing says (the render checks the word too,
+                // so the stale moment shows no link rather than a wrong one)
+                setHeard(lead ? { word, docs, lead } : null)
+            })
+            .catch((e) => {
+                // no link is a quieter title, never a broken one
+                if (!abort.signal.aborted) console.warn(e)
+            })
+        return () => abort.abort()
+    }, [word])
 
     const page = shown?.page ?? null
     /** Whether what is on screen is this word's yet: the URL changes on the click,
@@ -237,6 +280,11 @@ export const Dictionary = () => {
      * must not be greyed on another word's evidence. */
     const attested = stale ? null : page?.attested
 
+    /** The recording saying this word — only once the answer is this word's:
+     * the title must not offer another word's audio for the moment between
+     * the click and the fetch */
+    const heardDocs = heard != null && heard.word === word ? heard : null
+
     const header = (
         <div className="dict-page-header">
             <h1
@@ -254,6 +302,19 @@ export const Dictionary = () => {
                     <SenseLabel labels={senses[0].labels} />
                 )}
             </h1>
+            {/* across the row from the word, not part of it: the corpus's
+                recording, beside the spoken dictionary's corner when both
+                have something to play */}
+            {heardDocs != null && (
+                <button
+                    type="button"
+                    className="dict-page-heard"
+                    title={`Hear it spoken: ${heardDocs.lead.title} (${heardDocs.lead.year.toString()})`}
+                    onClick={() => setHeardOpen(true)}
+                >
+                    🔊 audio
+                </button>
+            )}
             {page?.audio && (
                 <div className="dict-page-audio-corner">
                     <button
@@ -498,6 +559,16 @@ export const Dictionary = () => {
             <VerseVersionsModal
                 refKey={citationKey}
                 onClose={() => setCitationKey(null)}
+            />
+            <AudioAttestationModal
+                word={word ?? ""}
+                docs={heardDocs?.docs ?? []}
+                openAt={
+                    heardOpen && heardDocs != null
+                        ? { ident: heardDocs.lead.ident }
+                        : null
+                }
+                onClose={() => setHeardOpen(false)}
             />
         </div>
     )

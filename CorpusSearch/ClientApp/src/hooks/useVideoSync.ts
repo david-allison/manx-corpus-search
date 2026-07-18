@@ -10,7 +10,7 @@ export const formatTime = (seconds: number): string => {
 }
 
 /** The video id, when the source is a YouTube watch URL */
-const getVideoId = (source: string): string | null => {
+export const getVideoId = (source: string): string | null => {
     let url: URL
     try {
         url = new URL(source)

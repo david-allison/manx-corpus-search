@@ -172,11 +172,13 @@ public class Searcher(LuceneIndex luceneIndex, SearchParser parser)
         return query == null ? new ScanResult() : luceneIndex.Scan(query);
     }
 
-    /// <summary>Every use of a lexeme within one document, surface words highlighted</summary>
+    /// <summary>Every use of a lexeme within one document, surface words highlighted.
+    /// Transcript timestamps ride along: a use in a recording is a moment as much as
+    /// a line, and the walk links to hearing it.</summary>
     internal SearchResult? SearchLemma(string ident, IReadOnlyCollection<string> lemmaIds)
     {
         var query = LemmaQuery(lemmaIds);
-        return query == null ? null : luceneIndex.Search(ident, query, getTranscriptData: false);
+        return query == null ? null : luceneIndex.Search(ident, query, getTranscriptData: true);
     }
 
     /// <summary>Every line of a document as it was indexed, for a reader that wants
@@ -184,6 +186,12 @@ public class Searcher(LuceneIndex luceneIndex, SearchParser parser)
     /// pass). The stored text, so no query is parsed and nothing is scored.</summary>
     public List<DocumentLine> AllLines(string ident) =>
         luceneIndex.GetAllLines(ident, getTranscript: false);
+
+    /// <summary>Whether any line of the document says when it is spoken: a
+    /// transcript may be written down without its clock (Skeealyn Vannin Track
+    /// 12), and a player offered such a recording can only start from the top</summary>
+    public bool HasTranscriptTimings(string ident) =>
+        luceneIndex.GetAllLines(ident, getTranscript: true).Any(x => x.SubStart != null);
 
     public ScanResult Scan(string query)
     {

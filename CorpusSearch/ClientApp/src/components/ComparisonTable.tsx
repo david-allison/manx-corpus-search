@@ -38,7 +38,8 @@ export const ComparisonTable = memo(function ComparisonTableInner(props: {
     /** dictionary debug mode: per-token coverage keyed by the line's Manx
      * text; when set, Manx cells render colour-coded tokens instead */
     dictCoverage?: Map<string, TokenCoverage[]> | null
-    /** csvLineNumber of a ?ref= deep link's verse: the row is flashed */
+    /** csvLineNumber of a ?ref=/?line= deep link's row: the row is flashed,
+     * and a recording is cued at its moment */
     targetLine?: number
 }) {
     const {
@@ -89,6 +90,14 @@ export const ComparisonTable = memo(function ComparisonTableInner(props: {
 
     const { videoId, isVideo, player, videoDock, rowElements, isPlaying } =
         useVideoSync(response?.source, response.results)
+
+    // a deep link into a recording: the video is cued at the target line's
+    // moment, so pressing play starts at the use rather than at the top
+    const targetStart =
+        targetLine == null
+            ? undefined
+            : (response.results.find((x) => x.csvLineNumber == targetLine)
+                  ?.subStart ?? undefined)
 
     const getRowClassName = (
         line: SearchWorkResult,
@@ -190,7 +199,14 @@ export const ComparisonTable = memo(function ComparisonTableInner(props: {
                 {isVideo && videoId != null && (
                     <div className="video-dock" ref={videoDock}>
                         <div className={"youtube-container center"}>
-                            <YouTuber ref={player} videoId={videoId} />
+                            {/* keyed by video: another document's recording
+                                starts from its own deep link's moment */}
+                            <YouTuber
+                                key={videoId}
+                                ref={player}
+                                videoId={videoId}
+                                startSeconds={targetStart}
+                            />
                         </div>
                     </div>
                 )}

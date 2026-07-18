@@ -62,8 +62,34 @@
     display: flex;
     align-items: baseline;
     gap: 8px;
+    /* claim the row, so the audio controls after it sit at the right edge */
+    flex: 1;
 }
 
+/* the title row's way to the recording: a corpus text *says* this word, which
+   no amount of print can. Across the row from the word — a link's colours and
+   a fraction of the headword's size, so it reads as an offer about the word
+   rather than as part of it. */
+.dict-page-heard {
+    border: none;
+    background: none;
+    padding: 0;
+    align-self: center;
+    font-family: var(--font-ui);
+    font-size: 15px;
+    color: var(--c-link);
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.dict-page-heard:hover {
+    text-decoration: underline;
+}
+
+.dict-page-heard:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+}
 
 .dict-page-loading {
     display: flex;

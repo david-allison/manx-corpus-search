@@ -10,7 +10,9 @@ import {
     DictionaryHistoryResponse,
 } from "../api/DictionaryApi"
 import { hasAttestation } from "../utils/Attestation"
+import { formatTime } from "../hooks/useVideoSync"
 import { usePersistedState } from "../hooks/usePersistedState"
+import { AudioAttestationModal } from "./AudioAttestationModal"
 import { FirstAttestation } from "./FirstAttestation"
 import { segmentChunks } from "./LineText"
 import { PrevNextLinks } from "./PrevNextLinks"
@@ -49,12 +51,41 @@ const UseLine = ({
     manx,
     english,
     highlights,
+    play,
 }: {
     manx?: string | null
     english?: string | null
     highlights?: { start: number; end: number }[] | null
+    /** where hearing the line starts, for a line of a recording — `at` is
+     * null on an untimed transcript, which plays from the start */
+    play?: { at: number | null; open: () => void }
 }) => {
     const [translated, setTranslated] = useState(false)
+    // a use in a recording: the whole line — Manx, timestamp and all — is the
+    // way to hearing it, opening the listening popup at its moment while the
+    // walk stays where the reader left it. Its translation waits in the popup,
+    // under the video, so the line keeps only one job here.
+    if (play) {
+        return (
+            <div className="attest-line">
+                <button
+                    type="button"
+                    className="attest-line-manx attest-line-tappable"
+                    title="Hear this line"
+                    onClick={play.open}
+                >
+                    <ManxText manx={manx} highlights={highlights} />
+                    <span className="attest-line-play">
+                        {/* ??:?? where the transcript wrote no clock down:
+                            the popup still plays, from the start */}
+                        {play.at != null
+                            ? `▶ ${formatTime(play.at)}`
+                            : "▶ ??:??"}
+                    </span>
+                </button>
+            </div>
+        )
+    }
     // an untranslated row has nothing to reveal, so it is not a control
     if (!english) {
         return (
@@ -125,10 +156,17 @@ const LemmaGroup = ({
     group,
     classes,
     ident,
+    audio,
+    onPlay,
 }: {
     group: AttestationLemmaGroup
     classes: string | null
     ident: string
+    /** the step is a recording: every line is a way to hearing it, even one
+     * whose transcript wrote no timestamp down (Skeealyn Vannin Track 12) */
+    audio: boolean
+    /** opens the listening popup at a tapped use's line */
+    onPlay: (csvLineNumber: number) => void
 }) => (
     <div className="attest-group">
         <p className="attest-group-head">
@@ -147,6 +185,14 @@ const LemmaGroup = ({
                     manx={line.manx}
                     english={line.english}
                     highlights={line.manxHighlights}
+                    play={
+                        audio || line.subStart != null
+                            ? {
+                                  at: line.subStart ?? null,
+                                  open: () => onPlay(line.csvLineNumber),
+                              }
+                            : undefined
+                    }
                 />
             ))}
             {group.count > group.lines.length && (
@@ -206,6 +252,14 @@ export const AttestationWalker = ({
         reading: string | null
     } | null>(null)
     const [lines, setLines] = useState<AttestationLinesResponse | null>(null)
+    // a tapped use's listening popup: the recording, and the line it opens at
+    const [heard, setHeard] = useState<{
+        doc: { ident: string; title: string; year?: number | null }
+        at: number
+    } | null>(null)
+    // another word is another walk: its popup must not outlive the page it
+    // was opened from
+    useEffect(() => setHeard(null), [word])
     // The walk reserves the tallest step it has shown. Steps differ in height
     // (a text may use one reading or three), and a reader scrolled to the foot
     // of the page is held at the bottom by the browser: shortening the page
@@ -260,12 +314,23 @@ export const AttestationWalker = ({
     const walked =
         shown != null && shown.word === word && shown.reading === reading
 
+    // the recordings among the texts (the 🎥 name marks audio documents, as
+    // the Audio tag reads it): most of the corpus only writes a word down, and
+    // the texts that *say* it earn a tab of their own
+    const audioDocs =
+        walk?.documents.filter((d) => d.title.startsWith("🎥")) ?? []
+    // the audio tab is open: the walk steps through the recordings alone. A
+    // ?audio= on a word no recording says falls back to the whole walk, the
+    // way a garbage ?reading= does.
+    const audioTab = params.get("audio") != null && audioDocs.length > 0
+    const documents = audioTab ? audioDocs : (walk?.documents ?? [])
+
     // no step named: the walk starts at the word's first attestation
     const index = Math.max(
         0,
-        walk?.documents.findIndex((d) => d.ident === at) ?? 0,
+        documents.findIndex((d) => d.ident === at),
     )
-    const current = walk?.documents[index]
+    const current: (typeof documents)[number] | undefined = documents[index]
     const currentIdent = current?.ident
 
     // what the step is asked to show: the walked reading's uses, so the lines
@@ -335,11 +400,24 @@ export const AttestationWalker = ({
         if (reading != null) {
             query.set("reading", reading)
         }
+        if (audioTab) {
+            query.set("audio", "1")
+        }
         query.set("at", ident)
         return `${pathname}?${query.toString()}`
     }
-    const previous = walk?.documents[index - 1]
-    const next = walk?.documents[index + 1]
+    /** the audio tab's own address: same reading, no step — the recordings are
+     * walked from the earliest, like a walk newly opened */
+    const audioTabTo = () => {
+        const query = new URLSearchParams()
+        if (reading != null) {
+            query.set("reading", reading)
+        }
+        query.set("audio", "1")
+        return `${pathname}?${query.toString()}`
+    }
+    const previous = documents[index - 1]
+    const next = documents[index + 1]
 
     return (
         <section className="attest">
@@ -367,9 +445,14 @@ export const AttestationWalker = ({
             <FirstAttestation history={history} classes={classes} />
 
             {showTabs && (
-                <nav className="attest-tabs" aria-label="Readings of this word">
+                <nav
+                    className="attest-tabs"
+                    aria-label="Readings and recordings of this word"
+                >
                     {tabs.map((lemma) =>
-                        lemma === activeTab ? (
+                        // with the audio tab open, the active reading is the
+                        // way back to its whole walk rather than a caption
+                        lemma === activeTab && !audioTab ? (
                             <span
                                 key={lemma}
                                 className="attest-tab attest-tab-active"
@@ -387,6 +470,25 @@ export const AttestationWalker = ({
                             </Link>
                         ),
                     )}
+                    {/* the texts that *say* the word, walked alone: most of
+                        the corpus only writes it down */}
+                    {audioDocs.length > 0 &&
+                        (audioTab ? (
+                            <span
+                                className="attest-tab attest-tab-active"
+                                aria-current="true"
+                            >
+                                {`🔊 audio${audioDocs.length > 1 ? ` ×${audioDocs.length.toLocaleString()}` : ""}`}
+                            </span>
+                        ) : (
+                            <Link
+                                className="attest-tab"
+                                to={audioTabTo()}
+                                title="Only the recordings, oldest first"
+                            >
+                                {`🔊 audio${audioDocs.length > 1 ? ` ×${audioDocs.length.toLocaleString()}` : ""}`}
+                            </Link>
+                        ))}
                     {/* the reading's whole family, drawn on the lemma page:
                         the tab names the lexeme, this is the way to its tree.
                         Not offered for a spelling walk — there is no lemma to
@@ -409,10 +511,18 @@ export const AttestationWalker = ({
             {!hasWalk ? null : (
                 <>
                     <p className="attest-summary">
-                        {`${plural(walk.documents.length, "text", "texts")}, `}
-                        {walk.documents[0].year}
-                        {"–"}
-                        {walk.documents[walk.documents.length - 1].year}
+                        {audioTab
+                            ? `${plural(documents.length, "recording", "recordings")}, `
+                            : `${plural(documents.length, "text", "texts")}, `}
+                        {documents[0].year}
+                        {/* one year said once: a lone document has no range */}
+                        {documents[0].year !==
+                            documents[documents.length - 1].year && (
+                            <>
+                                {"–"}
+                                {documents[documents.length - 1].year}
+                            </>
+                        )}
                     </p>
 
                     <div
@@ -426,7 +536,11 @@ export const AttestationWalker = ({
                         }
                     >
                         <PrevNextLinks
-                            ariaLabel="Texts using this word, in date order"
+                            ariaLabel={
+                                audioTab
+                                    ? "Recordings using this word, in date order"
+                                    : "Texts using this word, in date order"
+                            }
                             previous={
                                 previous
                                     ? {
@@ -491,6 +605,17 @@ export const AttestationWalker = ({
                                             lines.groups,
                                         )}
                                         ident={lines.ident}
+                                        audio={lines.title.startsWith("🎥")}
+                                        onPlay={(csvLineNumber) =>
+                                            setHeard({
+                                                doc: {
+                                                    ident: lines.ident,
+                                                    title: lines.title,
+                                                    year: lines.year,
+                                                },
+                                                at: csvLineNumber,
+                                            })
+                                        }
                                     />
                                 ))}
                             </div>
@@ -504,6 +629,26 @@ export const AttestationWalker = ({
                     </div>
                 </>
             )}
+
+            <AudioAttestationModal
+                word={word}
+                // the word's other recordings ride along for the popup's
+                // arrows; a recording the walk does not list (a timed line in
+                // something unnamed as audio) leafs through itself alone
+                docs={
+                    heard == null
+                        ? []
+                        : audioDocs.some((d) => d.ident === heard.doc.ident)
+                          ? audioDocs
+                          : [heard.doc]
+                }
+                openAt={
+                    heard == null
+                        ? null
+                        : { ident: heard.doc.ident, at: heard.at }
+                }
+                onClose={() => setHeard(null)}
+            />
         </section>
     )
 }

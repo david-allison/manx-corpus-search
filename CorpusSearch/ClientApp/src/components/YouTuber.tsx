@@ -10,8 +10,24 @@ export type Player = {
 
 // event.target needs work, as does 'opts'
 /* eslint-disable @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment */
-const YouTuber = ({ videoId, ref }: { videoId: string; ref?: Ref<Player> }) => {
+const YouTuber = ({
+    videoId,
+    startSeconds,
+    autoplay,
+    ref,
+}: {
+    videoId: string
+    /** where playback begins, in seconds — a deep link's moment. Read once, at
+     * mount: a change of `opts` reloads the embed, and a re-search that loses
+     * the target line must not restart a video mid-listen. */
+    startSeconds?: number
+    /** play on load: only for a player a click summoned (the audio popup) —
+     * anywhere else the reader has not asked to be spoken at */
+    autoplay?: boolean
+    ref?: Ref<Player>
+}) => {
     const player = useRef<YouTubePlayer>(null)
+    const start = useRef(startSeconds).current
 
     const seek = (time: number) => {
         if (player.current == undefined) {
@@ -34,7 +50,9 @@ const YouTuber = ({ videoId, ref }: { videoId: string; ref?: Ref<Player> }) => {
         //width: "60%",
         playerVars: {
             // https://developers.google.com/youtube/player_parameters#autoplay
-            autoplay: 0,
+            autoplay: autoplay ? 1 : 0,
+            // https://developers.google.com/youtube/player_parameters#start
+            ...(start != null ? { start: Math.floor(start) } : {}),
         },
     }
 

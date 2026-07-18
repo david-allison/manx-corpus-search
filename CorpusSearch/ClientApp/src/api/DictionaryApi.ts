@@ -234,6 +234,9 @@ export type AttestationDocument = {
      * AttestationDocument on the server). Absent for an ambiguous word, whose
      * uses are counted a document at a time as `useCount` */
     uses?: number | null
+    /** whether a recording's transcript says when its lines are spoken
+     * (Skeealyn Vannin Track 12's does not); null for anything in print */
+    timed?: boolean | null
 }
 
 /** The lexeme's uses inside one document, split by the reading each line
@@ -270,6 +273,11 @@ export type AttestationLemmaGroup = {
         english?: string | null
         manxHighlights?: { start: number; end: number }[] | null
         csvLineNumber: number
+        /** seconds into the recording, for a line of a transcribed video: the
+         * use is a moment as much as a line, and the walk links to hearing it */
+        subStart?: number | null
+        /** who says the line, in a transcribed interview */
+        speaker?: string | null
     }[]
 }
 

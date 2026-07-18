@@ -556,4 +556,105 @@ describe("Dictionary page", () => {
             "/dictionary/billey",
         )
     })
+
+    it("offers audio in the title when a recording says the word", async () => {
+        // respondWith, except the walk holds a recording (the 🎥 name)
+        fetchMock.mockImplementation((url) => {
+            const href = hrefOf(url)
+            const body = href.includes("/history")
+                ? usedOnce
+                : href.includes("/dictionaries")
+                  ? dictionaries
+                  : href.includes("/attestations")
+                    ? {
+                          ...emptyAttestations,
+                          documents: [
+                              {
+                                  ident: "YouTube-SV",
+                                  title: "🎥 Skeealyn Vannin",
+                                  year: 1948,
+                              },
+                          ],
+                      }
+                    : href.includes("/samples")
+                      ? []
+                      : {
+                            answering: dictionaries.map((d) => d.slug),
+                            word: "greesagh",
+                            isSuggestionTier: false,
+                            attested: true,
+                            groups: [],
+                        }
+            return Promise.resolve({
+                ok: true,
+                json: () => Promise.resolve(body),
+            } as Response)
+        })
+        renderAt("/dictionary/greesagh")
+
+        const audio = await screen.findByRole("button", { name: "🔊 audio" })
+        // the popup names the recording before it is opened
+        expect(audio.getAttribute("title")).toContain("Skeealyn Vannin")
+    })
+
+    /** Skeealyn Vannin Track 12's transcript carries no timings, so its
+     * player can only start from the top: the title's link passes over it
+     * for a recording it can jump into, however much older the untimed one */
+    it("leads with a timed recording over an earlier untimed one", async () => {
+        fetchMock.mockImplementation((url) => {
+            const href = hrefOf(url)
+            const body = href.includes("/history")
+                ? usedOnce
+                : href.includes("/dictionaries")
+                  ? dictionaries
+                  : href.includes("/attestations")
+                    ? {
+                          ...emptyAttestations,
+                          documents: [
+                              {
+                                  ident: "Track-12",
+                                  title: "🎥 Skeealyn Vannin, Track 12",
+                                  year: 1948,
+                                  timed: false,
+                              },
+                              {
+                                  ident: "SA0001",
+                                  title: "🎥 HOYFM SA0001",
+                                  year: 1951,
+                                  timed: true,
+                              },
+                          ],
+                      }
+                    : href.includes("/samples")
+                      ? []
+                      : {
+                            answering: dictionaries.map((d) => d.slug),
+                            word: "dooinney",
+                            isSuggestionTier: false,
+                            attested: true,
+                            groups: [],
+                        }
+            return Promise.resolve({
+                ok: true,
+                json: () => Promise.resolve(body),
+            } as Response)
+        })
+        renderAt("/dictionary/dooinney")
+
+        const audio = await screen.findByRole("button", { name: "🔊 audio" })
+        expect(audio.getAttribute("title")).toContain("SA0001")
+    })
+
+    it("offers no audio in the title when no recording uses the word", async () => {
+        respondWith({
+            word: "billey",
+            isSuggestionTier: false,
+            attested: true,
+            groups: [],
+        })
+        renderAt("/dictionary/billey")
+
+        await screen.findByText("All dictionaries")
+        expect(screen.queryByRole("button", { name: "🔊 audio" })).toBeNull()
+    })
 })
