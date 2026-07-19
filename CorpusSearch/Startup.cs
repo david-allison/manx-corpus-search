@@ -235,6 +235,10 @@ public class Startup(IConfiguration configuration)
                 pattern: "{controller}/{action=Index}/{id?}");
         });
 
+        // the dictionary host's front door is "/": its bare /dictionary
+        // permanently redirects there (see DictionaryHost)
+        app.UseDictionaryHostRootRedirect();
+
         if (!env.IsDevelopment())
         {
             // URLs which are neither a server route nor a SPA page must 404 rather
