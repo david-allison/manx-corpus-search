@@ -1,4 +1,4 @@
-import { FormEvent, useState } from "react"
+import { FormEvent, KeyboardEvent, useState } from "react"
 import { Box, Modal } from "@mui/material"
 import { FeedbackError, submitFeedback } from "../api/FeedbackApi"
 import { usePersistedState } from "../hooks/usePersistedState"
@@ -75,6 +75,14 @@ export const DictionaryFeedback = ({
             )
     }
 
+    // Cmd/Ctrl+Enter sends from anywhere in the form: Enter alone must not —
+    // in the textarea it is a newline, and a suggestion is a place for them
+    const submitKey = (e: KeyboardEvent) => {
+        if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+            submit(e)
+        }
+    }
+
     return (
         <>
             <button
@@ -115,7 +123,11 @@ export const DictionaryFeedback = ({
                             <p className="dict-feedback-signature">-- David</p>
                         </div>
                     ) : (
-                        <form className="dict-feedback-form" onSubmit={submit}>
+                        <form
+                            className="dict-feedback-form"
+                            onSubmit={submit}
+                            onKeyDown={submitKey}
+                        >
                             <p className="dict-feedback-hint">
                                 Anything helps: a correction, a missing word or
                                 meaning, a better translation, or context this

@@ -109,6 +109,50 @@ describe("DictionaryFeedback", () => {
         expect(fetchMock).not.toHaveBeenCalled()
     })
 
+    it("sends on Cmd+Enter from the suggestion", async () => {
+        respond(204)
+        openDialog()
+        typeSuggestion("the plural is missing")
+        fireEvent.keyDown(screen.getByLabelText("Your suggestion"), {
+            key: "Enter",
+            metaKey: true,
+        })
+
+        await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1))
+    })
+
+    it("sends on Ctrl+Enter, and from the name field too", async () => {
+        respond(204)
+        openDialog()
+        typeSuggestion("the plural is missing")
+        fireEvent.keyDown(screen.getByLabelText("Name (optional)"), {
+            key: "Enter",
+            ctrlKey: true,
+        })
+
+        await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1))
+    })
+
+    it("keeps a bare Enter as a newline, never a send", () => {
+        openDialog()
+        typeSuggestion("line one")
+        fireEvent.keyDown(screen.getByLabelText("Your suggestion"), {
+            key: "Enter",
+        })
+
+        expect(fetchMock).not.toHaveBeenCalled()
+    })
+
+    it("sends nothing on Cmd+Enter while the suggestion is empty", () => {
+        openDialog()
+        fireEvent.keyDown(screen.getByLabelText("Your suggestion"), {
+            key: "Enter",
+            metaKey: true,
+        })
+
+        expect(fetchMock).not.toHaveBeenCalled()
+    })
+
     it("keeps the reader's text when the send fails", async () => {
         respond(502)
         openDialog()
