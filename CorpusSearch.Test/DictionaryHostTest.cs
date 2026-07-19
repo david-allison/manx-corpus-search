@@ -31,13 +31,16 @@ public class DictionaryHostTest
             Is.EqualTo("/"));
     }
 
+    /// <summary>The query string is dropped, not carried: the landing reads no
+    /// query parameters, and a Location reflecting request data is an
+    /// open-redirect shape a constant target does not have</summary>
     [Test]
-    public void TheQueryStringRidesAlong()
+    public void TheQueryStringDoesNotRideAlong()
     {
         Assert.That(
             DictionaryHost.RootRedirectTarget(
                 Request("dictionary.gaelg.im", "/dictionary", "?q=geddyn")),
-            Is.EqualTo("/?q=geddyn"));
+            Is.EqualTo("/"));
     }
 
     // the sub-pages stay under the prefix on both hosts, and the corpus host

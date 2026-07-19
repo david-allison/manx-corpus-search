@@ -18,8 +18,8 @@ internal static class DictionaryHost
         request.Host.Host.StartsWith("dictionary.", StringComparison.OrdinalIgnoreCase);
 
     /// <summary>
-    /// Permanently moves the bare /dictionary to "/" on the dictionary host,
-    /// query string and all: one address for the front door, not two.
+    /// Permanently moves the bare /dictionary to "/" on the dictionary host:
+    /// one address for the front door, not two.
     ///
     /// Sits after the MVC endpoints, so the server-rendered legacy pages
     /// (/Dictionary/Cregeen) are answered before it and stay where they are.
@@ -40,9 +40,15 @@ internal static class DictionaryHost
         });
     }
 
-    /// <summary>"/" (with the query string riding along) for the dictionary
-    /// host's bare /dictionary — or null where nothing moves: another host, or
-    /// any sub-page, which lives under the prefix on both hosts</summary>
+    /// <summary>"/" for the dictionary host's bare /dictionary — or null where
+    /// nothing moves: another host, or any sub-page, which lives under the
+    /// prefix on both hosts.
+    ///
+    /// The query string is dropped, not carried: the landing reads no query
+    /// parameters, so there is nothing to lose — and a Location built from
+    /// request data is an open-redirect shape
+    /// (CodeQL cs/web/unvalidated-url-redirection), where a constant is
+    /// provably not.</summary>
     internal static string? RootRedirectTarget(HttpRequest request)
     {
         var path = request.Path.Value?.TrimEnd('/');
@@ -51,6 +57,6 @@ internal static class DictionaryHost
         {
             return null;
         }
-        return "/" + request.QueryString.ToUriComponent();
+        return "/";
     }
 }
