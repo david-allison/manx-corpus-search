@@ -14,6 +14,11 @@ services:
     restart: unless-stopped
     ports:
       - "127.0.0.1:5002:8080" # proxied by nginx
+    environment:
+      # dictionary-feedback relay target (a Google Apps Script /exec URL, and a
+      # secret): set FEEDBACK_APPS_SCRIPT_URL in an uncommitted .env beside this
+      # file on the server. Unset, the feedback feature is dark.
+      - Feedback__AppsScriptUrl=${FEEDBACK_APPS_SCRIPT_URL:-}
     # no logs; for user privacy
     logging:
       driver: "none"

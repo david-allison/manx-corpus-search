@@ -1,6 +1,8 @@
 using CorpusSearch.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -40,6 +42,18 @@ public class LoadConfig
     //public LoadConfig(bool videoOnlyConfig) => videoOnlyConfig = videoOnly;
 }
 
+/// <summary>Where dictionary-entry feedback goes: a Google Apps Script web app
+/// appending rows to a sheet, so the store lives off this server. The URL is
+/// the secret — unset (the default) the feature is dark and api/Feedback 404s.
+/// Production supplies it as the Feedback__AppsScriptUrl environment variable
+/// (see docker-compose.yml). The script's listing and the procedure to create
+/// or rotate it are in OPERATIONS.md, "Setting up (or rotating) the
+/// dictionary-feedback sheet".</summary>
+public class FeedbackConfig
+{
+    public string? AppsScriptUrl { get; set; }
+}
+
 public class Startup(IConfiguration configuration)
 {
     // set by SetupDictionaries before the server starts serving
@@ -64,6 +78,22 @@ public class Startup(IConfiguration configuration)
         });
         // the pronunciation relay (AudioController) fetches from learnmanx.com
         services.AddHttpClient();
+
+        // the feedback relay (FeedbackController) posts to a Google Sheet's script
+        services.AddSingleton(Configuration.GetSection("Feedback").Get<FeedbackConfig>() ?? new FeedbackConfig());
+        // the site's one unauthenticated write endpoint gets a site-wide budget
+        // rather than a per-IP one: behind nginx every request wears the proxy's
+        // address, so partitioning by IP would be one bucket in disguise
+        services.AddRateLimiter(options =>
+        {
+            options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+            options.AddFixedWindowLimiter("feedback", o =>
+            {
+                o.Window = TimeSpan.FromMinutes(10);
+                o.PermitLimit = 10;
+                o.QueueLimit = 0;
+            });
+        });
 
         services.AddSingleton(provider => LuceneIndex.GetInstance());
         services.AddSingleton(provider => SearchParser.GetParser());
@@ -193,6 +223,10 @@ public class Startup(IConfiguration configuration)
         app.UseSpaStaticFiles(noCacheHtml);
 
         app.UseRouting();
+
+        // only the "feedback" policy is registered: every other endpoint (and the
+        // SPA middleware below) passes untouched
+        app.UseRateLimiter();
 
         app.UseEndpoints(endpoints =>
         {
