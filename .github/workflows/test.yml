@@ -98,9 +98,15 @@ jobs:
       - run: npx playwright install --with-deps chromium
       # the books are downloaded artifacts, never tracked files: without
       # cregeen.json the dictionary loads silently empty, and the browse
-      # spec meets a letter with no chapters
-      - run: ../tools/download_cregeen.sh && ../tools/download_kelly_m2e.sh
+      # spec meets a letter with no chapters. gh rather than the deploy
+      # scripts' bare curl: an unauthenticated api.github.com call from a
+      # shared runner meets the rate limit and answers with no assets
+      - run: |
+          gh release download --repo david-allison/cregeen-manx-dictionary-data --pattern '*' --output cregeen.json
+          gh release download --repo david-allison/kelly-m2e-manx-dictionary-data --pattern '*' --output kellym2e.json
         working-directory: CorpusSearch/Resources
+        env:
+          GH_TOKEN: ${{ github.token }}
       - run: npm run e2e
       - uses: actions/upload-artifact@v7
         if: failure()
