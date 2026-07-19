@@ -173,10 +173,14 @@ public class DictionaryController(
     /// </summary>
     /// <param name="dict">optional slug: one book's own order. Without it, the
     /// union across every dictionary, in collation order</param>
+    /// <param name="span">complete windows either side to send along, for the
+    /// walk to step through without asking again. Clamped: the span serves a
+    /// reader's tapping hand, not a bulk export.</param>
     [HttpGet("neighbours")]
-    public DictionaryNeighbours Neighbours([FromQuery] string word, [FromQuery] string? dict = null)
+    public DictionaryNeighbours Neighbours([FromQuery] string word,
+        [FromQuery] string? dict = null, [FromQuery] int span = 0)
     {
-        return browseService.Neighbours(dict, word);
+        return browseService.Neighbours(dict, word, Math.Clamp(span, 0, 25));
     }
 
     /// <summary>

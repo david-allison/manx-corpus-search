@@ -204,4 +204,13 @@ public class DictionaryNeighbours
     /// says. Null when there is none left in that direction.</summary>
     public string? PreviousUsed { get; set; }
     public string? NextUsed { get; set; }
+
+    /// <summary>The complete windows of the nearest pages either side, when a
+    /// span was asked for: previous pages nearest-first, then next pages
+    /// nearest-first, each carrying its own arrows and skips. The walk's
+    /// client steps through these without asking again, so a reader tapping
+    /// faster than a round trip is never stopped. Empty without a span, and
+    /// for a word that is not a headword (its first step lands on one, whose
+    /// own answer brings a span).</summary>
+    public List<DictionaryNeighbours> Nearby { get; set; } = [];
 }

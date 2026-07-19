@@ -18,6 +18,17 @@ public class DictionaryBrowseService(
 
     private readonly ISearchDictionary[] dictionaries = dictionaryServices.ToArray();
 
+    /// <summary>The cross-dictionary union in collation order, built once: the
+    /// headword lists are fixed at deploy, and the walk's prefetching client
+    /// asks for neighbours three windows at a time — re-sorting a hundred
+    /// thousand headwords per request would be the cost of every word page</summary>
+    private readonly Lazy<List<string>> unionHeadwords = new(() => dictionaryServices
+        .Where(x => x.QueryLanguages.Contains("gv"))
+        .SelectMany(x => x.Headwords)
+        .Distinct(StringComparer.InvariantCultureIgnoreCase)
+        .OrderBy(DictionaryBrowse.CollationKey, StringComparer.Ordinal)
+        .ToList());
+
     public ISearchDictionary? Find(string slug) =>
         dictionaries.FirstOrDefault(x =>
             string.Equals(x.Slug, slug, StringComparison.OrdinalIgnoreCase));
@@ -161,7 +172,10 @@ public class DictionaryBrowseService(
     /// across all of them it is the union in collation order, which is nobody's
     /// printed order but is the only one they can share.
     /// </summary>
-    public DictionaryNeighbours Neighbours(string? slug, string word)
+    /// <param name="span">how many complete windows either side to send along
+    /// (<see cref="DictionaryNeighbours.Nearby"/>): the walk's client steps
+    /// through them without asking again. 0 keeps the answer to the word's own.</param>
+    public DictionaryNeighbours Neighbours(string? slug, string word, int span = 0)
     {
         List<string> ordered;
         if (string.Equals(slug, SpokenSlug, StringComparison.OrdinalIgnoreCase))
@@ -183,12 +197,7 @@ public class DictionaryBrowseService(
                 ? scope.Headwords.ToList()
                 // no book's order can be kept across books, so the union takes the
                 // reader's: a word in several dictionaries is one step, not three
-                : dictionaries
-                    .Where(x => x.QueryLanguages.Contains("gv"))
-                    .SelectMany(x => x.Headwords)
-                    .Distinct(StringComparer.InvariantCultureIgnoreCase)
-                    .OrderBy(DictionaryBrowse.CollationKey, StringComparer.Ordinal)
-                    .ToList();
+                : unionHeadwords.Value;
         }
         if (ordered.Count == 0)
         {
@@ -199,25 +208,9 @@ public class DictionaryBrowseService(
             string.Equals(x, word, StringComparison.InvariantCultureIgnoreCase));
         if (at >= 0)
         {
-            // a step to a headword spelled as this one is a step to where you
-            // already are: the URL is the spelling, so Cregeen's two 'baare' and
-            // Kelly's five 'A' are each one page, however many entries they are
-            var back = Step(ordered, at, -1, word, used: false);
-            var forward = Step(ordered, at, +1, word, used: false);
-            return new DictionaryNeighbours
-            {
-                Word = word,
-                Attested = vocabulary.IsAttested(word),
-                Previous = back,
-                PreviousAttested = back != null && vocabulary.IsAttested(back),
-                Next = forward,
-                NextAttested = forward != null && vocabulary.IsAttested(forward),
-                // the nearest word either side the corpus uses is rarely the one
-                // next door: stepping through Phil Kelly one headword at a time
-                // walks a long way through words no text says
-                PreviousUsed = Step(ordered, at, -1, word, used: true),
-                NextUsed = Step(ordered, at, +1, word, used: true),
-            };
+            var window = WindowAt(ordered, at, word);
+            window.Nearby = NearbyWindows(ordered, at, word, span);
+            return window;
         }
 
         // not a headword: file it, and take the entries it would sit between.
@@ -288,6 +281,14 @@ public class DictionaryBrowseService(
     /// </summary>
     private string? Step(List<string> ordered, int at, int step, string word, bool used)
     {
+        var found = StepIndex(ordered, at, step, word, used);
+        return found < 0 ? null : ordered[found];
+    }
+
+    /// <summary>As <see cref="Step"/>, but saying where the page found sits:
+    /// the span walk steps on from it. -1 where there is nothing left.</summary>
+    private int StepIndex(List<string> ordered, int at, int step, string word, bool used)
+    {
         for (var i = at + step; i >= 0 && i < ordered.Count; i += step)
         {
             if (string.Equals(ordered[i], word, StringComparison.InvariantCultureIgnoreCase))
@@ -296,9 +297,64 @@ public class DictionaryBrowseService(
             }
             if (!used || vocabulary.IsAttested(ordered[i]))
             {
-                return ordered[i];
+                return i;
             }
         }
-        return null;
+        return -1;
+    }
+
+    /// <summary>The whole window of the page at <paramref name="at"/>: its
+    /// arrows, their attestation, and the skips to the nearest words the
+    /// corpus uses. A step to a headword spelled as this one is a step to
+    /// where you already are — the URL is the spelling, so Cregeen's two
+    /// 'baare' and Kelly's five 'A' are each one page, however many entries
+    /// they are.</summary>
+    /// <param name="word">the page's display spelling: the requested word for
+    /// the centre window, the headword itself for a nearby one</param>
+    private DictionaryNeighbours WindowAt(List<string> ordered, int at, string word)
+    {
+        var back = Step(ordered, at, -1, word, used: false);
+        var forward = Step(ordered, at, +1, word, used: false);
+        return new DictionaryNeighbours
+        {
+            Word = word,
+            Attested = vocabulary.IsAttested(word),
+            Previous = back,
+            PreviousAttested = back != null && vocabulary.IsAttested(back),
+            Next = forward,
+            NextAttested = forward != null && vocabulary.IsAttested(forward),
+            // the nearest word either side the corpus uses is rarely the one
+            // next door: stepping through Phil Kelly one headword at a time
+            // walks a long way through words no text says
+            PreviousUsed = Step(ordered, at, -1, word, used: true),
+            NextUsed = Step(ordered, at, +1, word, used: true),
+        };
+    }
+
+    /// <summary>The complete windows of up to <paramref name="span"/> pages
+    /// either side of <paramref name="at"/>, walked the way the arrows walk:
+    /// page by distinct page, so a run of same-spelled headwords is one step
+    /// here as it is there. Previous pages first, each side nearest-first.</summary>
+    private List<DictionaryNeighbours> NearbyWindows(
+        List<string> ordered, int at, string word, int span)
+    {
+        var windows = new List<DictionaryNeighbours>();
+        foreach (var direction in (int[]) [-1, +1])
+        {
+            var from = at;
+            var page = word;
+            for (var taken = 0; taken < span; taken++)
+            {
+                var found = StepIndex(ordered, from, direction, page, used: false);
+                if (found < 0)
+                {
+                    break;
+                }
+                page = ordered[found];
+                windows.Add(WindowAt(ordered, found, page));
+                from = found;
+            }
+        }
+        return windows;
     }
 }

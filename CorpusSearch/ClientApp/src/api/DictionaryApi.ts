@@ -598,18 +598,28 @@ export type DictionaryNeighboursResponse = {
      * the one next door: half of Phil Kelly is unattested */
     previousUsed?: string | null
     nextUsed?: string | null
+    /** the complete windows of the nearest pages either side, when a span was
+     * asked for: previous pages nearest-first, then next pages nearest-first.
+     * The walk steps through these without asking again. */
+    nearby?: DictionaryNeighboursResponse[] | null
 }
 
 /** @param dict optional slug: one book's own order. Without it, the union
- * across every dictionary in collation order */
+ * across every dictionary in collation order
+ * @param span complete windows either side to send along, for stepping
+ * through without asking again */
 export const dictionaryNeighbours = async (
     word: string,
     dict?: string,
     signal?: AbortSignal,
+    span?: number,
 ): Promise<DictionaryNeighboursResponse> => {
     const params = new URLSearchParams({ word })
     if (dict) {
         params.set("dict", dict)
+    }
+    if (span) {
+        params.set("span", span.toString())
     }
     const response = await fetch(
         `/api/Dictionary/neighbours?${params.toString()}`,
