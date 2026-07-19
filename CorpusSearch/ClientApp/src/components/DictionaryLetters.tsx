@@ -18,7 +18,11 @@ const BROWSE_DICT = "cregeen"
  * The books are named above the letters because the letters are one book's. They
  * were Cregeen's before too, and said so nowhere — an unlabelled A|B|C that gave
  * a reader no way to know whose index they were reading, nor that there were
- * others to read. */
+ * others to read.
+ *
+ * No name is marked active, though: the active mark is the browse pages' "you
+ * are here", and the landing has chosen nothing for the reader yet — a bolded
+ * Cregeen read as a selection already made. */
 export const DictionaryLetters = () => {
     const [letters, setLetters] = useState<string[]>([])
 
@@ -34,7 +38,7 @@ export const DictionaryLetters = () => {
 
     return (
         <>
-            <DictionaryBooks active={BROWSE_DICT} />
+            <DictionaryBooks />
             {letters.length > 0 && (
                 <nav
                     className="dict-letters-home"
