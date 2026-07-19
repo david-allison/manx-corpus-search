@@ -233,3 +233,13 @@ _Pvt_Extensions
 
 # custom
 *.DS_STORE
+.DS_Store
+
+# Runtime dictionary data, fetched on deployment (tools/init.sh) or copied
+# in locally: the sources of truth are the dictionary repos
+CorpusSearch/Resources/cregeen.json
+CorpusSearch/Resources/kellym2e.json
+CorpusSearch/Resources/spoken.json
+
+# Claude Code session state: worktrees, local settings, downloaded skills
+.claude/
