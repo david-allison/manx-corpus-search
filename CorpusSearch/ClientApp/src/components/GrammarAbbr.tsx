@@ -65,7 +65,11 @@ const GLOSSARY: Record<string, string> = {
 const LABEL_ONLY: Record<string, string> = {
     // the books write a noun 's.' for substantive; the page's own sense labels
     // say 'n.', which no dictionary here prints and no definition would contain
+    // — wearing the gender when the sense's entries agree on one
     "n.": "noun",
+    "n. m.": "noun, masculine",
+    "n. f.": "noun, feminine",
+    "n. m. f.": "noun, masculine or feminine",
     "interj.": "interjection",
     "in.": "interjection",
     "int.": "interjection",
