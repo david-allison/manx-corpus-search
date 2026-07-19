@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { Link } from "react-router-dom"
 import { DictionaryStats, dictionaryStats } from "../api/DictionaryApi"
 import "./DictionaryCoverage.css"
 
@@ -18,6 +19,7 @@ const Card = ({
     label,
     value,
     detail,
+    to,
 }: {
     number: string
     label: string
@@ -25,10 +27,18 @@ const Card = ({
      * undefined draws no bar (a count is no share) */
     value?: number | null
     detail?: string
+    /** where the share's own index lives: the label becomes the way in */
+    to?: string
 }) => (
     <div className="dict-coverage-stat">
         <span className="dict-coverage-number">{number}</span>
-        <span className="dict-coverage-label">{label}</span>
+        {to ? (
+            <Link className="dict-coverage-label" to={to}>
+                {label} ›
+            </Link>
+        ) : (
+            <span className="dict-coverage-label">{label}</span>
+        )}
         {value !== undefined && (
             <span
                 className="dict-coverage-track"
@@ -115,6 +125,7 @@ export const DictionaryCoverage = () => {
                         detail={`${count(stats.audioWords!)} of ${count(
                             stats.distinctWords,
                         )} distinct words, across ${stats.recordings} recordings`}
+                        to="/dictionary/spoken"
                     />
                 ) : (
                     <Card
@@ -126,6 +137,7 @@ export const DictionaryCoverage = () => {
                 <Card
                     number={percent(stats.attestedLemmas, stats.lemmas)}
                     label="of the word families appear in the texts"
+                    to="/dictionary/lemma"
                     value={share(stats.attestedLemmas, stats.lemmas)}
                     detail={`${count(stats.attestedLemmas)} of ${count(
                         stats.lemmas,

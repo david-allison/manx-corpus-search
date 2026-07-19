@@ -24,6 +24,15 @@ public class DictionaryController(
     [HttpGet("stats")]
     public DictionaryStats Stats() => statsService.Stats();
 
+    /// <summary>One letter of the spoken dictionary: every word the recordings
+    /// say that some book answers for. 404 until the recordings are read.</summary>
+    [HttpGet("spoken")]
+    public ActionResult<DictionaryBrowsePage> Spoken([FromQuery] string? at = null)
+    {
+        var page = statsService.SpokenIndex(at);
+        return page == null ? new NotFoundResult() : page;
+    }
+
     /// <summary>
     /// Returns diction
     /// </summary>

@@ -43,6 +43,32 @@ public class DictionaryBrowseServiceTest
         Assert.That(Service(new FakeDictionary("cregeen", "aa")).Page("nope", null), Is.Null);
     }
 
+    /// <summary>The spoken dictionary is a neighbours scope with no book behind
+    /// it: stepping walks the heard words in collation order, and a headword
+    /// nobody recorded is not a step. Before the recordings are read there is
+    /// nothing to step through, and the walk is not offered.</summary>
+    [Test]
+    public void TheSpokenScopeStepsThroughTheHeardWords()
+    {
+        var dict = new FakeDictionary("cregeen", "aase", "baase", "caashey", "dooinney");
+        var vocabulary = new CorpusVocabulary(LemmaTable.Instance);
+        var stats = new DictionaryStatsService(
+            LemmaTable.Instance, vocabulary, [dict], new WorkService());
+        var service = new DictionaryBrowseService([dict], vocabulary, stats);
+
+        var unread = service.Neighbours("spoken", "baase");
+        stats.InitAudio(1, ["baase dooinney", "aase"]);
+        var heard = service.Neighbours("spoken", "baase");
+        Assert.Multiple(() =>
+        {
+            Assert.That(unread.Previous, Is.Null);
+            Assert.That(unread.Next, Is.Null);
+            Assert.That(heard.Previous, Is.EqualTo("aase"));
+            // 'caashey' is printed but never recorded: the walk steps past it
+            Assert.That(heard.Next, Is.EqualTo("dooinney"));
+        });
+    }
+
     /// <summary>The bar is in capitals, as a printed index has it, though no book
     /// here prints its headwords that way</summary>
     [Test]

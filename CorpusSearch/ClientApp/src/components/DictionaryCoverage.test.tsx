@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { cleanup, render, screen, waitFor } from "@testing-library/react"
+import { MemoryRouter } from "react-router-dom"
 import { DictionaryCoverage } from "./DictionaryCoverage"
 import { DictionaryStats } from "../api/DictionaryApi"
 
@@ -33,7 +34,11 @@ const respond = (body: DictionaryStats) =>
 describe("DictionaryCoverage", () => {
     it("leads with the whole text's share, a bar beneath, the counts last", async () => {
         respond(stats)
-        render(<DictionaryCoverage />)
+        render(
+            <MemoryRouter>
+                <DictionaryCoverage />
+            </MemoryRouter>,
+        )
 
         // the headline weighs the text a reader meets, not the word list:
         // the distinct-words pair rides in the detail line
@@ -58,6 +63,11 @@ describe("DictionaryCoverage", () => {
                 /7,500 of 50,000 distinct words, across 23 recordings/,
             ),
         ).toBeTruthy()
+        // the share's own index hangs off the label
+        const spoken = screen.getByRole("link", {
+            name: "of the corpus's words can be heard spoken ›",
+        })
+        expect(spoken.getAttribute("href")).toBe("/dictionary/spoken")
         // the lemma table, the books, and the corpus measured against
         expect(screen.getByText("75.0%")).toBeTruthy()
         expect(
@@ -77,7 +87,11 @@ describe("DictionaryCoverage", () => {
             audioWords: null,
             audioRunningWords: null,
         })
-        render(<DictionaryCoverage />)
+        render(
+            <MemoryRouter>
+                <DictionaryCoverage />
+            </MemoryRouter>,
+        )
 
         await waitFor(() =>
             expect(

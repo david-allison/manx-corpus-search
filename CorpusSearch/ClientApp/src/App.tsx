@@ -6,6 +6,7 @@ import { Home } from "./routes/Home"
 import { Dictionary } from "./routes/Dictionary"
 import { DictionaryBrowse } from "./routes/DictionaryBrowse"
 import { DictionaryLemma } from "./routes/DictionaryLemma"
+import { DictionarySpoken } from "./routes/DictionarySpoken"
 import { DocumentView } from "./routes/DocumentView"
 import { BitPlayer } from "./routes/BitPlayer"
 import { Contributions } from "./routes/Contributions"
@@ -56,6 +57,12 @@ export const App = () => {
                     {/*:lemma is optional: bare it is the lemma index, whose
                        letter rides on ?at= — 'e' is a lemma, so a path letter
                        would shadow that word's tree*/}
+                    {/*a static segment outranks the :word catch-all, and the
+                       SPA guard's single-segment rule already serves it*/}
+                    <Route
+                        path="/dictionary/spoken"
+                        element={<DictionarySpoken />}
+                    />
                     <Route
                         path="/dictionary/lemma/:lemma?"
                         element={<DictionaryLemma />}

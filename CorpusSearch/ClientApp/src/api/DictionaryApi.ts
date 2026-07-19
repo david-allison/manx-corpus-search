@@ -648,3 +648,27 @@ export const dictionaryStats = async (
     }
     return (await response.json()) as DictionaryStats
 }
+
+/** One letter of the spoken dictionary: every word the recordings say that
+ * some book answers for, in the browse page's shape. Null while the server
+ * is still reading the recordings. */
+export const spokenIndex = async (
+    at?: string | null,
+    signal?: AbortSignal,
+): Promise<DictionaryBrowseResponse | null> => {
+    const params = new URLSearchParams()
+    if (at) {
+        params.set("at", at)
+    }
+    const response = await fetch(
+        `/api/Dictionary/spoken?${params.toString()}`,
+        { signal },
+    )
+    if (response.status === 404) {
+        return null
+    }
+    if (!response.ok) {
+        throw new Error(`spoken index failed: ${response.status}`)
+    }
+    return (await response.json()) as DictionaryBrowseResponse
+}

@@ -10,6 +10,9 @@ export type PrevNextTarget = {
     /** greys the step out: its target is there, but is of lesser standing than
      * the walk's ordinary steps. What the caller means by that is the caller's */
     muted?: boolean
+    /** a glyph worn at the button's inner extremity, facing the word being
+     * walked: the spoken walk's 🔊 */
+    edge?: string
 }
 
 /** Previous/next arrows around a label, as links rather than buttons: each step
@@ -54,8 +57,22 @@ export const PrevNextLinks = ({
                 rel="prev"
                 replace
             >
-                {"‹ "}
-                {previous.label}
+                {previous.edge ? (
+                    // the glyph pinned to the chip's inner border, however
+                    // short the name: the chips hold a width long names need
+                    <>
+                        <span className="prev-next-step-name">
+                            {"‹ "}
+                            {previous.label}
+                        </span>
+                        <span aria-hidden="true">{previous.edge}</span>
+                    </>
+                ) : (
+                    <>
+                        {"‹ "}
+                        {previous.label}
+                    </>
+                )}
             </Link>
         ) : (
             <span
@@ -72,8 +89,20 @@ export const PrevNextLinks = ({
                 rel="next"
                 replace
             >
-                {next.label}
-                {" ›"}
+                {next.edge ? (
+                    <>
+                        <span aria-hidden="true">{next.edge}</span>
+                        <span className="prev-next-step-name">
+                            {next.label}
+                            {" ›"}
+                        </span>
+                    </>
+                ) : (
+                    <>
+                        {next.label}
+                        {" ›"}
+                    </>
+                )}
             </Link>
         ) : (
             <span
@@ -86,7 +115,13 @@ export const PrevNextLinks = ({
 )
 
 const linkClass = (target: PrevNextTarget) =>
-    target.muted ? "prev-next-link dict-unattested" : "prev-next-link"
+    [
+        "prev-next-link",
+        target.muted ? "dict-unattested" : "",
+        target.edge ? "prev-next-edged" : "",
+    ]
+        .filter(Boolean)
+        .join(" ")
 
 /** An arrow and a tooltip: the label would be a third name in a row that has no
  * room for one. Holds its space at the edges, as the ordinary steps do. */

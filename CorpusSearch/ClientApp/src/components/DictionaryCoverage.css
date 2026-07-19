@@ -35,6 +35,17 @@
     color: var(--c-ink);
 }
 
+/* a share with an index of its own: the label is the way in, quietly */
+a.dict-coverage-label {
+    text-decoration: none;
+    color: var(--c-link);
+}
+
+a.dict-coverage-label:hover {
+    color: var(--c-accent);
+    text-decoration: underline;
+}
+
 .dict-coverage-track {
     display: block;
     width: 170px;

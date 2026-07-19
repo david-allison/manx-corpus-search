@@ -83,6 +83,39 @@ public class DictionaryStatsServiceTest
         });
     }
 
+    [Test]
+    public void TheSpokenIndexWaitsForTheRecordings()
+    {
+        var table = Table();
+        Assert.That(Service(table, Vocabulary(table)).SpokenIndex(null), Is.Null);
+    }
+
+    /// <summary>The spoken dictionary is the heard words the books answer for:
+    /// 'ayns' is heard and answered by nobody, so it is corpus, not dictionary;
+    /// 'deiney' is heard and answered through its lemma, so it is in.</summary>
+    [Test]
+    public void TheSpokenIndexListsTheHeardWordsTheBooksAnswerFor()
+    {
+        var table = Table();
+        var service = Service(table, Vocabulary(table));
+        service.InitAudio(1, ["dooinney as ayns", "deiney"]);
+
+        var page = service.SpokenIndex(null)!;
+        var atD = service.SpokenIndex("d")!;
+        Assert.Multiple(() =>
+        {
+            Assert.That(page.Letters, Is.EqualTo(new[] { "A", "D" }));
+            Assert.That(page.Letter, Is.EqualTo("A"));
+            Assert.That(page.Chapters.SelectMany(x => x.Words).Select(x => x.Word),
+                Is.EqualTo(new[] { "as" }));
+            Assert.That(atD.Letter, Is.EqualTo("D"));
+            Assert.That(atD.Chapters.SelectMany(x => x.Words).Select(x => x.Word),
+                Is.EqualTo(new[] { "deiney", "dooinney" }));
+            // heard, so nothing greys
+            Assert.That(atD.Chapters.SelectMany(x => x.Words).All(x => x.Attested));
+        });
+    }
+
     /// <summary>A book that answers for its word list and nothing else</summary>
     private sealed class StubDictionary(string[] words) : ISearchDictionary
     {
