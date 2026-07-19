@@ -141,10 +141,13 @@ export const senseGroupsIn = (page: DictionaryPageResponse): SenseGroup[] => {
             .map((c) => ABBREVIATION[c] ?? c.toLowerCase())
         // a noun sense wears the gender its entries print ("n. m." over an
         // "s. m."), but only while they agree: a mixed or silent sense stays
-        // "n.", and the printed labels underneath remain the evidence
+        // "n.", and the printed labels underneath remain the evidence. An
+        // entry whose printed gender the corpus disputes (genderNote) does
+        // not get to elect the heading's gender.
         if (key === "noun") {
             const genders = new Set(
                 sense.entries
+                    .filter((e) => !e.genderNote)
                     .map((e) => genderOf(e.grammarLabel))
                     .filter((g) => g != null),
             )

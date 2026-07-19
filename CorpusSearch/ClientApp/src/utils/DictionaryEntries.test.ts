@@ -187,6 +187,23 @@ describe("senseGroupsIn", () => {
         expect(groups[0].labels).toEqual(["n. m. f."])
     })
 
+    it("does not let a disputed gender elect the heading", () => {
+        // the real 'grian': printed s. m., but the corpus lenites it as
+        // feminine, and the gender check has said so on the entry
+        const groups = senseGroupsIn(
+            page([
+                entry({
+                    partsOfSpeech: ["Noun"],
+                    grammarLabel: "s. m.",
+                    genderNote:
+                        "the corpus points at feminine against the printed s. m.",
+                }),
+            ]),
+        )
+
+        expect(groups[0].labels).toEqual(["n."])
+    })
+
     it("returns one unlabelled group when nothing declares a class", () => {
         // the page it has today: no senses to show, so none are invented
         const groups = senseGroupsIn(page([entry({}), entry({})]))

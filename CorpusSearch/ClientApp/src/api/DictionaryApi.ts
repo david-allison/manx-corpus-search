@@ -30,6 +30,10 @@ export type Summary = {
     /** the printed grammar label ("s. m.", "s. f."): word class and gender
      * as the dictionary abbreviates them, expanded on hover */
     grammarLabel?: string | null
+    /** corpus evidence against the printed gender, where the gender check
+     * found any: shown as a warning on the label, and it keeps the sense
+     * heading from wearing the disputed gender */
+    genderNote?: string | null
     /** the entry's word classes ("Noun", "Verb", …) where the dictionary
      * declares them. Absent for Phil Kelly, which merges senses, and for the
      * entries whose printed definition names no class */

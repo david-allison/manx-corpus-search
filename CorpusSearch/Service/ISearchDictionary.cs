@@ -104,6 +104,12 @@ public class DictionarySummary
     /// display beside the headword with the expansion on hover</summary>
     public string? GrammarLabel { get; set; }
 
+    /// <summary>Corpus evidence against the printed gender, where the
+    /// gender check found any (some nouns changed gender since the book):
+    /// shown as a warning on the label, and it keeps the sense heading
+    /// from wearing the disputed gender</summary>
+    public string? GenderNote { get; set; }
+
     /// <summary>Set when the looked-up word reached its entries through a
     /// Phillips 1610 spelling link: the classical spelling it stands for
     /// ("dooinney" when tapping dwyne). The client explains the hop up front
