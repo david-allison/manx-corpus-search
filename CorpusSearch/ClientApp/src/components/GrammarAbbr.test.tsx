@@ -6,9 +6,11 @@ import { DefinitionText, expandGrammarLabel, GrammarLabel } from "./GrammarAbbr"
 afterEach(cleanup)
 
 describe("expandGrammarLabel", () => {
-    it("expands Cregeen's gendered noun labels", () => {
-        expect(expandGrammarLabel("s. m.")).toBe("noun, masculine")
-        expect(expandGrammarLabel("s. f.")).toBe("noun, feminine")
+    it("expands Cregeen's gendered noun labels, naming the substantive", () => {
+        expect(expandGrammarLabel("s. m.")).toBe(
+            "noun (substantive), masculine",
+        )
+        expect(expandGrammarLabel("s. f.")).toBe("noun (substantive), feminine")
         expect(expandGrammarLabel("v.")).toBe("verb")
         expect(expandGrammarLabel("in.")).toBe("interjection")
     })
@@ -35,7 +37,7 @@ describe("GrammarLabel", () => {
         render(<GrammarLabel label="s. f." />)
 
         const abbr = screen.getByText("s. f.")
-        expect(abbr.getAttribute("title")).toBe("noun, feminine")
+        expect(abbr.getAttribute("title")).toBe("noun (substantive), feminine")
     })
 
     it("renders an unknown label plainly, without a wrong tooltip", () => {
@@ -62,7 +64,7 @@ describe("DefinitionText", () => {
         render(<DefinitionText text="s. m. a father" />)
 
         expect(screen.getByText("s. m.").getAttribute("title")).toBe(
-            "noun, masculine",
+            "noun (substantive), masculine",
         )
     })
 
