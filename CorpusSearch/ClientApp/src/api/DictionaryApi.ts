@@ -268,8 +268,9 @@ export type AttestationDocument = {
      * AttestationDocument on the server). Absent for an ambiguous word, whose
      * uses are counted a document at a time as `useCount` */
     uses?: number | null
-    /** whether a recording's transcript says when its lines are spoken
-     * (Skeealyn Vannin Track 12's does not); null for anything in print */
+    /** whether the word's uses in the recording say when they are spoken: a
+     * transcript timed elsewhere may still write no clock at the word's own
+     * lines (Skeealyn Vannin Disk 1 Track 2 and 'geddyn'); null for print */
     timed?: boolean | null
 }
 

@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -28,19 +27,6 @@ namespace CorpusSearch.Service;
 public class DictionaryAttestationService(
     Searcher searcher, LemmaTable lemmaTable, WorkService workService)
 {
-    /// <summary>Whether a recording's transcript carries timings, by ident —
-    /// remembered, since a transcript's clock does not change under a running
-    /// server. Only recordings are ever asked about (see <see cref="TimedOrNull"/>).</summary>
-    private readonly ConcurrentDictionary<string, bool> timedTranscripts = new();
-
-    /// <summary>Whether the recording's transcript says when its lines are
-    /// spoken — the word page's audio link prefers a recording it can jump
-    /// into. Null for print: reading every line of the Psalms to answer a
-    /// question nobody asks of a book would be waste.</summary>
-    private bool? TimedOrNull(string name, string ident) =>
-        name.StartsWith("🎥")
-            ? timedTranscripts.GetOrAdd(ident, searcher.HasTranscriptTimings)
-            : null;
     /// <summary>The lemma ids whose uses the walk should show. A word that is a
     /// headword itself keeps only its own lexeme: walking 'ass' (out) must not step
     /// through the demutation guess fass, the way
@@ -120,7 +106,7 @@ public class DictionaryAttestationService(
                     Ident = x.Ident,
                     Title = x.DocumentName,
                     Year = x.StartDate!.Value.Year,
-                    Timed = TimedOrNull(x.DocumentName, x.Ident),
+                    Timed = x.Timed,
                     // the scan counts span matches, and an OR over several
                     // readings scores one token once per reading claiming it:
                     // only a lone term can be counted from here without
@@ -138,13 +124,16 @@ public class DictionaryAttestationService(
     /// the first-seen band counts by.</summary>
     private ScanResult ScanFor(string word, IReadOnlyList<string> lemmaIds)
     {
+        // timings ride along: the walk's audio link needs to know which
+        // recordings it could jump into (AttestationDocument.Timed)
         if (lemmaIds.Count > 0)
         {
-            return searcher.ScanLemma(lemmaIds);
+            return searcher.ScanLemma(lemmaIds, checkTranscriptTimings: true);
         }
         try
         {
-            return searcher.Scan(CorpusQueryFor(word));
+            return searcher.Scan(CorpusQueryFor(word), SearchOptions.Default,
+                checkTranscriptTimings: true);
         }
         catch (Exception)
         {
@@ -331,9 +320,11 @@ public class AttestationDocument
     public required string Title { get; set; }
     public int Year { get; set; }
 
-    /// <summary>Whether the recording's transcript says when its lines are
-    /// spoken (Skeealyn Vannin Track 12's does not, and a player can only
-    /// start it from the top). Null for anything that is not a recording.</summary>
+    /// <summary>Whether the word's uses in the recording say when they are
+    /// spoken. A transcript may carry its clock on some lines and not others
+    /// (Skeealyn Vannin Disk 1 Track 2 is timed, but its one use of 'geddyn'
+    /// is not), and a player can only jump to a use with a timestamp. Null
+    /// for anything that is not a recording.</summary>
     public bool? Timed { get; set; }
 
     /// <summary>

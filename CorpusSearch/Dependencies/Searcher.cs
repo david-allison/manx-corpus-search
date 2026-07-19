@@ -166,10 +166,14 @@ public class Searcher(LuceneIndex luceneIndex, SearchParser parser)
 
     /// <summary>The corpus documents attesting a lexeme, with their dates and counts.
     /// Empty when the word has no lemma reading to search for.</summary>
-    public ScanResult ScanLemma(IReadOnlyCollection<string> lemmaIds)
+    /// <param name="checkTranscriptTimings">also say, per recording, whether the
+    /// lexeme's matched lines carry timestamps (see <see cref="LuceneIndex.Scan"/>)</param>
+    public ScanResult ScanLemma(IReadOnlyCollection<string> lemmaIds, bool checkTranscriptTimings = false)
     {
         var query = LemmaQuery(lemmaIds);
-        return query == null ? new ScanResult() : luceneIndex.Scan(query);
+        return query == null
+            ? new ScanResult()
+            : luceneIndex.Scan(query, checkTranscriptTimings: checkTranscriptTimings);
     }
 
     /// <summary>Every use of a lexeme within one document, surface words highlighted.
@@ -187,24 +191,20 @@ public class Searcher(LuceneIndex luceneIndex, SearchParser parser)
     public List<DocumentLine> AllLines(string ident) =>
         luceneIndex.GetAllLines(ident, getTranscript: false);
 
-    /// <summary>Whether any line of the document says when it is spoken: a
-    /// transcript may be written down without its clock (Skeealyn Vannin Track
-    /// 12), and a player offered such a recording can only start from the top</summary>
-    public bool HasTranscriptTimings(string ident) =>
-        luceneIndex.GetAllLines(ident, getTranscript: true).Any(x => x.SubStart != null);
-
     public ScanResult Scan(string query)
     {
         return Scan(query, SearchOptions.Default);
     }
 
-    public ScanResult Scan(string query, SearchOptions searchOptions)
+    /// <param name="checkTranscriptTimings">also say, per recording, whether the
+    /// query's matched lines carry timestamps (see <see cref="LuceneIndex.Scan"/>)</param>
+    public ScanResult Scan(string query, SearchOptions searchOptions, bool checkTranscriptTimings = false)
     {
         // parse the string into a Result<Expression>
         var parsed = parser.Parse(query);
 
         var (spanQuery, referenceQuery) = BuildQueries(query, parsed, searchOptions);
-        return luceneIndex.Scan(spanQuery, referenceQuery);
+        return luceneIndex.Scan(spanQuery, referenceQuery, checkTranscriptTimings);
     }
 
 
