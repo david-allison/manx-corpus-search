@@ -40,6 +40,20 @@ describe("GrammarLabel", () => {
         expect(abbr.getAttribute("title")).toBe("noun (substantive), feminine")
     })
 
+    it("carries a gender warning in the tooltip, with a visible mark", () => {
+        render(
+            <GrammarLabel
+                label="s. m."
+                warning="the corpus points at feminine against the printed s. m. (article: 46 lenited / 4 unlenited)"
+            />,
+        )
+
+        const abbr = screen.getByText("s. m.⚠")
+        expect(abbr.getAttribute("title")).toBe(
+            "noun (substantive), masculine. ⚠ the corpus points at feminine against the printed s. m. (article: 46 lenited / 4 unlenited)",
+        )
+    })
+
     it("renders an unknown label plainly, without a wrong tooltip", () => {
         render(<GrammarLabel label="a. d." />)
 

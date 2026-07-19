@@ -92,7 +92,10 @@ const Entry = ({
                 : headingFor(word, summary)}
         </strong>
         <UnverifiedMark unverified={summary.unverifiedLink} />
-        <GrammarLabel label={summary.grammarLabel} />
+        <GrammarLabel
+            label={summary.grammarLabel}
+            warning={summary.genderNote}
+        />
         {": "}
         <DefinitionText
             text={summary.summary}

@@ -15,6 +15,9 @@ public class CregeenEntry
     public string? Definition { get; set; }
     public List<string>? PartsOfSpeech { get; set; }
     public List<string>? Gender { get; set; }
+    /// <summary>Editorial notes from cregeen-nvh; a "gender:" note records
+    /// corpus evidence against the printed gender</summary>
+    public string? Notes { get; set; }
     public required string HeadingHtml { get; set; }
     public List<CregeenEntry>? Children { get; set; }
 

@@ -25,6 +25,26 @@ public class CregeenDictionaryServiceTest
         Assert.That(CregeenDictionaryService.GrammarLabelOf(html), Is.Null);
     }
 
+    /// <summary>The gender check writes its findings into cregeen-nvh as a
+    /// "gender:" note; the reader sees the evidence without the tool stamp</summary>
+    [TestCase(
+        "gender: the corpus points at feminine against the printed s. m. (article: 46 lenited / 4 unlenited) [gender_check 2026-07-19]",
+        "the corpus points at feminine against the printed s. m. (article: 46 lenited / 4 unlenited)")]
+    [TestCase("check this; gender: the corpus points at masculine [gender_check 2026-07-19]",
+        "the corpus points at masculine")]
+    public void TheGenderNoteLosesItsToolStamp(string notes, string expected)
+    {
+        Assert.That(CregeenDictionaryService.GenderNoteOf(notes), Is.EqualTo(expected));
+    }
+
+    [TestCase("See also craa; both are used")]
+    [TestCase("")]
+    [TestCase(null)]
+    public void OtherNotesAreNotGenderWarnings(string? notes)
+    {
+        Assert.That(CregeenDictionaryService.GenderNoteOf(notes), Is.Null);
+    }
+
     /// <summary>The 702 entries without a plain Definition fall back to the
     /// full entry text, which opens with the printed label: it must not show
     /// twice (once as the chip, once inline) - moir keeps its label out of

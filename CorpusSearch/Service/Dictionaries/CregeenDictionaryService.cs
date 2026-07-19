@@ -213,9 +213,25 @@ public class CregeenDictionaryService(ISet<string> allWords, IList<CregeenEntry>
                 PrimaryWord = entry.Words.First(),
                 Summary = summary,
                 GrammarLabel = label,
+                GenderNote = GenderNoteOf(entry.Notes),
                 Citations = VerseCitations.FindAll(summary),
             };
         }
+    }
+
+    /// <summary>The "gender:" editorial note, reader-ready: the corpus
+    /// evidence against the printed gender, without the tool stamp</summary>
+    internal static string? GenderNoteOf(string? notes)
+    {
+        const string prefix = "gender: ";
+        var at = notes?.IndexOf(prefix, StringComparison.Ordinal) ?? -1;
+        if (at < 0)
+        {
+            return null;
+        }
+        var text = notes![(at + prefix.Length)..];
+        return System.Text.RegularExpressions.Regex
+            .Replace(text, @"\s*\[gender_check[^\]]*\]", "").Trim();
     }
 
     /// <summary>Cregeen's printed grammar label - the entry's leading italic

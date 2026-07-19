@@ -108,13 +108,26 @@ export const expandGrammarLabel = (label: string): string | undefined => {
         : undefined
 }
 
-/** The printed grammar label beside a headword ("s. f."), expansion on hover */
-export const GrammarLabel = ({ label }: { label?: string | null }) => {
+/** The printed grammar label beside a headword ("s. f."), expansion on
+ * hover. A gender warning (corpus evidence against the printed gender)
+ * rides in the same tooltip, with a visible mark so there is something to
+ * hover for. */
+export const GrammarLabel = ({
+    label,
+    warning,
+}: {
+    label?: string | null
+    warning?: string | null
+}) => {
     if (!label) return null
     const expansion = expandGrammarLabel(label)
-    return expansion ? (
-        <abbr className="dict-abbr dict-grammar-label" title={expansion}>
+    const title = [expansion, warning && `⚠ ${warning}`]
+        .filter(Boolean)
+        .join(". ")
+    return title ? (
+        <abbr className="dict-abbr dict-grammar-label" title={title}>
             {label}
+            {warning ? "⚠" : ""}
         </abbr>
     ) : (
         <span className="dict-grammar-label">{label}</span>
