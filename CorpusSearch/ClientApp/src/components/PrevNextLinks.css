@@ -78,3 +78,18 @@
         min-width: 44px;
     }
 }
+
+/* a step wearing an edge glyph: flex pins the glyph to the chip's inner
+   border while the name keeps to its outer edge as ever, whatever width the
+   chip holds for longer names */
+.prev-next-edged {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 6px;
+}
+
+.prev-next-edged .prev-next-step-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}

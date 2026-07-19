@@ -9,8 +9,13 @@ namespace CorpusSearch.Service;
 /// the letter's headwords under the prefixes they file under.
 /// </summary>
 public class DictionaryBrowseService(
-    IEnumerable<ISearchDictionary> dictionaryServices, CorpusVocabulary vocabulary)
+    IEnumerable<ISearchDictionary> dictionaryServices, CorpusVocabulary vocabulary,
+    DictionaryStatsService? statsService = null)
 {
+    /// <summary>The spoken dictionary's pseudo-slug: a neighbours scope with no
+    /// book behind it, stepping the heard words instead</summary>
+    public const string SpokenSlug = "spoken";
+
     private readonly ISearchDictionary[] dictionaries = dictionaryServices.ToArray();
 
     public ISearchDictionary? Find(string slug) =>
@@ -158,22 +163,33 @@ public class DictionaryBrowseService(
     /// </summary>
     public DictionaryNeighbours Neighbours(string? slug, string word)
     {
-        var scope = slug == null ? null : Find(slug);
-        if (slug != null && scope == null)
+        List<string> ordered;
+        if (string.Equals(slug, SpokenSlug, StringComparison.OrdinalIgnoreCase))
         {
-            return new DictionaryNeighbours { Word = word };
+            // the spoken dictionary as a scope: stepping through it walks the
+            // audio corpus, one heard word at a time. Unread recordings leave
+            // nothing to step through, and the walk simply is not offered
+            ordered = statsService?.SpokenWords() ?? [];
         }
+        else
+        {
+            var scope = slug == null ? null : Find(slug);
+            if (slug != null && scope == null)
+            {
+                return new DictionaryNeighbours { Word = word };
+            }
 
-        var ordered = scope != null
-            ? scope.Headwords.ToList()
-            // no book's order can be kept across books, so the union takes the
-            // reader's: a word in several dictionaries is one step, not three
-            : dictionaries
-                .Where(x => x.QueryLanguages.Contains("gv"))
-                .SelectMany(x => x.Headwords)
-                .Distinct(StringComparer.InvariantCultureIgnoreCase)
-                .OrderBy(DictionaryBrowse.CollationKey, StringComparer.Ordinal)
-                .ToList();
+            ordered = scope != null
+                ? scope.Headwords.ToList()
+                // no book's order can be kept across books, so the union takes the
+                // reader's: a word in several dictionaries is one step, not three
+                : dictionaries
+                    .Where(x => x.QueryLanguages.Contains("gv"))
+                    .SelectMany(x => x.Headwords)
+                    .Distinct(StringComparer.InvariantCultureIgnoreCase)
+                    .OrderBy(DictionaryBrowse.CollationKey, StringComparer.Ordinal)
+                    .ToList();
+        }
         if (ordered.Count == 0)
         {
             return new DictionaryNeighbours { Word = word };

@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useMemo, useReducer, useState } from "react"
-import { Link, useParams } from "react-router-dom"
+import { Link, useParams, useSearchParams } from "react-router-dom"
 import { CircularProgress } from "@mui/material"
 import {
     AttestationDocument,
@@ -170,6 +170,10 @@ const SenseLabel = ({ labels }: { labels: string[] }) => (
 export const Dictionary = () => {
     // `dict` is set only by /dictionary/in/:dict/:word: the scoped page
     const { word, dict } = useParams()
+    // arrived from the spoken index: the headword walk steps the heard words
+    // instead, and each step carries the walk along
+    const [searchParams] = useSearchParams()
+    const spokenNav = searchParams.get("nav") === "spoken"
     // the page together with what was asked for, so the entries on screen can be
     // told from the URL, which moves the moment you click. Same reason
     // DocumentView keeps `displayed` beside its query.
@@ -404,7 +408,7 @@ export const Dictionary = () => {
             )}
 
             {word && (
-                <HeadwordNav word={word} dict={dict}>
+                <HeadwordNav word={word} dict={dict} spoken={spokenNav}>
                     <span
                         className={
                             attested === false

@@ -111,6 +111,70 @@ public class DictionaryStatsService(LemmaTable lemmaTable, CorpusVocabulary voca
         gvDictionaries.Any(d => d.ContainsWord(term))
         || lemmaTable.DisplayLemmasFor(term)
             .Any(lemma => gvDictionaries.Any(d => d.ContainsWord(lemma)));
+
+    /// <summary>The spoken index's word list in collation order, worked out
+    /// once per audio read: nothing re-sorts per request</summary>
+    private (object Audio, List<string> Words)? spokenCache;
+
+    /// <summary>The spoken dictionary's word list in collation order, or null
+    /// until the recordings are read: what the spoken index pages, and the
+    /// order the 'spoken' neighbours scope steps a reader through</summary>
+    public List<string>? SpokenWords()
+    {
+        var read = audio;
+        if (read == null)
+        {
+            return null;
+        }
+        if (spokenCache is { } kept && ReferenceEquals(kept.Audio, read))
+        {
+            return kept.Words;
+        }
+        var words = read.Words
+            .Where(x => char.IsLetter(DictionaryBrowse.LetterOf(x)))
+            // a heard word no book answers for is corpus, not dictionary:
+            // its page would offer the recording and no entry to read
+            .Where(Defined)
+            .OrderBy(DictionaryBrowse.CollationKey, StringComparer.Ordinal)
+            .ThenBy(x => x, StringComparer.Ordinal)
+            .ToList();
+        spokenCache = (read, words);
+        return words;
+    }
+
+    /// <summary>
+    /// One letter of the spoken dictionary: every word the recordings say that
+    /// some book answers for, in the shape the dictionary browse serves - each
+    /// word's own page carries the recording to jump into. Null until the
+    /// recordings are read: the page says so rather than serving an empty book.
+    /// </summary>
+    public DictionaryBrowsePage? SpokenIndex(string? at)
+    {
+        if (SpokenWords() is not { } words)
+        {
+            return null;
+        }
+        var letters = DictionaryBrowse.LettersOf(words);
+        var page = new DictionaryBrowsePage
+        {
+            Dictionary = "Heard spoken",
+            Slug = "spoken",
+            Letters = letters.Select(c => char.ToUpperInvariant(c).ToString()).ToList(),
+            Chapters = [],
+        };
+        if (letters.Count == 0)
+        {
+            return page;
+        }
+        var asked = at == null ? "" : DictionaryBrowse.CollationKey(at);
+        var letter = asked.Length > 0 && letters.Contains(asked[0]) ? asked[0] : letters[0];
+        page.Letter = char.ToUpperInvariant(letter).ToString();
+        // every word here is heard, so nothing greys and nothing needs a voucher
+        page.Chapters = DictionaryBrowse
+            .Chapters(words.Where(x => DictionaryBrowse.LetterOf(x) == letter))
+            .ToList();
+        return page;
+    }
 }
 
 /// <summary>Counts, never percentages: the page turning a pair of counts into
