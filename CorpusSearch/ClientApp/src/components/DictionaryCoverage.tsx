@@ -93,7 +93,7 @@ export const DictionaryCoverage = () => {
     return (
         <>
             <section
-                className="dict-coverage"
+                className="dict-coverage-grid"
                 aria-label="Coverage of the corpus"
             >
                 <Card
