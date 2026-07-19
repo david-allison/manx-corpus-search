@@ -198,8 +198,9 @@ export const Dictionary = () => {
     const [heard, setHeard] = useState<{
         word: string
         docs: AttestationDocument[]
-        /** the recording the link opens: the earliest whose transcript can be
-         * jumped into, or — only when there is no such thing — an untimed one */
+        /** the recording the link opens: the earliest whose uses of the word
+         * can be jumped into, or — only when there is no such thing — an
+         * untimed one */
         lead: AttestationDocument
     } | null>(null)
     const [heardOpen, setHeardOpen] = useState(false)
@@ -243,9 +244,10 @@ export const Dictionary = () => {
                 const docs = walk.documents.filter((d) =>
                     d.title.startsWith("🎥"),
                 )
-                // the link leads with a recording it can jump into: an untimed
-                // transcript (Skeealyn Vannin Track 12) plays only from the
-                // top, so it leads only when it is the only recording there is
+                // the link leads with a recording it can jump into: one whose
+                // uses of the word carry no timestamp (an untimed transcript,
+                // or an untimed corner of a timed one) plays only from the
+                // top, so it leads only when there is nothing better
                 const lead = docs.find((d) => d.timed !== false) ?? docs[0]
                 // an answer either way: the last word's recordings must not
                 // linger on a word nothing says (the render checks the word too,

@@ -10,6 +10,11 @@ public class QueryDocumentResult : Countable
     public DateTime? StartDate { get; set; }
     public DateTime? EndDate { get; set; }
     public int Count { get; set; }
+
+    /// <summary>Whether the matched lines of a recording say when they are spoken.
+    /// Null for print, and unless the scan was asked to look
+    /// (<see cref="Dependencies.Lucene.LuceneIndex.Scan"/>'s checkTranscriptTimings).</summary>
+    public bool? Timed { get; internal set; }
     /// <summary>
     /// A sample of the first manx result.
     /// </summary>

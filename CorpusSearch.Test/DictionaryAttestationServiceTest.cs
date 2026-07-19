@@ -176,8 +176,8 @@ public class DictionaryAttestationServiceTest : QueryBase
         });
     }
 
-    /// <summary>The walk says whether a recording's transcript carries its
-    /// clock: the word page's audio link prefers a recording it can jump
+    /// <summary>The walk says whether a recording's uses of the word carry
+    /// timestamps: the word page's audio link prefers a recording it can jump
     /// into, and print is not asked the question at all</summary>
     [Test]
     public void ARecordingSaysWhetherItsTranscriptIsTimed()
@@ -206,6 +206,30 @@ public class DictionaryAttestationServiceTest : QueryBase
             Assert.That(walk.Documents.Single(x => x.Ident == "🎥 Untimed").Timed, Is.False);
             Assert.That(walk.Documents.Single(x => x.Ident == "Print").Timed, Is.Null);
         });
+    }
+
+    /// <summary>A transcript may carry its clock on some lines and not others,
+    /// and only the word's own lines can answer for it: Skeealyn Vannin Disk 1
+    /// Track 2 is timed, but its one use of 'geddyn' is not, and the audio
+    /// link leading with it opened a popup it could not cue (showing ??:??
+    /// while recordings it could jump into sat behind the arrows)</summary>
+    [Test]
+    public void APartiallyTimedTranscriptAnswersForTheWordsOwnLines()
+    {
+        var document = new TestDocument("🎥 Partial", new DateTime(1948, 1, 1));
+        workService.AddWork(document);
+        luceneIndex.Add(document, [
+            new DocumentLine { Manx = "Ta mee aase", English = "", CsvLineNumber = 2 },
+            new DocumentLine
+            {
+                Manx = "Cha nel eh", English = "", CsvLineNumber = 3,
+                SubStart = 5.0, SubEnd = 7.0,
+            },
+        ]);
+
+        var walk = Service().Attestations("aase");
+
+        Assert.That(walk.Documents.Single().Timed, Is.False);
     }
 
     /// <summary>The spelling fallback keeps them too: a word the lemma table

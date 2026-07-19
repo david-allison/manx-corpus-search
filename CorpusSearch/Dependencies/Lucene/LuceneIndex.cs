@@ -436,7 +436,13 @@ public class LuceneIndex(IndexWriter indexWriter)
         return new HashSet<DocId>(searcher.AllDocIds(query));
     }
 
-    public ScanResult Scan(SpanQuery query, SpanQuery? referenceQuery = null)
+    /// <param name="checkTranscriptTimings">also answer, per recording, whether
+    /// the matched lines say when they are spoken (<see cref="QueryDocumentResult.Timed"/>):
+    /// the attestation walk's audio link wants a recording it can jump into.
+    /// Off by default — the answer costs a stored-field read per matched line
+    /// of every recording, which a Home page scan has no use for.</param>
+    public ScanResult Scan(SpanQuery query, SpanQuery? referenceQuery = null,
+        bool checkTranscriptTimings = false)
     {
         using var reader = UseReader();
         // tests scan without compacting; production builds the lookup in Compact()
@@ -466,9 +472,20 @@ public class LuceneIndex(IndexWriter indexWriter)
         // sample is the first line by line number: docID order is merge-dependent, so it
         // cannot be relied on (#303)
         var corpusDocuments = new Dictionary<Ident, (DocId SampleDocId, int SampleLineNumber, int Count)>();
+        // the matched lines by corpus document, kept only when the timing
+        // question will be asked of them: a big scan matches too many to hold
+        var matchedLines = checkTranscriptTimings ? new Dictionary<Ident, List<DocId>>() : null;
         foreach (var docId in distinctDocuments.Concat(referenceCounts.Keys))
         {
             var (ident, lineNumber) = lookup.Get(docId);
+            if (matchedLines != null)
+            {
+                if (!matchedLines.TryGetValue(ident, out var lines))
+                {
+                    matchedLines[ident] = lines = [];
+                }
+                lines.Add(docId);
+            }
             var count = referenceCounts.TryGetValue(docId, out var referenceCount)
                 ? referenceCount
                 : spanCollection.GetCount(docId);
@@ -500,16 +517,18 @@ public class LuceneIndex(IndexWriter indexWriter)
             DateTime? endDate = doc.GetDateTime(DOCUMENT_CREATED_END);
 
             var sample = doc.RequireString(DOCUMENT_REAL_MANX);
+            var name = doc.RequireString(DOCUMENT_NAME);
 
             return new QueryDocumentResult
             {
                 Ident = kvp.Key,
-                DocumentName = doc.RequireString(DOCUMENT_NAME),
+                DocumentName = name,
                 Sample = sample,
                 SampleHighlights = ComputeHighlights(reader, sampleDocId, spanQuery.Field, sample,
                     highlightTokenSpans.GetValueOrDefault(sampleDocId)),
                 EndDate = endDate,
                 StartDate = startDate,
+                Timed = TimedOrNull(reader, name, matchedLines?[kvp.Key]),
                 Count = count
             };
         });
@@ -522,6 +541,20 @@ public class LuceneIndex(IndexWriter indexWriter)
             DocumentResults = samples.ToList(),
         };
     }
+
+    private static readonly HashSet<string> SubtitleStartOnly = [SUBTITLE_START];
+
+    /// <summary>Whether the matched lines of a recording (the 🎥 name, as the
+    /// Audio tag reads it) say when they are spoken. A transcript may carry its
+    /// clock on some lines and not others (Skeealyn Vannin Disk 1 Track 2), so
+    /// only *these* lines can answer for the word being jumpable-to. Null for
+    /// print, and when the scan was not asked: reading every matched line of
+    /// the Psalms to answer a question nobody asks of a book would be waste.</summary>
+    private static bool? TimedOrNull(IndexReader reader, string name, List<DocId>? lines) =>
+        lines != null && name.StartsWith("🎥")
+            ? lines.Any(docId =>
+                reader.Document(docId, SubtitleStartOnly).GetDouble(SUBTITLE_START) != null)
+            : null;
 
     public List<DocumentLine> GetAllLines(Ident ident, bool getTranscript)
     {
