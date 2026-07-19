@@ -67,6 +67,16 @@ const SENSE_OF: Record<string, string> = {
 /** dictionary order, so a word's senses do not shuffle between pages */
 const SENSE_ORDER = ["noun", "verb", "adjective", "particle"]
 
+/** The gender a printed label declares: "s. m." says masculine, "s. f. pl."
+ * says feminine, "s. m. f." says both. Null when the label is silent — most
+ * are, and silence is not disagreement. */
+const genderOf = (label: string | null | undefined): string | null => {
+    const tokens = label?.split(/\s+/) ?? []
+    const m = tokens.includes("m.")
+    const f = tokens.includes("f.")
+    return m && f ? "m. f." : m ? "m." : f ? "f." : null
+}
+
 export type SenseGroup = {
     /** the sense's key ("noun"); "" when nothing declared a class */
     key: string
@@ -126,11 +136,26 @@ export const senseGroupsIn = (page: DictionaryPageResponse): SenseGroup[] => {
 
     return SENSE_ORDER.filter((key) => byKey.has(key)).map((key) => {
         const sense = byKey.get(key)!
+        const labels = [...sense.classes]
+            .sort()
+            .map((c) => ABBREVIATION[c] ?? c.toLowerCase())
+        // a noun sense wears the gender its entries print ("n. m." over an
+        // "s. m."), but only while they agree: a mixed or silent sense stays
+        // "n.", and the printed labels underneath remain the evidence
+        if (key === "noun") {
+            const genders = new Set(
+                sense.entries
+                    .map((e) => genderOf(e.grammarLabel))
+                    .filter((g) => g != null),
+            )
+            const at = labels.indexOf("n.")
+            if (genders.size === 1 && at >= 0) {
+                labels[at] = `n. ${[...genders][0]}`
+            }
+        }
         return {
             key,
-            labels: [...sense.classes]
-                .sort()
-                .map((c) => ABBREVIATION[c] ?? c.toLowerCase()),
+            labels,
             // the unplaceable ride along with each: they may be any of them
             entries: [...sense.entries, ...unplaceable],
         }

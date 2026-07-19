@@ -140,6 +140,53 @@ describe("senseGroupsIn", () => {
         expect(groups.map((g) => g.labels)).toEqual([["n."], ["v."]])
     })
 
+    it("gives a noun sense the gender its entries print", () => {
+        // the real 'aa': both Cregeen entries say s. m., so the sense can too
+        const groups = senseGroupsIn(
+            page([
+                entry({ partsOfSpeech: ["Noun"], grammarLabel: "s. m." }),
+                entry({ partsOfSpeech: ["Noun"], grammarLabel: "s. m." }),
+                entry({ partsOfSpeech: ["Verb"], grammarLabel: "v." }),
+            ]),
+        )
+
+        expect(groups.map((g) => g.labels)).toEqual([["n. m."], ["v."]])
+    })
+
+    it("keeps the sense plain when its entries disagree on gender", () => {
+        const groups = senseGroupsIn(
+            page([
+                entry({ partsOfSpeech: ["Noun"], grammarLabel: "s. m." }),
+                entry({ partsOfSpeech: ["Noun"], grammarLabel: "s. f." }),
+            ]),
+        )
+
+        expect(groups[0].labels).toEqual(["n."])
+    })
+
+    it("lets silent entries ride along without vetoing the gender", () => {
+        // Kelly prints 's.' alone for many nouns: saying nothing is not
+        // disagreeing with Cregeen's 's. m.'
+        const groups = senseGroupsIn(
+            page([
+                entry({ partsOfSpeech: ["Noun"], grammarLabel: "s. m." }),
+                entry({ partsOfSpeech: ["Noun"], grammarLabel: "s." }),
+            ]),
+        )
+
+        expect(groups[0].labels).toEqual(["n. m."])
+    })
+
+    it("carries a both-genders label whole: 's. m. f.' is one claim", () => {
+        const groups = senseGroupsIn(
+            page([
+                entry({ partsOfSpeech: ["Noun"], grammarLabel: "s. m. f." }),
+            ]),
+        )
+
+        expect(groups[0].labels).toEqual(["n. m. f."])
+    })
+
     it("returns one unlabelled group when nothing declares a class", () => {
         // the page it has today: no senses to show, so none are invented
         const groups = senseGroupsIn(page([entry({}), entry({})]))

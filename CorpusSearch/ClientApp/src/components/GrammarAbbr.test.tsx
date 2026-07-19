@@ -17,6 +17,14 @@ describe("expandGrammarLabel", () => {
         expect(expandGrammarLabel("pro. adv.")).toBe("pronoun, adverb")
     })
 
+    it("expands the page's own gendered sense labels", () => {
+        expect(expandGrammarLabel("n. m.")).toBe("noun, masculine")
+        expect(expandGrammarLabel("n. f.")).toBe("noun, feminine")
+        expect(expandGrammarLabel("n. m. f.")).toBe(
+            "noun, masculine or feminine",
+        )
+    })
+
     it("returns undefined when any part is unknown", () => {
         expect(expandGrammarLabel("a. d.")).toBeUndefined()
     })
