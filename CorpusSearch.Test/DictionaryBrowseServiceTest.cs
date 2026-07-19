@@ -255,6 +255,52 @@ public class DictionaryBrowseServiceTest
         Assert.That(n.Next, Is.Null);
     }
 
+    /// <summary>A span sends the windows either side along whole — previous
+    /// pages nearest-first, then next pages nearest-first, each with its own
+    /// arrows — so the walk's client steps through them without asking again</summary>
+    [Test]
+    public void ASpanCarriesTheWindowsEitherSide()
+    {
+        var service = Service(new FakeDictionary("d", "aa", "baa", "caa", "daa", "eairk"));
+
+        var n = service.Neighbours("d", "caa", span: 2);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(n.Nearby.Select(x => x.Word),
+                Is.EqualTo(new[] { "baa", "aa", "daa", "eairk" }));
+            var daa = n.Nearby.Single(x => x.Word == "daa");
+            Assert.That(daa.Previous, Is.EqualTo("caa"));
+            Assert.That(daa.Next, Is.EqualTo("eairk"));
+            Assert.That(n.Nearby.Single(x => x.Word == "aa").Previous, Is.Null);
+            // nothing rides along unasked: the row's own answer stays light
+            Assert.That(service.Neighbours("d", "caa").Nearby, Is.Empty);
+        });
+    }
+
+    [Test]
+    public void ASpanStopsAtTheBookEnds()
+    {
+        var n = Service(new FakeDictionary("d", "aa", "baa"))
+            .Neighbours("d", "aa", span: 5);
+
+        Assert.That(n.Nearby.Select(x => x.Word), Is.EqualTo(new[] { "baa" }));
+    }
+
+    /// <summary>Same-spelled headwords are one page, so they are one step of
+    /// the span too: it must walk the way the arrows walk</summary>
+    [Test]
+    public void ASpanCollapsesSameSpelledHeadwordsAsTheArrowsDo()
+    {
+        var service = Service(
+            new FakeDictionary("d", "baar-aadjin", "baare", "baare", "baarelagh"));
+
+        var n = service.Neighbours("d", "baar-aadjin", span: 3);
+
+        Assert.That(n.Nearby.Select(x => x.Word),
+            Is.EqualTo(new[] { "baare", "baarelagh" }), "the twin 'baare' is one step");
+    }
+
     /// <summary>The dictionary JSON is downloaded on deployment: without it the
     /// dictionary is empty rather than broken, and so is its index</summary>
     [Test]
