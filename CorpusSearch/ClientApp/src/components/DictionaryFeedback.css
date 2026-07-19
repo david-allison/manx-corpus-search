@@ -1,0 +1,109 @@
+/* the offer in the title row: a link's colours at a fraction of the headword's
+   size (as .dict-page-heard), so it reads as an offer about the page rather
+   than as part of the word */
+.dict-feedback-open {
+    border: none;
+    background: none;
+    padding: 0;
+    font-family: var(--font-ui);
+    font-size: 13px;
+    color: var(--c-link);
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.dict-feedback-open:hover {
+    text-decoration: underline;
+}
+
+.dict-feedback-open:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+}
+
+.dict-feedback-title {
+    margin: 0 0 8px;
+    font-family: Georgia, serif;
+    font-size: 20px;
+    color: var(--c-heading, inherit);
+}
+
+.dict-feedback-hint {
+    margin: 0;
+    font-size: 13px;
+    color: var(--c-secondary);
+}
+
+.dict-feedback-form {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 13px;
+}
+
+.dict-feedback-form input,
+.dict-feedback-form textarea {
+    font: inherit;
+    font-size: 13px;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 6px 8px;
+    border: 1px solid var(--c-border-input);
+    border-radius: 4px;
+    background: var(--c-surface);
+    color: var(--c-ink);
+}
+
+.dict-feedback-form textarea {
+    resize: vertical;
+}
+
+/* the submit as a proper button in the dialog's action corner: the corpus's
+   red filled in, white text, squared */
+.dict-feedback-form button {
+    align-self: flex-end;
+    font: inherit;
+    font-size: 14px;
+    padding: 6px 18px;
+    background: var(--c-link);
+    color: #fff;
+    border: 1px solid var(--c-link-hover);
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.dict-feedback-form button:hover {
+    background: var(--c-link-hover);
+}
+
+.dict-feedback-form button:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+}
+
+/* disabled only mid-send: still itself, just briefly unavailable */
+.dict-feedback-form button:disabled {
+    opacity: 0.6;
+    cursor: default;
+}
+
+.dict-feedback-sent,
+.dict-feedback-error {
+    margin: 0 0 8px;
+    font-size: 14px;
+}
+
+.dict-feedback-error {
+    margin: 0;
+    color: var(--c-link);
+}
+
+/* a note ends with its writer's name, set apart as a signature */
+.dict-feedback-signature {
+    margin: 12px 0 0;
+    font-family: Georgia, serif;
+    font-style: italic;
+    font-size: 15px;
+    color: var(--c-secondary);
+}

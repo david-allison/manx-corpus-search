@@ -25,6 +25,7 @@ import { UnverifiedMark } from "../components/UnverifiedMark"
 import { DictionaryScope } from "../components/DictionaryScope"
 import { DictionaryLetters } from "../components/DictionaryLetters"
 import { DictionaryCoverage } from "../components/DictionaryCoverage"
+import { DictionaryFeedback } from "../components/DictionaryFeedback"
 import { isDictionaryHost } from "../utils/Host"
 import { WordSearch } from "../components/WordSearch"
 import { HeadwordNav } from "../components/HeadwordNav"
@@ -327,44 +328,54 @@ export const Dictionary = () => {
             </h1>
             {/* across the row from the word, not part of it: the corpus's
                 recording, beside the spoken dictionary's corner when both
-                have something to play */}
-            {heardDocs != null && (
-                <button
-                    type="button"
-                    className="dict-page-heard"
-                    title={`Hear it spoken: ${heardDocs.lead.title} (${heardDocs.lead.year.toString()})`}
-                    onClick={() => setHeardOpen(true)}
-                >
-                    🔊 audio
-                </button>
-            )}
-            {page?.audio && (
-                <div className="dict-page-audio-corner">
-                    <button
-                        className="dict-page-audio-main"
-                        aria-label={`Play pronunciation of ${word}`}
-                        title="Play pronunciation"
-                        onClick={() => {
-                            new Audio(page.audio!.url)
-                                .play()
-                                .catch(console.warn)
-                        }}
-                    >
-                        {"▶"}
-                    </button>
-                    {page.audio.sourceUrl && (
-                        <a
-                            className="dict-page-audio-credit"
-                            href={page.audio.sourceUrl}
-                            target="_blank"
-                            rel="noreferrer"
-                        >
-                            <span>{page.audio.credit}</span>
-                            <span>{hostOf(page.audio.sourceUrl)}</span>
-                        </a>
-                    )}
-                </div>
-            )}
+                have something to play, with the way to make the page better
+                beneath whatever is there */}
+            <div className="dict-page-corner">
+                {(heardDocs != null || page?.audio != null) && (
+                    <div className="dict-page-corner-audio">
+                        {heardDocs != null && (
+                            <button
+                                type="button"
+                                className="dict-page-heard"
+                                title={`Hear it spoken: ${heardDocs.lead.title} (${heardDocs.lead.year.toString()})`}
+                                onClick={() => setHeardOpen(true)}
+                            >
+                                🔊 audio
+                            </button>
+                        )}
+                        {page?.audio && (
+                            <div className="dict-page-audio-corner">
+                                <button
+                                    className="dict-page-audio-main"
+                                    aria-label={`Play pronunciation of ${word}`}
+                                    title="Play pronunciation"
+                                    onClick={() => {
+                                        new Audio(page.audio!.url)
+                                            .play()
+                                            .catch(console.warn)
+                                    }}
+                                >
+                                    {"▶"}
+                                </button>
+                                {page.audio.sourceUrl && (
+                                    <a
+                                        className="dict-page-audio-credit"
+                                        href={page.audio.sourceUrl}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                    >
+                                        <span>{page.audio.credit}</span>
+                                        <span>
+                                            {hostOf(page.audio.sourceUrl)}
+                                        </span>
+                                    </a>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                )}
+                {word != null && <DictionaryFeedback word={word} dict={dict} />}
+            </div>
         </div>
     )
 

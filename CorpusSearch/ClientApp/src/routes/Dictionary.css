@@ -91,6 +91,21 @@
     box-shadow: var(--focus-ring);
 }
 
+/* the title row's far corner: whatever there is to play, and the way to make
+   the page better beneath it (or alone in the corner when nothing plays) */
+.dict-page-corner {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+}
+
+.dict-page-corner-audio {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
 .dict-page-loading {
     display: flex;
     justify-content: center;

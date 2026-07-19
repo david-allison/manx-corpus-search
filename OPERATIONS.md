@@ -28,6 +28,7 @@ The service can run unattended for years. Document uploads are done entirely thr
 | Hosting | Digital Ocean (droplet, 2GB RAM) | David Allison | David's Google Account | $12/month              |
 | Mailing list | Mailjet                          | David Allison | hello@gaelg.im |                        |
 | GitHub repositories | github.com/david-allison         | David Allison | | Multiple project repos |
+| Dictionary feedback sheet | Google Sheets + Apps Script      | David Allison | David's Google Account | Receives /api/Feedback reports via the script's `/exec` URL — a secret, set as `FEEDBACK_APPS_SCRIPT_URL` in an uncommitted `.env` beside `docker-compose.yml` on the droplet. Losing it only disables feedback. |
 
 Credentials are not in this document. To request a transfer, see "Roles" below.
 
@@ -88,6 +89,38 @@ Next renewal due 28/12/2032.
 1. Log into nic.im (account: David's personal email).
 2. Renew `corpus.gaelg.im` for the desired term.
 3. Update the renewal date in the Accounts table and Minimum viable maintenance section above.
+
+### Setting up (or rotating) the dictionary-feedback sheet
+
+The "report an issue" form on dictionary entries posts to `/api/Feedback`, which relays each report to a Google Apps Script that appends a row to a Google Sheet. The script's `/exec` URL is the only secret; the server reads it from the `Feedback__AppsScriptUrl` environment variable and the feature stays dark while it is unset. Follow this to recreate the sheet from nothing, or to rotate the URL.
+
+1. Create a Google Sheet with the header row: `Timestamp | Name | Comments | Dictionary | Headword`.
+2. In the sheet: Extensions → Apps Script, replace the editor's contents with:
+
+   ```javascript
+   function doPost(e) {
+     var data = JSON.parse(e.postData.contents);
+     SpreadsheetApp.getActiveSpreadsheet().getSheets()[0].appendRow([
+       new Date(), data.name || "", data.comments || "",
+       data.dictionary || "", data.headword || "",
+     ]);
+     return ContentService.createTextOutput(JSON.stringify({ ok: true }))
+       .setMimeType(ContentService.MimeType.JSON);
+   }
+   ```
+
+   The server checks the response for `"ok":true` — an Apps Script that crashes still answers HTTP 200 with an HTML error page, so the script must return exactly this marker on success.
+3. Deploy → New deployment → type **Web app** → Execute as: **Me** → Who has access: **Anyone** (must be "Anyone", not "Anyone with a Google account": the server posts anonymously) → authorize → copy the `/exec` URL.
+4. On the droplet, put the URL in an uncommitted `.env` file beside `docker-compose.yml`:
+
+   ```
+   FEEDBACK_APPS_SCRIPT_URL=https://script.google.com/macros/s/…/exec
+   ```
+
+   then `docker compose up -d`.
+5. Verify: submit a report from any `/dictionary/` page on the live site and watch the row appear in the sheet.
+
+⚠️ To edit the script later, use *Manage deployments → edit → Version: New version*, which keeps the same URL. Creating a *new* deployment mints a different URL and the one in `.env` silently goes stale (the form then shows "could not send"). To rotate a leaked URL, that is exactly what you want: archive the old deployment, make a new one, update `.env`.
 
 ### Roles
 
