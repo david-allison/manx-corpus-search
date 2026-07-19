@@ -7,11 +7,11 @@ import "./GrammarAbbr.css"
  * than a wrong explanation. */
 const GLOSSARY: Record<string, string> = {
     // word class and gender
-    "s. m. f.": "noun, masculine or feminine",
-    "s. f. m.": "noun, feminine or masculine",
-    "s. m.": "noun, masculine",
-    "s. f.": "noun, feminine",
-    "s. pl.": "noun, plural",
+    "s. m. f.": "noun (substantive), masculine or feminine",
+    "s. f. m.": "noun (substantive), feminine or masculine",
+    "s. m.": "noun (substantive), masculine",
+    "s. f.": "noun (substantive), feminine",
+    "s. pl.": "noun (substantive), plural",
     "a. pl.": "adjective, plural",
     "v. i.": "verb, intransitive",
     "p. p.": "past participle",
