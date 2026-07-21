@@ -38,6 +38,12 @@ public class LemmaSidecarGenerator
     private const int DecisiveMinObservations = 3;
     private const double DecisiveMajority = 0.8;
 
+    /// <summary>A row that drops a whole display lemma is a claim about the
+    /// language, not the sample: voddey seeded moddey.n from 3/3 dog sentences
+    /// while the corpus splits ~30 dog / ~20 foddey ("cha voddey", not long).
+    /// Same-lexeme class picks can't misfile a word, so they keep the low floor.</summary>
+    private const int CrossLexemeMinObservations = 10;
+
     /// <summary>English words in more than this share of translated corpus lines
     /// carry no evidence ("the" would otherwise resolve every article)</summary>
     private const double MaxEvidenceLineShare = 0.05;
@@ -87,6 +93,7 @@ public class LemmaSidecarGenerator
 
         var overrides = new Dictionary<string, (IReadOnlyList<string> Ids, string Evidence)>();
         var undecidableDecisive = 0;
+        var underEvidencedCrossLexeme = new List<string>();
         foreach (var (form, readings) in readingsByForm)
         {
             var total = readings.Values.Sum();
@@ -103,6 +110,16 @@ public class LemmaSidecarGenerator
             if (ids.Count == 0 || ids.Count == table.CandidatesFor(form).Count)
             {
                 undecidableDecisive++;
+                continue;
+            }
+            // dropping another display lemma on a handful of sightings is the
+            // voddey failure: the sample can be decisive while the language is not
+            if (total < CrossLexemeMinObservations
+                && table.CandidatesFor(form)
+                    .Select(id => DisplayKey(displayById.GetValueOrDefault(id, id)))
+                    .Distinct().Count() > 1)
+            {
+                underEvidencedCrossLexeme.Add($"{form} ({majority} {count}/{total})");
                 continue;
             }
             overrides[form] = (ids, $"{count}/{total}");
@@ -247,6 +264,11 @@ public class LemmaSidecarGenerator
 
         var report = new StringBuilder();
         report.AppendLine($"overrides seed: {overrides.Count} forms ({undecidableDecisive} decisive forms skipped: majority reading not a candidate)");
+        if (underEvidencedCrossLexeme.Count > 0)
+        {
+            report.AppendLine($"cross-lexeme rows held back (<{CrossLexemeMinObservations} observations; adjudicate per-line instead): "
+                              + string.Join(", ", underEvidencedCrossLexeme.OrderBy(x => x, StringComparer.Ordinal)));
+        }
         report.AppendLine($"gloss scorer on treebank text_en: resolved {evalResolved:N0}/{evalEligible:N0} eligible ({evalResolved / (double)evalEligible:P1}), precision {evalCorrect / (double)Math.Max(1, evalResolved):P1}");
         if (wrongSample.Count > 0)
         {
