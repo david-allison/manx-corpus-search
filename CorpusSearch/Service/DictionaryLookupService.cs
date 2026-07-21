@@ -17,8 +17,11 @@ namespace CorpusSearch.Service;
 /// known phrase/idiom, and a compound such as 'goll-mygeayrt' can be broken into its parts.
 /// </summary>
 public class DictionaryLookupService(IEnumerable<ISearchDictionary> dictionaryServices, LemmaTable lemmaTable,
-    LemmaResolver lemmaResolver)
+    LemmaResolver lemmaResolver, SenseInventory? senseInventory = null, SenseResolver? senseResolver = null)
 {
+    private readonly SenseInventory senseInventory = senseInventory ?? SenseInventory.Empty;
+    private readonly SenseResolver senseResolver = senseResolver ?? SenseResolver.Empty;
+
     /// <summary>The longest dictionary phrase (in words) we attempt to match around a selection</summary>
     private const int MaxPhraseWords = 4;
 
@@ -174,7 +177,65 @@ public class DictionaryLookupService(IEnumerable<ISearchDictionary> dictionarySe
                 summary.PhillipsSpellingOf ??= phillips[0];
             }
         }
+        StampSenseNotes(selection, context, deduplicated);
         return deduplicated;
+    }
+
+    /// <summary>Where the clicked occurrence's sense is on record, the entry it
+    /// belongs to says so — on the matching headword's summaries only, since a
+    /// sense is the book's own subdivision of one entry. Layered after lemma
+    /// resolution: a sense verdict only means anything once the lemma is
+    /// settled (<see cref="SenseResolver.SenseFor"/> enforces the match).</summary>
+    private void StampSenseNotes(string selection, string? context, List<DictionarySummary> summaries)
+    {
+        if (!senseResolver.HasRows || string.IsNullOrWhiteSpace(context))
+        {
+            return;
+        }
+        var resolved = ResolvedLemmaIds(selection, context)
+                       ?? (IReadOnlyCollection<string>)lemmaTable.CandidatesFor(selection);
+        if (resolved.Count != 1)
+        {
+            return;
+        }
+        var lemmaId = resolved.First();
+
+        var selectionTokens = LemmaResolver.TokenizeManx(DocumentLine.NormalizeManx(selection));
+        if (selectionTokens.Count != 1)
+        {
+            return;
+        }
+        var tokens = LemmaResolver.TokenizeManx(DocumentLine.NormalizeManx(context));
+        var lineKey = LemmaResolver.LineKey(tokens);
+        var senses = new List<SenseInventory.Sense>();
+        for (var i = 0; i < tokens.Count; i++)
+        {
+            if (tokens[i] != selectionTokens[0])
+            {
+                continue;
+            }
+            var found = senseResolver.SenseFor(senseInventory, lineKey, i, tokens[i], lemmaId);
+            if (found == null)
+            {
+                // an unresolved occurrence of the same word in the line leaves
+                // the claim ambiguous: say nothing rather than guess which
+                return;
+            }
+            senses.AddRange(found);
+        }
+        var distinct = senses.DistinctBy(x => x.SenseId).ToList();
+        if (distinct.Count != 1)
+        {
+            return;
+        }
+        var sense = distinct[0];
+        var headword = LemmaTable.NormalizeForm(
+            sense.EntryPath.Split(':') is { Length: 2 } path ? path[1] : sense.EntryPath);
+        foreach (var summary in summaries
+                     .Where(x => LemmaTable.NormalizeForm(x.PrimaryWord) == headword))
+        {
+            summary.SenseNote = sense.Gloss;
+        }
     }
 
     /// <summary>The dictionaries which answer the query language, for the page's

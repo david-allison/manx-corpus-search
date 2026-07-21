@@ -99,6 +99,13 @@ public class DictionarySummary
     /// text</summary>
     public List<string>? Plurals { get; set; }
 
+    /// <summary>The printed sense the clicked occurrence was read as ("long,
+    /// of time" on a foddey resolved by its line): the sense sidecar's answer,
+    /// stamped by the popup path only (<see cref="SenseResolver"/>). Null
+    /// everywhere else — a sense is a claim about one occurrence, never about
+    /// the entry.</summary>
+    public string? SenseNote { get; set; }
+
     /// <summary>The printed grammar label of the entry ("s. m.", "s. f.",
     /// "v."): word class and gender as the dictionary abbreviates them, for
     /// display beside the headword with the expansion on hover</summary>
