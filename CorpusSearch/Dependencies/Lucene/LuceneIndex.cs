@@ -54,6 +54,13 @@ public class LuceneIndex(IndexWriter indexWriter)
     /// Manx lines, so lemma statistics stay clean. Queried and highlighted, never read back.</summary>
     public const string DOCUMENT_LEMMA_MANX = "manx_lemma";
 
+    /// <summary><see cref="DOCUMENT_LEMMA_MANX"/> restricted to tokens whose reading is
+    /// settled: the resolved id set names a single display lemma (moddey), not a choice of
+    /// them (voddey: moddey or foddey). What this field counts may be asserted; what only
+    /// <see cref="DOCUMENT_LEMMA_MANX"/> counts is offered as a possibility. Clitic parts
+    /// and uncovered tokens are absent: this field answers lemma-id queries only.</summary>
+    public const string DOCUMENT_LEMMA_MANX_SURE = "manx_lemma_sure";
+
     /// <summary>The line's verse/chapter reference ("MS 1 Thessalonians 2.16"): metadata
     /// like <see cref="DOCUMENT_SPEAKER"/>, but tokenized (digit-preserving analyzer) so
     /// references stay searchable without polluting the Manx token stream.</summary>
@@ -73,6 +80,14 @@ public class LuceneIndex(IndexWriter indexWriter)
     /// <summary>Whether the field's tokens append candidate lemma ids (<see cref="LemmaTokenFilter"/>)</summary>
     internal static bool IsLemmaField(string field) => field is DOCUMENT_LEMMA_MANX;
 
+    /// <summary>Whether the field keeps only settled readings (<see cref="LemmaTokenFilter"/> sure-only mode)</summary>
+    internal static bool IsSureLemmaField(string field) => field is DOCUMENT_LEMMA_MANX_SURE;
+
+    /// <summary>Whether the field's counts should be distinct token positions: a SpanOr
+    /// over lemma ids meets an ambiguous token once per reading, and that is one use</summary>
+    private static bool CountsDistinctPositions(string field) =>
+        IsLemmaField(field) || IsSureLemmaField(field);
+
     /// <summary>Whether the field feeds the Manx-language statistics (<see cref="NonWordTokenFilter"/>)</summary>
     internal static bool IsStatsField(string field) => field is DOCUMENT_MANX_GV;
 
@@ -80,7 +95,8 @@ public class LuceneIndex(IndexWriter indexWriter)
     internal static bool IsReferenceField(string field) => field is DOCUMENT_REFERENCE;
 
     private static bool IsManxField(string field) =>
-        field is DOCUMENT_NORMALIZED_MANX or DOCUMENT_CASED_MANX or DOCUMENT_LEMMA_MANX;
+        field is DOCUMENT_NORMALIZED_MANX or DOCUMENT_CASED_MANX or DOCUMENT_LEMMA_MANX
+            or DOCUMENT_LEMMA_MANX_SURE;
 
     private static bool IsEnglishField(string field) => field is DOCUMENT_NORMALIZED_ENGLISH or DOCUMENT_CASED_ENGLISH;
 
@@ -175,6 +191,8 @@ public class LuceneIndex(IndexWriter indexWriter)
                 doc.Add(new Field(DOCUMENT_MANX_GV, line.NormalizedStatsManx, statsFieldType));
                 // same text as the manx field: the analyzer injects the lemma ids
                 doc.Add(new Field(DOCUMENT_LEMMA_MANX, line.NormalizedManx, casedFieldType));
+                // and once more keeping only the settled readings (see the field's doc)
+                doc.Add(new Field(DOCUMENT_LEMMA_MANX_SURE, line.NormalizedManx, casedFieldType));
             }
             else
             {
@@ -274,6 +292,10 @@ public class LuceneIndex(IndexWriter indexWriter)
         var docs = spanCollection.DistinctDocuments().Concat(referenceMatches).Select(x =>
         {
             var (docId, countInDoc) = x;
+            if (CountsDistinctPositions(searchedField) && spanCollection.GetDistinctCount(docId) > 0)
+            {
+                countInDoc = spanCollection.GetDistinctCount(docId);
+            }
             var document = searcher.Doc(docId);
             var manx = document.RequireString(DOCUMENT_REAL_MANX);
             var english = document.RequireString(DOCUMENT_REAL_ENGLISH);
@@ -312,18 +334,20 @@ public class LuceneIndex(IndexWriter indexWriter)
         return new SearchResult
         {
             Lines = docs,
-            TotalMatches = spanCollection.GetTotalCount() + referenceMatches.Sum(x => x.Item2),
+            TotalMatches = (CountsDistinctPositions(searchedField)
+                ? spanCollection.GetTotalDistinctCount()
+                : spanCollection.GetTotalCount()) + referenceMatches.Sum(x => x.Item2),
         };
     }
 
     private static EmptySpanCollection BuildSpanCollection(SpanQuery rewritten, IndexReader reader, Func<DocId, bool> acceptDocument)
     {
         EmptySpanCollection spanCollection = new();
-        foreach (var (docId, _, _) in rewritten.EnumerateSpans(reader))
+        foreach (var (docId, start, _) in rewritten.EnumerateSpans(reader))
         {
             if (acceptDocument(docId))
             {
-                spanCollection.Increment(docId);
+                spanCollection.Increment(docId, start);
             }
         }
 
@@ -488,7 +512,9 @@ public class LuceneIndex(IndexWriter indexWriter)
             }
             var count = referenceCounts.TryGetValue(docId, out var referenceCount)
                 ? referenceCount
-                : spanCollection.GetCount(docId);
+                : CountsDistinctPositions(spanQuery.Field)
+                    ? spanCollection.GetDistinctCount(docId)
+                    : spanCollection.GetCount(docId);
             if (corpusDocuments.TryGetValue(ident, out var existing))
             {
                 corpusDocuments[ident] = lineNumber < existing.SampleLineNumber
@@ -535,7 +561,9 @@ public class LuceneIndex(IndexWriter indexWriter)
 
         return new ScanResult
         {
-            NumberOfMatches = spanCollection.GetTotalCount() + referenceCounts.Values.Sum(),
+            NumberOfMatches = (CountsDistinctPositions(spanQuery.Field)
+                ? spanCollection.GetTotalDistinctCount()
+                : spanCollection.GetTotalCount()) + referenceCounts.Values.Sum(),
             NumberOfSegments = distinctDocuments.Count,
             NumberOfDocuments = corpusDocuments.Count,
             DocumentResults = samples.ToList(),

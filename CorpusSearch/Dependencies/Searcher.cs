@@ -150,10 +150,11 @@ public class Searcher(LuceneIndex luceneIndex, SearchParser parser)
     /// </summary>
     /// <remarks>The query grammar has no field syntax, so the field is reachable only
     /// from here — see CorpusSearch.Test/LemmaIndexTest for what it matches</remarks>
-    private static SpanQuery? LemmaQuery(IReadOnlyCollection<string> lemmaIds)
+    private static SpanQuery? LemmaQuery(IReadOnlyCollection<string> lemmaIds,
+        string field = LuceneIndex.DOCUMENT_LEMMA_MANX)
     {
         var terms = lemmaIds
-            .Select(id => (SpanQuery)new SpanTermQuery(new Term(LuceneIndex.DOCUMENT_LEMMA_MANX, id)))
+            .Select(id => (SpanQuery)new SpanTermQuery(new Term(field, id)))
             .ToArray();
         // an ambiguous word means every reading it could be: 'veg' is veg.x or beg.a
         return terms.Length switch
@@ -176,6 +177,16 @@ public class Searcher(LuceneIndex luceneIndex, SearchParser parser)
             : luceneIndex.Scan(query, checkTranscriptTimings: checkTranscriptTimings);
     }
 
+    /// <summary>The corpus documents attesting a lexeme through settled readings only
+    /// (<see cref="LuceneIndex.DOCUMENT_LEMMA_MANX_SURE"/>): what a page may assert.
+    /// A strict subset of <see cref="ScanLemma"/>, whose extra matches are ambiguous
+    /// spellings the resolver has not pinned — offered, never asserted.</summary>
+    public ScanResult ScanLemmaSure(IReadOnlyCollection<string> lemmaIds)
+    {
+        var query = LemmaQuery(lemmaIds, LuceneIndex.DOCUMENT_LEMMA_MANX_SURE);
+        return query == null ? new ScanResult() : luceneIndex.Scan(query);
+    }
+
     /// <summary>Every use of a lexeme within one document, surface words highlighted.
     /// Transcript timestamps ride along: a use in a recording is a moment as much as
     /// a line, and the walk links to hearing it.</summary>
@@ -183,6 +194,14 @@ public class Searcher(LuceneIndex luceneIndex, SearchParser parser)
     {
         var query = LemmaQuery(lemmaIds);
         return query == null ? null : luceneIndex.Search(ident, query, getTranscriptData: true);
+    }
+
+    /// <summary>The settled uses of a lexeme within one document (see
+    /// <see cref="ScanLemmaSure"/>): the occurrences a walk row may print unmarked</summary>
+    internal SearchResult? SearchLemmaSure(string ident, IReadOnlyCollection<string> lemmaIds)
+    {
+        var query = LemmaQuery(lemmaIds, LuceneIndex.DOCUMENT_LEMMA_MANX_SURE);
+        return query == null ? null : luceneIndex.Search(ident, query, getTranscriptData: false);
     }
 
     /// <summary>Every line of a document as it was indexed, for a reader that wants

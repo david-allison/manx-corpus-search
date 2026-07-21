@@ -87,6 +87,11 @@ public class DictionaryAttestationService(
         var walkedIds = ReadingOf(lemmaIds, lemma);
         var scan = ScanFor(word, walkedIds);
 
+        // the same walk over the settled readings only: what may be asserted.
+        // A spelling walk has no readings and so no notion of settled.
+        var sure = walkedIds.Count > 0 ? searcher.ScanLemmaSure(walkedIds) : null;
+        var sureCounts = sure?.DocumentResults.ToDictionary(x => x.Ident, x => x.Count);
+
         // an undated document cannot take a place in a chronological walk, but
         // dropping it silently would understate the word's use: it is counted instead
         var undated = scan.DocumentResults.Where(x => x.StartDate == null).ToList();
@@ -107,15 +112,42 @@ public class DictionaryAttestationService(
                     Title = x.DocumentName,
                     Year = x.StartDate!.Value.Year,
                     Timed = x.Timed,
-                    // the scan counts span matches, and an OR over several
-                    // readings scores one token once per reading claiming it:
-                    // only a lone term can be counted from here without
-                    // reading four uses of 'vee' where there is one. A spelling
-                    // scan (no readings at all) is one term too.
-                    Uses = walkedIds.Count <= 1 ? x.Count : null,
+                    // distinct token positions: a token several readings claim
+                    // is one use, however many of them the OR meets it through
+                    Uses = x.Count,
+                    SureUses = sureCounts?.GetValueOrDefault(x.Ident, 0),
                 })
                 .ToList(),
             UndatedDocuments = undated.Count,
+            EarliestSure = EarliestSureOf(sure),
+        };
+    }
+
+    /// <summary>The oldest settled evidence: the year the page may assert, with the
+    /// surface form as the text prints it (cut from the sample by its highlight).
+    /// Null where nothing is settled, or for a spelling walk.</summary>
+    private static EarliestAttestation? EarliestSureOf(ScanResult? sure)
+    {
+        var doc = sure?.DocumentResults
+            .Where(x => x.StartDate != null)
+            .OrderBy(x => x.StartDate)
+            .ThenBy(x => x.Ident)
+            .FirstOrDefault();
+        if (doc == null)
+        {
+            return null;
+        }
+        var highlight = doc.SampleHighlights is { Count: > 0 } ? doc.SampleHighlights[0] : null;
+        var form = highlight != null
+                   && highlight.End <= doc.Sample.Length && highlight.Start < highlight.End
+            ? doc.Sample[highlight.Start..highlight.End]
+            : null;
+        return new EarliestAttestation
+        {
+            Year = doc.StartDate!.Value.Year,
+            Ident = doc.Ident,
+            Title = doc.DocumentName,
+            Form = form,
         };
     }
 
@@ -159,9 +191,33 @@ public class DictionaryAttestationService(
     /// so their offsets identify an occurrence across readings — a token two
     /// readings both claim is one use of the word, not two.</summary>
     private static IEnumerable<(int Line, int Start)> Occurrences(SearchResult result) =>
-        result.Lines.SelectMany(line => line.ManxHighlights is { Count: > 0 }
+        result.Lines.SelectMany(Occurrences);
+
+    private static IEnumerable<(int Line, int Start)> Occurrences(DocumentLine line) =>
+        line.ManxHighlights is { Count: > 0 }
             ? line.ManxHighlights.Select(h => (line.CsvLineNumber, h.Start))
-            : [(line.CsvLineNumber, -1)]);
+            : [(line.CsvLineNumber, -1)];
+
+    private static HashSet<(int Line, int Start)> OccurrencesOf(SearchResult? result) =>
+        result == null ? [] : Occurrences(result).ToHashSet();
+
+    /// <summary>The other headwords an unsettled line's matched words could be:
+    /// what the * on it should name. Cut from the line by its highlights, asked
+    /// of the table, less the row's own headword.</summary>
+    private List<string> SharedWithOf(IEnumerable<DocumentLine> uncertainLines, string ownLemma)
+    {
+        var own = LemmaTable.NormalizeForm(ownLemma);
+        return uncertainLines
+            .Where(line => line.Manx != null)
+            .SelectMany(line => (line.ManxHighlights ?? [])
+                .Where(h => h.End <= line.Manx!.Length && h.Start < h.End)
+                .Select(h => line.Manx![h.Start..h.End]))
+            .SelectMany(form => lemmaTable.DisplayLemmasFor(form))
+            .Where(display => LemmaTable.NormalizeForm(display) != own)
+            .Distinct()
+            .OrderBy(x => x, StringComparer.Ordinal)
+            .ToList();
+    }
 
     /// <summary>The word class a lemma id names ("jaagh.v" → "v"), or null where it
     /// names none: an id may carry no class at all ("ny-adv", "bagh-1").</summary>
@@ -247,6 +303,12 @@ public class DictionaryAttestationService(
                 x.Result,
                 x.Lemma,
                 Uses = Occurrences(x.Result).ToHashSet(),
+                // the same occurrences through the settled field: the ones this
+                // row may print unmarked. A spelling row (null id) has no
+                // readings to settle between, so nothing there is marked.
+                Sure = x.LemmaId == null
+                    ? Occurrences(x.Result).ToHashSet()
+                    : OccurrencesOf(searcher.SearchLemmaSure(ident, [x.LemmaId])),
             })
             .ToList();
         var groups = readings
@@ -260,19 +322,31 @@ public class DictionaryAttestationService(
             // resolver did decide, and the rows differ by more than their labels.
             .SelectMany(lemma => lemma
                 .GroupBy(x => x.Uses, HashSet<(int Line, int Start)>.CreateSetComparer())
-                .Select(row => new AttestationLemmaGroup
+                .Select(row =>
                 {
-                    LemmaIds = row.Select(x => x.LemmaId).OfType<string>().ToList(),
-                    Lemma = lemma.Key,
-                    Classes = ClassesOf(row.Select(x => x.LemmaId)),
-                    // the row's readings claim the same uses, so the count is that
-                    // set's: one term's spans cannot overlap each other
-                    Count = row.Key.Count,
-                    // and the same uses are the same lines: any reading's serve
-                    Lines = row.First().Result.Lines
+                    var sure = row.Aggregate(new HashSet<(int Line, int Start)>(),
+                        (set, x) => { set.UnionWith(x.Sure); return set; });
+                    var lines = row.First().Result.Lines
                         .OrderBy(line => line.CsvLineNumber)
                         .Take(MaxLinesPerLemma)
-                        .ToList(),
+                        .ToList();
+                    var uncertain = lines
+                        .Where(line => Occurrences(line).Any(o => !sure.Contains(o)))
+                        .ToList();
+                    return new AttestationLemmaGroup
+                    {
+                        LemmaIds = row.Select(x => x.LemmaId).OfType<string>().ToList(),
+                        Lemma = lemma.Key,
+                        Classes = ClassesOf(row.Select(x => x.LemmaId)),
+                        // the row's readings claim the same uses, so the count is that
+                        // set's: one term's spans cannot overlap each other
+                        Count = row.Key.Count,
+                        SureCount = row.Key.Count(sure.Contains),
+                        // and the same uses are the same lines: any reading's serve
+                        Lines = lines,
+                        UncertainLineNumbers = uncertain.Select(x => x.CsvLineNumber).ToList(),
+                        SharedWith = SharedWithOf(uncertain, lemma.Key),
+                    };
                 }))
             // the reading a text uses most leads: a one-off demutation guess should
             // not head a document that is really about the other word
@@ -311,6 +385,22 @@ public class DictionaryAttestations
     /// <summary>Documents attesting the lexeme which carry no date: they cannot be
     /// placed in the walk, so they are counted beside it rather than dropped</summary>
     public int UndatedDocuments { get; set; }
+
+    /// <summary>The oldest settled evidence of the walked reading: the year the page
+    /// may assert. Documents older than this rest on unsettled spellings and are
+    /// offered, not asserted. Null for a spelling walk, and where nothing is settled.</summary>
+    public EarliestAttestation? EarliestSure { get; set; }
+}
+
+/// <summary>A dated claim the page may assert: the oldest settled use</summary>
+public class EarliestAttestation
+{
+    public int Year { get; set; }
+    public required string Ident { get; set; }
+    public required string Title { get; set; }
+    /// <summary>The surface form as the text prints it ("Moddey"), where the
+    /// sample's highlight could recover it</summary>
+    public string? Form { get; set; }
 }
 
 /// <summary>A step in the walk</summary>
@@ -327,17 +417,15 @@ public class AttestationDocument
     /// for anything that is not a recording.</summary>
     public bool? Timed { get; set; }
 
-    /// <summary>
-    /// Uses of the lexeme, where the scan can be trusted to count them: a word
-    /// with one reading is one query term, so each use is matched once.
-    ///
-    /// Null for an ambiguous word, whose readings are OR'd — a token carrying
-    /// several of them is matched once per reading, and 'vee' (four readings)
-    /// would read four times too high. Those are counted from the highlight
-    /// offsets instead, one document at a time, as
-    /// <see cref="AttestationLines.UseCount"/>.
-    /// </summary>
+    /// <summary>Uses of the lexeme: distinct matched tokens, so a token several
+    /// readings claim counts once however many of them the OR meets it through</summary>
     public int? Uses { get; set; }
+
+    /// <summary>How many of <see cref="Uses"/> are settled readings — what may be
+    /// asserted. Zero means the document holds the word only as spellings another
+    /// lexeme also uses: the reader is shown the step marked, not spared it.
+    /// Null for a spelling walk, which has no notion of settled.</summary>
+    public int? SureUses { get; set; }
 }
 
 public class AttestationLines
@@ -380,5 +468,19 @@ public class AttestationLemmaGroup
     /// two headwords is claimed by each, so these do not sum to
     /// <see cref="AttestationLines.UseCount"/>.</summary>
     public int Count { get; set; }
+
+    /// <summary>How many of <see cref="Count"/> are settled to this reading, rather
+    /// than shared with another headword's row. For a spelling row, all of them:
+    /// there are no readings to be unsettled between.</summary>
+    public int SureCount { get; set; }
+
     public required List<DocumentLine> Lines { get; set; }
+
+    /// <summary>Of the shown <see cref="Lines"/>, the ones holding an occurrence the
+    /// resolver has not settled: the client marks these with the shared-spelling *</summary>
+    public required List<int> UncertainLineNumbers { get; set; }
+
+    /// <summary>The other headwords the unsettled shown lines could belong to
+    /// ("foddey" on a voddey line of the moddey row): what the mark names</summary>
+    public required List<string> SharedWith { get; set; }
 }

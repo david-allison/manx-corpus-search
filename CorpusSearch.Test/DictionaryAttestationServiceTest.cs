@@ -71,18 +71,59 @@ public class DictionaryAttestationServiceTest : QueryBase
         Assert.That(walk.Documents.Single().Uses, Is.EqualTo(2));
     }
 
-    /// <summary>...but an ambiguous word's readings are OR'd, and a token that
-    /// several of them claim is matched once per reading: 'vee' would read four
-    /// times too high, so the walk says nothing rather than something wrong
-    /// (AttestationLines.UseCount counts those from the offsets instead)</summary>
+    /// <summary>An ambiguous word's readings are OR'd, and a token several of
+    /// them claim is met once per reading — counting spans would read 'vee'
+    /// four times too high. The scan counts distinct tokens instead, so the
+    /// walk says the exact number: 'ta', 'mee' and 'vee' are one use each here,
+    /// though 'vee' answers to four readings.</summary>
     [Test]
-    public void AnAmbiguousWordIsNotCountedFromTheScan()
+    public void AnAmbiguousWordCountsEachTokenOnce()
     {
         AddDated("Doc", 1748, "Ta mee vee ayn");
 
         var walk = Service().Attestations("vee");
 
-        Assert.That(walk.Documents.Single().Uses, Is.Null);
+        Assert.That(walk.Documents.Single().Uses, Is.EqualTo(3));
+    }
+
+    /// <summary>What may be asserted is what the settled field counts: 'daase'
+    /// can only be aase.v, so it is sure — while 'aase' itself could be a
+    /// lenited faase, so its use is offered, never asserted, even on the
+    /// lexeme's own page</summary>
+    [Test]
+    public void SureUsesCountOnlySettledReadings()
+    {
+        AddDated("Doc", 1748, "Ta mee aase", "Daase eh");
+
+        var walked = Service().Attestations("daase").Documents.Single();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(walked.Uses, Is.EqualTo(2));
+            Assert.That(walked.SureUses, Is.EqualTo(1));
+        });
+    }
+
+    /// <summary>The year the page asserts is the oldest settled document's, not
+    /// the oldest match's: a document holding the word only as a shared spelling
+    /// ('veg' could as well be veg.x or meg.n) stays in the walk, marked by its
+    /// zero SureUses, but cannot claim first</summary>
+    [Test]
+    public void TheEarliestSureClaimSkipsSharedSpellings()
+    {
+        AddDated("SharedOnly", 1707, "Cha row veg ayn");
+        AddDated("Settled", 1748, "Ta thie beg aym");
+
+        var walk = Service().Attestations("beg");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(walk.Documents.Select(x => x.Ident),
+                Is.EqualTo(new[] { "SharedOnly", "Settled" }));
+            Assert.That(walk.Documents[0].SureUses, Is.EqualTo(0));
+            Assert.That(walk.EarliestSure!.Year, Is.EqualTo(1748));
+            Assert.That(walk.EarliestSure.Form, Is.EqualTo("beg"));
+        });
     }
 
     /// <summary>The whole point of walking the lemma field rather than the

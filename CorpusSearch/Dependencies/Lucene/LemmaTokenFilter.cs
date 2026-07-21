@@ -23,8 +23,16 @@ namespace CorpusSearch.Dependencies.Lucene;
 /// Sidecar rows are keyed by a hash of the whole line's token stream, so when
 /// any exist the line is buffered before the first token is emitted; with no
 /// sidecar (or none loaded) the filter streams token by token as before.
+///
+/// In <paramref name="sureOnly"/> mode (the manx_lemma_sure field) only settled
+/// readings are emitted: a covered token whose resolved id set names a single
+/// display lemma. An ambiguous token (voddey: moddey or foddey), an uncovered
+/// token, and a clitic's parts say nothing here — the field exists so a count
+/// can be asserted rather than offered, and only serves lemma-id queries.
+/// Skipped tokens leave position holes; offsets, and so highlights, hold.
 /// </summary>
-public sealed class LemmaTokenFilter(TokenStream input, LemmaTable table, LemmaResolver? resolver = null)
+public sealed class LemmaTokenFilter(TokenStream input, LemmaTable table, LemmaResolver? resolver = null,
+    bool sureOnly = false)
     : TokenFilter(input)
 {
     private readonly ICharTermAttribute termAtt = input.AddAttribute<ICharTermAttribute>();
@@ -40,7 +48,26 @@ public sealed class LemmaTokenFilter(TokenStream input, LemmaTable table, LemmaR
 
     public override bool IncrementToken()
     {
-        return resolver.HasSidecarRows ? BufferedIncrement() : StreamingIncrement();
+        return resolver.HasSidecarRows || sureOnly ? BufferedIncrement() : StreamingIncrement();
+    }
+
+    /// <summary>Whether the ids leave no doubt which word this is: they all
+    /// display as one headword (jaagh.n and jaagh.v are both jaagh)</summary>
+    private bool SingleDisplayLemma(IReadOnlyList<string> ids)
+    {
+        var display = table.DisplayLemmaOf(ids[0]);
+        if (display == null)
+        {
+            return false;
+        }
+        for (var i = 1; i < ids.Count; i++)
+        {
+            if (table.DisplayLemmaOf(ids[i]) != display)
+            {
+                return false;
+            }
+        }
+        return true;
     }
 
     private bool StreamingIncrement()
@@ -107,6 +134,8 @@ public sealed class LemmaTokenFilter(TokenStream input, LemmaTable table, LemmaR
         {
             posIncrAtt.PositionIncrement = 0;
         }
+        // sure-only mode skips tokens outright, leaving holes in the position
+        // sequence: harmless, since this field is only counted and highlighted
         return true;
     }
 
@@ -130,11 +159,19 @@ public sealed class LemmaTokenFilter(TokenStream input, LemmaTable table, LemmaR
                 var ids = resolver.OverrideFor(token)
                           ?? resolver.SidecarFor(lineKey, i, token, includePopupTier: false)
                           ?? direct;
+                if (sureOnly && !SingleDisplayLemma(ids))
+                {
+                    continue;
+                }
                 buffer.Enqueue((states[i], ids[0], false));
                 for (var j = 1; j < ids.Count; j++)
                 {
                     buffer.Enqueue((states[i], ids[j], true));
                 }
+                continue;
+            }
+            if (sureOnly)
+            {
                 continue;
             }
             buffer.Enqueue((states[i], token, false));
