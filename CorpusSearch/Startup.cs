@@ -117,6 +117,9 @@ public class Startup(IConfiguration configuration)
         services.AddSingleton(LemmaTable.Instance);
         // eager for the same reason: the resolution layers narrow the lemma field
         services.AddSingleton(LemmaResolver.Instance);
+        // the sense layer refines the popup's display only, never the index
+        services.AddSingleton(SenseInventory.Instance);
+        services.AddSingleton(SenseResolver.Instance);
         services.AddSingleton<DictionaryLookupService>();
         services.AddSingleton<DictionaryHistoryService>();
         services.AddSingleton<DictionaryAttestationService>();

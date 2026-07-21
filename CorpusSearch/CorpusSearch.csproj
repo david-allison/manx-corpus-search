@@ -111,6 +111,18 @@
         <Link>Resources\lemma.sidecar.tsv</Link>
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <!-- The sense layer (SenseInventory/SenseResolver): display refinement
+    only; optional until the data repo mints an inventory -->
+    <Content Include="external\manx-lemma-data\senses.tsv"
+             Condition="Exists('external\manx-lemma-data\senses.tsv')">
+        <Link>Resources\senses.tsv</Link>
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="external\manx-lemma-data\sense.sidecar.tsv"
+             Condition="Exists('external\manx-lemma-data\sense.sidecar.tsv')">
+        <Link>Resources\sense.sidecar.tsv</Link>
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
 </ItemGroup>
 
   <!-- Files copied in from a public GitHub -->
