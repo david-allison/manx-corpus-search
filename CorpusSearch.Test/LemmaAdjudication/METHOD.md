@@ -232,8 +232,12 @@ Your final message: one line, "N verdicts written, M unsure".
 
 ```
 # 1. export (pool construction; all layers applied)
+# LEMMA_OVERRIDES_TSV is the ADOPTED overrides only (lemma.overrides.tsv, if
+# any) - never the seed: a seed row is a hypothesis the run exists to test,
+# and the original corpus run passed the seed here, which excluded voddey
+# from the adjudication that would have disproved its 3/3 dog reading
+# (DESIGN-disambiguation.md Phase 0b)
 LEMMA_ADJUDICATION_DIR=<work> \
-LEMMA_OVERRIDES_TSV=<manx-lemma-data>/lemma.overrides.seed.tsv \
 LEMMA_EQUIVALENCES_TSV=<manx-lemma-data>/lemma.equivalences.seed.tsv \
   dotnet test CorpusSearch.Test --filter FullyQualifiedName~AdjudicationExporter
 
@@ -241,8 +245,11 @@ LEMMA_EQUIVALENCES_TSV=<manx-lemma-data>/lemma.equivalences.seed.tsv \
 #    writing verdicts-*.jsonl; any orchestration works - agents are
 #    stateless over (file in, file out)
 
-# 3. score + emit
+# 3. score + emit; LEMMA_OVERRIDES_SEED_TSV additionally reports each seed
+#    row's per-line agreement (unanimous = adoption evidence; any
+#    disagreement kills the row)
 LEMMA_ADJUDICATION_DIR=<work> LEMMA_SIDECAR_OUT=<manx-lemma-data> \
+LEMMA_OVERRIDES_SEED_TSV=<manx-lemma-data>/lemma.overrides.seed.tsv \
   dotnet test CorpusSearch.Test --filter FullyQualifiedName~AdjudicationImporter
 ```
 

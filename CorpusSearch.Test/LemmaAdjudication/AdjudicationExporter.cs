@@ -27,8 +27,14 @@ namespace CorpusSearch.Test.LemmaAdjudication;
 /// token changes correctly invalidate). Verdicts come back as
 /// verdicts-*.jsonl: {key, i, chosenIds, confidence}.
 ///
-/// Run: LEMMA_ADJUDICATION_DIR=... LEMMA_OVERRIDES_TSV=...
+/// Run: LEMMA_ADJUDICATION_DIR=... [LEMMA_OVERRIDES_TSV=...]
 ///   dotnet test CorpusSearch.Test --filter FullyQualifiedName~AdjudicationExporter
+///
+/// LEMMA_OVERRIDES_TSV is the ADOPTED overrides layer (lemma.overrides.tsv):
+/// forms it owns are settled and leave the pool. Never pass the seed — a seed
+/// row is a hypothesis this run exists to test, and passing it once excluded
+/// voddey from the adjudication that would have disproved its 3/3 dog reading
+/// (DESIGN-disambiguation.md Phase 0b). Absent means nothing is adopted.
 /// </summary>
 [TestFixture]
 [Explicit("artifact generator over the full corpus, not a regression test")]
@@ -55,15 +61,15 @@ public class AdjudicationExporter
         var outDir = Environment.GetEnvironmentVariable("LEMMA_ADJUDICATION_DIR");
         Assert.That(outDir, Is.Not.Null.And.Not.Empty, "set LEMMA_ADJUDICATION_DIR to the work directory");
         var overridesPath = Environment.GetEnvironmentVariable("LEMMA_OVERRIDES_TSV");
-        Assert.That(overridesPath, Is.Not.Null.And.Not.Empty,
-            "set LEMMA_OVERRIDES_TSV to the form-level overrides file (lemma.overrides[.seed].tsv)");
         Directory.CreateDirectory(outDir!);
 
         var table = LemmaTable.Instance;
         var displayById = AdjudicationCommon.DisplayLemmaById();
         var glossTexts = AdjudicationCommon.LoadGlossTexts();
         var linkTypes = AdjudicationCommon.LinkTypesByFormId();
-        var overrides = AdjudicationCommon.LoadOverrides(overridesPath!);
+        Dictionary<string, string[]> overrides = string.IsNullOrEmpty(overridesPath)
+            ? []
+            : AdjudicationCommon.LoadOverrides(overridesPath);
 
         // the equivalence layer over Cregeen: ids classified as one lexeme
         // collapse into a group; ids sharing a display headword always do.
@@ -259,7 +265,7 @@ public class AdjudicationExporter
         WriteBatches(outDir!, "corpus-requests", corpusRequests, CorpusLinesPerFile);
 
         var report = new StringBuilder();
-        report.AppendLine($"overrides layer: {overrides.Count} forms ({overridesPath})");
+        report.AppendLine($"overrides layer: {overrides.Count} forms ({overridesPath ?? "none adopted"})");
         report.AppendLine($"un-adjudicable forms (table gap / UD convention split): "
                           + string.Join(", ", unAdjudicableForms.OrderBy(x => x, StringComparer.Ordinal)));
         report.AppendLine($"eval: {evalRequests.Count:N0} UD sentences with text_en carrying {evalTokens:N0} adjudicable tokens");
