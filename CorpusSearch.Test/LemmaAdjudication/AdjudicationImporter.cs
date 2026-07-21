@@ -56,7 +56,7 @@ public class AdjudicationImporter
         var sidecarOut = Environment.GetEnvironmentVariable("LEMMA_SIDECAR_OUT");
         if (!string.IsNullOrEmpty(sidecarOut) && Directory.GetFiles(workDir!, "corpus-verdicts-*.jsonl").Length > 0)
         {
-            EmitSidecar(workDir!, sidecarOut, report);
+            EmitSidecar(workDir!, sidecarOut, displayById, report);
         }
 
         TestContext.Progress.WriteLine(report.ToString());
@@ -201,7 +201,8 @@ public class AdjudicationImporter
 
     // ---- corpus emit ----
 
-    private static void EmitSidecar(string workDir, string sidecarOut, StringBuilder report)
+    private static void EmitSidecar(string workDir, string sidecarOut,
+        Dictionary<string, string> displayById, StringBuilder report)
     {
         var requests = new Dictionary<(string Key, int I), RequestToken>();
         foreach (var path in Directory.GetFiles(workDir, "corpus-requests-*.jsonl").OrderBy(x => x))
@@ -293,6 +294,31 @@ public class AdjudicationImporter
                           + $"{unsure:N0} unresolved/invalid-shape, {invalid:N0} unmatched keys");
         report.AppendLine($"promotions: {promotions.Count:N0} unanimous forms -> {candidatesPath}");
         report.AppendLine($"wrote {sidecarPath}");
+
+        // seed check (DESIGN-disambiguation.md Phase 0b): the seed's form-level
+        // hypotheses judged against this run's per-line verdicts, at display-lemma
+        // level (a class disagreement doesn't misfile a word; a lexeme one does).
+        // Unanimous agreement is adoption evidence; any disagreement kills the row
+        var seedPath = Environment.GetEnvironmentVariable("LEMMA_OVERRIDES_SEED_TSV");
+        if (string.IsNullOrEmpty(seedPath))
+        {
+            return;
+        }
+        foreach (var (form, claimed) in AdjudicationCommon.LoadOverrides(seedPath)
+                     .OrderBy(x => x.Key, StringComparer.Ordinal))
+        {
+            var judged = rows.Where(x => x.Token.Form == form).ToList();
+            if (judged.Count == 0)
+            {
+                continue;
+            }
+            var claimedLemmas = claimed
+                .Select(id => AdjudicationCommon.DisplayKey(displayById.GetValueOrDefault(id, id)))
+                .ToHashSet();
+            var upheld = judged.Count(x => ChosenDisplayKeys(x.Verdict, displayById).SetEquals(claimedLemmas));
+            report.AppendLine($"seed check: {form} -> {string.Join(",", claimed)} upheld {upheld}/{judged.Count}"
+                              + (upheld == judged.Count ? "" : " DISAGREES: kill the row, keep the per-line verdicts"));
+        }
     }
 
     // ---- shared ----
