@@ -49,6 +49,14 @@
     font-size: 0.9em;
 }
 
+/* the sense this line's occurrence was read as: a note about the tapped
+   word in its line, not part of the printed entry */
+.dict-popup-sense {
+    color: var(--c-accent);
+    font-style: italic;
+    font-size: 0.9em;
+}
+
 /* the "did you mean" fallback: a tinted suggestion box, visually apart from
    real entries - these words are guesses, not what the text says */
 .dict-popup-suggestions {

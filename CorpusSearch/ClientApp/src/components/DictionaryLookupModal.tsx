@@ -151,6 +151,23 @@ const PluralNote = ({ summary }: { summary: DictionaryResponse[number] }) =>
         </span>
     ) : null
 
+/** The printed sense this line's occurrence was read as: a claim about the
+ * clicked word in its line, not about the entry, so it trails the definition
+ * as a note rather than joining it */
+const SenseNote = ({ summary }: { summary: DictionaryResponse[number] }) =>
+    summary.senseNote ? (
+        <span className="dict-popup-sense">
+            {" "}
+            <abbr
+                className="dict-abbr"
+                title="the sense this line uses, as read from its translation"
+            >
+                here:
+            </abbr>{" "}
+            {summary.senseNote}
+        </span>
+    ) : null
+
 /** Plays the entry's pronunciation recording (streamed from the source) */
 const AudioButton = ({
     summary,
@@ -373,6 +390,7 @@ export const DictionaryLookupModal = (props: DictionaryLookupState) => {
                                                     }
                                                 />
                                                 <PluralNote summary={summary} />
+                                                <SenseNote summary={summary} />
                                                 {summary != cornerAudio && (
                                                     <AudioButton
                                                         summary={summary}
@@ -432,6 +450,7 @@ export const DictionaryLookupModal = (props: DictionaryLookupState) => {
                                                     }
                                                 />
                                                 <PluralNote summary={summary} />
+                                                <SenseNote summary={summary} />
                                                 {summary != cornerAudio && (
                                                     <AudioButton
                                                         summary={summary}
