@@ -54,6 +54,7 @@ const tree: LemmaTreeResponse = {
                     attestations: 0,
                     attested: false,
                     unverified: true,
+                    sharedWithOtherLemmas: false,
                 },
                 {
                     form: "pyee",
@@ -61,6 +62,7 @@ const tree: LemmaTreeResponse = {
                     attested: false,
                     unverified: false,
                     source: "cregeen",
+                    sharedWithOtherLemmas: false,
                 },
             ],
         },
@@ -72,6 +74,7 @@ const tree: LemmaTreeResponse = {
                     attestations: 2,
                     attested: true,
                     unverified: true,
+                    sharedWithOtherLemmas: false,
                 },
             ],
         },
@@ -83,6 +86,7 @@ const tree: LemmaTreeResponse = {
                     attestations: null,
                     attested: true,
                     unverified: false,
+                    sharedWithOtherLemmas: false,
                     // full depth: what hangs off pyagh nests inside its node
                     groups: [
                         {
@@ -93,6 +97,7 @@ const tree: LemmaTreeResponse = {
                                     attestations: 3,
                                     attested: true,
                                     unverified: true,
+                                    sharedWithOtherLemmas: false,
                                 },
                             ],
                         },
@@ -237,6 +242,41 @@ describe("lemma tree", () => {
         expect(screen.getByText("×2")).toBeTruthy()
         expect(screen.getByText("×3")).toBeTruthy()
         expect(document.querySelectorAll(".dict-lemma-count")).toHaveLength(3)
+    })
+
+    it("marks a form whose spelling another word also uses", async () => {
+        respondWith({
+            ...tree,
+            groups: [
+                {
+                    linkType: "mutation",
+                    forms: [
+                        {
+                            form: "pheiagh",
+                            attestations: 2,
+                            attested: true,
+                            unverified: false,
+                            sharedWithOtherLemmas: true,
+                        },
+                    ],
+                },
+            ],
+        })
+        renderAt("/dictionary/lemma/peiagh")
+
+        // the * rides the count: the count is of the spelling, and some of it
+        // may be the other word's
+        await screen.findByText("×2")
+        expect(
+            screen.getByTitle(
+                "Another word also uses this spelling: some of these occurrences may be its",
+            ).textContent,
+        ).toBe("*")
+        // the root's count carries no mark: the response does not say it of
+        // the lemma itself
+        expect(
+            screen.getAllByTitle(/Another word also uses this spelling/),
+        ).toHaveLength(1)
     })
 
     it("reads back up: the root names what it hangs off", async () => {

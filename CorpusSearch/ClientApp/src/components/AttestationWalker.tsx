@@ -1,7 +1,8 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react"
+import { ReactNode, useEffect, useLayoutEffect, useRef, useState } from "react"
 import { Link, useLocation, useSearchParams } from "react-router-dom"
 import Highlighter from "react-highlight-words"
 import {
+    AttestationDocument,
     AttestationLemmaGroup,
     AttestationLinesResponse,
     dictionaryAttestationLines,
@@ -13,7 +14,7 @@ import { hasAttestation } from "../utils/Attestation"
 import { formatTime } from "../hooks/useVideoSync"
 import { usePersistedState } from "../hooks/usePersistedState"
 import { AudioAttestationModal } from "./AudioAttestationModal"
-import { FirstAttestation } from "./FirstAttestation"
+import { FirstAttestation, SharedMark } from "./FirstAttestation"
 import { segmentChunks } from "./LineText"
 import { PrevNextLinks } from "./PrevNextLinks"
 import "./AttestationWalker.css"
@@ -22,6 +23,11 @@ import "./AttestationWalker.css"
  * remembered: a reader who does not want the evidence should not have to shut
  * it on every word. */
 const OPEN_KEY = "dictionary.corpus.open"
+
+/** The mark's words on a step, and on the summary's hedged half: uses resting
+ * only on spellings another lexeme also writes are offered, never asserted */
+const OFFERED_TITLE =
+    "Only as a spelling shared with another word: these occurrences may not be this one"
 
 const plural = (n: number, one: string, many: string) =>
     `${n.toLocaleString()} ${n === 1 ? one : many}`
@@ -52,6 +58,7 @@ const UseLine = ({
     english,
     highlights,
     play,
+    mark,
 }: {
     manx?: string | null
     english?: string | null
@@ -59,6 +66,9 @@ const UseLine = ({
     /** where hearing the line starts, for a line of a recording — `at` is
      * null on an untimed transcript, which plays from the start */
     play?: { at: number | null; open: () => void }
+    /** the shared-spelling *, after a line the resolver has not settled: the
+     * occurrence may be another word's */
+    mark?: ReactNode
 }) => {
     const [translated, setTranslated] = useState(false)
     // a use in a recording: the whole line — Manx, timestamp and all — is the
@@ -75,6 +85,7 @@ const UseLine = ({
                     onClick={play.open}
                 >
                     <ManxText manx={manx} highlights={highlights} />
+                    {mark}
                     <span className="attest-line-play">
                         {/* ??:?? where the transcript wrote no clock down:
                             the popup still plays, from the start */}
@@ -92,6 +103,7 @@ const UseLine = ({
             <div className="attest-line">
                 <div className="attest-line-manx">
                     <ManxText manx={manx} highlights={highlights} />
+                    {mark}
                 </div>
             </div>
         )
@@ -106,6 +118,7 @@ const UseLine = ({
                 onClick={() => setTranslated(!translated)}
             >
                 <ManxText manx={manx} highlights={highlights} />
+                {mark}
             </button>
             {translated && <div className="attest-line-english">{english}</div>}
         </div>
@@ -185,6 +198,22 @@ const LemmaGroup = ({
                     manx={line.manx}
                     english={line.english}
                     highlights={line.manxHighlights}
+                    // a line the resolver has not settled wears the mark,
+                    // naming the other headwords its spelling answers to:
+                    // the occurrence is offered to this row, not proven its
+                    mark={
+                        group.uncertainLineNumbers.includes(
+                            line.csvLineNumber,
+                        ) ? (
+                            <SharedMark
+                                title={
+                                    group.sharedWith.length > 0
+                                        ? `This spelling is shared with another word (${group.sharedWith.join(", ")}): the occurrence may not be this one`
+                                        : undefined
+                                }
+                            />
+                        ) : undefined
+                    }
                     play={
                         audio || line.subStart != null
                             ? {
@@ -207,6 +236,56 @@ const LemmaGroup = ({
         </div>
     </div>
 )
+
+/** What the section holds, readable while it is shut — and only what is
+ * settled may say so. With sure counts in hand, the count and the range are
+ * of the documents holding at least one settled reading, and an unsettled
+ * text older than that is appended as an offer: "37 texts, 1730–2026 ·
+ * possibly from 1707*". A word with nothing settled at all leads with the
+ * hedge instead. A spelling walk sends no sure counts, and its summary stays
+ * the plain scan. */
+const WalkSummary = ({
+    documents,
+    audioTab,
+}: {
+    documents: AttestationDocument[]
+    audioTab: boolean
+}) => {
+    const [one, many] = audioTab
+        ? ["recording", "recordings"]
+        : ["text", "texts"]
+    const sure = documents.filter((d) => d.sureUses != null && d.sureUses > 0)
+    // hedging is only owed where the walk knows the difference: some document
+    // sent a sure count, and not every document earned one
+    const hedged =
+        documents.some((d) => d.sureUses != null) &&
+        sure.length < documents.length
+    const claimed = hedged && sure.length > 0 ? sure : documents
+    return (
+        <p className="attest-summary">
+            {hedged && sure.length === 0 && "possibly "}
+            {plural(claimed.length, one, many)}
+            {", "}
+            {claimed[0].year}
+            {/* one year said once: a lone document has no range */}
+            {claimed[0].year !== claimed[claimed.length - 1].year && (
+                <>
+                    {"–"}
+                    {claimed[claimed.length - 1].year}
+                </>
+            )}
+            {hedged && sure.length === 0 && (
+                <SharedMark title={OFFERED_TITLE} />
+            )}
+            {hedged && sure.length > 0 && documents[0].year < sure[0].year && (
+                <>
+                    {` · possibly from ${documents[0].year}`}
+                    <SharedMark title={OFFERED_TITLE} />
+                </>
+            )}
+        </p>
+    )
+}
 
 /** Everything the corpus has to say about a word: when it was first seen, then
  * a walk through the texts using it in date order, one at a time, showing a
@@ -446,7 +525,16 @@ export const AttestationWalker = ({
                 </span>
             </h3>
 
-            <FirstAttestation history={history} classes={classes} />
+            <FirstAttestation
+                history={history}
+                classes={classes}
+                // the walk's settled year rides down only once the walk on
+                // screen is this word's: the last word's evidence, still
+                // holding the section's shape, must not caption this one
+                sureClaim={
+                    walked ? (walk?.earliestSure ?? undefined) : undefined
+                }
+            />
 
             {showTabs && (
                 <nav
@@ -518,20 +606,7 @@ export const AttestationWalker = ({
 
             {!hasWalk ? null : (
                 <>
-                    <p className="attest-summary">
-                        {audioTab
-                            ? `${plural(documents.length, "recording", "recordings")}, `
-                            : `${plural(documents.length, "text", "texts")}, `}
-                        {documents[0].year}
-                        {/* one year said once: a lone document has no range */}
-                        {documents[0].year !==
-                            documents[documents.length - 1].year && (
-                            <>
-                                {"–"}
-                                {documents[documents.length - 1].year}
-                            </>
-                        )}
-                    </p>
+                    <WalkSummary documents={documents} audioTab={audioTab} />
 
                     <div
                         id="attest-body"
@@ -570,29 +645,44 @@ export const AttestationWalker = ({
                                     : null
                             }
                         >
-                            <strong className="attest-year">
-                                {current.year}
-                            </strong>
-                            {" · "}
-                            <Link
-                                to={`/docs/${current.ident}?q=${encodeURIComponent(word)}`}
+                            {/* a step held only as shared spellings is
+                                offered, not asserted: muted, and the mark
+                                carries the doubt. Null sure counts are a
+                                spelling walk's, and hedge nothing. */}
+                            <span
+                                className={
+                                    current.sureUses === 0
+                                        ? "attest-step-uncertain"
+                                        : undefined
+                                }
                             >
-                                {current.title}
-                            </Link>
-                            {/* the walk's own count where it has one, so it
-                                is there as you arrive; otherwise the document's
-                                own, once counted from the offsets */}
-                            {current.uses != null ? (
-                                <span className="attest-count">
-                                    {` · ${plural(current.uses, "use", "uses")}`}
-                                </span>
-                            ) : (
-                                fresh && (
+                                <strong className="attest-year">
+                                    {current.year}
+                                </strong>
+                                {" · "}
+                                <Link
+                                    to={`/docs/${current.ident}?q=${encodeURIComponent(word)}`}
+                                >
+                                    {current.title}
+                                </Link>
+                                {/* the walk's own count where it has one, so it
+                                    is there as you arrive; otherwise the document's
+                                    own, once counted from the offsets */}
+                                {current.uses != null ? (
                                     <span className="attest-count">
-                                        {` · ${plural(lines.useCount, "use", "uses")}`}
+                                        {` · ${plural(current.uses, "use", "uses")}`}
                                     </span>
-                                )
-                            )}
+                                ) : (
+                                    fresh && (
+                                        <span className="attest-count">
+                                            {` · ${plural(lines.useCount, "use", "uses")}`}
+                                        </span>
+                                    )
+                                )}
+                                {current.sureUses === 0 && (
+                                    <SharedMark title={OFFERED_TITLE} />
+                                )}
+                            </span>
                         </PrevNextLinks>
 
                         {lines == null ? (

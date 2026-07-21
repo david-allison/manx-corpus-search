@@ -2,7 +2,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { cleanup, fireEvent, render, screen } from "@testing-library/react"
 import { MemoryRouter } from "react-router-dom"
 import { FirstAttestation } from "./FirstAttestation"
-import { DictionaryHistoryResponse } from "../api/DictionaryApi"
+import {
+    DictionaryHistoryResponse,
+    EarliestAttestation,
+} from "../api/DictionaryApi"
 
 const fetchMock = vi.fn<typeof fetch>()
 vi.stubGlobal("fetch", fetchMock)
@@ -60,10 +63,15 @@ const billeyHistory: DictionaryHistoryResponse = {
 const renderBand = (
     history: DictionaryHistoryResponse | null,
     classes: string[] = [],
+    sureClaim?: EarliestAttestation,
 ) =>
     render(
         <MemoryRouter>
-            <FirstAttestation history={history} classes={classes} />
+            <FirstAttestation
+                history={history}
+                classes={classes}
+                sureClaim={sureClaim}
+            />
         </MemoryRouter>,
     )
 
@@ -329,6 +337,113 @@ describe("FirstAttestation", () => {
         renderBand(billeyHistory, [])
 
         expect(screen.queryByText(/covers more than one sense/)).toBeNull()
+    })
+
+    it("lets the walk's settled evidence take the assertion over", () => {
+        // the history reads 1748 from spellings alone; the walk stands behind
+        // a Villey of 1707, so 1707 is asserted — plainly, with no mark
+        renderBand(billeyHistory, [], {
+            year: 1707,
+            ident: "Coyrle",
+            title: "Coyrle Sodjey",
+            form: "Villey",
+        })
+
+        // the spelling keeps its own row and date...
+        expect(screen.getByText("This spelling")).toBeTruthy()
+        expect(screen.getByText("1748")).toBeTruthy()
+        // ...and the lexeme's claim is the walk's, year bold and form italic
+        expect(screen.getByText("1707").className).toContain("first-seen-year")
+        expect(screen.getByText("Villey").tagName).toBe("EM")
+        expect(
+            screen
+                .getByRole("link", { name: "Coyrle Sodjey" })
+                .getAttribute("href"),
+        ).toBe("/docs/Coyrle?q=Villey")
+        expect(screen.queryByTitle(/shared with another word/)).toBeNull()
+    })
+
+    it("ignores settled evidence the history's own claim precedes", () => {
+        renderBand(billeyHistory, [], {
+            year: 1800,
+            ident: "Later",
+            title: "A Later Text",
+            form: "billey",
+        })
+
+        // the one 1748 fact, collapsed as before: a later settled year has
+        // nothing to add
+        expect(screen.getByText("1748")).toBeTruthy()
+        expect(screen.queryByText("1800")).toBeNull()
+        expect(screen.queryByText("Any form")).toBeNull()
+    })
+
+    it("carries the band alone when the history has no claim", () => {
+        renderBand(null, [], {
+            year: 1707,
+            ident: "Coyrle",
+            title: "Coyrle Sodjey",
+            form: "villey",
+        })
+
+        expect(screen.getByText("First seen")).toBeTruthy()
+        expect(screen.getByText("1707")).toBeTruthy()
+        expect(
+            screen
+                .getByRole("link", { name: "Coyrle Sodjey" })
+                .getAttribute("href"),
+        ).toBe("/docs/Coyrle?q=villey")
+    })
+
+    it("keeps the earlier-shared offer while it still precedes the settled year", () => {
+        renderBand(
+            {
+                ...billeyHistory,
+                forms: [
+                    billeyHistory.forms[0], // billey 1748, unambiguous
+                    {
+                        form: "villey",
+                        total: 31,
+                        documents: 12,
+                        sharedWithOtherLemmas: true,
+                        earliestYear: 1610,
+                    },
+                ],
+            },
+            [],
+            { year: 1707, ident: "Coyrle", title: "Coyrle Sodjey" },
+        )
+
+        // 1707 is asserted, and the genuinely-earliest 1610 is still worth
+        // offering behind it
+        expect(screen.getByText("1707")).toBeTruthy()
+        expect(screen.getByText(/Possibly/)).toBeTruthy()
+        expect(screen.getByText("1610")).toBeTruthy()
+    })
+
+    it("drops the earlier-shared offer once the settled claim covers it", () => {
+        renderBand(
+            {
+                ...billeyHistory,
+                forms: [
+                    billeyHistory.forms[0], // billey 1748, unambiguous
+                    {
+                        form: "villey",
+                        total: 31,
+                        documents: 12,
+                        sharedWithOtherLemmas: true,
+                        earliestYear: 1610,
+                    },
+                ],
+            },
+            [],
+            { year: 1600, ident: "Early", title: "An Early Text" },
+        )
+
+        // asserting 1600 leaves a possible 1610 with nothing to say
+        expect(screen.getByText("1600")).toBeTruthy()
+        expect(screen.queryByText(/Possibly/)).toBeNull()
+        expect(screen.queryByText("1610")).toBeNull()
     })
 
     it("renders nothing while loading or with no attestations", () => {

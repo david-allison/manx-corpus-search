@@ -50,6 +50,7 @@ const lines = {
             lemma: "aase",
             classes: ["v"],
             count: 9,
+            sureCount: 9,
             lines: [
                 {
                     manx: "Daase yn billey",
@@ -58,6 +59,8 @@ const lines = {
                     csvLineNumber: 2,
                 },
             ],
+            uncertainLineNumbers: [],
+            sharedWith: [],
         },
     ],
 }
@@ -114,6 +117,20 @@ const withGroups = (
     useCount,
     groups: groups.map((g) => ({ ...lines.groups[0], ...g })),
 })
+
+/** the walk with its documents swapped: the settled-vs-offered cases */
+const respondWithDocuments = (documents: Record<string, unknown>[]) =>
+    fetchMock.mockImplementation((url) =>
+        Promise.resolve({
+            ok: true,
+            json: () =>
+                Promise.resolve(
+                    hrefOf(url).includes("/attestations/")
+                        ? lines
+                        : { ...walk, documents },
+                ),
+        } as Response),
+    )
 
 /** the walk's own tests: the first-seen band it hosts has its own file, and
  * an unattested history keeps it out of the way here */
@@ -506,5 +523,158 @@ describe("AttestationWalker", () => {
                     .some((u) => u.includes("lemma=mee")),
             ).toBe(true),
         )
+    })
+
+    it("offers rather than asserts a step held only as shared spellings", async () => {
+        // Psalms holds the word solely as spellings another lexeme also uses:
+        // the step stays in the walk, muted, and the mark carries the doubt
+        respondWithDocuments([
+            {
+                ident: "Psalms1610",
+                title: "Psalms",
+                year: 1610,
+                uses: 9,
+                sureUses: 0,
+            },
+            {
+                ident: "Coyrle",
+                title: "Coyrle Sodjey",
+                year: 1707,
+                uses: 3,
+                sureUses: 3,
+            },
+        ])
+        renderWalker()
+        await screen.findByText("Daase")
+
+        const row = document.querySelector(".attest-step-uncertain")
+        expect(row).toBeTruthy()
+        expect(row?.querySelector("abbr")?.getAttribute("title")).toBe(
+            "Only as a spelling shared with another word: these occurrences may not be this one",
+        )
+    })
+
+    it("leaves a settled step unmarked", async () => {
+        respondWithDocuments([
+            {
+                ident: "Psalms1610",
+                title: "Psalms",
+                year: 1610,
+                uses: 9,
+                sureUses: 0,
+            },
+            {
+                ident: "Coyrle",
+                title: "Coyrle Sodjey",
+                year: 1707,
+                uses: 3,
+                sureUses: 3,
+            },
+        ])
+        renderWalker("aase", "?at=Coyrle")
+        await screen.findByText("Daase")
+
+        expect(document.querySelector(".attest-step-uncertain")).toBeNull()
+    })
+
+    it("asserts only the settled range, offering the older texts after it", async () => {
+        respondWithDocuments([
+            {
+                ident: "Coyrle",
+                title: "Coyrle Sodjey",
+                year: 1707,
+                uses: 1,
+                sureUses: 0,
+            },
+            {
+                ident: "Bible",
+                title: "Bible",
+                year: 1730,
+                uses: 5,
+                sureUses: 4,
+            },
+            {
+                ident: "New",
+                title: "A New Text",
+                year: 2026,
+                uses: 2,
+                sureUses: 2,
+            },
+        ])
+        renderWalker()
+
+        // the claim counts and ranges only what is settled; the unsettled
+        // 1707 rides after it as a starred possibility
+        expect(
+            await screen.findByText(/2 texts, 1730–2026 · possibly from 1707/),
+        ).toBeTruthy()
+    })
+
+    it("hedges the whole summary when nothing is settled", async () => {
+        respondWithDocuments([
+            {
+                ident: "Psalms1610",
+                title: "Psalms",
+                year: 1610,
+                uses: 2,
+                sureUses: 0,
+            },
+            {
+                ident: "Coyrle",
+                title: "Coyrle Sodjey",
+                year: 1707,
+                uses: 1,
+                sureUses: 0,
+            },
+        ])
+        renderWalker()
+
+        const summary = await screen.findByText(/possibly 2 texts, 1610–1707/)
+        expect(summary.querySelector("abbr")).toBeTruthy()
+    })
+
+    it("marks a line the resolver has not settled, naming the other word", async () => {
+        respondWith(
+            withGroups(2, [
+                {
+                    lemmaIds: ["moddey.n"],
+                    lemma: "moddey",
+                    classes: ["n"],
+                    count: 2,
+                    sureCount: 1,
+                    uncertainLineNumbers: [2],
+                    sharedWith: ["foddey"],
+                },
+            ]),
+        )
+        renderWalker()
+        await screen.findByText("Daase")
+
+        expect(
+            screen.getByTitle(
+                "This spelling is shared with another word (foddey): the occurrence may not be this one",
+            ).textContent,
+        ).toBe("*")
+    })
+
+    it("marks an unsettled line with the generic doubt when no other headword is named", async () => {
+        respondWith(
+            withGroups(2, [
+                {
+                    count: 2,
+                    sureCount: 1,
+                    uncertainLineNumbers: [2],
+                    sharedWith: [],
+                },
+            ]),
+        )
+        renderWalker()
+        await screen.findByText("Daase")
+
+        expect(
+            screen.getByTitle(
+                "This spelling is shared with another word: the occurrence may not be this one",
+            ),
+        ).toBeTruthy()
     })
 })

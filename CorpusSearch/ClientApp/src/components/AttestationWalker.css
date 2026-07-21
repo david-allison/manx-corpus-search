@@ -20,6 +20,17 @@
     color: #33454d;
 }
 
+/* a step the walk can only offer: every use is a spelling another lexeme also
+   writes. Muted the way .dict-unattested greys the never-said — year, title
+   and count all step back together — while the * (first-seen-shared) keeps
+   its own colour and carries the doubt. */
+.attest-step-uncertain,
+.attest-step-uncertain a,
+.attest-step-uncertain .attest-year,
+.attest-step-uncertain .attest-count {
+    color: var(--c-muted);
+}
+
 /* the section header doubles as the collapse control */
 .attest-toggle {
     border: none;

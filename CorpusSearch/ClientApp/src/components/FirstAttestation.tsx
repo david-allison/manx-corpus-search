@@ -1,6 +1,9 @@
 import { useState } from "react"
 import { Link } from "react-router-dom"
-import { DictionaryHistoryResponse } from "../api/DictionaryApi"
+import {
+    DictionaryHistoryResponse,
+    EarliestAttestation,
+} from "../api/DictionaryApi"
 import {
     AttestationClaim,
     earliestForLemma,
@@ -11,12 +14,15 @@ import { AttestationLineModal } from "./AttestationLineModal"
 import "./FirstAttestation.css"
 
 /** A spelling whose occurrences may belong to another lexeme: the year is
- * offered, not asserted */
-const SharedMark = () => (
-    <abbr
-        className="dict-abbr first-seen-shared"
-        title="This spelling is shared with another word: the occurrence may not be this one"
-    >
+ * offered, not asserted. Exported for the walk and the lemma tree, which hedge
+ * their own claims with the same mark: one asterisk, wherever doubt is carried. */
+export const SharedMark = ({
+    title = "This spelling is shared with another word: the occurrence may not be this one",
+}: {
+    /** the mark's words, where the doubt being carried is not the generic one */
+    title?: string
+}) => (
+    <abbr className="dict-abbr first-seen-shared" title={title}>
         *
     </abbr>
 )
@@ -105,6 +111,57 @@ const ClaimText = ({
     </>
 )
 
+/** The walk's settled evidence, asserted plainly: the resolver stands behind
+ * the occurrence, so the year carries no mark however shared its spelling
+ * looks. No sample rides along — the claim comes from the walk's scan, not
+ * the history's — so the linked title is the way to the line. */
+const SureClaimText = ({
+    claim,
+    word,
+}: {
+    claim: EarliestAttestation
+    /** what the document opens searching for, when the claim names no form */
+    word?: string
+}) => {
+    const q = claim.form ?? word
+    return (
+        <>
+            <strong className="first-seen-year">{claim.year}</strong>
+            {claim.form && (
+                <>
+                    {" as "}
+                    <em className="first-seen-form">{claim.form}</em>
+                </>
+            )}
+            {" in "}
+            <Link
+                to={`/docs/${claim.ident}${q ? `?q=${encodeURIComponent(q)}` : ""}`}
+            >
+                {claim.title}
+            </Link>
+        </>
+    )
+}
+
+/** The band with only the walk's word to stand on: the history scan dates
+ * spellings, and has none to date here, while the walk's resolver has settled
+ * an occurrence — the two can know the word apart, so neither waits for the
+ * other */
+const SureOnlyBand = ({
+    claim,
+    word,
+}: {
+    claim: EarliestAttestation
+    word?: string
+}) => (
+    <div className="first-seen" role="note">
+        <span className="first-seen-label">First seen</span>
+        <p className="first-seen-single">
+            <SureClaimText claim={claim} word={word} />
+        </p>
+    </div>
+)
+
 /** The lexeme's genuinely-earliest reading, when it rests on a spelling
  * another word also uses: "— possibly 1610 as villey*". Worth knowing, not
  * worth claiming, so it trails the claim rather than replacing it. */
@@ -128,22 +185,42 @@ const EarlierShared = ({ claim }: { claim: AttestationClaim }) => (
 export const FirstAttestation = ({
     history,
     classes = [],
+    sureClaim,
 }: {
     history: DictionaryHistoryResponse | null
     /** the word classes the entries declare: more than one and the date below
      * belongs to whichever of them came first */
     classes?: string[]
+    /** the walk's oldest settled evidence (attestations.earliestSure): a year
+     * the resolver stands behind. The history's own claim rests on counting
+     * spellings, which cannot settle one — so when the walk's word is earlier
+     * it takes the assertion over, and when the history has no claim at all
+     * it carries the band alone */
+    sureClaim?: EarliestAttestation
 }) => {
     // the claim whose line is open in the dialog; null while closed
     const [reading, setReading] = useState<AttestationClaim | null>(null)
     if (history == null || history.forms.length === 0) {
-        return null
+        return sureClaim ? (
+            <SureOnlyBand claim={sureClaim} word={history?.word} />
+        ) : null
     }
     const word = earliestForWord(history)
     const lemma = earliestForLemma(history)
     if (lemma == null) {
-        return null
+        return sureClaim ? (
+            <SureOnlyBand claim={sureClaim} word={history.word} />
+        ) : null
     }
+
+    // the walk's settled evidence, where it precedes anything the history can
+    // claim: 'moddey' reads 1730 by spellings alone, while the walk stands
+    // behind a Voddey of 1707. A settled year no earlier than the claim adds
+    // nothing, and the history's own rendering — sample and all — is kept.
+    const sure =
+        sureClaim != null && sureClaim.year < lemma.claim.year
+            ? sureClaim
+            : null
 
     // Splitting the spelling from the lexeme is only worth doing when they say
     // different things. They don't when the lexeme's earliest spelling IS the
@@ -152,8 +229,11 @@ export const FirstAttestation = ({
     // also 1610) — an unambiguous spelling cannot post-date its own lexeme.
     // A shared spelling with an unambiguous lexeme behind it is the case worth
     // splitting: 'vee' looks 1610 but may be another word, so the lexeme's own
-    // secure 1748 stands beside it.
+    // secure 1748 stands beside it. A settled walk year forces the split too:
+    // it is earlier than any date the spelling can claim for itself, so the
+    // two always say different things.
     const single =
+        sure == null &&
         word != null &&
         (word.form.form === lemma.claim.form.form ||
             (!word.uncertain && lemma.claim.year >= word.year))
@@ -163,10 +243,16 @@ export const FirstAttestation = ({
     // the earlier-shared reading survives the collapse, but is dropped when it
     // would merely restate the spelling's own line ('vee' as 'vee's earlier
     // reading)
-    const earlierShared =
+    const restatesWord =
         lemma.earlierShared?.form.form === word?.form.form
             ? null
             : lemma.earlierShared
+    // ...and when the settled assertion reaches at least as far back: an
+    // offered year the claim already covers is noise
+    const earlierShared =
+        sure != null && restatesWord != null && restatesWord.year >= sure.year
+            ? null
+            : restatesWord
 
     return (
         <div className="first-seen" role="note">
@@ -193,7 +279,14 @@ export const FirstAttestation = ({
                     </dd>
                     <dt>Any form</dt>
                     <dd>
-                        <ClaimText claim={lemma.claim} onOpen={setReading} />
+                        {sure ? (
+                            <SureClaimText claim={sure} word={history.word} />
+                        ) : (
+                            <ClaimText
+                                claim={lemma.claim}
+                                onOpen={setReading}
+                            />
+                        )}
                         {earlierShared && (
                             <EarlierShared claim={earlierShared} />
                         )}
