@@ -179,6 +179,7 @@ public class LemmaIndexService(LemmaTable lemmaTable, CorpusVocabulary vocabular
                              && own.SelfSource.Length > 0
                         ? own.SelfSource
                         : null,
+                    SharedWithOtherLemmas = lemmaTable.DisplayLemmasFor(x.Form).Count > 1,
                 })
                 .ToList();
             if (family.Count > 0)
@@ -364,6 +365,7 @@ public class LemmaIndexService(LemmaTable lemmaTable, CorpusVocabulary vocabular
             Source = link.Unverified || link.Source.Length == 0 ? null : link.Source,
             Via = particlePhrase,
             AlsoLinkedAs = alsoLinkedAs is { Count: > 0 } ? alsoLinkedAs.ToList() : null,
+            SharedWithOtherLemmas = lemmaTable.DisplayLemmasFor(link.Form).Count > 1,
             Groups = groups,
         };
     }
@@ -445,6 +447,11 @@ public class LemmaTreeForm
     /// however many links, the best-ranked drawing it and the rest named
     /// here. Null where the row's group says it all.</summary>
     public List<string>? AlsoLinkedAs { get; set; }
+
+    /// <summary>Whether another lexeme also uses this spelling (voddey answers
+    /// to moddey and foddey): the count is of the spelling, so some of it may
+    /// be the other word's — the tree marks the claim rather than making it</summary>
+    public bool SharedWithOtherLemmas { get; set; }
     /// <summary>What hangs off this form in turn: rows deriving through it, and
     /// — where it heads a lexeme of its own — that lexeme's tree. Null at a
     /// leaf, and at a form the tree has already drawn (a book-true cycle's

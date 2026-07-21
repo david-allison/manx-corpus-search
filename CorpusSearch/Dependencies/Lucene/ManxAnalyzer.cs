@@ -37,9 +37,10 @@ public class ManxAnalyzer : Analyzer
             // are not Manx words: the statistics stream drops them
             filter = new NonWordTokenFilter(filter);
         }
-        if (LuceneIndex.IsLemmaField(fieldName))
+        if (LuceneIndex.IsLemmaField(fieldName) || LuceneIndex.IsSureLemmaField(fieldName))
         {
-            filter = new LemmaTokenFilter(filter, LemmaTable.Instance, lemmaResolver);
+            filter = new LemmaTokenFilter(filter, LemmaTable.Instance, lemmaResolver,
+                sureOnly: LuceneIndex.IsSureLemmaField(fieldName));
         }
         return new TokenStreamComponents(tokenizer, filter);
     }
