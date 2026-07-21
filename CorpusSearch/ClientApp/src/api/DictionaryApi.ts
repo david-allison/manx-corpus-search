@@ -46,6 +46,11 @@ export type Summary = {
      * canonical verse keys ("judges.12.6"): each occurrence renders as a
      * link to the verse in the corpus */
     citations?: { text: string; key: string }[] | null
+    /** the printed sense the clicked occurrence was read as ("long, of
+     * time" on a voddey the resolver settled as foddey): a claim about this
+     * one line, never about the entry, so it renders as a note on the
+     * entry rather than part of it */
+    senseNote?: string | null
 }
 export type DictionaryResponse = Summary[]
 
@@ -257,6 +262,22 @@ export type DictionaryAttestationsResponse = {
     /** attesting documents with no date: they cannot be placed in the walk */
     undatedDocuments: number
     undatedUses: number
+    /** the oldest settled evidence of the walked reading: the year the page
+     * may assert. Documents older than this rest on unsettled spellings and
+     * are offered, not asserted. Null for a spelling walk, and where nothing
+     * is settled */
+    earliestSure?: EarliestAttestation | null
+}
+
+/** A dated claim the page may assert: the oldest settled use of the walked
+ * reading */
+export type EarliestAttestation = {
+    year: number
+    ident: string
+    title: string
+    /** the surface form as the text prints it ("Moddey"), where the sample's
+     * highlight could recover it */
+    form?: string | null
 }
 
 /** A step in the walk */
@@ -264,10 +285,15 @@ export type AttestationDocument = {
     ident: string
     title: string
     year: number
-    /** uses of the lexeme, where the scan can be trusted to count them (see
-     * AttestationDocument on the server). Absent for an ambiguous word, whose
-     * uses are counted a document at a time as `useCount` */
+    /** uses of the lexeme: distinct matched tokens, so a token several
+     * readings claim counts once however many of them the scan meets it
+     * through */
     uses?: number | null
+    /** how many of `uses` are settled readings — what may be asserted. Zero
+     * means the document holds the word only as spellings another lexeme also
+     * uses: the step is shown marked, not spared. Null for a spelling walk,
+     * which has no notion of settled */
+    sureUses?: number | null
     /** whether the word's uses in the recording say when they are spoken: a
      * transcript timed elsewhere may still write no clock at the word's own
      * lines (Skeealyn Vannin Disk 1 Track 2 and 'geddyn'); null for print */
@@ -303,6 +329,10 @@ export type AttestationLemmaGroup = {
     classes: string[]
     /** uses this row claims across the document, not only in `lines` */
     count: number
+    /** how many of `count` are settled to this reading, rather than shared
+     * with another headword's row. A spelling row settles all of them: there
+     * are no readings to be unsettled between */
+    sureCount: number
     lines: {
         manx?: string | null
         english?: string | null
@@ -314,6 +344,12 @@ export type AttestationLemmaGroup = {
         /** who says the line, in a transcribed interview */
         speaker?: string | null
     }[]
+    /** of the shown `lines`, the ones holding an occurrence the resolver has
+     * not settled: they wear the shared-spelling mark */
+    uncertainLineNumbers: number[]
+    /** the other headwords the unsettled shown lines could belong to ("foddey"
+     * on a voddey line of the moddey row): what the mark names */
+    sharedWith: string[]
 }
 
 /** @param lemma optional display lemma: one reading's documents, for the
@@ -534,6 +570,10 @@ export type LemmaTreeForm = {
      * row 'Inflected forms' files deiney under): one row however many links,
      * the best-ranked drawing it and the rest named here */
     alsoLinkedAs?: string[] | null
+    /** another lexeme also uses this spelling (voddey answers to moddey and
+     * foddey): the count is of the spelling, so some of it may be the other
+     * word's — the tree marks the claim rather than making it */
+    sharedWithOtherLemmas: boolean
     /** what hangs off this form in turn: forms deriving through it ('pyaghyn'
      * inflects the variant 'pyagh'), and — where it heads a lexeme of its own
      * ('deiney' under dooinney) — that lexeme's tree. Absent at a leaf, and at

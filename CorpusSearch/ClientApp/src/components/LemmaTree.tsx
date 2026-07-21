@@ -8,6 +8,7 @@ import {
     LemmaTreeResponse,
 } from "../api/DictionaryApi"
 import { dictionaryWordUrl } from "../utils/DictionaryEntries"
+import { SharedMark } from "./FirstAttestation"
 import { UnverifiedMark } from "./UnverifiedMark"
 import "./LemmaTree.css"
 
@@ -166,7 +167,12 @@ const TreeGroups = ({
                             >
                                 {form.via ?? form.form}
                             </Link>
-                            <Count attestations={form.attestations} />
+                            {/* only the form rows can carry the shared mark:
+                                the response does not say it of the root */}
+                            <Count
+                                attestations={form.attestations}
+                                shared={form.sharedWithOtherLemmas}
+                            />
                             {/* the other ways the same form is linked: one
                                 row, however many links the tables hold */}
                             {form.alsoLinkedAs?.length ? (
@@ -202,14 +208,29 @@ const TreeGroups = ({
 /** How often the corpus says a node's spelling, as the walk counts uses
  * ("×96"). Silent at a known 0 — the greying already says it — and while a
  * phrase's count is not yet known. */
-const Count = ({ attestations }: { attestations?: number | null }) =>
+const Count = ({
+    attestations,
+    shared,
+}: {
+    attestations?: number | null
+    /** another lexeme also uses the spelling: the count wears the
+     * shared-spelling *, since some of it may be the other word's. Riding on
+     * the count keeps the mark off the rows with nothing counted — with no
+     * occurrences there is nothing for the doubt to be about. */
+    shared?: boolean
+}) =>
     attestations != null && attestations > 0 ? (
-        <span
-            className="dict-lemma-count"
-            title={`Said ${attestations.toLocaleString()} ${attestations === 1 ? "time" : "times"} in the corpus, by this spelling`}
-        >
-            {` ×${attestations.toLocaleString()}`}
-        </span>
+        <>
+            <span
+                className="dict-lemma-count"
+                title={`Said ${attestations.toLocaleString()} ${attestations === 1 ? "time" : "times"} in the corpus, by this spelling`}
+            >
+                {` ×${attestations.toLocaleString()}`}
+            </span>
+            {shared && (
+                <SharedMark title="Another word also uses this spelling: some of these occurrences may be its" />
+            )}
+        </>
     ) : null
 
 /** One family drawn inside the word page: the same tree the lemma page
