@@ -14,6 +14,7 @@ import {
     dictionaryIndexUrl,
     dictionaryWordUrl,
     headingFor,
+    rootsBySense,
     senseGroupsIn,
 } from "../utils/DictionaryEntries"
 import {
@@ -286,6 +287,10 @@ export const Dictionary = () => {
     const senses =
         page != null && !page.isSuggestionTier ? senseGroupsIn(page) : []
 
+    /** the roots split among the senses they belong to, the unthreadable left
+     * in a page-level basket */
+    const sensedRoots = rootsBySense(senses, rootEntries)
+
     /* The only sense of a word has nothing to tell apart, so it needs no heading
        of its own: its label rides on the title, and the word is not said twice
        over. Several senses each earn the word again, under a label that says
@@ -521,15 +526,37 @@ export const Dictionary = () => {
                                     key={index}
                                 />
                             ))}
+                            {/* each reading owns the roots it is built from: the
+                            dog sense says moddey, "not long" says foddey, and
+                            neither answers for the other's ancestry */}
+                            {(sensedRoots.bySense.get(sense.key) ?? []).length >
+                                0 && (
+                                <>
+                                    <h4 className="dict-page-dictionary">
+                                        Built from
+                                    </h4>
+                                    {sensedRoots.bySense
+                                        .get(sense.key)!
+                                        .map((summary, index) => (
+                                            <Entry
+                                                word={page.word}
+                                                summary={summary}
+                                                credit
+                                                onCitationClick={setCitationKey}
+                                                key={index}
+                                            />
+                                        ))}
+                                </>
+                            )}
                         </section>
                     ))}
 
-                {/* the roots are other words this one is built from, not senses of
-                it: they follow the senses rather than sitting among them */}
-                {rootEntries.length > 0 && (
+                {/* a root the thread cannot place under one sense: the mixed
+                basket is an admission, never a guess */}
+                {sensedRoots.unclaimed.length > 0 && (
                     <section className="dict-page-group">
                         <h3 className="dict-page-dictionary">Built from</h3>
-                        {rootEntries.map((summary, index) => (
+                        {sensedRoots.unclaimed.map((summary, index) => (
                             <Entry
                                 word={page!.word}
                                 summary={summary}

@@ -525,6 +525,37 @@ public class DictionaryLookupServiceTest
         }));
     }
 
+    /// <summary>Entries and roots are threaded by the reading they belong to:
+    /// 'cha voddey' files voddey under foddey, 'yn voddey' under the dog, and
+    /// each chain root carries the reading that opened it — so the page can
+    /// give each sense its own Built-from instead of one mixed basket</summary>
+    [Test]
+    public void EntriesAndRootsAreThreadedByReading()
+    {
+        var table = LemmaTable.Load(new StringReader(
+            "form\tlemmaId\tlemma\tlinkType\n"
+            + "voddey\tfoddey.a\tfoddey\tparticle\n"
+            + "voddey\tmoddey.n\tmoddey\tdemutated\n"
+            + "cha voddey\tfoddey.a\tfoddey\tself\n"
+            + "yn voddey\tmoddey.n\tmoddey\tself\n"
+            + "foddey\tfoddey.a\tfoddey\tself\n"
+            + "moddey\tmoddey.n\tmoddey\tself\n"));
+        var service = new DictionaryLookupService([new FakeDictionary(
+            ["cha voddey", "voddey"], ["yn voddey", "voddey"], ["foddey"], ["moddey"])],
+            table, LemmaResolver.Empty);
+
+        var byWord = service.Lookup("gv", "voddey")
+            .ToDictionary(x => x.PrimaryWord, x => x.ThroughLemma);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(byWord["cha voddey"], Is.EqualTo("foddey"));
+            Assert.That(byWord["yn voddey"], Is.EqualTo("moddey"));
+            Assert.That(byWord["foddey"], Is.EqualTo("foddey"));
+            Assert.That(byWord["moddey"], Is.EqualTo("moddey"));
+        });
+    }
+
     /// <summary>The id vocabulary cannot say adverb — Cregeen's foddey "adv."
     /// and its child cha voddey "a." mint one .a id — so an a-class root keeps
     /// its adverb entries: demanding Adjective alone let the "remote, distant,

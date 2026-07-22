@@ -51,6 +51,11 @@ export type Summary = {
      * one line, never about the entry, so it renders as a note on the
      * entry rather than part of it */
     senseNote?: string | null
+    /** the reading of the looked-up word this entry belongs to: "cha voddey"
+     * files voddey under foddey, "yn voddey" under the dog, and a chain root
+     * carries the reading that opened it. The thread that lets each sense
+     * own its Built-from. Null where the table cannot name one reading. */
+    throughLemma?: string | null
 }
 export type DictionaryResponse = Summary[]
 

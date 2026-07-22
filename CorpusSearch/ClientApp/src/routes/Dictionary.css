@@ -136,6 +136,12 @@
     color: inherit;
 }
 
+/* a sense's own Built-from follows its entries directly (the h4 variant):
+   the entries need air before the ancestry heading changes the subject */
+h4.dict-page-dictionary {
+    margin-top: 14px;
+}
+
 /* a sense of the word: the headword again, with the classes the dictionaries
    printed for it. The word repeats because each sense is its own headword. */
 .dict-page-sense {
