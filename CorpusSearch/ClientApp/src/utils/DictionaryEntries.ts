@@ -88,6 +88,10 @@ export type SenseGroup = {
      * a string. */
     labels: string[]
     entries: DictionaryResponse
+    /** the readings this sense's placed entries derive through ("moddey" for
+     * the dog sense): what claims a root for the sense's own Built-from.
+     * Empty when no entry could be threaded. */
+    lemmas: string[]
 }
 
 /** The word's own entries, split into the senses they declare.
@@ -107,8 +111,13 @@ export const senseGroupsIn = (page: DictionaryPageResponse): SenseGroup[] => {
         .filter((e) => !e.rootDepth && !e.nearMatchOf)
     const unplaceable = own.filter((e) => !e.partsOfSpeech?.length)
     const placed = own.filter((e) => e.partsOfSpeech?.length)
+    const lemmasOf = (entries: Summary[]) => [
+        ...new Set(
+            entries.flatMap((e) => (e.throughLemma ? [e.throughLemma] : [])),
+        ),
+    ]
     if (placed.length === 0) {
-        return [{ key: "", labels: [], entries: own }]
+        return [{ key: "", labels: [], entries: own, lemmas: lemmasOf(own) }]
     }
 
     const byKey = new Map<
@@ -161,8 +170,38 @@ export const senseGroupsIn = (page: DictionaryPageResponse): SenseGroup[] => {
             labels,
             // the unplaceable ride along with each: they may be any of them
             entries: [...sense.entries, ...unplaceable],
+            // ...but only the placed entries speak for the sense's reading: an
+            // entry that could be any sense must not claim a root for one
+            lemmas: lemmasOf(sense.entries),
         }
     })
+}
+
+/** The roots each sense's entries derive through, threaded by `throughLemma`:
+ * the moddey hop belongs under the dog sense, foddey's under "not long".
+ * A root no sense claims stays page-level — where the thread is missing, the
+ * old mixed basket is an admission rather than a guess. */
+export const rootsBySense = (
+    senses: SenseGroup[],
+    roots: DictionaryResponse,
+): {
+    bySense: Map<string, DictionaryResponse>
+    unclaimed: DictionaryResponse
+} => {
+    const bySense = new Map<string, DictionaryResponse>()
+    const claimed = new Set<Summary>()
+    for (const sense of senses) {
+        const own = roots.filter(
+            (root) =>
+                root.throughLemma != null &&
+                sense.lemmas.includes(root.throughLemma),
+        )
+        if (own.length > 0) {
+            bySense.set(sense.key, own)
+            own.forEach((root) => claimed.add(root))
+        }
+    }
+    return { bySense, unclaimed: roots.filter((root) => !claimed.has(root)) }
 }
 
 /** A word's page, keeping the dictionary scope the reader is already in:

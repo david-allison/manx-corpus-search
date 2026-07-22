@@ -77,9 +77,12 @@ public class DictionaryLookupService(IEnumerable<ISearchDictionary> dictionarySe
             // each hop carries whether the table only reaches it by rule: once a
             // chain crosses an unverified link every root beyond it rests on that
             // guess, so the flag sticks for the rest of the walk
+            // Origin is the first hop, carried through the deeper ones: every
+            // entry of a chain answers to the reading that opened it
             var frontier = ResolvedDisplayLemmas(selection, context)
                 .Where(x => !seen.Contains(x))
-                .Select(x => (Display: x, Unverified: lemmaTable.IsUnverifiedLink(selection, x)))
+                .Select(x => (Display: x, Origin: x,
+                    Unverified: lemmaTable.IsUnverifiedLink(selection, x)))
                 .ToList();
             // which sense of a root the chain means: the word classes of the
             // candidate ids that produced each display (row -> bee.v is the
@@ -88,7 +91,7 @@ public class DictionaryLookupService(IEnumerable<ISearchDictionary> dictionarySe
             for (var depth = 1; frontier.Count > 0 && depth <= 3; depth++)
             {
                 seen.UnionWith(frontier.Select(x => x.Display));
-                foreach (var (display, unverified) in frontier)
+                foreach (var (display, origin, unverified) in frontier)
                 {
                     var summaries = GetSummaries([display]);
                     if (depth == 1 && expectedPos.TryGetValue(display, out var expected))
@@ -119,6 +122,7 @@ public class DictionaryLookupService(IEnumerable<ISearchDictionary> dictionarySe
                     {
                         summary.RootDepth = depth;
                         summary.UnverifiedLink = unverified;
+                        summary.ThroughLemma = origin;
                         results.Add(summary);
                     }
                 }
@@ -126,7 +130,7 @@ public class DictionaryLookupService(IEnumerable<ISearchDictionary> dictionarySe
                 // candidate reading of the selection, not a root of the root
                 frontier = frontier
                     .SelectMany(root => lemmaTable.RootDisplayLemmasFor(root.Display)
-                        .Select(next => (Display: next,
+                        .Select(next => (Display: next, root.Origin,
                             Unverified: root.Unverified || lemmaTable.IsUnverifiedLink(root.Display, next))))
                     .Where(x => !seen.Contains(x.Display))
                     .DistinctBy(x => x.Display, StringComparer.InvariantCultureIgnoreCase)
@@ -178,7 +182,37 @@ public class DictionaryLookupService(IEnumerable<ISearchDictionary> dictionarySe
             }
         }
         StampSenseNotes(selection, context, deduplicated);
+        StampThroughLemmas(selection, deduplicated);
         return deduplicated;
+    }
+
+    /// <summary>Which reading of the selection each own entry files it under:
+    /// the entry's headword asked of the table ('cha voddey' is foddey's,
+    /// 'yn voddey' the dog's), kept only when it names exactly one of the
+    /// selection's readings — an entry headed by the shared spelling itself
+    /// stays unclaimed. Chain entries were stamped with their first hop as
+    /// they were fetched.</summary>
+    private void StampThroughLemmas(string selection, List<DictionarySummary> summaries)
+    {
+        var readings = lemmaTable.DisplayLemmasFor(selection)
+            .Select(LemmaTable.NormalizeForm)
+            .ToHashSet();
+        if (readings.Count == 0)
+        {
+            return;
+        }
+        foreach (var summary in summaries.Where(x =>
+                     x.RootDepth == 0 && x.NearMatchOf == null && x.ThroughLemma == null))
+        {
+            var displays = lemmaTable.DisplayLemmasFor(summary.PrimaryWord)
+                .Where(display => readings.Contains(LemmaTable.NormalizeForm(display)))
+                .Distinct()
+                .ToList();
+            if (displays.Count == 1)
+            {
+                summary.ThroughLemma = displays[0];
+            }
+        }
     }
 
     /// <summary>Where the clicked occurrence's sense is on record, the entry it

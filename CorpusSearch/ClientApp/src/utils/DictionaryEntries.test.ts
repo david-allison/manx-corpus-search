@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest"
 import {
     corpusSearchUrl,
     declaredClassesIn,
+    rootsBySense,
     senseGroupsIn,
 } from "./DictionaryEntries"
 import { DictionaryPageResponse, Summary } from "../api/DictionaryApi"
@@ -255,5 +256,67 @@ describe("corpusSearchUrl", () => {
 
     it("leaves a hyphen inside a word alone: it joins, it does not cut loose", () => {
         expect(corpusSearchUrl("aa-aase")).toBe("/?q=aa-aase")
+    })
+})
+
+describe("rootsBySense", () => {
+    const voddeyPage = page([
+        entry({
+            primaryWord: "yn voddey",
+            partsOfSpeech: ["Noun"],
+            throughLemma: "moddey",
+        }),
+        entry({
+            primaryWord: "cha voddey",
+            partsOfSpeech: ["Adjective"],
+            throughLemma: "foddey",
+        }),
+    ])
+    const moddeyRoot = entry({
+        primaryWord: "moddey",
+        rootDepth: 1,
+        throughLemma: "moddey",
+    })
+    const foddeyRoot = entry({
+        primaryWord: "foddey",
+        rootDepth: 1,
+        throughLemma: "foddey",
+    })
+
+    it("each sense owns the roots its entries derive through", () => {
+        const senses = senseGroupsIn(voddeyPage)
+        const { bySense, unclaimed } = rootsBySense(senses, [
+            moddeyRoot,
+            foddeyRoot,
+        ])
+        expect(bySense.get("noun")).toEqual([moddeyRoot])
+        expect(bySense.get("adjective")).toEqual([foddeyRoot])
+        expect(unclaimed).toEqual([])
+    })
+
+    it("a root the thread cannot place stays page-level", () => {
+        const senses = senseGroupsIn(voddeyPage)
+        const stray = entry({ primaryWord: "sodjey", rootDepth: 1 })
+        const { bySense, unclaimed } = rootsBySense(senses, [stray, foddeyRoot])
+        expect(bySense.get("adjective")).toEqual([foddeyRoot])
+        expect(unclaimed).toEqual([stray])
+    })
+
+    it("an unplaceable entry does not claim a root for one sense", () => {
+        // the class-less entry rides along with every sense, so letting its
+        // thread claim roots would file one ancestry under all of them
+        const senses = senseGroupsIn(
+            page([
+                entry({
+                    primaryWord: "yn voddey",
+                    partsOfSpeech: ["Noun"],
+                    throughLemma: "moddey",
+                }),
+                entry({ primaryWord: "voddey", throughLemma: "foddey" }),
+            ]),
+        )
+        const { bySense, unclaimed } = rootsBySense(senses, [foddeyRoot])
+        expect(bySense.size).toBe(0)
+        expect(unclaimed).toEqual([foddeyRoot])
     })
 })

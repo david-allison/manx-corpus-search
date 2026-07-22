@@ -106,6 +106,14 @@ public class DictionarySummary
     /// the entry.</summary>
     public string? SenseNote { get; set; }
 
+    /// <summary>The reading of the selection this entry belongs to: an own
+    /// entry's headword asked of the table ('cha voddey' files voddey under
+    /// foddey, 'yn voddey' under the dog), a chain entry's first hop. The
+    /// thread between a sense and the roots it is built from, so the page can
+    /// give each reading its own Built-from. Null where the table cannot name
+    /// exactly one reading.</summary>
+    public string? ThroughLemma { get; set; }
+
     /// <summary>The printed grammar label of the entry ("s. m.", "s. f.",
     /// "v."): word class and gender as the dictionary abbreviates them, for
     /// display beside the headword with the expansion on hover</summary>
