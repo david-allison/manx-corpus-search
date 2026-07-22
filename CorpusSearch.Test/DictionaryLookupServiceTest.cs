@@ -525,6 +525,29 @@ public class DictionaryLookupServiceTest
         }));
     }
 
+    /// <summary>The id vocabulary cannot say adverb — Cregeen's foddey "adv."
+    /// and its child cha voddey "a." mint one .a id — so an a-class root keeps
+    /// its adverb entries: demanding Adjective alone let the "remote, distant,
+    /// foreign" homograph child stand in for the lexeme on the voddey page</summary>
+    [Test]
+    public void AnAClassRootKeepsItsAdverbEntries()
+    {
+        var table = LemmaTable.Load(new StringReader(
+            "form\tlemmaId\tlemma\tlinkType\n"
+            + "voddey\tfoddey.a\tfoddey\tdemutated\n"
+            + "foddey\tfoddey.a\tfoddey\tself\n"));
+        var service = new DictionaryLookupService([new FakeDictionary(
+            ("voddey", "", "the dog."),
+            ("foddey", "Adverb", "far, at a great distance"),
+            ("foddey", "Adjective", "remote, distant, foreign"))],
+            table, LemmaResolver.Empty);
+
+        var results = service.Lookup("gv", "voddey");
+
+        Assert.That(results.Where(x => x.PrimaryWord == "foddey").Select(x => x.Summary),
+            Is.EquivalentTo(new[] { "far, at a great distance", "remote, distant, foreign" }));
+    }
+
     /// <summary>Entries without a declared class survive the sense filter</summary>
     [Test]
     public void UndeclaredWordClassesAreNeverFiltered()

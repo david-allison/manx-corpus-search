@@ -648,11 +648,16 @@ public class DictionaryLookupService(IEnumerable<ISearchDictionary> dictionarySe
             {
                 continue;
             }
-            var pos = id[(id.LastIndexOf('.') + 1)..] switch
+            string[]? pos = id[(id.LastIndexOf('.') + 1)..] switch
             {
-                "v" => "Verb",
-                "n" => "Noun",
-                "a" => "Adjective",
+                "v" => ["Verb"],
+                "n" => ["Noun"],
+                // the id vocabulary cannot say adverb: Cregeen prints foddey
+                // "adv." and its own child cha voddey "a." in one family, and
+                // both mint .a — demanding Adjective alone let the "remote,
+                // distant, foreign" homograph child stand in for the lexeme
+                // on the voddey page's root chain
+                "a" => ["Adjective", "Adverb"],
                 _ => null, // .x, .np and explicit ids ("bagh-1") constrain nothing
             };
             if (pos == null || id.LastIndexOf('.') < 0)
@@ -664,7 +669,7 @@ public class DictionaryLookupService(IEnumerable<ISearchDictionary> dictionarySe
             {
                 result[display] = set = [];
             }
-            set.Add(pos);
+            set.UnionWith(pos);
         }
         foreach (var display in unconstrained)
         {
