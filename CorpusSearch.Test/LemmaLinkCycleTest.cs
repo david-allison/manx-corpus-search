@@ -48,6 +48,10 @@ public class LemmaLinkCycleTest
         "choodee -> chood",
         "choyrlee -> choyrl",
         "chuirr -> chuir",
+        // "cuir or cuirr*" prints twice (invite/bid and sow/shoot): the two
+        // relations share one entry pair, so one spelling keeps a page of
+        // its own beside the fold, like its mutated twin chuirr -> chuir
+        "cuirr -> cuir",
         "cleaynee -> cleayn",
         "cleiee -> cleaiee",
         "cleiy -> cleigh",
@@ -93,6 +97,10 @@ public class LemmaLinkCycleTest
         "ferchoadee -> coadeyder",
         "firriney -> firrin",
         "fockl -> fockl",
+        // "fockl* or fockle" prints twice (s. m. and v.); the verb keeps
+        // the fockl page while the noun folds to fockle, as UD lemmatizes
+        // (focklyn -> fockle)
+        "fockl -> fockle",
         "gerjoil -> gerjoilid",
         "gerrit -> gerrid",
         "giallee -> giall",

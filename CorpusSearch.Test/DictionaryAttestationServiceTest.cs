@@ -478,14 +478,15 @@ public class DictionaryAttestationServiceTest : QueryBase
     }
 
     /// <summary>Mirrors DictionaryHistoryService.LemmaReadingsFor: a word which
-    /// heads its own lexeme keeps only that one. 'veg' is a lenition of beg.a,
-    /// but it also heads veg.x — walking it must not step through beg.a's
-    /// documents as though they were the same word.</summary>
+    /// heads its own lexeme keeps only its own. 'veg' is a lenition of beg.a,
+    /// but it also heads veg.x (and, since 'feer veg' arrived, veg.a) —
+    /// walking it must not step through beg.a's documents as though they
+    /// were the same word.</summary>
     [Test]
     public void AHeadwordKeepsOnlyItsOwnLexeme()
     {
         Assert.That(DictionaryAttestationService.LemmaIdsFor(LemmaTable.Instance, "veg"),
-            Is.EqualTo(new[] { "veg.x" }));
+            Is.EqualTo(new[] { "veg.a", "veg.x" }));
     }
 
     /// <summary>...but a form which heads nothing offers every reading: 'vee' is
