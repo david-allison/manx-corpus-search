@@ -6,7 +6,7 @@ import {
     screen,
     waitFor,
 } from "@testing-library/react"
-import { MemoryRouter } from "react-router-dom"
+import { MemoryRouter } from "react-router"
 import { Home } from "./Home"
 import { MAX_QUERY_LENGTH, SearchResponse } from "../api/SearchApi"
 

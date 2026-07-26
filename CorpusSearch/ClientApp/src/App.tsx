@@ -1,5 +1,5 @@
 import { useReducer } from "react"
-import { Route, Routes, useLocation } from "react-router-dom"
+import { Route, Routes, useLocation } from "react-router"
 import { Layout } from "./components/Layout"
 import { ErrorBoundary } from "./components/ErrorBoundary"
 import { Home } from "./routes/Home"

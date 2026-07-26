@@ -7,8 +7,8 @@ communicating via `fetch`.
 
 ## Stack
 
-- **React 18** + **TypeScript** (from Create React App)
-- **react-router-dom 6**
+- **React 19** + **TypeScript** (built with Vite)
+- **react-router 8**
 - **MUI** (`@mui/material`) and **reactstrap** / **Bootstrap 5** for UI
 
 ## Getting started

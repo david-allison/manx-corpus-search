@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react"
-import { Link, useSearchParams } from "react-router-dom"
+import { Link, useSearchParams } from "react-router"
 import { CircularProgress } from "@mui/material"
 import { DictionaryBrowseResponse, spokenIndex } from "../api/DictionaryApi"
 import { WordSearch } from "../components/WordSearch"

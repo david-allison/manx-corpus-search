@@ -7,7 +7,7 @@ import {
     screen,
     waitFor,
 } from "@testing-library/react"
-import { MemoryRouter } from "react-router-dom"
+import { MemoryRouter } from "react-router"
 import { ComparisonTable } from "./ComparisonTable"
 import { segmentChunks } from "./LineText"
 import { SearchWorkResponse, SearchWorkResult } from "../api/SearchWorkApi"

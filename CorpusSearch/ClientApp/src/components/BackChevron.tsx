@@ -1,4 +1,4 @@
-import { Link, To } from "react-router-dom"
+import { Link, To } from "react-router"
 import { MouseEvent } from "react"
 
 export const BackChevron = (props: { to: To | "historyBack" }) => {

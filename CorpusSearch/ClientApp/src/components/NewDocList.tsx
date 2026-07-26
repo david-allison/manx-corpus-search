@@ -3,7 +3,7 @@
  * Which means those document.csv files that git detects as having recent changes
  */
 import { use } from "react"
-import { Link } from "react-router-dom"
+import { Link } from "react-router"
 
 type DocType = { name: string; ident: string; uploaded: string }
 

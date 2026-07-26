@@ -1,5 +1,5 @@
 import { ReactNode } from "react"
-import { Link } from "react-router-dom"
+import { Link } from "react-router"
 import { NavMenu } from "./NavMenu"
 import { isDictionaryHost } from "../utils/Host"
 

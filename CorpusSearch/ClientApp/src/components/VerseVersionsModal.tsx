@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { Box, CircularProgress, Modal } from "@mui/material"
-import { Link } from "react-router-dom"
+import { Link } from "react-router"
 import {
     fetchVerseAlignment,
     VerseAlignmentResponse,

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react"
-import { Link, useParams, useSearchParams } from "react-router-dom"
+import { Link, useParams, useSearchParams } from "react-router"
 import { CircularProgress } from "@mui/material"
 import { DictionaryBrowseResponse, lemmaIndex } from "../api/DictionaryApi"
 import {

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { Link } from "react-router-dom"
+import { Link } from "react-router"
 import { dictionaryBrowse } from "../api/DictionaryApi"
 import { DictionaryBooks } from "./DictionaryBooks"
 import { DictionarySamples } from "./DictionarySamples"

@@ -1,5 +1,5 @@
 import { MouseEvent } from "react"
-import { Link, useLocation, useNavigate } from "react-router-dom"
+import { Link, useLocation, useNavigate } from "react-router"
 import corpusIcon from "../assets/corpus-search-icon.png"
 import { isDictionaryHost } from "../utils/Host"
 

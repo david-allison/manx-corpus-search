@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom"
+import { Link } from "react-router"
 
 // The 404 page. In production, unknown URLs get this via SpaRouteGuard.cs, which
 // serves the app shell with a 404 status; in-app navigation and Development reach

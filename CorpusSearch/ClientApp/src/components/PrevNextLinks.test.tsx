@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest"
 import { cleanup, fireEvent, render, screen } from "@testing-library/react"
-import { MemoryRouter, useLocation, useNavigate } from "react-router-dom"
+import { MemoryRouter, useLocation, useNavigate } from "react-router"
 import { PrevNextLinks } from "./PrevNextLinks"
 
 afterEach(cleanup)

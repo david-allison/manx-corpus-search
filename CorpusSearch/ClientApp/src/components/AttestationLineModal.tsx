@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { Box, CircularProgress, Modal } from "@mui/material"
-import { Link } from "react-router-dom"
+import { Link } from "react-router"
 import Highlighter from "react-highlight-words"
 import { searchWork, SearchWorkResult } from "../api/SearchWorkApi"
 import { defaultSearchOptions } from "../api/SearchOptions"

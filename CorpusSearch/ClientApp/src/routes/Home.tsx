@@ -26,7 +26,7 @@ import {
 } from "../components/MultidictLink"
 import { hasTranslations, TranslationList } from "../components/TranslationList"
 import AdvancedOptions, { DateRange } from "../components/AdvancedOptions"
-import { useSearchParams } from "react-router-dom"
+import { useSearchParams } from "react-router"
 import { usePersistedState } from "../hooks/usePersistedState"
 import {
     search,
