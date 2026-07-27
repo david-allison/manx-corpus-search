@@ -73,6 +73,16 @@ public class DictionarySummary
     /// the entry was reached through, when nothing matched the selection itself</summary>
     public string? NearMatchOf { get; set; }
 
+    /// <summary>Set on the compound-parts fallback only: the part of the
+    /// selection this entry defines, when nothing answered for the whole
+    /// ('goll-mygeayrt' has no entry, but 'goll' and 'mygeayrt' do).
+    ///
+    /// The entry is about the part, never about the selection, so a page must
+    /// not print it under the selection's own name: 'Bolan-y-chee' is a
+    /// nipplewort, and reading çhee's "seeking" as its sense makes the page say
+    /// so. Marked as near matches are, and for the same reason.</summary>
+    public string? PartOf { get; set; }
+
     /// <summary>Pronunciation recording, streamed from the defining source's site</summary>
     public string? AudioUrl { get; set; }
 
