@@ -393,7 +393,28 @@ export const AttestationWalker = ({
     // ?audio= on a word no recording says falls back to the whole walk, the
     // way a garbage ?reading= does.
     const audioTab = params.get("audio") != null && audioDocs.length > 0
-    const documents = audioTab ? audioDocs : (walk?.documents ?? [])
+
+    // the walk in two: texts holding a settled use are known matches, and
+    // texts holding the word only as spellings another lexeme also writes are
+    // potential matches, stepped apart so they cannot head the word's history
+    // (cronk 'hill' must not open crank's walk). The split engages only where
+    // the walk knows the difference and each side has something to step; a
+    // spelling walk sends no sure counts and keeps its single walk.
+    const knownDocs =
+        walk?.documents.filter((d) => d.sureUses != null && d.sureUses > 0) ??
+        []
+    const potentialDocs = walk?.documents.filter((d) => d.sureUses === 0) ?? []
+    const splitWalk = knownDocs.length > 0 && potentialDocs.length > 0
+    // the potential tab is open: the walk steps the offered texts alone
+    const potentialTab =
+        params.get("potential") != null && splitWalk && !audioTab
+    const documents = audioTab
+        ? audioDocs
+        : potentialTab
+          ? potentialDocs
+          : splitWalk
+            ? knownDocs
+            : (walk?.documents ?? [])
 
     // no step named: the walk starts at the word's first attestation
     const index = Math.max(
@@ -486,6 +507,9 @@ export const AttestationWalker = ({
         if (audioTab) {
             query.set("audio", "1")
         }
+        if (potentialTab) {
+            query.set("potential", "1")
+        }
         query.set("at", ident)
         return `${pathname}?${query.toString()}`
     }
@@ -497,6 +521,16 @@ export const AttestationWalker = ({
             query.set("reading", reading)
         }
         query.set("audio", "1")
+        return `${pathname}?${query.toString()}`
+    }
+    /** the potential tab's own address: same reading, no step — the offered
+     * texts are walked from the earliest, like a walk newly opened */
+    const potentialTabTo = () => {
+        const query = new URLSearchParams()
+        if (reading != null) {
+            query.set("reading", reading)
+        }
+        query.set("potential", "1")
         return `${pathname}?${query.toString()}`
     }
     const previous = documents[index - 1]
@@ -585,6 +619,26 @@ export const AttestationWalker = ({
                                 {`🔊 audio${audioDocs.length > 1 ? ` ×${audioDocs.length.toLocaleString()}` : ""}`}
                             </Link>
                         ))}
+                    {/* the texts holding the word only as shared spellings,
+                        stepped apart: offered, never asserted */}
+                    {splitWalk &&
+                        (potentialTab ? (
+                            <span
+                                className="attest-tab attest-tab-active"
+                                aria-current="true"
+                            >
+                                {`potential ×${potentialDocs.length.toLocaleString()}`}
+                            </span>
+                        ) : (
+                            <Link
+                                className="attest-tab"
+                                to={potentialTabTo()}
+                                title={OFFERED_TITLE}
+                                replace
+                            >
+                                {`potential ×${potentialDocs.length.toLocaleString()}`}
+                            </Link>
+                        ))}
                     {/* the reading's whole family, drawn on the lemma page:
                         the tab names the lexeme, this is the way to its tree.
                         Not offered for a spelling walk — there is no lemma to
@@ -606,7 +660,19 @@ export const AttestationWalker = ({
 
             {!hasWalk ? null : (
                 <>
-                    <WalkSummary documents={documents} audioTab={audioTab} />
+                    {/* the summary reads the whole walk, not the open tab's
+                        half: the headline keeps its "possibly from" offer
+                        while the known matches are what is stepped */}
+                    <WalkSummary
+                        documents={
+                            audioTab
+                                ? audioDocs
+                                : potentialTab
+                                  ? potentialDocs
+                                  : walk.documents
+                        }
+                        audioTab={audioTab}
+                    />
 
                     <div
                         id="attest-body"
@@ -624,7 +690,9 @@ export const AttestationWalker = ({
                             ariaLabel={
                                 audioTab
                                     ? "Recordings using this word, in date order"
-                                    : "Texts using this word, in date order"
+                                    : potentialTab
+                                      ? "Texts possibly using this word, in date order"
+                                      : "Texts using this word, in date order"
                             }
                             previous={
                                 previous
