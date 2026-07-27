@@ -158,9 +158,11 @@ public class DictionaryAttestationServiceTest : QueryBase
     }
 
     /// <summary>'daase' carries only the verb, so the verb's group holds both
-    /// lines while the noun's holds one: each reading shows what it claims</summary>
+    /// lines while the noun's holds one: each reading shows what it claims.
+    /// 'aase' is also faase.a demutated, so its line is offered after the
+    /// settled daase line, whatever order the document wrote them in.</summary>
     [Test]
-    public void EveryUseInADocumentIsReturnedInLineOrder()
+    public void EveryUseInADocumentIsReturnedSettledFirst()
     {
         AddDated("Doc", 1748, "Ta mee aase", "Cha nel eh", "Daase yn billey");
 
@@ -174,8 +176,8 @@ public class DictionaryAttestationServiceTest : QueryBase
             // counted twice for being claimed by both the noun and the verb
             Assert.That(found.UseCount, Is.EqualTo(2));
             Assert.That(verb.Lines.Select(x => x.Manx),
-                Is.EqualTo(new[] { "Ta mee aase", "Daase yn billey" }));
-            Assert.That(verb.Lines.Select(x => x.CsvLineNumber), Is.Ordered);
+                Is.EqualTo(new[] { "Daase yn billey", "Ta mee aase" }));
+            Assert.That(verb.UncertainLineNumbers, Is.EqualTo(new[] { 2 }));
         });
     }
 
@@ -246,6 +248,26 @@ public class DictionaryAttestationServiceTest : QueryBase
             Assert.That(walk.Documents.Single(x => x.Ident == "🎥 Timed").Timed, Is.True);
             Assert.That(walk.Documents.Single(x => x.Ident == "🎥 Untimed").Timed, Is.False);
             Assert.That(walk.Documents.Single(x => x.Ident == "Print").Timed, Is.Null);
+        });
+    }
+
+    /// <summary>The settled lines lead a step's sample: 'cronk' is shared with
+    /// cronk.n (the hill) and unsettled, while 'crank' can only be this word.
+    /// A document in the known walk must not open on the occurrences its
+    /// potential twin holds, however early in the text they come.</summary>
+    [Test]
+    public void TheSettledLinesLeadTheSample()
+    {
+        AddDated("Doc", 1819, "ayns cronk Seir", "va crank ayn");
+
+        var found = Service().InDocument("crank", "Doc").Result!;
+        var noun = found.Groups.Single(x => x.LemmaIds.Contains("crank.n"));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(noun.Lines.Select(x => x.Manx),
+                Is.EqualTo(new[] { "va crank ayn", "ayns cronk Seir" }));
+            Assert.That(noun.UncertainLineNumbers, Is.EqualTo(new[] { 2 }));
         });
     }
 
