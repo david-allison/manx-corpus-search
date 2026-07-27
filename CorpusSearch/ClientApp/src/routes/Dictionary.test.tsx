@@ -490,6 +490,40 @@ describe("Dictionary page", () => {
         renderAt("/dictionary/costlagh")
 
         expect(await screen.findByText(/Near spellings/)).toBeTruthy()
+        expect(screen.queryByText(/No dictionary defines/)).toBeNull()
+    })
+
+    /** the word no book defines is the one the citation matters most for: a
+     * printed list named it, so the page says so before offering near
+     * spellings, and does not claim nothing was found */
+    it("cites a word list even where no dictionary defines the word", async () => {
+        respondWith({
+            word: "blughtyn",
+            isSuggestionTier: true,
+            attested: true,
+            groups: [],
+            wordLists: [
+                {
+                    source: {
+                        listId: "morrison-plants",
+                        name: "Manx Plant Names",
+                        credit: "Sophia Morrison",
+                        date: "1908",
+                        documentIdent: "Manx-Plant-Names",
+                        url: "https://example.invalid",
+                        citation: "Manx Wild Flowers, 1908",
+                    },
+                    headword: "Blughtyn",
+                    gloss: "Marsh marigolds",
+                    binomial: "Caltha palustris",
+                },
+            ],
+        })
+        renderAt("/dictionary/blughtyn")
+
+        expect(await screen.findByText("Marsh marigolds")).toBeTruthy()
+        expect(screen.getByText(/No dictionary defines/)).toBeTruthy()
+        expect(screen.queryByText(/Nothing found for/)).toBeNull()
     })
 
     it("shows the search box and the letters without a word", async () => {

@@ -121,6 +121,43 @@ export type DictionaryPageResponse = {
         sourceUrl?: string | null
         entries: Summary[]
     }[]
+    /** the printed word lists that name the word. Not a group: a list gives a
+     * spelling and what it names, never a definition or a word class, so it
+     * reads as a citation rather than as a book's own entry.
+     *
+     * Optional because a server from before word lists existed answers without
+     * it, and the page has to survive the minutes of a deploy */
+    wordLists?: WordListCitation[]
+}
+
+/** What one printed word list prints against a word */
+export type WordListCitation = {
+    source: {
+        listId: string
+        /** the list's title ('Manx Plant Names') */
+        name: string
+        /** who compiled it */
+        credit: string
+        /** when it was printed, as much of a date as is known ('1908') */
+        date: string
+        /** the corpus document it was transcribed from: the citation links here
+         * so a reader can read the page rather than take our word */
+        documentIdent: string
+        url: string
+        /** the full printed citation, for the reader who wants the book */
+        citation: string
+    }
+    /** the spelling as the page sets it, which is not always the spelling looked
+     * up ('Yn luss' found from 'luss') */
+    headword: string
+    /** the English name, verbatim from the page — typos included, which `note`
+     * reads back */
+    gloss: string
+    /** the Latin name, where the list sets one */
+    binomial?: string | null
+    /** what the page or the transcription needs said: a print correction,
+     * 'always plural' */
+    note?: string | null
 }
 
 /** A dictionary the page can be scoped to */

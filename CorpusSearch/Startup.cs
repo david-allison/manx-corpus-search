@@ -123,6 +123,7 @@ public class Startup(IConfiguration configuration)
         services.AddSingleton<DictionaryLookupService>();
         services.AddSingleton<DictionaryHistoryService>();
         services.AddSingleton<DictionaryAttestationService>();
+        services.AddSingleton<WordListCitationService>();
         // filled from the index's term list in Configure, once the corpus is loaded
         services.AddSingleton<CorpusVocabulary>();
         services.AddSingleton<DictionaryBrowseService>();

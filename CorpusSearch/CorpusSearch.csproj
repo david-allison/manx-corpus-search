@@ -99,6 +99,20 @@
         <Link>Resources\vocab.tsv</Link>
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <!-- Printed word lists (generated from cregeen-nvh wordlists/*.nvh):
+    deliberately NOT a lemma supplement. A list prints a spelling against a
+    thing and says nothing about class or root, so these rows are shown as a
+    citation beside a word and never folded into the lemma table -->
+    <Content Include="external\manx-lemma-data\wordlists.tsv"
+             Condition="Exists('external\manx-lemma-data\wordlists.tsv')">
+        <Link>Resources\wordlists.tsv</Link>
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="external\manx-lemma-data\wordlists.sources.tsv"
+             Condition="Exists('external\manx-lemma-data\wordlists.sources.tsv')">
+        <Link>Resources\wordlists.sources.tsv</Link>
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <!-- The disambiguation layers ride beside the table (LemmaResolver);
     optional until the data repo adopts the generated artifacts -->
     <Content Include="external\manx-lemma-data\lemma.overrides.tsv"
