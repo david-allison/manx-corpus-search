@@ -39,6 +39,7 @@ import { AudioAttestationModal } from "../components/AudioAttestationModal"
 import { useWordHistory } from "../hooks/useWordHistory"
 import { useDictionaryHead } from "../hooks/useDictionaryHead"
 import { AttestationWalker } from "../components/AttestationWalker"
+import { WordListCitations } from "../components/WordListCitations"
 import { WordFamily } from "../components/LemmaTree"
 import "./Dictionary.css"
 
@@ -469,9 +470,19 @@ export const Dictionary = () => {
                     ) : null
                 })()}
 
+                {/* a word list names the word even where no dictionary defines
+                it — which is exactly the word that needs the citation most, so
+                it comes before the near spellings rather than after them */}
+                {page?.isSuggestionTier && (
+                    <WordListCitations citations={page.wordLists ?? []} />
+                )}
+
                 {page?.isSuggestionTier && (
                     <p className="dict-page-suggestions-note">
-                        Nothing found for “{page.word}”. Near spellings:
+                        {page.wordLists?.length
+                            ? // a list named it: "nothing found" would be untrue
+                              `No dictionary defines “${page.word}”. Near spellings:`
+                            : `Nothing found for “${page.word}”. Near spellings:`}
                     </p>
                 )}
 
@@ -566,6 +577,13 @@ export const Dictionary = () => {
                             />
                         ))}
                     </section>
+                )}
+
+                {/* between the books and the corpus, which is where a printed
+                list sits: it is not a dictionary's reading, and it is not a
+                text using the word — it is a page that named it */}
+                {page != null && !page.isSuggestionTier && (
+                    <WordListCitations citations={page.wordLists ?? []} />
                 )}
 
                 {word && page != null && !page.isSuggestionTier && (

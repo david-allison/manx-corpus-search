@@ -1,0 +1,65 @@
+/* The printed word lists that name the word.
+   Set apart from the dictionary groups on purpose: a list is a citation, and
+   dressing it as an entry would let a reader take a page's naming for a book's
+   reading. */
+.dict-wordlists {
+    margin-top: 20px;
+}
+
+.dict-wordlist-items {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.dict-wordlist-item {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 8px;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--c-border-row);
+}
+
+.dict-wordlist-item:last-child {
+    border-bottom: none;
+}
+
+/* the spelling the page sets, which is not always the one looked up */
+.dict-wordlist-headword {
+    font-weight: 600;
+    color: var(--c-heading);
+}
+
+.dict-wordlist-gloss {
+    color: var(--c-body-results);
+}
+
+.dict-wordlist-binomial {
+    font-style: italic;
+    color: var(--c-secondary);
+}
+
+/* the list itself, and the way through to the page it was read off */
+.dict-wordlist-source {
+    color: var(--c-muted);
+    font-size: 13px;
+    margin-left: auto;
+}
+
+.dict-wordlist-source a {
+    color: var(--c-link);
+}
+
+.dict-wordlist-source a:hover {
+    color: var(--c-link-hover);
+}
+
+/* the page's own slip, read back: it takes the whole row so it is not mistaken
+   for part of the naming */
+.dict-wordlist-note {
+    flex-basis: 100%;
+    color: var(--c-muted);
+    font-size: 13px;
+    font-style: italic;
+}

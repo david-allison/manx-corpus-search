@@ -16,7 +16,7 @@ public class DictionaryController(
     DictionaryLookupService lookupService, DictionaryHistoryService historyService,
     DictionaryAttestationService attestationService, DictionaryBrowseService browseService,
     LemmaIndexService lemmaIndexService, CorpusVocabulary vocabulary,
-    DictionaryStatsService statsService)
+    DictionaryStatsService statsService, WordListCitationService wordLists)
 {
     /// <summary>The front page's coverage numbers: what share of the corpus the
     /// books, the recordings and the lemma table can answer for. Counts, with
@@ -71,6 +71,9 @@ public class DictionaryController(
         // corpus's business, and the page only carries the answer — including
         // "not yet", which a phrase gets until the corpus has been read for it
         page.Attested = vocabulary.Attestation(word);
+        // a printed list is neither book nor corpus: it is shown as a citation,
+        // so it rides beside the groups rather than becoming one
+        page.WordLists = [.. wordLists.For(word)];
         return page;
     }
 

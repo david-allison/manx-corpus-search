@@ -46,6 +46,13 @@ public class DictionaryPage
     public required List<string> Answering { get; set; }
 
     public required List<DictionaryPageGroup> Groups { get; set; }
+
+    /// <summary>The printed word lists that name the word, if any.
+    ///
+    /// Not a dictionary group: a list gives a spelling and what it names, never a
+    /// definition or a word class, so it is shown as a citation rather than as an
+    /// entry a reader might mistake for a book's own reading.</summary>
+    public List<WordListCitation> WordLists { get; set; } = [];
 }
 
 public class DictionaryPageGroup
