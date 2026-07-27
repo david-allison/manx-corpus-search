@@ -474,7 +474,10 @@ export const Dictionary = () => {
                 it — which is exactly the word that needs the citation most, so
                 it comes before the near spellings rather than after them */}
                 {page?.isSuggestionTier && (
-                    <WordListCitations citations={page.wordLists ?? []} />
+                    <WordListCitations
+                        citations={page.wordLists ?? []}
+                        word={page.word}
+                    />
                 )}
 
                 {page?.isSuggestionTier && (
@@ -583,7 +586,10 @@ export const Dictionary = () => {
                 list sits: it is not a dictionary's reading, and it is not a
                 text using the word — it is a page that named it */}
                 {page != null && !page.isSuggestionTier && (
-                    <WordListCitations citations={page.wordLists ?? []} />
+                    <WordListCitations
+                        citations={page.wordLists ?? []}
+                        word={page.word}
+                    />
                 )}
 
                 {word && page != null && !page.isSuggestionTier && (

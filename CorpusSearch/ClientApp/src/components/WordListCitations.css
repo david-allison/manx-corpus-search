@@ -1,7 +1,11 @@
 /* The printed word lists that name the word.
    Set apart from the dictionary groups on purpose: a list is a citation, and
    dressing it as an entry would let a reader take a page's naming for a book's
-   reading. */
+   reading.
+
+   Text flow, not columns: the naming and its source are one sentence, so they
+   wrap like one. A flex row would break at whatever width the window happened
+   to be and leave the parts standing alone. */
 .dict-wordlists {
     margin-top: 20px;
 }
@@ -12,41 +16,26 @@
     padding: 0;
 }
 
-.dict-wordlist-item {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: 8px;
-    padding: 6px 0;
-    border-bottom: 1px solid var(--c-border-row);
+.dict-wordlist-item + .dict-wordlist-item {
+    margin-top: 6px;
 }
 
-.dict-wordlist-item:last-child {
-    border-bottom: none;
+.dict-wordlist-line {
+    margin: 0;
+    color: var(--c-body-results);
 }
 
-/* the spelling the page sets, which is not always the one looked up */
+/* the spelling the page sets, said only where it differs from the word asked for */
 .dict-wordlist-headword {
     font-weight: 600;
     color: var(--c-heading);
 }
 
-.dict-wordlist-gloss {
-    color: var(--c-body-results);
-}
-
 .dict-wordlist-binomial {
     font-style: italic;
-    color: var(--c-secondary);
 }
 
 /* the list itself, and the way through to the page it was read off */
-.dict-wordlist-source {
-    color: var(--c-muted);
-    font-size: 13px;
-    margin-left: auto;
-}
-
 .dict-wordlist-source a {
     color: var(--c-link);
 }
@@ -55,10 +44,10 @@
     color: var(--c-link-hover);
 }
 
-/* the page's own slip, read back: it takes the whole row so it is not mistaken
-   for part of the naming */
+/* the page's own slip, read back: its own line, so it is not mistaken for part
+   of the naming */
 .dict-wordlist-note {
-    flex-basis: 100%;
+    margin: 2px 0 0;
     color: var(--c-muted);
     font-size: 13px;
     font-style: italic;
