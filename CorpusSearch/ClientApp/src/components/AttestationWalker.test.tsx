@@ -394,11 +394,14 @@ describe("AttestationWalker", () => {
         expect(line.textContent).toBe("Daase yn billey▶ 0:12")
         fireEvent.click(line)
 
-        expect(
-            (
-                await screen.findByRole("link", { name: "Full document ›" })
-            ).getAttribute("href"),
-        ).toBe("/docs/Psalms1610?line=2")
+        // the link exists before the popup's lines arrive and only then cues
+        // the tapped line: the href is awaited, not the link alone
+        const full = await screen.findByRole("link", {
+            name: "Full document ›",
+        })
+        await waitFor(() =>
+            expect(full.getAttribute("href")).toBe("/docs/Psalms1610?line=2"),
+        )
     })
 
     it("offers no play link where the text is not a recording", async () => {
@@ -420,11 +423,14 @@ describe("AttestationWalker", () => {
         expect(line.textContent).toBe("Daase yn billey▶ ??:??")
         fireEvent.click(line)
 
-        expect(
-            (
-                await screen.findByRole("link", { name: "Full document ›" })
-            ).getAttribute("href"),
-        ).toBe("/docs/Psalms1610?line=2")
+        // the link exists before the popup's lines arrive and only then cues
+        // the tapped line: the href is awaited, not the link alone
+        const full = await screen.findByRole("link", {
+            name: "Full document ›",
+        })
+        await waitFor(() =>
+            expect(full.getAttribute("href")).toBe("/docs/Psalms1610?line=2"),
+        )
     })
 
     it("offers an audio tab when recordings use the word", async () => {
@@ -558,22 +564,38 @@ describe("AttestationWalker", () => {
     })
 
     it("offers rather than asserts the potential walk's steps", async () => {
-        respondWithDocuments([
-            {
-                ident: "Psalms1610",
-                title: "Psalms",
-                year: 1610,
-                uses: 9,
-                sureUses: 0,
-            },
-            {
-                ident: "Coyrle",
-                title: "Coyrle Sodjey",
-                year: 1707,
-                uses: 3,
-                sureUses: 3,
-            },
+        const offered = withGroups(9, [
+            { sureCount: 0, uncertainLineNumbers: [2] },
         ])
+        fetchMock.mockImplementation((url) =>
+            Promise.resolve({
+                ok: true,
+                json: () =>
+                    Promise.resolve(
+                        hrefOf(url).includes("/attestations/")
+                            ? offered
+                            : {
+                                  ...walk,
+                                  documents: [
+                                      {
+                                          ident: "Psalms1610",
+                                          title: "Psalms",
+                                          year: 1610,
+                                          uses: 9,
+                                          sureUses: 0,
+                                      },
+                                      {
+                                          ident: "Coyrle",
+                                          title: "Coyrle Sodjey",
+                                          year: 1707,
+                                          uses: 3,
+                                          sureUses: 3,
+                                      },
+                                  ],
+                              },
+                    ),
+            } as Response),
+        )
         renderWalker("aase", "?potential=1")
         await screen.findByText("Daase")
 
@@ -584,6 +606,67 @@ describe("AttestationWalker", () => {
         expect(row?.querySelector("abbr")?.getAttribute("title")).toBe(
             "Only as a spelling shared with another word: these occurrences may not be this one",
         )
+    })
+
+    it("walks a text holding both kinds in both walks, each showing its own", async () => {
+        // the Bible's cronkal is settled, its cronk hills are not: the known
+        // step shows the settled row and counts 4, the potential step shows
+        // the offered row and counts the rest
+        const both = withGroups(172, [
+            { lemmaIds: ["crank.v"], count: 4, sureCount: 4 },
+            {
+                lemmaIds: ["crank.n"],
+                count: 168,
+                sureCount: 0,
+                lines: [
+                    {
+                        manx: "ayns cronk Seir",
+                        english: "",
+                        manxHighlights: [],
+                        csvLineNumber: 9,
+                    },
+                ],
+                uncertainLineNumbers: [9],
+                sharedWith: ["cronk"],
+            },
+        ])
+        const respondBoth = (search = "") =>
+            fetchMock.mockImplementation((url) =>
+                Promise.resolve({
+                    ok: true,
+                    json: () =>
+                        Promise.resolve(
+                            hrefOf(url).includes("/attestations/")
+                                ? both
+                                : {
+                                      ...walk,
+                                      documents: [
+                                          {
+                                              ident: "Bible",
+                                              title: "Bible",
+                                              year: 1819,
+                                              uses: 172,
+                                              sureUses: 4,
+                                          },
+                                      ],
+                                  },
+                        ),
+                } as Response),
+            ) && renderWalker("crank", search)
+
+        respondBoth()
+        await screen.findByText("Daase")
+        // the known step: the settled row, its count, and no hills
+        expect(screen.getByText(/· 4 uses/)).toBeTruthy()
+        expect(screen.queryByText("ayns cronk Seir")).toBeNull()
+        cleanup()
+        fetchMock.mockReset()
+
+        respondBoth("?potential=1")
+        await screen.findByText("ayns cronk Seir")
+        // the potential step: the offered row, the remainder counted
+        expect(screen.getByText(/· 168 uses/)).toBeTruthy()
+        expect(screen.queryByText("Daase")).toBeNull()
     })
 
     it("keeps one walk when nothing is settled", async () => {

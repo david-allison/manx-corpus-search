@@ -180,62 +180,64 @@ const LemmaGroup = ({
     audio: boolean
     /** opens the listening popup at a tapped use's line */
     onPlay: (csvLineNumber: number) => void
-}) => (
-    <div className="attest-group">
-        <p className="attest-group-head">
-            <em className="attest-group-lemma">{group.lemma}</em>
-            {classes && (
-                <span className="attest-group-class">{` ${classes}`}</span>
-            )}
-            <span className="attest-group-count">
-                {` ×${group.count.toLocaleString()}`}
-            </span>
-        </p>
-        <div className="attest-group-lines">
-            {group.lines.map((line) => (
-                <UseLine
-                    key={line.csvLineNumber}
-                    manx={line.manx}
-                    english={line.english}
-                    highlights={line.manxHighlights}
-                    // a line the resolver has not settled wears the mark,
-                    // naming the other headwords its spelling answers to:
-                    // the occurrence is offered to this row, not proven its
-                    mark={
-                        group.uncertainLineNumbers.includes(
-                            line.csvLineNumber,
-                        ) ? (
-                            <SharedMark
-                                title={
-                                    group.sharedWith.length > 0
-                                        ? `This spelling is shared with another word (${group.sharedWith.join(", ")}): the occurrence may not be this one`
-                                        : undefined
-                                }
-                            />
-                        ) : undefined
-                    }
-                    play={
-                        audio || line.subStart != null
-                            ? {
-                                  at: line.subStart ?? null,
-                                  open: () => onPlay(line.csvLineNumber),
-                              }
-                            : undefined
-                    }
-                />
-            ))}
-            {group.count > group.lines.length && (
-                <p className="attest-more">
-                    <Link
-                        to={`/docs/${ident}?q=${encodeURIComponent(group.lemma)}`}
-                    >
-                        {`All ${plural(group.count, "use", "uses")} in this text ›`}
-                    </Link>
-                </p>
-            )}
+}) => {
+    return (
+        <div className="attest-group">
+            <p className="attest-group-head">
+                <em className="attest-group-lemma">{group.lemma}</em>
+                {classes && (
+                    <span className="attest-group-class">{` ${classes}`}</span>
+                )}
+                <span className="attest-group-count">
+                    {` ×${group.count.toLocaleString()}`}
+                </span>
+            </p>
+            <div className="attest-group-lines">
+                {group.lines.map((line) => (
+                    <UseLine
+                        key={line.csvLineNumber}
+                        manx={line.manx}
+                        english={line.english}
+                        highlights={line.manxHighlights}
+                        // a line the resolver has not settled wears the mark,
+                        // naming the other headwords its spelling answers to:
+                        // the occurrence is offered to this row, not proven its
+                        mark={
+                            group.uncertainLineNumbers.includes(
+                                line.csvLineNumber,
+                            ) ? (
+                                <SharedMark
+                                    title={
+                                        group.sharedWith.length > 0
+                                            ? `This spelling is shared with another word (${group.sharedWith.join(", ")}): the occurrence may not be this one`
+                                            : undefined
+                                    }
+                                />
+                            ) : undefined
+                        }
+                        play={
+                            audio || line.subStart != null
+                                ? {
+                                      at: line.subStart ?? null,
+                                      open: () => onPlay(line.csvLineNumber),
+                                  }
+                                : undefined
+                        }
+                    />
+                ))}
+                {group.count > group.lines.length && (
+                    <p className="attest-more">
+                        <Link
+                            to={`/docs/${ident}?q=${encodeURIComponent(group.lemma)}`}
+                        >
+                            {`All ${plural(group.count, "use", "uses")} in this text ›`}
+                        </Link>
+                    </p>
+                )}
+            </div>
         </div>
-    </div>
-)
+    )
+}
 
 /** What the section holds, readable while it is shut — and only what is
  * settled may say so. With sure counts in hand, the count and the range are
@@ -395,15 +397,20 @@ export const AttestationWalker = ({
     const audioTab = params.get("audio") != null && audioDocs.length > 0
 
     // the walk in two: texts holding a settled use are known matches, and
-    // texts holding the word only as spellings another lexeme also writes are
-    // potential matches, stepped apart so they cannot head the word's history
-    // (cronk 'hill' must not open crank's walk). The split engages only where
-    // the walk knows the difference and each side has something to step; a
-    // spelling walk sends no sure counts and keeps its single walk.
+    // every unsettled occurrence — a spelling another lexeme also writes — is
+    // a potential match, stepped apart so it cannot head the word's history
+    // (cronk 'hill' must not open crank's walk). A text holding both kinds
+    // walks in both: the Bible's cronkal is known, its cronk hills potential.
+    // The split engages only where the walk knows the difference and each
+    // side has something to step; a spelling walk sends no sure counts and
+    // keeps its single walk.
     const knownDocs =
         walk?.documents.filter((d) => d.sureUses != null && d.sureUses > 0) ??
         []
-    const potentialDocs = walk?.documents.filter((d) => d.sureUses === 0) ?? []
+    const potentialDocs =
+        walk?.documents.filter(
+            (d) => d.sureUses != null && d.uses != null && d.uses > d.sureUses,
+        ) ?? []
     const splitWalk = knownDocs.length > 0 && potentialDocs.length > 0
     // the potential tab is open: the walk steps the offered texts alone
     const potentialTab =
@@ -713,13 +720,13 @@ export const AttestationWalker = ({
                                     : null
                             }
                         >
-                            {/* a step held only as shared spellings is
-                                offered, not asserted: muted, and the mark
-                                carries the doubt. Null sure counts are a
-                                spelling walk's, and hedge nothing. */}
+                            {/* a step of offered occurrences is not asserted:
+                                muted, and the mark carries the doubt. Null
+                                sure counts are a spelling walk's, and hedge
+                                nothing. */}
                             <span
                                 className={
-                                    current.sureUses === 0
+                                    potentialTab || current.sureUses === 0
                                         ? "attest-step-uncertain"
                                         : undefined
                                 }
@@ -735,10 +742,23 @@ export const AttestationWalker = ({
                                 </Link>
                                 {/* the walk's own count where it has one, so it
                                     is there as you arrive; otherwise the document's
-                                    own, once counted from the offsets */}
+                                    own, once counted from the offsets. On a split
+                                    walk the step counts its own tab's kind: the
+                                    Bible is 4 known uses, or its 168 offered */}
                                 {current.uses != null ? (
                                     <span className="attest-count">
-                                        {` · ${plural(current.uses, "use", "uses")}`}
+                                        {` · ${plural(
+                                            splitWalk &&
+                                                !audioTab &&
+                                                current.sureUses != null
+                                                ? potentialTab
+                                                    ? current.uses -
+                                                      current.sureUses
+                                                    : current.sureUses
+                                                : current.uses,
+                                            "use",
+                                            "uses",
+                                        )}`}
                                     </span>
                                 ) : (
                                     fresh && (
@@ -747,7 +767,7 @@ export const AttestationWalker = ({
                                         </span>
                                     )
                                 )}
-                                {current.sureUses === 0 && (
+                                {(potentialTab || current.sureUses === 0) && (
                                     <SharedMark title={OFFERED_TITLE} />
                                 )}
                             </span>
@@ -759,33 +779,47 @@ export const AttestationWalker = ({
                             // dimmed while they are the step before's: the shape
                             // of the section holds, so the arrows stay put
                             <div className={fresh ? undefined : "attest-stale"}>
-                                {lines.groups.map((group) => (
-                                    <LemmaGroup
-                                        // a row with no readings is a spelling,
-                                        // and there is only ever one of those
-                                        key={
-                                            group.lemmaIds.join(" ") ||
-                                            group.lemma
-                                        }
-                                        group={group}
-                                        classes={classLabelFor(
-                                            group,
-                                            lines.groups,
-                                        )}
-                                        ident={lines.ident}
-                                        audio={lines.title.startsWith("🎥")}
-                                        onPlay={(csvLineNumber) =>
-                                            setHeard({
-                                                doc: {
-                                                    ident: lines.ident,
-                                                    title: lines.title,
-                                                    year: lines.year,
-                                                },
-                                                at: csvLineNumber,
-                                            })
-                                        }
-                                    />
-                                ))}
+                                {/* each tab shows its own kind: the known walk
+                                    the settled rows, the potential tab the rows
+                                    with nothing settled — the Bible's cronk
+                                    hills belong under potential, never under
+                                    crank's known step */}
+                                {lines.groups
+                                    .filter((group) =>
+                                        !splitWalk || audioTab
+                                            ? true
+                                            : potentialTab
+                                              ? group.sureCount === 0
+                                              : group.sureCount > 0,
+                                    )
+                                    .map((group) => (
+                                        <LemmaGroup
+                                            // a row with no readings is a spelling,
+                                            // and there is only ever one of those;
+                                            // the step's ident keys a fresh mount
+                                            key={`${lines.ident} ${
+                                                group.lemmaIds.join(" ") ||
+                                                group.lemma
+                                            }`}
+                                            group={group}
+                                            classes={classLabelFor(
+                                                group,
+                                                lines.groups,
+                                            )}
+                                            ident={lines.ident}
+                                            audio={lines.title.startsWith("🎥")}
+                                            onPlay={(csvLineNumber) =>
+                                                setHeard({
+                                                    doc: {
+                                                        ident: lines.ident,
+                                                        title: lines.title,
+                                                        year: lines.year,
+                                                    },
+                                                    at: csvLineNumber,
+                                                })
+                                            }
+                                        />
+                                    ))}
                             </div>
                         )}
 
