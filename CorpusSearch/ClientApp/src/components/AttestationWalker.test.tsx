@@ -525,9 +525,10 @@ describe("AttestationWalker", () => {
         )
     })
 
-    it("offers rather than asserts a step held only as shared spellings", async () => {
+    it("keeps a step held only as shared spellings out of the known walk", async () => {
         // Psalms holds the word solely as spellings another lexeme also uses:
-        // the step stays in the walk, muted, and the mark carries the doubt
+        // the known walk opens at the settled text, and the offer waits
+        // behind its own tab (cronk 'hill' must not open crank's walk)
         respondWithDocuments([
             {
                 ident: "Psalms1610",
@@ -547,11 +548,69 @@ describe("AttestationWalker", () => {
         renderWalker()
         await screen.findByText("Daase")
 
+        expect(screen.getByText("Coyrle Sodjey")).toBeTruthy()
+        expect(document.querySelector(".attest-step-uncertain")).toBeNull()
+        expect(
+            screen
+                .getByRole("link", { name: "potential ×1" })
+                .getAttribute("href"),
+        ).toBe("/dictionary/aase?potential=1")
+    })
+
+    it("offers rather than asserts the potential walk's steps", async () => {
+        respondWithDocuments([
+            {
+                ident: "Psalms1610",
+                title: "Psalms",
+                year: 1610,
+                uses: 9,
+                sureUses: 0,
+            },
+            {
+                ident: "Coyrle",
+                title: "Coyrle Sodjey",
+                year: 1707,
+                uses: 3,
+                sureUses: 3,
+            },
+        ])
+        renderWalker("aase", "?potential=1")
+        await screen.findByText("Daase")
+
+        // the offered text is the step, muted, the mark carrying the doubt
+        expect(screen.getByText("Psalms")).toBeTruthy()
         const row = document.querySelector(".attest-step-uncertain")
         expect(row).toBeTruthy()
         expect(row?.querySelector("abbr")?.getAttribute("title")).toBe(
             "Only as a spelling shared with another word: these occurrences may not be this one",
         )
+    })
+
+    it("keeps one walk when nothing is settled", async () => {
+        respondWithDocuments([
+            {
+                ident: "Psalms1610",
+                title: "Psalms",
+                year: 1610,
+                uses: 9,
+                sureUses: 0,
+            },
+            {
+                ident: "Coyrle",
+                title: "Coyrle Sodjey",
+                year: 1707,
+                uses: 3,
+                sureUses: 0,
+            },
+        ])
+        renderWalker()
+        await screen.findByText("Daase")
+
+        // nothing to step apart from: no tab, and the single walk still
+        // opens at the earliest text, marked
+        expect(screen.queryByText(/potential ×/)).toBeNull()
+        expect(screen.getByText("Psalms")).toBeTruthy()
+        expect(document.querySelector(".attest-step-uncertain")).toBeTruthy()
     })
 
     it("leaves a settled step unmarked", async () => {
