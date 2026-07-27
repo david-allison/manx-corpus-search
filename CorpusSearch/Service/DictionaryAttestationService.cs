@@ -326,8 +326,13 @@ public class DictionaryAttestationService(
                 {
                     var sure = row.Aggregate(new HashSet<(int Line, int Start)>(),
                         (set, x) => { set.UnionWith(x.Sure); return set; });
+                    // the settled lines lead the sample: a step in the known
+                    // walk must not open on the shared-spelling occurrences
+                    // its potential twin holds (the Bible's "cronk Seir"
+                    // hills come long before its cronkal knocking)
                     var lines = row.First().Result.Lines
-                        .OrderBy(line => line.CsvLineNumber)
+                        .OrderBy(line => Occurrences(line).Any(o => !sure.Contains(o)) ? 1 : 0)
+                        .ThenBy(line => line.CsvLineNumber)
                         .Take(MaxLinesPerLemma)
                         .ToList();
                     var uncertain = lines
