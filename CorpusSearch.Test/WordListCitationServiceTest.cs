@@ -25,7 +25,9 @@ public class WordListCitationServiceTest
         "luss\tYn luss\tmorrison-plants\tVervain\tVerbena officinalis\t\n" +
         "smeyr\tSmeyr\tmorrison-plants\tBlackberry (bramble)\t\t\n";
 
-    private static WordListCitationService Loaded(string rows = Rows, string sources = Sources)
+    /// <summary>Shared with the tests of the services that consult word lists:
+    /// they need a loaded one, and the TSV shape is this file's business</summary>
+    internal static WordListCitationService Loaded(string rows = Rows, string sources = Sources)
     {
         return new WordListCitationService(new StringReader(rows), new StringReader(sources), NullLogger.Instance);
     }
@@ -108,5 +110,26 @@ public class WordListCitationServiceTest
     public void AnEmptyWordIsNotLookedUp()
     {
         Assert.That(Loaded().For(""), Is.Empty);
+    }
+
+    /// <summary>What makes a naming enough to count as the only thing that
+    /// documents a word, where no book does</summary>
+    [Test]
+    public void ANamedWordIsNamed()
+    {
+        Assert.Multiple(() =>
+        {
+            Assert.That(Loaded().Names("Keirn"), Is.True);
+            Assert.That(Loaded().Names("jaagh"), Is.False);
+        });
+    }
+
+    /// <summary>The index meets each head once, as its page set it — not once
+    /// per spelling the lookup keys it on</summary>
+    [Test]
+    public void TheHeadwordsAreEachSaidOnceAsPrinted()
+    {
+        Assert.That(Loaded().Headwords, Is.EquivalentTo(
+            new[] { "Keirn", "Aghaue", "Lus-ny-Geayee", "Yn luss", "Smeyr" }));
     }
 }

@@ -444,7 +444,9 @@ export const dictionaryAttestationLines = async (
 export type TokenCoverage = {
     start: number
     length: number
-    status: "entry" | "root" | "lemma" | "none"
+    /** "list": no dictionary defines it, but a printed word list names it —
+     * which for such a word is all there is */
+    status: "entry" | "root" | "list" | "lemma" | "none"
 }
 
 /** Per-token dictionary coverage for each line (the dictionary debug mode).

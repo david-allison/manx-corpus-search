@@ -40,6 +40,8 @@ const coverageTitle = (status: TokenCoverage["status"]): string => {
             return "In the dictionary"
         case "root":
             return "Found via its root form"
+        case "list":
+            return "Named by a printed word list; no dictionary defines it"
         case "lemma":
             return "Known to the lemma table, but no dictionary entry"
         case "none":
@@ -54,7 +56,7 @@ export const CoverageLegend = (props: {
     onClose: () => void
 }) => {
     const { coverage, onClose } = props
-    const counts = { entry: 0, root: 0, lemma: 0, none: 0 }
+    const counts = { entry: 0, root: 0, list: 0, lemma: 0, none: 0 }
     let total = 0
     if (coverage) {
         for (const tokens of coverage.values()) {
@@ -96,6 +98,7 @@ export const CoverageLegend = (props: {
                 <>
                     {row("entry", "in the dictionary")}
                     {row("root", "found via root form")}
+                    {row("list", "word list only")}
                     {row("lemma", "lemma table only")}
                     {row("none", "not found")}
                 </>

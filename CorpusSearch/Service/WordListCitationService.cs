@@ -71,6 +71,25 @@ public class WordListCitationService
         return byForm.TryGetValue(LemmaTable.NormalizeForm(word), out var found) ? found : [];
     }
 
+    /// <summary>Whether any list prints the word. What makes a naming enough to
+    /// count as the only thing that documents a word, where no book does.</summary>
+    public bool Names(string word) => For(word).Count > 0;
+
+    /// <summary>The printed heads, each said once, as the pages set them.
+    ///
+    /// The index's business, not the lookup's: the lookup keys on every spelling
+    /// a head answers to (collapsed, article-stripped), but a reader walking the
+    /// words should meet each head once, spelled the way it was printed.
+    /// </summary>
+    public IReadOnlyList<string> Headwords =>
+        headwords ??= [.. byForm.Values
+            .SelectMany(x => x)
+            .Select(x => x.Headword)
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Distinct(StringComparer.InvariantCultureIgnoreCase)];
+
+    private IReadOnlyList<string>? headwords;
+
     private static Dictionary<string, WordListSource> ReadSources(TextReader reader)
     {
         var sources = new Dictionary<string, WordListSource>(StringComparer.OrdinalIgnoreCase);

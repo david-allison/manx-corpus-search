@@ -52,6 +52,30 @@ public class DictionaryStatsServiceTest
         });
     }
 
+    /// <summary>A printed list is the only thing that documents some words, so
+    /// it counts towards what the reader can look up - but it is not a book,
+    /// and the counts of books and of their entries must not move with it.</summary>
+    [Test]
+    public void AWordOnlyAListNamesCountsAsDefinedButAddsNoBook()
+    {
+        var table = Table();
+        var wordLists = WordListCitationServiceTest.Loaded(
+            "form\theadword\tlistId\tgloss\tbinomial\tnote\n" +
+            "ayns\tAyns\tmorrison-plants\tSomething\t\t\n");
+        var stats = new DictionaryStatsService(
+            table, Vocabulary(table), [new StubDictionary(["dooinney", "as"])],
+            new WorkService(), wordLists).Stats();
+
+        Assert.Multiple(() =>
+        {
+            // 'ayns' was the word nobody answered for; the list now names it
+            Assert.That(stats.DefinedWords, Is.EqualTo(4));
+            Assert.That(stats.DefinedRunningWords, Is.EqualTo(155));
+            Assert.That(stats.Books, Is.EqualTo(1), "a list is not a book");
+            Assert.That(stats.Entries, Is.EqualTo(2), "nor are its namings entries");
+        });
+    }
+
     [Test]
     public void TheAudioTrioIsNullUntilTheRecordingsAreRead()
     {

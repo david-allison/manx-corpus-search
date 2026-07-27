@@ -19,7 +19,8 @@ namespace CorpusSearch.Service;
 /// word each by the first count and could not differ more by the second.
 /// </summary>
 public class DictionaryStatsService(LemmaTable lemmaTable, CorpusVocabulary vocabulary,
-    IEnumerable<ISearchDictionary> dictionaryServices, WorkService workService)
+    IEnumerable<ISearchDictionary> dictionaryServices, WorkService workService,
+    WordListCitationService? wordLists = null)
 {
     private readonly ISearchDictionary[] gvDictionaries = dictionaryServices
         .Where(d => d.QueryLanguages.Contains("gv")).ToArray();
@@ -104,13 +105,21 @@ public class DictionaryStatsService(LemmaTable lemmaTable, CorpusVocabulary voca
         };
     }
 
-    /// <summary>Whether some book answers for the word - by its own spelling,
-    /// or by a lemma the table reads it as: 'deiney' is answered by the entry
-    /// 'dooinney', which is how the word page itself would answer it</summary>
+    /// <summary>Whether anything answers for the word - a book by its own
+    /// spelling, a book by a lemma the table reads it as ('deiney' is answered
+    /// by the entry 'dooinney', which is how the word page itself would answer
+    /// it), or a printed word list naming it.
+    ///
+    /// A list counts here though it is no book and gets no tab: for a word like
+    /// 'blughtyn' the naming is the only thing there is, and a count of what the
+    /// reader can look up that left it out would be counting the wrong thing.
+    /// <see cref="DictionaryStats.Books"/> and <see cref="DictionaryStats.Entries"/>
+    /// deliberately do not move with it - those count books.</summary>
     private bool Defined(string term) =>
         gvDictionaries.Any(d => d.ContainsWord(term))
         || lemmaTable.DisplayLemmasFor(term)
-            .Any(lemma => gvDictionaries.Any(d => d.ContainsWord(lemma)));
+            .Any(lemma => gvDictionaries.Any(d => d.ContainsWord(lemma)))
+        || wordLists?.Names(term) == true;
 
     /// <summary>The spoken index's word list in collation order, worked out
     /// once per audio read: nothing re-sorts per request</summary>
@@ -132,8 +141,9 @@ public class DictionaryStatsService(LemmaTable lemmaTable, CorpusVocabulary voca
         }
         var words = read.Words
             .Where(x => char.IsLetter(DictionaryBrowse.LetterOf(x)))
-            // a heard word no book answers for is corpus, not dictionary:
-            // its page would offer the recording and no entry to read
+            // a heard word nothing answers for is corpus, not dictionary: its
+            // page would offer the recording and nothing to read beside it. A
+            // word a printed list names has something to read, so it belongs
             .Where(Defined)
             .OrderBy(DictionaryBrowse.CollationKey, StringComparer.Ordinal)
             .ThenBy(x => x, StringComparer.Ordinal)

@@ -639,6 +639,68 @@ public class DictionaryLookupServiceTest
             Is.EqualTo(new[] { (0, 6), (8, 5), (14, 4), (19, 5) }));
     }
 
+    /// <summary>A word only a printed list names is not a miss: the naming is
+    /// all that documents such a word. Ranked under the two a book answers for
+    /// and over 'lemma', which is the table knowing a token nothing documents.</summary>
+    [Test]
+    public void CoverageMarksAWordOnlyAListNames()
+    {
+        var table = LemmaTable.Load(new StringReader(
+            "form\tlemmaId\tlemma\tlinkType\n"
+            + "aase\taase.v\taase\tself\n"
+            + "ghow\tgow.v\tgow\tinflected\n"));
+        var wordLists = WordListCitationServiceTest.Loaded(
+            "form\theadword\tlistId\tgloss\tbinomial\tnote\n"
+            + "blughtyn\tBlughtyn\tmorrison-plants\tMarsh marigolds\tCaltha palustris\t\n"
+            + "ghow\tGhow\tmorrison-plants\tSomething\t\t\n");
+        var service = new DictionaryLookupService(
+            [new FakeDictionary("aase")], table, LemmaResolver.Empty, null, null, wordLists);
+
+        var coverage = service.Coverage("gv", ["aase blughtyn ghow xyzzy"]);
+
+        // aase: its own entry; blughtyn: no book, but a list names it; ghow: a
+        // list names it too, and that beats the table's bare knowledge of it;
+        // xyzzy: nothing anywhere
+        Assert.That(coverage[0].Select(x => x.Status),
+            Is.EqualTo(new[] { "entry", "list", "list", "none" }));
+    }
+
+    /// <summary>Most plant names are two words, and the second alone is nobody's:
+    /// a token inside a phrase the list names is covered by that naming, exactly
+    /// as one inside a phrase a book lists is covered by the entry</summary>
+    [Test]
+    public void CoverageReadsAPhraseAListNames()
+    {
+        var wordLists = WordListCitationServiceTest.Loaded(
+            "form\theadword\tlistId\tgloss\tbinomial\tnote\n"
+            + "drine bogogue\tDrine bogogue\tmorrison-plants\tDog-rose\tRosa canina\t\n");
+        var service = new DictionaryLookupService(
+            [new FakeDictionary("moddey")], LemmaTable.Load(new StringReader("form\tlemmaId\tlemma\tlinkType\n")),
+            LemmaResolver.Empty, null, null, wordLists);
+
+        var coverage = service.Coverage("gv", ["Drine bogogue"]);
+
+        Assert.That(coverage[0].Select(x => x.Status), Is.EqualTo(new[] { "list", "list" }));
+    }
+
+    /// <summary>A book's own definition still wins: a list naming a word does
+    /// not displace the entry the root chain reaches</summary>
+    [Test]
+    public void ABooksDefinitionOutranksAListsNaming()
+    {
+        var table = LemmaTable.Load(new StringReader(
+            "form\tlemmaId\tlemma\tlinkType\n"
+            + "daase\taase.v\taase\tinflected\n"
+            + "aase\taase.v\taase\tself\n"));
+        var wordLists = WordListCitationServiceTest.Loaded(
+            "form\theadword\tlistId\tgloss\tbinomial\tnote\n"
+            + "daase\tDaase\tmorrison-plants\tSomething\t\t\n");
+        var service = new DictionaryLookupService(
+            [new FakeDictionary("aase")], table, LemmaResolver.Empty, null, null, wordLists);
+
+        Assert.That(service.Coverage("gv", ["daase"])[0].Single().Status, Is.EqualTo("root"));
+    }
+
     [Test]
     public void CoverageResolvesClitics()
     {
