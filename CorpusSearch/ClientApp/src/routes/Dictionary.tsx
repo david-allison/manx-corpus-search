@@ -288,6 +288,23 @@ export const Dictionary = () => {
     const senses =
         page != null && !page.isSuggestionTier ? senseGroupsIn(page) : []
 
+    /** entries for a piece of the word, where nothing answered for the whole:
+     * they define the part, and are shown saying so */
+    const partEntries =
+        page == null || page.isSuggestionTier
+            ? []
+            : page.groups.flatMap((g) => g.entries).filter((e) => e.partOf)
+
+    /* Nothing here is about the word itself, and a printed list names it: the
+       naming is the page's answer, so it leads instead of following the pieces
+       the word was broken into. The suggestion tier leads with its own copy,
+       above the near spellings, and is not this case. */
+    const citationsLead =
+        page != null &&
+        !page.isSuggestionTier &&
+        senses.length === 0 &&
+        !!page.wordLists?.length
+
     /** the roots split among the senses they belong to, the unthreadable left
      * in a page-level basket */
     const sensedRoots = rootsBySense(senses, rootEntries)
@@ -511,6 +528,15 @@ export const Dictionary = () => {
                         </section>
                     ))}
 
+                {/* a full naming outranks the pieces the word was broken into:
+                shown first, where the word's own entries would have been */}
+                {citationsLead && (
+                    <WordListCitations
+                        citations={page.wordLists ?? []}
+                        word={page.word}
+                    />
+                )}
+
                 {page != null &&
                     !page.isSuggestionTier &&
                     senses.map((sense) => (
@@ -582,10 +608,33 @@ export const Dictionary = () => {
                     </section>
                 )}
 
+                {/* nothing answered for the whole word, so the books were asked
+                about its pieces. Under a heading that says so: these entries
+                define the parts, and printing them under the word's own name
+                had the page assert that Bolan-y-chee means "seeking" */}
+                {partEntries.length > 0 && (
+                    <section className="dict-page-group">
+                        {/* the tier only runs when nothing answered for the
+                        whole, so there is never a sense to sit beside */}
+                        <h3 className="dict-page-dictionary">
+                            {`No dictionary lists “${page!.word}”. Its parts:`}
+                        </h3>
+                        {partEntries.map((summary, index) => (
+                            <Entry
+                                word={summary.partOf ?? page!.word}
+                                summary={summary}
+                                credit
+                                onCitationClick={setCitationKey}
+                                key={index}
+                            />
+                        ))}
+                    </section>
+                )}
+
                 {/* between the books and the corpus, which is where a printed
                 list sits: it is not a dictionary's reading, and it is not a
                 text using the word — it is a page that named it */}
-                {page != null && !page.isSuggestionTier && (
+                {page != null && !page.isSuggestionTier && !citationsLead && (
                     <WordListCitations
                         citations={page.wordLists ?? []}
                         word={page.word}

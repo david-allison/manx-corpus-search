@@ -148,8 +148,18 @@ public class DictionaryLookupService(IEnumerable<ISearchDictionary> dictionarySe
 
         if (results.Count == 0)
         {
-            // 'goll-mygeayrt' has no entry, but 'goll' and 'mygeayrt' do
-            results = GetSummaries(GetParts(selection));
+            // 'goll-mygeayrt' has no entry, but 'goll' and 'mygeayrt' do.
+            // Tagged with the part each answers for: these entries are about
+            // the part, and a page that prints them under the selection's own
+            // name has the selection meaning something it does not
+            foreach (var part in GetParts(selection))
+            {
+                foreach (var entry in GetSummaries([part]))
+                {
+                    entry.PartOf = part;
+                    results.Add(entry);
+                }
+            }
         }
 
         if (results.Count == 0 && lang == "gv")

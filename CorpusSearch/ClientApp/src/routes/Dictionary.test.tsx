@@ -526,6 +526,61 @@ describe("Dictionary page", () => {
         expect(screen.queryByText(/Nothing found for/)).toBeNull()
     })
 
+    /** 'Bolan-y-chee' is a nipplewort. No book lists it, so the books were
+     * asked about 'chee' — and heading those entries with the whole word had
+     * the page say a nipplewort means "seeking". The parts say they are parts,
+     * and the naming, which answers the whole word, comes first. */
+    it("leads with the naming when only the word's parts were found", async () => {
+        respondWith({
+            word: "Bolan-y-chee",
+            isSuggestionTier: false,
+            attested: true,
+            groups: [
+                {
+                    dictionary: "Cregeen",
+                    entries: [
+                        {
+                            primaryWord: "çhee",
+                            summary: "seeking",
+                            dictionaryName: "Cregeen",
+                            rootDepth: 0,
+                            partOf: "chee",
+                            partsOfSpeech: ["v."],
+                        },
+                    ],
+                },
+            ],
+            wordLists: [
+                {
+                    source: {
+                        listId: "morrison-plants",
+                        name: "Manx Plant Names",
+                        credit: "Sophia Morrison",
+                        date: "1908",
+                        documentIdent: "Manx-Plant-Names",
+                        url: "https://example.invalid",
+                        citation: "Manx Wild Flowers, 1908",
+                    },
+                    headword: "Bolan-y-chee",
+                    gloss: "Nipplewort",
+                    binomial: "Lapsana communis",
+                },
+            ],
+        })
+        renderAt("/dictionary/Bolan-y-chee")
+
+        expect(await screen.findByText("Nipplewort")).toBeTruthy()
+        // the part is shown, but never as a sense of the whole word
+        expect(screen.getByText(/No dictionary lists/)).toBeTruthy()
+        expect(screen.getByText(/seeking/)).toBeTruthy()
+        const listedIn = screen.getByText("Listed in")
+        const parts = screen.getByText(/No dictionary lists/)
+        expect(
+            listedIn.compareDocumentPosition(parts) &
+                Node.DOCUMENT_POSITION_FOLLOWING,
+        ).toBeTruthy()
+    })
+
     it("shows the search box and the letters without a word", async () => {
         respondWith({
             word: "",

@@ -101,14 +101,16 @@ export type SenseGroup = {
  * could belong to any of them, and putting it beside one would be a guess where
  * showing it beside each is only an admission.
  *
- * Roots and near-spellings are left out: they are other words, not senses of
- * this one. A word nothing declares a class for comes back as a single
- * unlabelled group — the page it has today.
+ * Roots, near-spellings and compound parts are left out: they are other words,
+ * not senses of this one. A part especially — çhee "seeking" is not a sense of
+ * 'Bolan-y-chee', and heading it with the whole word has the page assert that
+ * a nipplewort means seeking. A word nothing declares a class for comes back as
+ * a single unlabelled group — the page it has today.
  */
 export const senseGroupsIn = (page: DictionaryPageResponse): SenseGroup[] => {
     const own = page.groups
         .flatMap((g) => g.entries)
-        .filter((e) => !e.rootDepth && !e.nearMatchOf)
+        .filter((e) => !e.rootDepth && !e.nearMatchOf && !e.partOf)
     const unplaceable = own.filter((e) => !e.partsOfSpeech?.length)
     const placed = own.filter((e) => e.partsOfSpeech?.length)
     const lemmasOf = (entries: Summary[]) => [
@@ -116,6 +118,11 @@ export const senseGroupsIn = (page: DictionaryPageResponse): SenseGroup[] => {
             entries.flatMap((e) => (e.throughLemma ? [e.throughLemma] : [])),
         ),
     ]
+    // nothing of the word's own: no sense to head, and an empty group would
+    // print the word over a section with nothing under it
+    if (own.length === 0) {
+        return []
+    }
     if (placed.length === 0) {
         return [{ key: "", labels: [], entries: own, lemmas: lemmasOf(own) }]
     }

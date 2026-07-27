@@ -14,6 +14,10 @@ export type Summary = {
     /** set on "did you mean" fallback entries only: the near spelling the
      * entry was reached through, when nothing matched the selection itself */
     nearMatchOf?: string | null
+    /** set on the compound-parts fallback only: the part of the selection this
+     * entry defines, when nothing answered for the whole. The entry is about
+     * the part, so it must never be printed under the selection's own name */
+    partOf?: string | null
     /** pronunciation recording, streamed from the defining source's site */
     audioUrl?: string | null
     /** the defining source's home page: the group heading links the citation */
