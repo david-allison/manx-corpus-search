@@ -17,7 +17,8 @@ namespace CorpusSearch.Service;
 /// known phrase/idiom, and a compound such as 'goll-mygeayrt' can be broken into its parts.
 /// </summary>
 public class DictionaryLookupService(IEnumerable<ISearchDictionary> dictionaryServices, LemmaTable lemmaTable,
-    LemmaResolver lemmaResolver, SenseInventory? senseInventory = null, SenseResolver? senseResolver = null)
+    LemmaResolver lemmaResolver, SenseInventory? senseInventory = null, SenseResolver? senseResolver = null,
+    WordListCitationService? wordLists = null)
 {
     private readonly SenseInventory senseInventory = senseInventory ?? SenseInventory.Empty;
     private readonly SenseResolver senseResolver = senseResolver ?? SenseResolver.Empty;
@@ -762,7 +763,9 @@ public class DictionaryLookupService(IEnumerable<ISearchDictionary> dictionarySe
     /// <remarks>
     /// Statuses, best first: "entry" — a dictionary lists the token itself;
     /// "root" — no direct entry, but the lemma table's root chain reaches one
-    /// ('daase' -> aase); "lemma" — the lemma table knows the token but no
+    /// ('daase' -> aase); "list" — no dictionary documents it, but a printed
+    /// word list names it ('blughtyn', marsh marigolds), which is all that
+    /// documents such a word; "lemma" — the lemma table knows the token but no
     /// dictionary documents any of its lemmas; "none" — unknown everywhere.
     /// </remarks>
     public List<List<TokenCoverage>> Coverage(string lang, IReadOnlyList<string> lines)
@@ -804,6 +807,11 @@ public class DictionaryLookupService(IEnumerable<ISearchDictionary> dictionarySe
             // Phil Kelly's entry, "bashtal" alone is nobody's): a token inside
             // a listed phrase is covered. Longest first, as GetCandidates asks.
             var phraseCovered = new bool[words.Count];
+            // the same, for a phrase a printed list names rather than a book
+            // defines: most plant names are two words ("Drine bogogue"), and
+            // 'bogogue' alone is nobody's. Kept apart from phraseCovered so the
+            // naming does not get reported as a dictionary entry
+            var phraseNamed = new bool[words.Count];
             for (int length = MaxPhraseWords; length >= 2; length--)
             {
                 for (int start = 0; start + length <= words.Count; start++)
@@ -818,6 +826,13 @@ public class DictionaryLookupService(IEnumerable<ISearchDictionary> dictionarySe
                         for (int i = start; i < start + length; i++)
                         {
                             phraseCovered[i] = true;
+                        }
+                    }
+                    else if (wordLists?.Names(phrase) == true)
+                    {
+                        for (int i = start; i < start + length; i++)
+                        {
+                            phraseNamed[i] = true;
                         }
                     }
                 }
@@ -836,6 +851,14 @@ public class DictionaryLookupService(IEnumerable<ISearchDictionary> dictionarySe
                          .Any(HasEntry))
                 {
                     status = "root";
+                }
+                // no book documents it, but a printed list named it. Ranked
+                // under "root" — a dictionary's own definition, even one reached
+                // through the root chain, says more than a naming — and over
+                // "lemma", which is the table knowing a token nothing documents
+                else if (phraseNamed[i] || wordLists?.Names(token) == true)
+                {
+                    status = "list";
                 }
                 else if (lemmaTable.CandidatesFor(token).Count > 0
                          || lemmaTable.CliticCandidatesFor(token).Count > 0)
@@ -996,6 +1019,6 @@ public class TokenCoverage
 
     public int Length { get; set; }
 
-    /// <summary>"entry" | "root" | "lemma" | "none" (see <see cref="DictionaryLookupService.Coverage"/>)</summary>
+    /// <summary>"entry" | "root" | "list" | "lemma" | "none" (see <see cref="DictionaryLookupService.Coverage"/>)</summary>
     public required string Status { get; set; }
 }

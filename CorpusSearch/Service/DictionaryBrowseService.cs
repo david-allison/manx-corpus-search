@@ -10,7 +10,7 @@ namespace CorpusSearch.Service;
 /// </summary>
 public class DictionaryBrowseService(
     IEnumerable<ISearchDictionary> dictionaryServices, CorpusVocabulary vocabulary,
-    DictionaryStatsService? statsService = null)
+    DictionaryStatsService? statsService = null, WordListCitationService? wordLists = null)
 {
     /// <summary>The spoken dictionary's pseudo-slug: a neighbours scope with no
     /// book behind it, stepping the heard words instead</summary>
@@ -25,6 +25,12 @@ public class DictionaryBrowseService(
     private readonly Lazy<List<string>> unionHeadwords = new(() => dictionaryServices
         .Where(x => x.QueryLanguages.Contains("gv"))
         .SelectMany(x => x.Headwords)
+        // the printed word lists ride in the union though they are no book: a
+        // word only a list names is still a word the reader can walk to, and
+        // leaving it out would keep the all-words index from being all words.
+        // Scoping to one dictionary still asks that book alone — a list has no
+        // scope of its own, which is why it is not in the picker
+        .Concat(wordLists?.Headwords ?? [])
         .Distinct(StringComparer.InvariantCultureIgnoreCase)
         .OrderBy(DictionaryBrowse.CollationKey, StringComparer.Ordinal)
         .ToList());

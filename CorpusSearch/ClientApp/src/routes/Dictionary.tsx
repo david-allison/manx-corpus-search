@@ -600,20 +600,24 @@ export const Dictionary = () => {
                     />
                 )}
 
-                {page != null && page.groups.length === 0 && (
-                    <p>
-                        Could not find a definition
-                        {multidictWord != null && (
-                            <>
-                                {". Try searching "}
-                                <MultidictLink
-                                    word={multidictWord}
-                                    language="Manx"
-                                />
-                            </>
-                        )}
-                    </p>
-                )}
+                {/* a list naming the word is a definition — the only one such a
+                word has — so the page does not go on to say it found none */}
+                {page != null &&
+                    page.groups.length === 0 &&
+                    !page.wordLists?.length && (
+                        <p>
+                            Could not find a definition
+                            {multidictWord != null && (
+                                <>
+                                    {". Try searching "}
+                                    <MultidictLink
+                                        word={multidictWord}
+                                        language="Manx"
+                                    />
+                                </>
+                            )}
+                        </p>
+                    )}
 
                 {/* the word's whole family ends the page, above the way out
                     to the corpus: every form the corpus search groups with

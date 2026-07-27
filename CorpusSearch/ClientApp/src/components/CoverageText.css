@@ -14,6 +14,14 @@
     border-bottom: 2px solid #29b6f6;
 }
 
+/* Named by a printed list, defined by no book. Underlined without a wash, like
+   the two above it and unlike the two below: this is a word we can answer for,
+   which is the whole claim of the word-list layer. Its own colour because what
+   answers for it is not a dictionary. */
+.dict-coverage-list {
+    border-bottom: 2px solid #7e57c2;
+}
+
 .dict-coverage-lemma {
     border-bottom: 2px solid #ffb300;
     background: rgba(255, 179, 0, 0.12);

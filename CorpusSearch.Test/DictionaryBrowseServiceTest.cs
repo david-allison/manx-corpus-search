@@ -246,6 +246,45 @@ public class DictionaryBrowseServiceTest
         });
     }
 
+    /// <summary>A word only a printed list names is still a word: the all-words
+    /// walk steps to it, though no book has it and it gets no scope of its own.
+    /// The list is not in the picker, so this is the only walk that meets it.</summary>
+    [Test]
+    public void TheUnionStepsThroughWordsOnlyAListNames()
+    {
+        var wordLists = WordListCitationServiceTest.Loaded(
+            "form\theadword\tlistId\tgloss\tbinomial\tnote\n" +
+            "blughtyn\tBlughtyn\tmorrison-plants\tMarsh marigolds\tCaltha palustris\t\n");
+        var service = new DictionaryBrowseService(
+            [new FakeDictionary("cregeen", "aa", "coo")],
+            new CorpusVocabulary(LemmaTable.Instance), null, wordLists);
+
+        var n = service.Neighbours(null, "blughtyn");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(n.Previous, Is.EqualTo("aa"));
+            Assert.That(n.Next, Is.EqualTo("coo"));
+        });
+    }
+
+    /// <summary>Scoping to a book asks that book alone: a list rides in the
+    /// union without joining any of the dictionaries it is walked beside</summary>
+    [Test]
+    public void AScopedWalkDoesNotMeetTheListsWords()
+    {
+        var wordLists = WordListCitationServiceTest.Loaded(
+            "form\theadword\tlistId\tgloss\tbinomial\tnote\n" +
+            "blughtyn\tBlughtyn\tmorrison-plants\tMarsh marigolds\tCaltha palustris\t\n");
+        var service = new DictionaryBrowseService(
+            [new FakeDictionary("cregeen", "aa", "coo")],
+            new CorpusVocabulary(LemmaTable.Instance), null, wordLists);
+
+        var n = service.Neighbours("cregeen", "aa");
+
+        Assert.That(n.Next, Is.EqualTo("coo"));
+    }
+
     [Test]
     public void AnUnknownDictionaryStepsNowhere()
     {
