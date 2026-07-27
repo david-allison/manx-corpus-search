@@ -39,6 +39,10 @@ public class LemmaLinkCycleTest
         "booaliught -> bhullught",
         "brasnee -> brasn",
         "breag -> breig",
+        // nearest-homograph relation binding re-rooted the breag/breg/breig
+        // and enn/enney/ennee families; the bounces themselves were already
+        // reviewed under their previous canonicals
+        "breg -> breag",
         "breg -> breig",
         "brynnyragh -> brynnagh",
         "cast -> carit",
@@ -86,6 +90,7 @@ public class LemmaLinkCycleTest
         "eh -> e",
         "eit -> eieit",
         "enn -> enney",
+        "ennee -> enn",
         "ennee -> enney",
         "erbe -> erbey",
         "faarkee -> faark",
