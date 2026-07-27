@@ -24,20 +24,47 @@ const citation = (over: Partial<WordListCitation> = {}): WordListCitation => ({
     ...over,
 })
 
-const show = (citations: WordListCitation[]) =>
+const show = (citations: WordListCitation[], word?: string) =>
     render(
         <MemoryRouter>
-            <WordListCitations citations={citations} />
+            <WordListCitations citations={citations} word={word} />
         </MemoryRouter>,
     )
 
 describe("WordListCitations", () => {
-    it("names the list, what it calls the plant, and the Latin name", () => {
-        show([citation()])
-        expect(screen.getByText("Keirn")).toBeTruthy()
+    it("names what the list calls the plant, the Latin name and the list", () => {
+        show([citation()], "keirn")
         expect(screen.getByText("Ash (mountain)")).toBeTruthy()
         expect(screen.getByText("Pyrus aucuparia")).toBeTruthy()
         expect(screen.getByText(/Manx Plant Names/)).toBeTruthy()
+    })
+
+    /** the naming and its source are one statement: it reads as a sentence
+     * rather than as fields the reader has to reassemble */
+    it("reads as one line, not as separate fields", () => {
+        const { container } = show([citation()], "keirn")
+        expect(
+            container.querySelector(".dict-wordlist-line")?.textContent,
+        ).toBe(
+            "Ash (mountain), Pyrus aucuparia — Manx Plant Names, Sophia Morrison (1908)",
+        )
+    })
+
+    /** on the page for Ollyssyn the reader can already see the word: saying it
+     * back adds nothing */
+    it("does not repeat the word whose page this is", () => {
+        show(
+            [citation({ headword: "Ollyssyn", gloss: "Alexanders" })],
+            "Ollyssyn",
+        )
+        expect(screen.queryByText("Ollyssyn")).toBeNull()
+        expect(screen.getByText(/Alexanders/)).toBeTruthy()
+    })
+
+    /** a hyphenated head reached by its folded spelling is the same head */
+    it("treats a hyphenated head as the word it was reached by", () => {
+        show([citation({ headword: "Lus-ny-Geayee" })], "lus ny geayee")
+        expect(screen.queryByText(/^as /)).toBeNull()
     })
 
     /** the citation has to be checkable: the reader gets to the page it was read
@@ -69,19 +96,23 @@ describe("WordListCitations", () => {
 
     /** one name, two plants: the page named both, so both are shown */
     it("keeps every plant a name was printed against", () => {
-        show([
-            citation({ headword: "Aghaue", gloss: "Hemlock" }),
-            citation({ headword: "Aghaue", gloss: "Water hemlock" }),
-        ])
+        show(
+            [
+                citation({ headword: "Aghaue", gloss: "Hemlock" }),
+                citation({ headword: "Aghaue", gloss: "Water hemlock" }),
+            ],
+            "aghaue",
+        )
         expect(screen.getByText("Hemlock")).toBeTruthy()
         expect(screen.getByText("Water hemlock")).toBeTruthy()
     })
 
-    /** the head is shown as the page sets it, even when the reader arrived by
-     * the bare word: the phrase is what was printed */
-    it("shows the head as printed, not as looked up", () => {
-        show([citation({ headword: "Yn luss", gloss: "Vervain" })])
+    /** reached by the bare word, the page's own head is a different spelling —
+     * saying so keeps the citation from quietly answering another word */
+    it("says the printed head where it differs from the word looked up", () => {
+        show([citation({ headword: "Yn luss", gloss: "Vervain" })], "luss")
         expect(screen.getByText("Yn luss")).toBeTruthy()
+        expect(screen.getByText(/^as /)).toBeTruthy()
     })
 
     /** not every line names a species */
