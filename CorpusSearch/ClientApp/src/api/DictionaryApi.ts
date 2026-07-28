@@ -739,6 +739,12 @@ export type DictionaryStats = {
     definedRunningWords: number
     lemmas: number
     attestedLemmas: number
+    /** how many printed word lists have been transcribed. Not counted among
+     * `books`: a list is not a dictionary */
+    wordLists?: number
+    /** the heads those lists print, each said once. Shown added to `entries`,
+     * with the label naming the books and the lists separately */
+    wordListEntries?: number
     /** null until the server's startup pass has read the recordings */
     recordings?: number | null
     audioWords?: number | null

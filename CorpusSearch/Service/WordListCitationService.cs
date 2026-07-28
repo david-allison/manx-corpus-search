@@ -75,6 +75,12 @@ public class WordListCitationService
     /// count as the only thing that documents a word, where no book does.</summary>
     public bool Names(string word) => For(word).Count > 0;
 
+    /// <summary>How many lists have been read. Counted apart from the books,
+    /// which is the whole point of the layer.</summary>
+    public int Lists =>
+        byForm.Values.SelectMany(x => x).Select(x => x.Source.ListId)
+            .Distinct(StringComparer.OrdinalIgnoreCase).Count();
+
     /// <summary>The printed heads, each said once, as the pages set them.
     ///
     /// The index's business, not the lookup's: the lookup keys on every spelling
