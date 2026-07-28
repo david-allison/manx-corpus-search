@@ -573,7 +573,7 @@ describe("Dictionary page", () => {
         // the part is shown, but never as a sense of the whole word
         expect(screen.getByText(/No dictionary lists/)).toBeTruthy()
         expect(screen.getByText(/seeking/)).toBeTruthy()
-        const listedIn = screen.getByText("Listed in")
+        const listedIn = screen.getByText("Defined in")
         const parts = screen.getByText(/No dictionary lists/)
         expect(
             listedIn.compareDocumentPosition(parts) &
