@@ -39,32 +39,32 @@ describe("WordListCitations", () => {
         expect(screen.getByText(/Manx Plant Names/)).toBeTruthy()
     })
 
-    /** the naming and its source are one statement: it reads as a sentence
-     * rather than as fields the reader has to reassemble */
-    it("reads as one line, not as separate fields", () => {
+    /** set out like the entries above it, so the last line on the page reads
+     * the same way as the rest: head, naming, source. No dash anywhere. */
+    it("reads like an entry, head first and without a dash", () => {
         const { container } = show([citation()], "keirn")
-        expect(
-            container.querySelector(".dict-wordlist-line")?.textContent,
-        ).toBe(
-            "Ash (mountain), Pyrus aucuparia — Manx Plant Names, Sophia Morrison (1908)",
+        const line = container.querySelector(".dict-wordlist-item")
+        expect(line?.textContent).toBe(
+            "Keirn: Ash (mountain), Pyrus aucupariaManx Plant Names, Sophia Morrison (1908)",
         )
+        expect(line?.textContent).not.toMatch(/[—–]/)
     })
 
-    /** on the page for Ollyssyn the reader can already see the word: saying it
-     * back adds nothing */
-    it("does not repeat the word whose page this is", () => {
+    /** the head is bold, as an entry's is */
+    it("shows the head in bold", () => {
+        const { container } = show([citation()], "keirn")
+        expect(container.querySelector("strong")?.textContent).toBe("Keirn")
+    })
+
+    /** the page's spelling is always said, even where it is the word looked
+     * up: an entry does not drop its own headword, and neither does this */
+    it("says the head even when it is the word looked up", () => {
         show(
             [citation({ headword: "Ollyssyn", gloss: "Alexanders" })],
             "Ollyssyn",
         )
-        expect(screen.queryByText("Ollyssyn")).toBeNull()
+        expect(screen.getByText("Ollyssyn")).toBeTruthy()
         expect(screen.getByText(/Alexanders/)).toBeTruthy()
-    })
-
-    /** a hyphenated head reached by its folded spelling is the same head */
-    it("treats a hyphenated head as the word it was reached by", () => {
-        show([citation({ headword: "Lus-ny-Geayee" })], "lus ny geayee")
-        expect(screen.queryByText(/^as /)).toBeNull()
     })
 
     /** the citation has to be checkable: the reader gets to the page it was read
@@ -112,7 +112,6 @@ describe("WordListCitations", () => {
     it("says the printed head where it differs from the word looked up", () => {
         show([citation({ headword: "Yn luss", gloss: "Vervain" })], "luss")
         expect(screen.getByText("Yn luss")).toBeTruthy()
-        expect(screen.getByText(/^as /)).toBeTruthy()
     })
 
     /** not every line names a species */

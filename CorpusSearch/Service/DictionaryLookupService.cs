@@ -39,6 +39,35 @@ public class DictionaryLookupService(IEnumerable<ISearchDictionary> dictionarySe
     private readonly Dictionary<string, string> slugByDictionary = dictionaryServices
         .ToDictionary(x => x.Identifier, x => x.Slug);
 
+    /// <summary>
+    /// The printed lists naming the selection, or naming the longest phrase
+    /// around it that the context supports.
+    ///
+    /// Most plant names are phrases: the page names 'Mairanyn ferish', and a
+    /// tap lands on 'Mairanyn', which is nobody's word. Resolved through the
+    /// same candidates a dictionary phrase is ('mie er bashtal'), longest
+    /// first, so the naming found is the one the page actually printed.
+    /// </summary>
+    /// <param name="selection">the word/phrase the user selected</param>
+    /// <param name="context">the line it appears in; without it only the
+    /// selection itself can be tried, which is all a word page has</param>
+    public IReadOnlyList<WordListCitation> WordListsFor(string selection, string? context = null)
+    {
+        if (wordLists == null)
+        {
+            return [];
+        }
+        foreach (var candidate in GetCandidates(selection, context))
+        {
+            var found = wordLists.For(candidate);
+            if (found.Count > 0)
+            {
+                return found;
+            }
+        }
+        return [];
+    }
+
     /// <param name="lang">the query language, for example 'gv'</param>
     /// <param name="selection">the word/phrase the user selected</param>
     /// <param name="context">the text surrounding the selection (typically the line it appears in)</param>
@@ -162,7 +191,10 @@ public class DictionaryLookupService(IEnumerable<ISearchDictionary> dictionarySe
             }
         }
 
-        if (results.Count == 0 && lang == "gv")
+        // a printed list naming the word is a match, so the last resort is not
+        // reached: offering "did you mean" beside an answer asks the reader to
+        // doubt a word we just told them the meaning of
+        if (results.Count == 0 && lang == "gv" && WordListsFor(selection, context).Count == 0)
         {
             // last resort: entries for near spellings ("did you mean"), tagged
             // so the client presents them as suggestions, never as matches

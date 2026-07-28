@@ -665,6 +665,45 @@ public class DictionaryLookupServiceTest
             Is.EqualTo(new[] { "entry", "list", "list", "none" }));
     }
 
+    /// <summary>The page names 'Mairanyn ferish'; a tap lands on 'Mairanyn',
+    /// which is nobody's word. The line around it says which phrase was meant,
+    /// so the naming is found the way a dictionary phrase is.</summary>
+    [Test]
+    public void AWordListPhraseIsFoundThroughTheLineAroundIt()
+    {
+        var wordLists = WordListCitationServiceTest.Loaded(
+            "form\theadword\tlistId\tgloss\tbinomial\tnote\n"
+            + "mairanyn ferish\tMairanyn ferish\tmorrison-plants\tHarebell\tCampanula rotundifolia\t\n");
+        var service = new DictionaryLookupService(
+            [], LemmaTable.Load(new StringReader("form\tlemmaId\tlemma\tlinkType\n")),
+            LemmaResolver.Empty, null, null, wordLists);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(service.WordListsFor("Mairanyn", "Mairanyn ferish").Single().Gloss,
+                Is.EqualTo("Harebell"));
+            // without the line there is only the word, which the page never named
+            Assert.That(service.WordListsFor("Mairanyn"), Is.Empty);
+        });
+    }
+
+    /// <summary>The longest phrase the line supports wins, as for a dictionary:
+    /// the naming found should be the one the page printed</summary>
+    [Test]
+    public void TheLongestNamedPhraseWins()
+    {
+        var wordLists = WordListCitationServiceTest.Loaded(
+            "form\theadword\tlistId\tgloss\tbinomial\tnote\n"
+            + "lus\tLus\tmorrison-plants\tHerb\t\t\n"
+            + "lus y thie\tLus y thie\tmorrison-plants\tHouse leek\tSempervivum tectorum\t\n");
+        var service = new DictionaryLookupService(
+            [], LemmaTable.Load(new StringReader("form\tlemmaId\tlemma\tlinkType\n")),
+            LemmaResolver.Empty, null, null, wordLists);
+
+        Assert.That(service.WordListsFor("Lus", "Lus y thie").Single().Gloss,
+            Is.EqualTo("House leek"));
+    }
+
     /// <summary>Most plant names are two words, and the second alone is nobody's:
     /// a token inside a phrase the list names is covered by that naming, exactly
     /// as one inside a phrase a book lists is covered by the entry</summary>

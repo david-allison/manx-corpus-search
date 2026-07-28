@@ -1,43 +1,36 @@
 /* The printed word lists that name the word.
-   Set apart from the dictionary groups on purpose: a list is a citation, and
-   dressing it as an entry would let a reader take a page's naming for a book's
-   reading.
-
-   Text flow, not columns: the naming and its source are one sentence, so they
-   wrap like one. A flex row would break at whatever width the window happened
-   to be and leave the parts standing alone. */
+   Set out like the entries above it — head in bold, then the naming, then a
+   credit chip for the source — so the last line on the page reads the same way
+   as the rest. It keeps its own section heading because a list is a citation,
+   not a book's reading, and that difference is worth showing. */
 .dict-wordlists {
     margin-top: 20px;
 }
 
-.dict-wordlist-items {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-}
-
-.dict-wordlist-item + .dict-wordlist-item {
-    margin-top: 6px;
-}
-
-.dict-wordlist-line {
-    margin: 0;
+.dict-wordlist-item {
+    margin-bottom: 4px;
     color: var(--c-body-results);
-}
-
-/* the spelling the page sets, said only where it differs from the word asked for */
-.dict-wordlist-headword {
-    font-weight: 600;
-    color: var(--c-heading);
 }
 
 .dict-wordlist-binomial {
     font-style: italic;
 }
 
-/* the list itself, and the way through to the page it was read off */
+/* the source, as the entries credit their dictionary */
+.dict-wordlist-source {
+    display: inline-block;
+    margin-left: 8px;
+    padding: 1px 6px;
+    border-radius: 8px;
+    font-size: 11px;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+    color: var(--c-secondary);
+    box-shadow: inset 0 0 0 1px var(--c-border-table-head);
+}
+
 .dict-wordlist-source a {
-    color: var(--c-link);
+    color: inherit;
 }
 
 .dict-wordlist-source a:hover {

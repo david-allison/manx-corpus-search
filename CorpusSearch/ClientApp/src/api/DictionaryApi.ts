@@ -63,6 +63,13 @@ export type Summary = {
 }
 export type DictionaryResponse = Summary[]
 
+/** What a tap on a word turns up: the books' entries, and the printed lists
+ * that name it. Kept apart, as on the word page — a naming is not an entry. */
+export type DictionaryLookupResult = {
+    entries: DictionaryResponse
+    wordLists?: WordListCitation[]
+}
+
 /**
  * The server matches phrases of up to a few words around the selection, so a
  * short window of context is enough: keep the URL bounded for long lines.
@@ -88,7 +95,7 @@ export const manxDictionaryLookup = async (
     queryUnsafe: string,
     context?: string,
     signal?: AbortSignal,
-): Promise<DictionaryResponse> => {
+): Promise<DictionaryLookupResult> => {
     const params = new URLSearchParams({ lang: "gv", word: queryUnsafe })
     if (context) {
         params.set("context", trimContext(context, queryUnsafe))
@@ -97,7 +104,7 @@ export const manxDictionaryLookup = async (
         signal,
     })
     // TODO: Validation
-    return (await response.json()) as DictionaryResponse
+    return (await response.json()) as DictionaryLookupResult
 }
 
 /** The teanglann-style full page for a word (experimental): per-dictionary
