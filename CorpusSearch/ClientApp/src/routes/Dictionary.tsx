@@ -16,6 +16,7 @@ import {
     headingFor,
     rootsBySense,
     senseGroupsIn,
+    tiersOf,
 } from "../utils/DictionaryEntries"
 import {
     DefinitionText,
@@ -280,20 +281,22 @@ export const Dictionary = () => {
     const stale = shown != null && (shown.word !== word || shown.dict !== dict)
 
     const multidictWord = word ? getMultidictLookupWord(word) : null
-    const rootEntries =
+    /* what kind each entry is, decided once and in one place: the popup asks
+       the same question of the same markers, and the two answering separately
+       is how the page learned about compound parts while a tap did not */
+    const tiers =
         page == null || page.isSuggestionTier
-            ? []
-            : page.groups.flatMap((g) => g.entries).filter((e) => e.rootDepth)
+            ? null
+            : tiersOf(page.groups.flatMap((g) => g.entries))
+
+    const rootEntries = tiers?.roots ?? []
 
     const senses =
         page != null && !page.isSuggestionTier ? senseGroupsIn(page) : []
 
     /** entries for a piece of the word, where nothing answered for the whole:
      * they define the part, and are shown saying so */
-    const partEntries =
-        page == null || page.isSuggestionTier
-            ? []
-            : page.groups.flatMap((g) => g.entries).filter((e) => e.partOf)
+    const partEntries = tiers?.parts ?? []
 
     /* Nothing here is about the word itself, and a printed list names it: the
        naming is the page's answer, so it leads instead of following the pieces

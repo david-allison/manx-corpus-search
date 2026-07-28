@@ -20,6 +20,7 @@ import {
     classifyEntries,
     groupByDictionary,
     headingFor,
+    tiersOf,
     trimPunctuation,
 } from "../utils/DictionaryEntries"
 import { UnverifiedMark } from "./UnverifiedMark"
@@ -235,19 +236,30 @@ export const DictionaryLookupModal = (props: DictionaryLookupState) => {
             trimPunctuation(x.primaryWord).toLowerCase() == wordKey,
     )
 
+    /* what kind each entry is, decided by the same function the word page uses:
+       the two answering separately is how the page came to know about compound
+       parts while a tap read çhee's "seeking" as the sense of a nipplewort */
+    const tiers = summaries == null ? null : tiersOf(summaries)
+
     // the suggestion tier only fires on a total miss, so a response is either
     // all near-matches or none
     const nearMatchOnly =
-        summaries != null &&
-        summaries.length > 0 &&
-        summaries.every((x) => x.nearMatchOf)
+        tiers != null &&
+        tiers.nearMatches.length > 0 &&
+        tiers.own.length == 0 &&
+        tiers.roots.length == 0 &&
+        tiers.parts.length == 0
 
     /* Entries for a piece of the tapped word, where nothing answered for the
-       whole. They define the part, so they are kept out of the groups: çhee
-       "seeking" printed under 'Bolan-y-chee' has the popup say a nipplewort
-       means seeking, which is the page's bug in the popup's shape. */
-    const partEntries = summaries?.filter((x) => x.partOf) ?? []
-    const ownEntries = summaries?.filter((x) => !x.partOf) ?? null
+       whole. They define the part, so they are kept out of the groups. */
+    const partEntries = tiers?.parts ?? []
+    // the groups show what is about the word: its own entries, the roots they
+    // were reached through, and — on a total miss — the near spellings, which
+    // the block below labels as suggestions rather than as the word
+    const ownEntries =
+        tiers == null
+            ? null
+            : [...tiers.own, ...tiers.roots, ...tiers.nearMatches]
 
     /* Nothing here is about the tapped word, and a printed list names it: the
        naming is the answer, so it comes before the near spellings and before
