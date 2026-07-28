@@ -107,10 +107,36 @@ export type SenseGroup = {
  * a nipplewort means seeking. A word nothing declares a class for comes back as
  * a single unlabelled group — the page it has today.
  */
+/** A look-up's entries, sorted into the kinds a reader must be able to tell
+ * apart. Only the server's own markers decide: nothing here guesses.
+ *
+ * The one place that answers "what kind of entry is this", because two places
+ * drift. The word page and the tap popup each used to decide for themselves,
+ * so when entries began carrying `partOf` the page learned it and the popup did
+ * not — and a tap on 'Bolan-y-chee' read çhee's "seeking" as the sense of a
+ * nipplewort. A new marker is added here, and both are told at once. */
+export type EntryTiers = {
+    /** entries for the word itself: the only ones that may wear its name */
+    own: Summary[]
+    /** entries the lemma table's root chain reached ('gheiney' → 'dooinney') */
+    roots: Summary[]
+    /** entries for a piece of the word, where nothing answered for the whole */
+    parts: Summary[]
+    /** "did you mean" spellings; never the word, and never shown as it */
+    nearMatches: Summary[]
+}
+
+export const tiersOf = (entries: Summary[]): EntryTiers => ({
+    // order matters: a near-match is not the word however it was reached, and
+    // a part answers for a piece of it, so both are taken before `own`
+    nearMatches: entries.filter((e) => e.nearMatchOf),
+    parts: entries.filter((e) => !e.nearMatchOf && e.partOf),
+    roots: entries.filter((e) => !e.nearMatchOf && !e.partOf && e.rootDepth),
+    own: entries.filter((e) => !e.nearMatchOf && !e.partOf && !e.rootDepth),
+})
+
 export const senseGroupsIn = (page: DictionaryPageResponse): SenseGroup[] => {
-    const own = page.groups
-        .flatMap((g) => g.entries)
-        .filter((e) => !e.rootDepth && !e.nearMatchOf && !e.partOf)
+    const own = tiersOf(page.groups.flatMap((g) => g.entries)).own
     const unplaceable = own.filter((e) => !e.partsOfSpeech?.length)
     const placed = own.filter((e) => e.partsOfSpeech?.length)
     const lemmasOf = (entries: Summary[]) => [
