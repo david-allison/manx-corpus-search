@@ -665,6 +665,32 @@ public class DictionaryLookupServiceTest
             Is.EqualTo(new[] { "entry", "list", "list", "none" }));
     }
 
+    /// <summary>The tap and the word page are built from one assembly, so what
+    /// a look-up learns cannot reach one and miss the other. They used to
+    /// decorate their own answers, and the word lists reached the page while a
+    /// tap on the same word said nothing was found.</summary>
+    [Test]
+    public void TheTapAndThePageAreBuiltFromOneAnswer()
+    {
+        var wordLists = WordListCitationServiceTest.Loaded(
+            "form\theadword\tlistId\tgloss\tbinomial\tnote\n"
+            + "keirn\tKeirn\tmorrison-plants\tAsh (mountain)\tPyrus aucuparia\t\n");
+        var service = new DictionaryLookupService(
+            [new FakeDictionary("keirn")],
+            LemmaTable.Load(new StringReader("form\tlemmaId\tlemma\tlinkType\n")),
+            LemmaResolver.Empty, null, null, wordLists);
+
+        var tap = service.Answer("gv", "keirn");
+        var page = service.Page("gv", "keirn");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(tap.WordLists.Select(x => x.Gloss), Is.EqualTo(new[] { "Ash (mountain)" }));
+            Assert.That(page.WordLists.Select(x => x.Gloss), Is.EqualTo(tap.WordLists.Select(x => x.Gloss)),
+                "the page must not know a different set of namings from the tap");
+        });
+    }
+
     /// <summary>The page names 'Mairanyn ferish'; a tap lands on 'Mairanyn',
     /// which is nobody's word. The line around it says which phrase was meant,
     /// so the naming is found the way a dictionary phrase is.</summary>
