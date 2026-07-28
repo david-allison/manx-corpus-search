@@ -69,6 +69,24 @@ public class DictionaryPageGroup
     public required List<DictionarySummary> Entries { get; set; }
 }
 
+/// <summary>
+/// What one look-up of a word turns up, whoever asked: the books' entries, and
+/// the printed lists that name it.
+///
+/// Built once by <see cref="DictionaryLookupService.Answer"/> and shared by the
+/// tap popup and the word page. Add what a look-up learns here rather than to
+/// either caller: the two used to assemble their own answers, and the word
+/// lists reached the page while a tap on the same word said nothing was found.
+/// </summary>
+public class DictionaryAnswer
+{
+    public required List<DictionarySummary> Entries { get; init; }
+
+    /// <summary>Kept apart from <see cref="Entries"/>: a naming is not a book's
+    /// entry, and a reader must be able to see which is which</summary>
+    public required List<WordListCitation> WordLists { get; init; }
+}
+
 /// <summary>A dictionary the page can be scoped to</summary>
 public class DictionaryInfo
 {

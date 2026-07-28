@@ -41,27 +41,11 @@ public class DictionaryController(
     /// <param name="context">optional: the text surrounding the word, used to match phrases/idioms</param>
     /// <returns></returns>
     [HttpGet]
-    public DictionaryLookupResponse Get([FromQuery] string lang, [FromQuery] string word, [FromQuery] string? context = null)
+    public DictionaryAnswer Get([FromQuery] string lang, [FromQuery] string word, [FromQuery] string? context = null)
     {
-        return new DictionaryLookupResponse
-        {
-            Entries = [.. lookupService.Lookup(lang, word, context)],
-            // the popup asks the same question the word page does, so it gets
-            // the same answer: for a word only a list names, the naming is all
-            // there is, and a popup saying nothing was found would be wrong.
-            // Through the context, so a tap inside a printed phrase finds it
-            WordLists = [.. lookupService.WordListsFor(word, context)],
-        };
-    }
-
-    /// <summary>What a tap on a word turns up: the books' entries, and the
-    /// printed lists that name it. Kept apart, as on the word page — a naming
-    /// is not an entry, and must not be shown as one.</summary>
-    public class DictionaryLookupResponse
-    {
-        public required List<DictionarySummary> Entries { get; set; }
-
-        public required List<WordListCitation> WordLists { get; set; }
+        // the same assembly the word page is built from, so a tap and a page
+        // cannot come to know different things about a word
+        return lookupService.Answer(lang, word, context);
     }
 
     /// <summary>
@@ -89,10 +73,6 @@ public class DictionaryController(
         // corpus's business, and the page only carries the answer — including
         // "not yet", which a phrase gets until the corpus has been read for it
         page.Attested = vocabulary.Attestation(word);
-        // a printed list is neither book nor corpus: it is shown as a citation,
-        // so it rides beside the groups rather than becoming one. A page has no
-        // line around the word, so only the word itself can be tried
-        page.WordLists = [.. lookupService.WordListsFor(word)];
         return page;
     }
 

@@ -68,6 +68,26 @@ public class DictionaryLookupService(IEnumerable<ISearchDictionary> dictionarySe
         return [];
     }
 
+    /// <summary>
+    /// Everything a look-up of a word turns up: the books' entries, and the
+    /// printed lists that name it.
+    ///
+    /// One assembly step, because the popup and the word page each used to
+    /// build their own answer and a thing added to one missed the other. The
+    /// word lists reached the page and not the tap, so tapping Ollyssyn in a
+    /// text said nothing was found while its page named the plant. Whatever a
+    /// look-up learns belongs here, where neither caller can be told and the
+    /// other left out.
+    /// </summary>
+    /// <param name="context">the line the word sits in, where there is one: a
+    /// page has none, and only the word itself can be tried</param>
+    public DictionaryAnswer Answer(string lang, string selection, string? context = null) =>
+        new()
+        {
+            Entries = Lookup(lang, selection, context),
+            WordLists = [.. WordListsFor(selection, context)],
+        };
+
     /// <param name="lang">the query language, for example 'gv'</param>
     /// <param name="selection">the word/phrase the user selected</param>
     /// <param name="context">the text surrounding the selection (typically the line it appears in)</param>
@@ -333,7 +353,10 @@ public class DictionaryLookupService(IEnumerable<ISearchDictionary> dictionarySe
     /// silently widening back to every dictionary</param>
     public DictionaryPage Page(string lang, string word, string? dict = null)
     {
-        var summaries = WithoutDemutationGuesses(word, Lookup(lang, word));
+        // through Answer, so the page cannot be built from entries alone: the
+        // word lists ride with them rather than being remembered separately
+        var answer = Answer(lang, word);
+        var summaries = WithoutDemutationGuesses(word, answer.Entries);
         // read before the scoping below, and deliberately: the picker shows every
         // dictionary, so it has to be told about the ones this page is hiding
         var answering = summaries.Select(SlugOf).OfType<string>().Distinct().ToList();
@@ -351,6 +374,7 @@ public class DictionaryLookupService(IEnumerable<ISearchDictionary> dictionarySe
         {
             Word = word,
             Answering = answering,
+            WordLists = [.. answer.WordLists],
             IsSuggestionTier = summaries.Count > 0 && summaries.All(x => x.NearMatchOf != null),
             Audio = audio == null
                 ? null
