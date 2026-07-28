@@ -6,7 +6,12 @@ import {
 } from "react"
 import { Box, CircularProgress, Modal } from "@mui/material"
 import Typography from "@mui/material/Typography"
-import { DictionaryResponse, manxDictionaryLookup } from "../api/DictionaryApi"
+import {
+    DictionaryResponse,
+    manxDictionaryLookup,
+    WordListCitation,
+} from "../api/DictionaryApi"
+import { WordListCitations } from "./WordListCitations"
 import { DefinitionText, GrammarLabel } from "./GrammarAbbr"
 import { VerseVersionsModal } from "./VerseVersionsModal"
 import { getMultidictLookupWord, MultidictLink } from "./MultidictLink"
@@ -196,6 +201,9 @@ export const DictionaryLookupModal = (props: DictionaryLookupState) => {
     const { open, word, context, onClose } = props
 
     const [summaries, setSummaries] = useState<DictionaryResponse | null>(null)
+    // the printed lists that name the word: for a word only a list names, this
+    // is the whole answer, and the popup would otherwise say nothing was found
+    const [citations, setCitations] = useState<WordListCitation[]>([])
 
     // a tapped scripture citation ("Jud. xii. 6"): the verse's other-versions
     // popup opens over the dictionary popup; following a version link closes both
@@ -203,9 +211,13 @@ export const DictionaryLookupModal = (props: DictionaryLookupState) => {
 
     useEffect(() => {
         setSummaries(null)
+        setCitations([])
         if (!word) return
         manxDictionaryLookup(word, context)
-            .then(setSummaries)
+            .then((result) => {
+                setSummaries(result.entries)
+                setCitations(result.wordLists ?? [])
+            })
             .catch((e) => {
                 console.warn(e)
             })
@@ -229,6 +241,12 @@ export const DictionaryLookupModal = (props: DictionaryLookupState) => {
         summaries != null &&
         summaries.length > 0 &&
         summaries.every((x) => x.nearMatchOf)
+
+    /* Nothing here is about the tapped word, and a printed list names it: the
+       naming is the answer, so it comes before the near spellings rather than
+       under them — as on the word page. */
+    const citationsLead =
+        citations.length > 0 && (nearMatchOnly || summaries?.length === 0)
 
     return (
         <Modal
@@ -291,12 +309,20 @@ export const DictionaryLookupModal = (props: DictionaryLookupState) => {
                         </div>
                     )}
 
+                    {/* a list naming the tapped word answers it, so it leads */}
+                    {citationsLead && (
+                        <WordListCitations citations={citations} word={word} />
+                    )}
+
                     {nearMatchOnly && summaries != null && (
                         // "did you mean" fallback: a suggestion box, styled so
                         // it can never read as an entry for the tapped word
                         <div className="dict-popup-suggestions">
                             <p className="dict-popup-suggestions-note">
-                                Nothing found for “{word}”. Near spellings:
+                                {citations.length > 0
+                                    ? // a list named it: "nothing found" is untrue
+                                      `No dictionary defines “${word}”. Near spellings:`
+                                    : `Nothing found for “${word}”. Near spellings:`}
                             </p>
                             {groupByDictionary(summaries).map(
                                 ([dictionaryName, entries]) => (
@@ -462,7 +488,12 @@ export const DictionaryLookupModal = (props: DictionaryLookupState) => {
                                 )
                             },
                         )}
-                    {summaries?.length == 0 && (
+                    {/* under the entries, as on the word page: where a book
+                    defines the word the naming is supplementary */}
+                    {!citationsLead && (
+                        <WordListCitations citations={citations} word={word} />
+                    )}
+                    {summaries?.length == 0 && citations.length == 0 && (
                         <span>
                             Could not find definition
                             {multidictWord != null && (

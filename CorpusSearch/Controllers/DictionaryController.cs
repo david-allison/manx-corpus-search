@@ -16,7 +16,7 @@ public class DictionaryController(
     DictionaryLookupService lookupService, DictionaryHistoryService historyService,
     DictionaryAttestationService attestationService, DictionaryBrowseService browseService,
     LemmaIndexService lemmaIndexService, CorpusVocabulary vocabulary,
-    DictionaryStatsService statsService, WordListCitationService wordLists)
+    DictionaryStatsService statsService)
 {
     /// <summary>The front page's coverage numbers: what share of the corpus the
     /// books, the recordings and the lemma table can answer for. Counts, with
@@ -41,9 +41,27 @@ public class DictionaryController(
     /// <param name="context">optional: the text surrounding the word, used to match phrases/idioms</param>
     /// <returns></returns>
     [HttpGet]
-    public IEnumerable<DictionarySummary> Get([FromQuery] string lang, [FromQuery] string word, [FromQuery] string? context = null)
+    public DictionaryLookupResponse Get([FromQuery] string lang, [FromQuery] string word, [FromQuery] string? context = null)
     {
-        return lookupService.Lookup(lang, word, context);
+        return new DictionaryLookupResponse
+        {
+            Entries = [.. lookupService.Lookup(lang, word, context)],
+            // the popup asks the same question the word page does, so it gets
+            // the same answer: for a word only a list names, the naming is all
+            // there is, and a popup saying nothing was found would be wrong.
+            // Through the context, so a tap inside a printed phrase finds it
+            WordLists = [.. lookupService.WordListsFor(word, context)],
+        };
+    }
+
+    /// <summary>What a tap on a word turns up: the books' entries, and the
+    /// printed lists that name it. Kept apart, as on the word page — a naming
+    /// is not an entry, and must not be shown as one.</summary>
+    public class DictionaryLookupResponse
+    {
+        public required List<DictionarySummary> Entries { get; set; }
+
+        public required List<WordListCitation> WordLists { get; set; }
     }
 
     /// <summary>
@@ -72,8 +90,9 @@ public class DictionaryController(
         // "not yet", which a phrase gets until the corpus has been read for it
         page.Attested = vocabulary.Attestation(word);
         // a printed list is neither book nor corpus: it is shown as a citation,
-        // so it rides beside the groups rather than becoming one
-        page.WordLists = [.. wordLists.For(word)];
+        // so it rides beside the groups rather than becoming one. A page has no
+        // line around the word, so only the word itself can be tried
+        page.WordLists = [.. lookupService.WordListsFor(word)];
         return page;
     }
 

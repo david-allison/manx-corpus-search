@@ -104,15 +104,19 @@ const renderTable = (
     overrides?: Partial<Parameters<typeof ComparisonTable>[0]>,
 ) =>
     render(
-        <ComparisonTable
-            response={response(results)}
-            value="chengey"
-            highlightManx={true}
-            highlightEnglish={false}
-            manxVisible={true}
-            englishVisible={true}
-            {...overrides}
-        />,
+        // as in the app, where one BrowserRouter wraps everything (main.tsx):
+        // the lookup popup links the documents a citation was read off
+        <MemoryRouter>
+            <ComparisonTable
+                response={response(results)}
+                value="chengey"
+                highlightManx={true}
+                highlightEnglish={false}
+                manxVisible={true}
+                englishVisible={true}
+                {...overrides}
+            />
+        </MemoryRouter>,
     )
 
 describe("ComparisonTable highlighting", () => {
@@ -556,18 +560,21 @@ describe("dictionary popup (#51)", () => {
     }
 
     it("labels each entry with the dictionary defining it", async () => {
-        mockDictionaryLookup.mockResolvedValue([
-            {
-                primaryWord: "lhiam",
-                summary: "with me",
-                dictionaryName: "Cregeen",
-            },
-            {
-                primaryWord: "lhiam",
-                summary: "to me, with me",
-                dictionaryName: "J Kelly Manx to English",
-            },
-        ])
+        mockDictionaryLookup.mockResolvedValue({
+            entries: [
+                {
+                    primaryWord: "lhiam",
+                    summary: "with me",
+                    dictionaryName: "Cregeen",
+                },
+                {
+                    primaryWord: "lhiam",
+                    summary: "to me, with me",
+                    dictionaryName: "J Kelly Manx to English",
+                },
+            ],
+            wordLists: [],
+        })
         openPopup()
 
         await screen.findByText("Cregeen")
@@ -577,18 +584,21 @@ describe("dictionary popup (#51)", () => {
     })
 
     it("groups entries of one dictionary under a single header", async () => {
-        mockDictionaryLookup.mockResolvedValue([
-            {
-                primaryWord: "goll",
-                summary: "to go",
-                dictionaryName: "Cregeen",
-            },
-            {
-                primaryWord: "mygeayrt",
-                summary: "about",
-                dictionaryName: "Cregeen",
-            },
-        ])
+        mockDictionaryLookup.mockResolvedValue({
+            entries: [
+                {
+                    primaryWord: "goll",
+                    summary: "to go",
+                    dictionaryName: "Cregeen",
+                },
+                {
+                    primaryWord: "mygeayrt",
+                    summary: "about",
+                    dictionaryName: "Cregeen",
+                },
+            ],
+            wordLists: [],
+        })
         openPopup()
 
         await screen.findByText(/to go/)
@@ -599,10 +609,84 @@ describe("dictionary popup (#51)", () => {
     })
 
     it("reports when no dictionary defines the word", async () => {
-        mockDictionaryLookup.mockResolvedValue([])
+        mockDictionaryLookup.mockResolvedValue({ entries: [], wordLists: [] })
         openPopup()
 
         await screen.findByText(/Could not find definition/)
+    })
+
+    /** tapping a word in a text asks the same question its page does, so it
+     * gets the same answer: for a word only a printed list names, the naming is
+     * the whole of it, and "could not find definition" would be untrue */
+    it("shows a word list's naming where no dictionary defines the word", async () => {
+        mockDictionaryLookup.mockResolvedValue({
+            entries: [],
+            wordLists: [
+                {
+                    source: {
+                        listId: "morrison-plants",
+                        name: "Manx Plant Names",
+                        credit: "Sophia Morrison",
+                        date: "1908",
+                        documentIdent: "Manx-Plant-Names",
+                        url: "https://example.invalid",
+                        citation: "Manx Wild Flowers, 1908",
+                    },
+                    headword: "Ollyssyn",
+                    gloss: "Alexanders",
+                    binomial: "Smyrnium olusatrum",
+                },
+            ],
+        })
+        openPopup()
+
+        await screen.findByText("Alexanders")
+        expect(screen.getByText(/Manx Plant Names/)).toBeTruthy()
+        expect(screen.queryByText(/Could not find definition/)).toBeNull()
+    })
+
+    /** the tap that started this: Ollyssyn has no entry, so the books offered
+     * near spellings and the popup called it a miss — while Morrison names it.
+     * The naming leads, and the note stops claiming nothing was found. */
+    it("does not call a word a miss when a list names it", async () => {
+        mockDictionaryLookup.mockResolvedValue({
+            entries: [
+                {
+                    primaryWord: "oalyssyn",
+                    summary: "witchcrafts",
+                    dictionaryName: "Phil Kelly Manx to English",
+                    nearMatchOf: "oalyssyn",
+                },
+            ],
+            wordLists: [
+                {
+                    source: {
+                        listId: "morrison-plants",
+                        name: "Manx Plant Names",
+                        credit: "Sophia Morrison",
+                        date: "1908",
+                        documentIdent: "Manx-Plant-Names",
+                        url: "https://example.invalid",
+                        citation: "Manx Wild Flowers, 1908",
+                    },
+                    headword: "Ollyssyn",
+                    gloss: "Alexanders",
+                    binomial: "Smyrnium olusatrum",
+                },
+            ],
+        })
+        openPopup()
+
+        await screen.findByText("Alexanders")
+        expect(screen.getByText(/No dictionary defines/)).toBeTruthy()
+        expect(screen.queryByText(/Nothing found for/)).toBeNull()
+        // the naming comes before the near spellings it used to sit under
+        const cite = screen.getByText("Alexanders")
+        const note = screen.getByText(/No dictionary defines/)
+        expect(
+            cite.compareDocumentPosition(note) &
+                Node.DOCUMENT_POSITION_FOLLOWING,
+        ).toBeTruthy()
     })
 
     it("does not open on a non-Manx row", () => {
@@ -633,7 +717,7 @@ describe("dictionary popup (#51)", () => {
 describe("dictionary popup on touch", () => {
     beforeEach(() => {
         mockDictionaryLookup.mockReset()
-        mockDictionaryLookup.mockResolvedValue([])
+        mockDictionaryLookup.mockResolvedValue({ entries: [], wordLists: [] })
         mockGetSelectedWordOrPhrase.mockReset()
         mockGetWordAtPoint.mockReset()
     })

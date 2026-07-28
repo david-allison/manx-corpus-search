@@ -10,94 +10,61 @@ import "./WordListCitations.css"
  * a dictionary's own reading, and the lists have no tab in the scope picker for
  * the same reason.
  *
- * Written as a sentence rather than laid out in columns: the English name, the
- * Latin name and the book are one statement ("Alexanders, Smyrnium olusatrum,
- * in Manx Plant Names"), and splitting them into fields leaves the reader
- * holding four fragments to reassemble. The comma between the English and the
- * Latin is the page's own — it prints them as one phrase.
- *
- * The English is the page's wording, typos and all; where the page is wrong its
- * note reads the word back rather than quietly correcting the quotation. */
+ * Set out like the entries above it: the head in bold, then what the page calls
+ * the plant, then who says so. A reader should not have to learn a second shape
+ * to read the last line on the page. The comma between the English and the
+ * Latin is the page's own — it prints them as one phrase. */
 export const WordListCitations = ({
     citations,
     word,
 }: {
     citations: WordListCitation[]
-    /** the word whose page this is: the printed head is only worth saying when
-     * it differs, and on 'Ollyssyn' the reader can already see the word */
+    /** the word whose page this is: unused for display (the head is always
+     * shown, as on an entry) but kept for callers that pass it */
     word?: string
 }) => {
+    void word
     if (citations.length === 0) {
         return null
     }
     return (
         <section className="dict-wordlists">
             <h3 className="dict-page-dictionary">Listed in</h3>
-            <ul className="dict-wordlist-items">
-                {citations.map((citation, index) => (
-                    <li className="dict-wordlist-item" key={index}>
-                        <p className="dict-wordlist-line">
-                            {/* the page sets a head the reader did not type
-                            ("Yn luss" reached from "luss"): say so, or the
-                            citation quietly answers a different word */}
-                            {differs(citation.headword, word) && (
-                                <>
-                                    as{" "}
-                                    <span className="dict-wordlist-headword">
-                                        {citation.headword}
-                                    </span>
-                                    {": "}
-                                </>
-                            )}
-                            <span className="dict-wordlist-gloss">
-                                {citation.gloss}
+            {citations.map((citation, index) => (
+                <div className="dict-wordlist-item" key={index}>
+                    <strong>{citation.headword}</strong>
+                    {": "}
+                    <span className="dict-wordlist-gloss">
+                        {citation.gloss}
+                    </span>
+                    {citation.binomial && (
+                        <>
+                            {", "}
+                            <span className="dict-wordlist-binomial">
+                                {citation.binomial}
                             </span>
-                            {citation.binomial && (
-                                <>
-                                    {", "}
-                                    <span className="dict-wordlist-binomial">
-                                        {citation.binomial}
-                                    </span>
-                                </>
-                            )}
-                            {" — "}
-                            <span className="dict-wordlist-source">
-                                {citation.source.documentIdent ? (
-                                    <Link
-                                        to={`/docs/${citation.source.documentIdent}`}
-                                        title={citation.source.citation}
-                                    >
-                                        {citation.source.name}
-                                    </Link>
-                                ) : (
-                                    citation.source.name
-                                )}
-                                {citation.source.credit &&
-                                    `, ${citation.source.credit}`}
-                                {citation.source.date &&
-                                    ` (${citation.source.date})`}
-                            </span>
-                        </p>
-                        {citation.note && (
-                            <p className="dict-wordlist-note">
-                                {citation.note}
-                            </p>
+                        </>
+                    )}
+                    <span className="dict-wordlist-source">
+                        {citation.source.documentIdent ? (
+                            <Link
+                                to={`/docs/${citation.source.documentIdent}`}
+                                title={citation.source.citation}
+                            >
+                                {citation.source.name}
+                            </Link>
+                        ) : (
+                            citation.source.name
                         )}
-                    </li>
-                ))}
-            </ul>
+                        {citation.source.credit &&
+                            `, ${citation.source.credit}`}
+                        {citation.source.date && ` (${citation.source.date})`}
+                    </span>
+                    {citation.note && (
+                        <p className="dict-wordlist-note">{citation.note}</p>
+                    )}
+                </div>
+            ))}
         </section>
     )
-}
-
-/** Whether the printed head says something the looked-up word does not. Folded
- * the way the table is keyed (case, hyphens and spaces), so "Lus-ny-Geayee"
- * reached from "lus ny geayee" is the same head, not a different one. */
-const differs = (headword: string, word: string | undefined) => {
-    if (!word) {
-        return true
-    }
-    const fold = (s: string) =>
-        s.toLowerCase().replace(/[-‑]/g, " ").replace(/\s+/g, " ").trim()
-    return fold(headword) !== fold(word)
 }
