@@ -99,6 +99,8 @@ public class DictionaryStatsService(LemmaTable lemmaTable, CorpusVocabulary voca
             DefinedRunningWords = definedRunning,
             Lemmas = lemmaTable.AllDisplayLemmas.Count(),
             AttestedLemmas = vocabulary.AttestedLemmaCount,
+            WordLists = wordLists?.Lists ?? 0,
+            WordListEntries = wordLists?.Headwords.Count ?? 0,
             Recordings = read?.Recordings,
             AudioWords = read == null ? null : audioWords,
             AudioRunningWords = read == null ? null : audioRunning,
@@ -116,10 +118,15 @@ public class DictionaryStatsService(LemmaTable lemmaTable, CorpusVocabulary voca
     /// <see cref="DictionaryStats.Books"/> and <see cref="DictionaryStats.Entries"/>
     /// deliberately do not move with it - those count books.</summary>
     private bool Defined(string term) =>
+        DefinedByBook(term) || wordLists?.Names(term) == true;
+
+    /// <summary>Whether a book answers for the word, by its own spelling or by a
+    /// lemma the table reads it as. Split out from <see cref="Defined"/> so the
+    /// page can say what the lists add rather than what they echo.</summary>
+    private bool DefinedByBook(string term) =>
         gvDictionaries.Any(d => d.ContainsWord(term))
         || lemmaTable.DisplayLemmasFor(term)
-            .Any(lemma => gvDictionaries.Any(d => d.ContainsWord(lemma)))
-        || wordLists?.Names(term) == true;
+            .Any(lemma => gvDictionaries.Any(d => d.ContainsWord(lemma)));
 
     /// <summary>The spoken index's word list in collation order, worked out
     /// once per audio read: nothing re-sorts per request</summary>
@@ -201,6 +208,12 @@ public record DictionaryStats
     public required long DefinedRunningWords { get; init; }
     public required long Lemmas { get; init; }
     public required long AttestedLemmas { get; init; }
+    /// <summary>How many printed word lists have been transcribed. Not counted
+    /// among <see cref="Books"/>: a list is not a dictionary</summary>
+    public required int WordLists { get; init; }
+    /// <summary>The heads those lists print, each said once. Counted beside
+    /// <see cref="Entries"/> by the page, which says whose is whose</summary>
+    public required long WordListEntries { get; init; }
     /// <summary>null until the startup pass has read the recordings</summary>
     public required int? Recordings { get; init; }
     public required long? AudioWords { get; init; }

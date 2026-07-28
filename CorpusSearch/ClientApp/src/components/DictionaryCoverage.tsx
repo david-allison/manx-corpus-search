@@ -96,9 +96,21 @@ export const DictionaryCoverage = () => {
                 className="dict-coverage-grid"
                 aria-label="Coverage of the corpus"
             >
+                {/* the printed lists are counted here, not in a box of their
+                    own: their heads are entries the dictionary can answer from.
+                    They are named apart from the books because a list is not
+                    one — the count is joint, the credit is not */}
                 <Card
-                    number={`${count(stats.entries)} entries`}
-                    label={`across ${stats.books} dictionaries`}
+                    number={`${count(
+                        stats.entries + (stats.wordListEntries ?? 0),
+                    )} entries`}
+                    label={
+                        stats.wordLists
+                            ? `across ${stats.books} dictionaries and ${
+                                  stats.wordLists
+                              } word ${stats.wordLists === 1 ? "list" : "lists"}`
+                            : `across ${stats.books} dictionaries`
+                    }
                 />
                 <Card
                     number={percent(
