@@ -242,11 +242,18 @@ export const DictionaryLookupModal = (props: DictionaryLookupState) => {
         summaries.length > 0 &&
         summaries.every((x) => x.nearMatchOf)
 
+    /* Entries for a piece of the tapped word, where nothing answered for the
+       whole. They define the part, so they are kept out of the groups: çhee
+       "seeking" printed under 'Bolan-y-chee' has the popup say a nipplewort
+       means seeking, which is the page's bug in the popup's shape. */
+    const partEntries = summaries?.filter((x) => x.partOf) ?? []
+    const ownEntries = summaries?.filter((x) => !x.partOf) ?? null
+
     /* Nothing here is about the tapped word, and a printed list names it: the
-       naming is the answer, so it comes before the near spellings rather than
-       under them — as on the word page. */
+       naming is the answer, so it comes before the near spellings and before
+       the pieces the word was broken into — as on the word page. */
     const citationsLead =
-        citations.length > 0 && (nearMatchOnly || summaries?.length === 0)
+        citations.length > 0 && (nearMatchOnly || ownEntries?.length === 0)
 
     return (
         <Modal
@@ -373,9 +380,9 @@ export const DictionaryLookupModal = (props: DictionaryLookupState) => {
                     {summaries != null && !nearMatchOnly && (
                         <PhillipsBridge word={word} summaries={summaries} />
                     )}
-                    {summaries != null &&
+                    {ownEntries != null &&
                         !nearMatchOnly &&
-                        groupByDictionary(summaries).map(
+                        groupByDictionary(ownEntries).map(
                             ([dictionaryName, entries]) => {
                                 const { own, derived } = classifyEntries(
                                     word,
@@ -488,6 +495,57 @@ export const DictionaryLookupModal = (props: DictionaryLookupState) => {
                                 )
                             },
                         )}
+                    {/* nothing answered for the whole word, so the books were
+                    asked about its pieces. Under a heading that says so: these
+                    entries define the parts, and printing them under the tapped
+                    word had the popup assert that Bolan-y-chee means "seeking" */}
+                    {partEntries.length > 0 && (
+                        <div className="dict-popup-parts">
+                            <p className="dict-popup-suggestions-note">
+                                {`No dictionary lists “${word}”. Its parts:`}
+                            </p>
+                            {groupByDictionary(partEntries).map(
+                                ([dictionaryName, entries]) => (
+                                    <div
+                                        className="dict-popup-group"
+                                        key={dictionaryName}
+                                    >
+                                        <DictionaryHeading
+                                            dictionaryName={dictionaryName}
+                                            entries={entries}
+                                        />
+                                        {entries.map((summary, index) => (
+                                            // the part's own head, never the
+                                            // tapped word: the entry is about
+                                            // the piece, and says so
+                                            <div
+                                                className="dict-popup-entry"
+                                                key={index}
+                                            >
+                                                <strong>
+                                                    {summary.primaryWord}
+                                                </strong>
+                                                <GrammarLabel
+                                                    label={summary.grammarLabel}
+                                                />
+                                                {": "}
+                                                <DefinitionText
+                                                    text={summary.summary}
+                                                    citations={
+                                                        summary.citations
+                                                    }
+                                                    onCitationClick={
+                                                        setCitationKey
+                                                    }
+                                                />
+                                            </div>
+                                        ))}
+                                    </div>
+                                ),
+                            )}
+                        </div>
+                    )}
+
                     {/* under the entries, as on the word page: where a book
                     defines the word the naming is supplementary */}
                     {!citationsLead && (

@@ -645,6 +645,51 @@ describe("dictionary popup (#51)", () => {
         expect(screen.queryByText(/Could not find definition/)).toBeNull()
     })
 
+    /** the same bug the word page had, in the popup's shape: no book lists
+     * 'Bolan-y-chee', so the books were asked about 'chee' — and heading those
+     * entries with the tapped word had the popup say a nipplewort means
+     * "seeking". The parts say they are parts, and the naming leads. */
+    it("does not show a word's parts as the tapped word's own senses", async () => {
+        mockDictionaryLookup.mockResolvedValue({
+            entries: [
+                {
+                    primaryWord: "çhee",
+                    summary: "seeking",
+                    dictionaryName: "Cregeen",
+                    partOf: "chee",
+                },
+            ],
+            wordLists: [
+                {
+                    source: {
+                        listId: "morrison-plants",
+                        name: "Manx Plant Names",
+                        credit: "Sophia Morrison",
+                        date: "1908",
+                        documentIdent: "Manx-Plant-Names",
+                        url: "https://example.invalid",
+                        citation: "Manx Wild Flowers, 1908",
+                    },
+                    headword: "Bolan-y-chee",
+                    gloss: "Nipplewort",
+                    binomial: "Lapsana communis",
+                },
+            ],
+        })
+        openPopup()
+
+        await screen.findByText("Nipplewort")
+        expect(screen.getByText(/No dictionary lists/)).toBeTruthy()
+        // the part keeps its own head; the tapped word never heads it
+        expect(screen.getByText("çhee")).toBeTruthy()
+        const naming = screen.getByText("Nipplewort")
+        const parts = screen.getByText(/No dictionary lists/)
+        expect(
+            naming.compareDocumentPosition(parts) &
+                Node.DOCUMENT_POSITION_FOLLOWING,
+        ).toBeTruthy()
+    })
+
     /** the tap that started this: Ollyssyn has no entry, so the books offered
      * near spellings and the popup called it a miss — while Morrison names it.
      * The naming leads, and the note stops claiming nothing was found. */
