@@ -17,6 +17,17 @@ public class CregeenDictionaryServiceTest
         Assert.That(CregeenDictionaryService.GrammarLabelOf(html), Is.EqualTo(expected));
     }
 
+    /// <summary>The transcription corrects the print inside the label - angle
+    /// brackets around the print's reading, square around the correction - and
+    /// the marks reach the reader as brackets, not as "&amp;lt;" entities</summary>
+    [TestCase("<i>&lt;v&gt;[a]. </i>not long, not far F", "<v>[a].")]
+    [TestCase("<i>s. &lt;f.&gt; </i>a hand barrow", "s. <f.>")]
+    [TestCase("<i>&lt;a. d.&gt;[a. pl.] </i>brave men B", "<a. d.>[a. pl.]")]
+    public void TheEditorialMarksInALabelStayAndDecode(string html, string expected)
+    {
+        Assert.That(CregeenDictionaryService.GrammarLabelOf(html), Is.EqualTo(expected));
+    }
+
     [TestCase("plain text, no label")]
     [TestCase("starts plainly <i>with italics later</i>")]
     [TestCase("<i>this italic run is far too long to be a grammar label at all</i> text")]
