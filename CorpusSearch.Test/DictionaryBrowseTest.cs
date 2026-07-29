@@ -41,7 +41,7 @@ public class DictionaryBrowseTest
     }
 
     /// <summary>The letter bar is derived, so a letter the data has is a letter
-    /// the bar shows: LetterLookup has no ç, and 39 Cregeen headwords start with
+    /// the bar shows: the hardcoded Letters has no ç, and 39 Cregeen headwords start with
     /// one</summary>
     [Test]
     public void TheLettersComeFromTheHeadwordsThemselves()
