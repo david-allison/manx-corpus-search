@@ -57,7 +57,7 @@ public static class DictionaryBrowse
     /// The letters a dictionary has headwords for, in order.
     /// </summary>
     /// <remarks>Derived rather than declared: the hardcoded
-    /// <see cref="Dictionaries.CregeenDictionaryService.LetterLookup"/> is Cregeen's
+    /// <see cref="Dictionaries.CregeenDictionaryService.Letters"/> is Cregeen's
     /// alone and has no ç, which 39 of its own headwords and 129 of Kelly's start
     /// with. A letter the data has is a letter the bar shows.</remarks>
     public static IReadOnlyList<char> LettersOf(IEnumerable<string> headwords) =>

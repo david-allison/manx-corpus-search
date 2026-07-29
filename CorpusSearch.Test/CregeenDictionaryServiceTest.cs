@@ -1,4 +1,5 @@
 using System.Linq;
+using CorpusSearch.Model.Dictionary;
 using CorpusSearch.Service.Dictionaries;
 using NUnit.Framework;
 
@@ -43,6 +44,49 @@ public class CregeenDictionaryServiceTest
     public void OtherNotesAreNotGenderWarnings(string? notes)
     {
         Assert.That(CregeenDictionaryService.GenderNoteOf(notes), Is.Null);
+    }
+
+    /// <summary>A letter page is filed by each entry's own letter, not sliced
+    /// between the letters' first printed entries: when the data respelled F's
+    /// opening 'fa.' as 'fa', the slice emptied F and poured the rest of the
+    /// book into E</summary>
+    [Test]
+    public void ALetterPageIsFiledByItsEntriesOwnLetters()
+    {
+        var entries = new[] { "e", "eairk", "fa", "fablagh", "gaal" }
+            .Select(word => new CregeenEntry { Words = [word], EntryHtml = "", HeadingHtml = "" })
+            .ToList();
+
+        string[] PageOf(char letter) => CregeenDictionaryService.EntriesUnder(letter, entries)
+            .Select(x => x.Words[0]).ToArray();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(PageOf('E'), Is.EqualTo(new[] { "e", "eairk" }));
+            Assert.That(PageOf('F'), Is.EqualTo(new[] { "fa", "fablagh" }));
+            Assert.That(PageOf('g'), Is.EqualTo(new[] { "gaal" }), "lowercase URLs file alike");
+        });
+    }
+
+    /// <summary>Every letter of the bar answers with entries. The old slicing
+    /// failed silently: a letter whose landmark entry the data no longer
+    /// printed was simply empty, and nothing said so</summary>
+    [Test]
+    public void EveryLetterOfTheBarHasAPage()
+    {
+        var entries = CregeenDictionaryService.GetEntries();
+        // cregeen.json is downloaded on deployment (tools/init.sh): without it
+        // the dictionary is deliberately empty, and there is nothing to assert
+        Assume.That(entries, Is.Not.Empty, "cregeen.json not present");
+
+        Assert.Multiple(() =>
+        {
+            foreach (var letter in CregeenDictionaryService.Letters)
+            {
+                Assert.That(CregeenDictionaryService.EntriesUnder(letter, entries),
+                    Is.Not.Empty, $"the {letter} page has no entries");
+            }
+        });
     }
 
     /// <summary>The 702 entries without a plain Definition fall back to the

@@ -14,34 +14,15 @@ namespace CorpusSearch.Service.Dictionaries;
 public class CregeenDictionaryService(ISet<string> allWords, IList<CregeenEntry> entries)
     : ISearchDictionary, IQuotingDictionary
 {
-    public static readonly Dictionary<char, string> LetterLookup = new(new CaseInsensitiveCharComparer())
-    {
-        [' '] = "  ",
-        ['A'] = "aa-",
-        ['B'] = "baa",
-        ['C'] = "caa",
-        ['D'] = "da",
-        ['E'] = "e",
-        ['F'] = "fa.",
-        ['G'] = "ga",
-        ['H'] = "ha",
-        ['I'] = "ick",
-        ['J'] = "jaagh",
-        ['K'] = "kaart",
-        ['L'] = "laa",
-        ['M'] = "maaig",
-        ['N'] = "na",
-        ['O'] = "O",
-        ['P'] = "paa",
-        ['Q'] = "quaagh",
-        ['R'] = "raa",
-        ['S'] = "saagh",
-        ['T'] = "taagh",
-        ['U'] = "udlan",
-        ['V'] = "vaidjin",
-        ['W'] = "wagaan",
-        ['Y'] = "y",
-    };
+    /// <summary>The letters of Cregeen's printed index: no X or Z, which head no
+    /// words of the book's, and no ç, which files under c (see
+    /// <see cref="DictionaryBrowse.CollationKey"/>). The legacy page's letter
+    /// bar, and what makes a one-character query a letter page, not a search.</summary>
+    public static readonly IReadOnlyList<char> Letters =
+    [
+        'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
+        'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'Y',
+    ];
 
     public string Identifier => "Cregeen";
     public string Slug => "cregeen";
@@ -104,7 +85,7 @@ public class CregeenDictionaryService(ISet<string> allWords, IList<CregeenEntry>
     {
         return !string.IsNullOrWhiteSpace(query) // invalid if whitespace
                && (query.Length > 1 // valid if longer than 1 char
-                   || LetterLookup.ContainsKey(query[0]) // valid if 1 char and in the lookup
+                   || Letters.Contains(char.ToUpperInvariant(query[0])) // valid if 1 char and a letter of the index
                );
     }
 
@@ -136,6 +117,15 @@ public class CregeenDictionaryService(ISet<string> allWords, IList<CregeenEntry>
         }
     }
 
+    /// <summary>One letter of the legacy browse page: the top-level entries
+    /// whose headword files under it (<see cref="DictionaryBrowse.LetterOf"/>),
+    /// in the book's order. Filed by each word's own letter rather than sliced
+    /// between landmark entries, so a letter keeps its page when the data
+    /// respells the entry that used to open it.</summary>
+    public static IEnumerable<CregeenEntry> EntriesUnder(char letter, IEnumerable<CregeenEntry> entries) =>
+        entries.Where(x =>
+            DictionaryBrowse.LetterOf(x.Words.FirstOrDefault() ?? "") == char.ToLowerInvariant(letter));
+
     /// <summary>Whether the dictionary contains the provided word (no fuzziness)</summary>
     public bool ContainsWordExact(string s)
     {
@@ -150,9 +140,10 @@ public class CregeenDictionaryService(ISet<string> allWords, IList<CregeenEntry>
     public IEnumerable<string> AllWords => allWords;
 
     /// <summary>The printed headwords, top-level entries only and in the file's
-    /// order, which is Cregeen's own: <see cref="LetterLookup"/>'s sentinels only
-    /// work because of it. Built once: GetSummaries re-flattens the tree per call
-    /// (see the PERF note below), and the index must not pay that.</summary>
+    /// order, which is Cregeen's own: the browse keeps the book's order (see
+    /// <see cref="DictionaryBrowse.Chapters"/>). Built once: GetSummaries
+    /// re-flattens the tree per call (see the PERF note below), and the index
+    /// must not pay that.</summary>
     public IReadOnlyList<string> Headwords { get; } =
         entries.Select(x => x.Words.FirstOrDefault()).OfType<string>().ToList();
 
@@ -243,11 +234,5 @@ public class CregeenDictionaryService(ISet<string> allWords, IList<CregeenEntry>
         var match = System.Text.RegularExpressions.Regex.Match(
             entryHtml ?? "", @"^\s*<i>\s*([^<]{1,30}?)\s*</i>");
         return match.Success ? match.Groups[1].Value : null;
-    }
-
-    private class CaseInsensitiveCharComparer : IEqualityComparer<char>
-    {
-        public bool Equals(char x, char y) => char.ToUpperInvariant(x) == char.ToUpperInvariant(y);
-        public int GetHashCode(char c) => char.ToUpperInvariant(c).GetHashCode();
     }
 }

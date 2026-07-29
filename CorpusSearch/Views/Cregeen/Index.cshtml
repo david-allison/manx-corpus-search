@@ -54,7 +54,7 @@
     </script>
 
     <div class="dict-letters">
-        @foreach (var k in CregeenDictionaryService.LetterLookup.Keys.Where(x => x != ' '))
+        @foreach (var k in CregeenDictionaryService.Letters)
         {
             <a href="/Dictionary/Cregeen/@k" class="@(k == activeLetter ? "active" : null)">@k</a>
         }
@@ -79,19 +79,12 @@
         }
 
         var entries = CregeenDictionaryService.GetEntries();
-        var dict = CregeenDictionaryService.LetterLookup;
 
         IEnumerable<CregeenEntry> search;
         int entryCount = 0;
         if (isLetterBrowse)
         {
-            var start = activeLetter;
-            var end = (char)(start + 1);
-
-            if (end == 'X') { end = 'Y'; }
-            if (!dict.ContainsKey(end)) { end = ' '; }
-
-            search = entries.SkipWhile(x => x.Words.First() != dict[start]).TakeWhile(x => x.Words.First() != dict[end]);
+            search = CregeenDictionaryService.EntriesUnder(activeLetter, entries);
         }
         else
         {
