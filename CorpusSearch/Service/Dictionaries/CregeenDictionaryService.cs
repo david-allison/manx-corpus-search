@@ -277,11 +277,14 @@ public class CregeenDictionaryService(ISet<string> allWords, IList<CregeenEntry>
     /// <summary>Cregeen's printed grammar label - the entry's leading italic
     /// run ("s. m.", "s. f.", "v."): word class and gender, absent from the
     /// basic summary text, surfaced so the client can show it beside the
-    /// headword with the expansion on hover</summary>
+    /// headword with the expansion on hover. Decoded to text as the summaries
+    /// are: the transcription's editorial marks stay - angle brackets around
+    /// the print's reading, square around the correction - and the reader
+    /// sees the brackets themselves, not "&amp;lt;" entities.</summary>
     internal static string? GrammarLabelOf(string? entryHtml)
     {
         var match = System.Text.RegularExpressions.Regex.Match(
             entryHtml ?? "", @"^\s*<i>\s*([^<]{1,30}?)\s*</i>");
-        return match.Success ? match.Groups[1].Value : null;
+        return match.Success ? HttpUtility.HtmlDecode(match.Groups[1].Value) : null;
     }
 }
