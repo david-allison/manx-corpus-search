@@ -144,7 +144,14 @@ public class CregeenDictionaryService(ISet<string> allWords, IList<CregeenEntry>
     /// the print's own sequence; each filed under the letter the data names,
     /// or its spelling's where the data is silent. Older data files carry no
     /// identity fields, and the index falls back to the family heads the
-    /// top level holds — the pre-2026 browse.</summary>
+    /// top level holds — the pre-2026 browse.
+    ///
+    /// Lexical entries only: the book also prints each word's grammar demos
+    /// ('e chah', 'nyn gaa' after 'caa'; 'daase', "s'aalin"), marked in the
+    /// data by Particle and RadicalInitial. Nearly every consonant noun has
+    /// two or three, so an index listing them drowns the words in their own
+    /// mutations and breaks the prefix bar, which chunks on runs. They stay
+    /// searchable, and their word pages stand.</summary>
     private readonly (IReadOnlyList<PrintedHeadword> Printed, IReadOnlyList<string> Words) index =
         BuildIndex(entries);
 
@@ -152,7 +159,7 @@ public class CregeenDictionaryService(ISet<string> allWords, IList<CregeenEntry>
         IList<CregeenEntry> entries)
     {
         var printed = entries.SelectMany(x => x.ChildrenRecursive)
-            .Where(x => x.Headword != null)
+            .Where(x => x.Headword != null && x.Particle == null && x.RadicalInitial == null)
             .Select(x => new PrintedHeadword(
                 x.Headword!,
                 x.Letter is { Length: > 0 } letter
@@ -165,8 +172,9 @@ public class CregeenDictionaryService(ISet<string> allWords, IList<CregeenEntry>
         return (printed, words);
     }
 
-    /// <summary>Every printed entry in the book's order, with the letter the
-    /// book files it under: 'e hardjyn' in A beside ardjyn, as printed</summary>
+    /// <summary>The book's lexical entries in the book's order, with the
+    /// letter each files under: 'aa-aase' in A beside 'aa-', where the
+    /// book prints it</summary>
     public IReadOnlyList<PrintedHeadword> PrintedHeadwords => index.Printed;
 
     /// <summary>The printed headwords, in the book's order (see
