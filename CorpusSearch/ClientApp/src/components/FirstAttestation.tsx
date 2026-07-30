@@ -185,12 +185,16 @@ const EarlierShared = ({ claim }: { claim: AttestationClaim }) => (
 export const FirstAttestation = ({
     history,
     classes = [],
+    senseGlosses,
     sureClaim,
 }: {
     history: DictionaryHistoryResponse | null
     /** the word classes the entries declare: more than one and the date below
      * belongs to whichever of them came first */
     classes?: string[]
+    /** the inventory's named readings, when it has them: "an egg / an udder"
+     * says more than "noun, noun", so the warning prefers the glosses */
+    senseGlosses?: string[]
     /** the walk's oldest settled evidence (attestations.earliestSure): a year
      * the resolver stands behind. The history's own claim rests on counting
      * spellings, which cannot settle one — so when the walk's word is earlier
@@ -304,11 +308,11 @@ export const FirstAttestation = ({
                     >
                         !
                     </span>
-                    {`“${history.word}” covers more than one sense (${classes
-                        .map((x) => x.toLowerCase())
-                        .join(
-                            ", ",
-                        )}): this date is the earliest of any of them.`}
+                    {`“${history.word}” covers more than one sense (${
+                        senseGlosses && senseGlosses.length > 1
+                            ? senseGlosses.join(" / ")
+                            : classes.map((x) => x.toLowerCase()).join(", ")
+                    }): this date is the earliest of any of them.`}
                 </p>
             )}
             {history.truncatedForms > 0 && (

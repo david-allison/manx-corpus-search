@@ -307,10 +307,13 @@ export const AttestationWalker = ({
     word,
     history,
     classes,
+    senseGlosses,
 }: {
     word: string
     history: DictionaryHistoryResponse | null
     classes: string[]
+    /** the inventory's named readings, for the multi-sense warning */
+    senseGlosses?: string[]
 }) => {
     const { pathname } = useLocation()
     const [params] = useSearchParams()
@@ -569,6 +572,7 @@ export const AttestationWalker = ({
             <FirstAttestation
                 history={history}
                 classes={classes}
+                senseGlosses={senseGlosses}
                 // the walk's settled year rides down only once the walk on
                 // screen is this word's: the last word's evidence, still
                 // holding the section's shape, must not caption this one
