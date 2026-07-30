@@ -104,19 +104,19 @@
 }
 
 /* sub-entries shown: one family a line, the head at the margin and its own
-   words running on after it, quieter — the book's paragraph, condensed */
+   words running on after it — the head bold, as the book sets it, so the
+   hierarchy reads from weight and grey stays the mark of the unattested */
 .dict-browse-family-line {
     display: block;
 }
 
-.dict-browse-family {
-    font-size: 0.85em;
-    color: var(--c-muted);
-    margin-left: 12px;
+.dict-browse-family-line > a {
+    font-weight: bold;
 }
 
-.dict-browse-family a {
-    color: inherit;
+.dict-browse-family {
+    font-size: 0.85em;
+    margin-left: 12px;
 }
 
 /* the toggles sit together, asides on the listing */
