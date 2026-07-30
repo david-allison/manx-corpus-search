@@ -53,6 +53,35 @@ public class DictionaryPage
     /// definition or a word class, so it is shown as a citation rather than as an
     /// entry a reader might mistake for a book's own reading.</summary>
     public List<WordListCitation> WordLists { get; set; } = [];
+
+    /// <summary>The word's named readings, one block per lemma id the word
+    /// resolves to whose sense inventory names any: what the popup picks among
+    /// in context, shown here so the reader sees the fork itself (ooh: an egg /
+    /// an udder). Empty for the many words with one implicit sense.</summary>
+    public List<DictionaryPageSenses> Senses { get; set; } = [];
+}
+
+/// <summary>One lemma id's named readings</summary>
+public class DictionaryPageSenses
+{
+    public required string LemmaId { get; set; }
+    /// <summary>The lemma as the reader knows it ("foddey")</summary>
+    public required string Lemma { get; set; }
+    /// <summary>The dictionary slug whose senses these are ("cregeen"):
+    /// the inventory is per book, and the strip credits its source the way
+    /// every entry on the page does</summary>
+    public required string Dictionary { get; set; }
+    public required List<DictionaryPageSense> Readings { get; set; }
+}
+
+/// <summary>One reading: the book's own gloss for it</summary>
+public class DictionaryPageSense
+{
+    public required string SenseId { get; set; }
+    public required string Gloss { get; set; }
+    /// <summary>The printed headword the gloss belongs to, for the reader who
+    /// wants the entry ("dy cheilley" under cheilley)</summary>
+    public required string Headword { get; set; }
 }
 
 public class DictionaryPageGroup
