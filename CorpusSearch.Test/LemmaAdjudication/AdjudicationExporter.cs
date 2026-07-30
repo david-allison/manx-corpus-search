@@ -90,22 +90,49 @@ public class AdjudicationExporter
             }
             var ids = table.CandidatesFor(form);
             var groupByKey = new Dictionary<string, string>();
-            var displayAlias = new Dictionary<string, string>();
             var labels = new List<string>();
-            var candidates = ids.Select(id =>
+            // one union-find over the form's candidates, with two edge
+            // sources: equivalence same-verdicts and shared display
+            // headwords. The old display-alias map REPLACED an id's
+            // equivalence root instead of merging with it, so a chain like
+            // cheet.n ~display~ cheet.v ~same~ er-jeet.x broke apart and a
+            // settled pair was adjudicated again.
+            var local = new Dictionary<string, string>();
+            string Find(string x)
             {
-                var lemma = displayById.GetValueOrDefault(id, id);
-                var rootKey = equivalenceRoot(id);
-                var displayKey = AdjudicationCommon.DisplayKey(lemma);
-                // same display headword => same lexeme group, regardless of ids
-                if (displayAlias.TryGetValue(displayKey, out var aliased))
+                while (local.TryGetValue(x, out var p) && p != x)
                 {
-                    rootKey = aliased;
+                    x = p;
+                }
+                return x;
+            }
+            void Union(string a, string b)
+            {
+                var (ra, rb) = (Find(a), Find(b));
+                if (ra != rb)
+                {
+                    local[ra] = rb;
+                }
+            }
+            var byDisplay = new Dictionary<string, string>();
+            foreach (var id in ids)
+            {
+                var root = equivalenceRoot(id);
+                Union(id, root);
+                var displayKey = AdjudicationCommon.DisplayKey(displayById.GetValueOrDefault(id, id));
+                if (byDisplay.TryGetValue(displayKey, out var first))
+                {
+                    Union(root, first);
                 }
                 else
                 {
-                    displayAlias[displayKey] = rootKey;
+                    byDisplay[displayKey] = root;
                 }
+            }
+            var candidates = ids.Select(id =>
+            {
+                var lemma = displayById.GetValueOrDefault(id, id);
+                var rootKey = Find(id);
                 if (!groupByKey.TryGetValue(rootKey, out var label))
                 {
                     label = $"g{groupByKey.Count + 1}";
