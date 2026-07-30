@@ -394,6 +394,23 @@ public class DictionaryLookupService(IEnumerable<ISearchDictionary> dictionarySe
                     Entries = g.ToList(),
                 })
                 .ToList(),
+            Senses = lemmaTable.CandidatesFor(word)
+                .Select(id => (Id: id, Readings: senseInventory.SensesOf(id)))
+                .Where(x => x.Readings.Count > 0)
+                .Select(x => new DictionaryPageSenses
+                {
+                    LemmaId = x.Id,
+                    Lemma = lemmaTable.DisplayLemmaOf(x.Id) ?? x.Id,
+                    Dictionary = x.Readings[0].Dictionary,
+                    Readings = x.Readings.Select(s => new DictionaryPageSense
+                    {
+                        SenseId = s.SenseId,
+                        Gloss = s.Gloss,
+                        Headword = s.EntryPath.Split(':') is { Length: 2 } path
+                            ? path[1] : s.EntryPath,
+                    }).ToList(),
+                })
+                .ToList(),
         };
     }
 

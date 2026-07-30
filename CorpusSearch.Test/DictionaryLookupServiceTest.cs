@@ -23,6 +23,34 @@ public class DictionaryLookupServiceTest
         return service.Lookup("gv", selection, context).Select(x => x.PrimaryWord).ToList();
     }
 
+    /// <summary>The page names the readings the inventory has: the popup picks
+    /// among them in context, and here the reader sees the fork itself</summary>
+    [Test]
+    public void ThePageNamesTheWordsReadings()
+    {
+        var table = LemmaTable.Load(new StringReader(
+            "form\tlemmaId\tlemma\nooh\tooh.n\tooh\n"));
+        var inventory = SenseInventory.Load(new StringReader(
+            "senseId\tlemmaId\tdict\tentryPath\tgloss\n"
+            + "ooh.n#1\tooh.n\tcregeen\tcregeen:ooh\tan egg\n"
+            + "ooh.n#2\tooh.n\tcregeen\tcregeen:ooh\tan udder\n"));
+        var service = new DictionaryLookupService(
+            [new FakeDictionary(["ooh"])], table, LemmaResolver.Empty, inventory);
+
+        var page = service.Page("gv", "ooh");
+        Assert.Multiple(() =>
+        {
+            Assert.That(page.Senses, Has.Count.EqualTo(1));
+            Assert.That(page.Senses[0].Lemma, Is.EqualTo("ooh"));
+            Assert.That(page.Senses[0].Readings.Select(x => x.Gloss),
+                Is.EqualTo(new[] { "an egg", "an udder" }));
+            Assert.That(page.Senses[0].Readings[0].Headword, Is.EqualTo("ooh"));
+        });
+
+        // one implicit sense: no block, nothing for the page to say
+        Assert.That(Service("ooh").Page("gv", "ooh").Senses, Is.Empty);
+    }
+
     [Test]
     public void MatchesASingleWord()
     {
