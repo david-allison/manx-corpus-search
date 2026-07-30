@@ -241,6 +241,29 @@ h4.dict-page-dictionary {
     border-radius: 6px;
 }
 
+/* a named reading: the book's own gloss as a numbered heading under the
+   headword-and-class line, its entries a step further in - the
+   dictionary.com shape. The whole body, ancestry included, sits inside the
+   headword's margin: it all belongs to the line above. */
+.dict-page-reading-body {
+    margin-left: 20px;
+}
+
+.dict-page-reading {
+    margin: 8px 0 10px;
+}
+
+.dict-page-reading-heading {
+    margin: 0 0 4px;
+    font-size: 15px;
+    font-weight: 600;
+    color: #333;
+}
+
+.dict-page-reading .dict-page-entry {
+    margin-left: 18px;
+}
+
 /* near-spelling suggestions: tinted apart from real entries, as in the popup */
 .dict-page-suggestions {
     background: #fff8e1;

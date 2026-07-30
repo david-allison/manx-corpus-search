@@ -210,6 +210,151 @@ export const senseGroupsIn = (page: DictionaryPageResponse): SenseGroup[] => {
     })
 }
 
+/** Words that carry no sense of their own when matching an entry's text to a
+ * reading's gloss: articles, copulas and the books' formula words */
+const MATCH_STOP = new Set([
+    "a",
+    "an",
+    "the",
+    "of",
+    "to",
+    "or",
+    "and",
+    "in",
+    "on",
+    "at",
+    "by",
+    "for",
+    "with",
+    "is",
+    "it",
+    "its",
+    "as",
+    "be",
+    "not",
+    "s",
+    "v",
+    "pl",
+    "&c",
+    "c",
+])
+
+const contentWords = (text: string): Set<string> =>
+    new Set(
+        text
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, " ")
+            .split(" ")
+            .filter((w) => w.length > 0 && !MATCH_STOP.has(w)),
+    )
+
+/** The printed class a lemma id's suffix declares: ooh.n is the noun. The
+ * closed-class x carries no label a reader is owed. */
+const LABEL_OF_ID: Record<string, string> = { n: "n.", v: "v.", a: "a." }
+
+/** One lemma id's readings, headed the dictionary.com way: the headword and
+ * its class, then the numbered senses, each gathering the entries of every
+ * book beneath the reading it defines */
+export type ReadingBlock = {
+    lemmaId: string
+    /** the headword of the block ("foddey" on voddey's page) */
+    lemma: string
+    /** the class the id declares, abbreviated ("n."); null for the closed
+     * classes, whose id suffix names no reader-facing label */
+    label: string | null
+    readings: {
+        key: string
+        /** numbered within the block ("1. an egg;") */
+        heading: string
+        entries: Summary[]
+        /** matched more than one reading equally: shown under each, marked */
+        unplaced: Summary[]
+    }[]
+}
+
+/** The word's own entries, split by the sense inventory's named readings —
+ * the dictionary.com shape: headword and class, then each reading a numbered
+ * heading with every book's entries gathered beneath the one it defines.
+ *
+ * The assignment is textual and admits it: an entry goes to the reading
+ * sharing most content words with its text; a tie (Phil Kelly's "egg; ...
+ * udder" line) puts it under each tied reading with the unplaced mark; an
+ * entry matching no reading falls to the class-grouped tail, exactly the
+ * sections the page had before the inventory. A reading no entry matched
+ * still shows: the gloss is the book's own definition, not a mere caption.
+ * Null where the inventory has nothing to say, so the caller falls back to
+ * senseGroupsIn. */
+export const readingGroupsIn = (
+    page: DictionaryPageResponse,
+): { blocks: ReadingBlock[]; tail: SenseGroup[] } | null => {
+    const senseBlocks = page.senses ?? []
+    if (senseBlocks.length === 0) {
+        return null
+    }
+    const own = tiersOf(page.groups.flatMap((g) => g.entries)).own
+    if (own.length === 0) {
+        return null
+    }
+
+    const blocks = senseBlocks.map((block) => ({
+        lemmaId: block.lemmaId,
+        lemma: block.lemma,
+        label: LABEL_OF_ID[block.lemmaId.split(".").pop() ?? ""] ?? null,
+        readings: block.readings.map((reading, index) => ({
+            key: reading.senseId,
+            heading: `${index + 1}. ${reading.gloss}`,
+            words: contentWords(reading.gloss),
+            entries: [] as Summary[],
+            unplaced: [] as Summary[],
+        })),
+    }))
+    const readings = blocks.flatMap((block) => block.readings)
+
+    const unmatched: Summary[] = []
+    for (const entry of own) {
+        const words = contentWords(entry.summary)
+        const overlaps = readings.map(
+            (reading) => [...reading.words].filter((w) => words.has(w)).length,
+        )
+        const best = Math.max(...overlaps)
+        if (best === 0) {
+            unmatched.push(entry)
+            continue
+        }
+        const winners = readings.filter((_, i) => overlaps[i] === best)
+        for (const reading of winners) {
+            reading.entries.push(entry)
+            if (winners.length > 1) {
+                reading.unplaced.push(entry)
+            }
+        }
+    }
+
+    // whatever no reading claimed keeps the page it had: the class-grouped
+    // sections, after the named readings
+    const tail =
+        unmatched.length > 0
+            ? senseGroupsIn({
+                  ...page,
+                  groups: [{ dictionary: "", entries: unmatched }],
+              })
+            : []
+    return {
+        blocks: blocks.map((block) => ({
+            ...block,
+            readings: block.readings.map(
+                ({ key, heading, entries, unplaced }) => ({
+                    key,
+                    heading,
+                    entries,
+                    unplaced,
+                }),
+            ),
+        })),
+        tail,
+    }
+}
+
 /** The roots each sense's entries derive through, threaded by `throughLemma`:
  * the moddey hop belongs under the dog sense, foddey's under "not long".
  * A root no sense claims stays page-level — where the thread is missing, the
