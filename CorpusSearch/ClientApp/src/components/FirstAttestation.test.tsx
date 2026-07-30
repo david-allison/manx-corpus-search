@@ -326,6 +326,23 @@ describe("FirstAttestation", () => {
         expect(warning.textContent).toMatch(/earliest of any of them/)
     })
 
+    it("prefers the inventory's glosses over the class list", () => {
+        // "an egg / an udder" says more than "noun, noun"
+        render(
+            <MemoryRouter>
+                <FirstAttestation
+                    history={{ ...billeyHistory, word: "ooh" }}
+                    classes={["Noun", "Verb"]}
+                    senseGlosses={["an egg", "an udder"]}
+                />
+            </MemoryRouter>,
+        )
+
+        const warning = screen.getByText(/covers more than one sense/)
+        expect(warning.textContent).toContain("an egg / an udder")
+        expect(warning.textContent).not.toContain("noun, verb")
+    })
+
     it("says nothing when the entries agree on one class", () => {
         renderBand(billeyHistory, ["Noun"])
 
