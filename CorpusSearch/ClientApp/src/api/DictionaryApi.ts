@@ -139,6 +139,24 @@ export type DictionaryPageResponse = {
      * Optional because a server from before word lists existed answers without
      * it, and the page has to survive the minutes of a deploy */
     wordLists?: WordListCitation[]
+    /** the word's named readings, one block per lemma the word resolves to
+     * whose sense inventory names any (ooh: an egg / an udder). Empty for the
+     * many words with one implicit sense; optional to survive a deploy from
+     * before the inventory existed */
+    senses?: {
+        lemmaId: string
+        /** the lemma as the reader knows it ("foddey") */
+        lemma: string
+        /** the dictionary slug whose senses these are ("cregeen") */
+        dictionary: string
+        readings: {
+            senseId: string
+            /** the book's own gloss for the reading */
+            gloss: string
+            /** the printed headword the gloss belongs to */
+            headword: string
+        }[]
+    }[]
 }
 
 /** What one printed word list prints against a word */

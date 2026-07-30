@@ -14,6 +14,7 @@ import {
     dictionaryIndexUrl,
     dictionaryWordUrl,
     headingFor,
+    readingGroupsIn,
     rootsBySense,
     senseGroupsIn,
     tiersOf,
@@ -291,8 +292,17 @@ export const Dictionary = () => {
 
     const rootEntries = tiers?.roots ?? []
 
-    const senses =
-        page != null && !page.isSuggestionTier ? senseGroupsIn(page) : []
+    /* the inventory's named readings outrank the class split where they
+       exist: "ooh n. — 1. an egg / 2. an udder" is the fork itself, and each
+       book's entry files under the reading it defines. What no reading
+       claims keeps the class-grouped page it had, as the tail. */
+    const readingBlocks =
+        page != null && !page.isSuggestionTier ? readingGroupsIn(page) : null
+    const senses = readingBlocks
+        ? readingBlocks.tail
+        : page != null && !page.isSuggestionTier
+          ? senseGroupsIn(page)
+          : []
 
     /** entries for a piece of the word, where nothing answered for the whole:
      * they define the part, and are shown saying so */
@@ -309,14 +319,26 @@ export const Dictionary = () => {
         !!page.wordLists?.length
 
     /** the roots split among the senses they belong to, the unthreadable left
-     * in a page-level basket */
-    const sensedRoots = rootsBySense(senses, rootEntries)
+     * in a page-level basket. A reading block claims through its own lemma,
+     * so foddey's ancestry sits under foddey's readings. */
+    const sensedRoots = rootsBySense(
+        [
+            ...(readingBlocks?.blocks ?? []).map((block) => ({
+                key: block.lemmaId,
+                labels: [],
+                entries: [],
+                lemmas: [block.lemma],
+            })),
+            ...senses,
+        ],
+        rootEntries,
+    )
 
     /* The only sense of a word has nothing to tell apart, so it needs no heading
        of its own: its label rides on the title, and the word is not said twice
        over. Several senses each earn the word again, under a label that says
        which of them you are reading. */
-    const singleSense = senses.length === 1
+    const singleSense = readingBlocks == null && senses.length === 1
 
     /** Whether any text actually uses the word, as the history's own scan found
      * it: the evidence, rather than the browse page's guess at it */
@@ -357,7 +379,7 @@ export const Dictionary = () => {
                 {/* the class is the entries', so it waits for them: the title is
                     already this word, and "CREEAGH n." on cree's authority is a
                     claim about a word that has not arrived */}
-                {!stale && singleSense && (
+                {!stale && singleSense && senses[0].labels.length > 0 && (
                     <SenseLabel labels={senses[0].labels} />
                 )}
             </h1>
@@ -540,6 +562,78 @@ export const Dictionary = () => {
                     />
                 )}
 
+                {/* the inventory's blocks lead: the headword and its class,
+                then the numbered readings, each with every book's entries
+                for that reading beneath it - dictionary.com's shape */}
+                {page != null &&
+                    readingBlocks?.blocks.map((block) => (
+                        <section
+                            className="dict-page-group"
+                            key={block.lemmaId}
+                        >
+                            <h3 className="dict-page-sense">
+                                <span className="dict-page-sense-word">
+                                    {block.lemma}
+                                </span>
+                                {block.label && (
+                                    <SenseLabel labels={[block.label]} />
+                                )}
+                            </h3>
+                            {/* everything of the block's sits inside the
+                            headword's margin: the readings, their entries
+                            and the ancestry all belong to the line above */}
+                            <div className="dict-page-reading-body">
+                                {block.readings.map((reading) => (
+                                    <div
+                                        className="dict-page-reading"
+                                        key={reading.key}
+                                    >
+                                        <h4 className="dict-page-reading-heading">
+                                            {reading.heading}
+                                        </h4>
+                                        {reading.entries.map(
+                                            (summary, index) => (
+                                                <Entry
+                                                    word={page.word}
+                                                    summary={summary}
+                                                    credit
+                                                    unplaced={reading.unplaced.includes(
+                                                        summary,
+                                                    )}
+                                                    onCitationClick={
+                                                        setCitationKey
+                                                    }
+                                                    key={index}
+                                                />
+                                            ),
+                                        )}
+                                    </div>
+                                ))}
+                                {(sensedRoots.bySense.get(block.lemmaId) ?? [])
+                                    .length > 0 && (
+                                    <>
+                                        <h4 className="dict-page-dictionary">
+                                            Built from
+                                        </h4>
+                                        {sensedRoots.bySense
+                                            .get(block.lemmaId)!
+                                            .map((summary, index) => (
+                                                <Entry
+                                                    word={page.word}
+                                                    summary={summary}
+                                                    credit
+                                                    onCitationClick={
+                                                        setCitationKey
+                                                    }
+                                                    key={index}
+                                                />
+                                            ))}
+                                    </>
+                                )}
+                            </div>
+                        </section>
+                    ))}
+
                 {page != null &&
                     !page.isSuggestionTier &&
                     senses.map((sense) => (
@@ -551,46 +645,65 @@ export const Dictionary = () => {
                             {!singleSense && sense.labels.length > 0 && (
                                 <h3 className="dict-page-sense">
                                     <span className="dict-page-sense-word">
-                                        {page.word}
+                                        {/* the sense belongs to its lexeme:
+                                        when every entry threads through one
+                                        lemma, the heading names it (moddey
+                                        over the mutated voddey), as the
+                                        reading blocks name theirs */}
+                                        {sense.lemmas.length === 1
+                                            ? sense.lemmas[0]
+                                            : page.word}
                                     </span>
                                     <SenseLabel labels={sense.labels} />
                                 </h3>
                             )}
-                            {sense.entries.map((summary, index) => (
-                                <Entry
-                                    word={page.word}
-                                    summary={summary}
-                                    credit
-                                    unplaced={
-                                        senses.length > 1 &&
-                                        !summary.partsOfSpeech?.length
-                                    }
-                                    onCitationClick={setCitationKey}
-                                    key={index}
-                                />
-                            ))}
-                            {/* each reading owns the roots it is built from: the
-                            dog sense says moddey, "not long" says foddey, and
-                            neither answers for the other's ancestry */}
-                            {(sensedRoots.bySense.get(sense.key) ?? []).length >
-                                0 && (
-                                <>
-                                    <h4 className="dict-page-dictionary">
-                                        Built from
-                                    </h4>
-                                    {sensedRoots.bySense
-                                        .get(sense.key)!
-                                        .map((summary, index) => (
-                                            <Entry
-                                                word={page.word}
-                                                summary={summary}
-                                                credit
-                                                onCitationClick={setCitationKey}
-                                                key={index}
-                                            />
-                                        ))}
-                                </>
-                            )}
+                            {/* under a heading, the section's body sits in
+                            its margin, as the reading blocks' do */}
+                            <div
+                                className={
+                                    !singleSense && sense.labels.length > 0
+                                        ? "dict-page-reading-body"
+                                        : undefined
+                                }
+                            >
+                                {sense.entries.map((summary, index) => (
+                                    <Entry
+                                        word={page.word}
+                                        summary={summary}
+                                        credit
+                                        unplaced={
+                                            senses.length > 1 &&
+                                            !summary.partsOfSpeech?.length
+                                        }
+                                        onCitationClick={setCitationKey}
+                                        key={index}
+                                    />
+                                ))}
+                                {/* each reading owns the roots it is built from:
+                                the dog sense says moddey, "not long" says foddey,
+                                and neither answers for the other's ancestry */}
+                                {(sensedRoots.bySense.get(sense.key) ?? [])
+                                    .length > 0 && (
+                                    <>
+                                        <h4 className="dict-page-dictionary">
+                                            Built from
+                                        </h4>
+                                        {sensedRoots.bySense
+                                            .get(sense.key)!
+                                            .map((summary, index) => (
+                                                <Entry
+                                                    word={page.word}
+                                                    summary={summary}
+                                                    credit
+                                                    onCitationClick={
+                                                        setCitationKey
+                                                    }
+                                                    key={index}
+                                                />
+                                            ))}
+                                    </>
+                                )}
+                            </div>
                         </section>
                     ))}
 
@@ -649,6 +762,9 @@ export const Dictionary = () => {
                         word={word}
                         history={history}
                         classes={declaredClassesIn(page)}
+                        senseGlosses={page.senses?.flatMap((block) =>
+                            block.readings.map((reading) => reading.gloss),
+                        )}
                     />
                 )}
 

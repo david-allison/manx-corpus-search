@@ -144,6 +144,154 @@ describe("Dictionary page", () => {
         expect(document.querySelectorAll(".dict-page-credit")).toHaveLength(2)
     })
 
+    it("splits the entries under the inventory's numbered readings", async () => {
+        respondWith({
+            word: "ooh",
+            isSuggestionTier: false,
+            attested: true,
+            groups: [
+                {
+                    dictionary: "Cregeen",
+                    entries: [
+                        {
+                            primaryWord: "ooh",
+                            summary: "an egg;",
+                            dictionaryName: "Cregeen",
+                            rootDepth: 0,
+                            partsOfSpeech: ["Noun"],
+                        },
+                        {
+                            primaryWord: "ooh",
+                            summary: "an udder",
+                            dictionaryName: "Cregeen",
+                            rootDepth: 0,
+                            partsOfSpeech: ["Noun"],
+                        },
+                    ],
+                },
+                {
+                    dictionary: "Phil Kelly Manx to English",
+                    entries: [
+                        {
+                            primaryWord: "ooh",
+                            summary: "egg; nest egg; ovum; dug; udder",
+                            dictionaryName: "Phil Kelly Manx to English",
+                            rootDepth: 0,
+                        },
+                    ],
+                },
+            ],
+            senses: [
+                {
+                    lemmaId: "ooh.n",
+                    lemma: "ooh",
+                    dictionary: "cregeen",
+                    readings: [
+                        {
+                            senseId: "ooh.n#1",
+                            gloss: "an egg;",
+                            headword: "ooh",
+                        },
+                        {
+                            senseId: "ooh.n#2",
+                            gloss: "an udder",
+                            headword: "ooh",
+                        },
+                    ],
+                },
+            ],
+        })
+        renderAt("/dictionary/ooh")
+
+        // dictionary.com-fashion: headword and class, then each reading a
+        // numbered heading with the books' entries beneath the one it defines
+        expect(await screen.findByText("1. an egg;")).toBeTruthy()
+        const block = document.querySelector(".dict-page-group")
+        expect(block?.querySelector(".dict-page-sense-word")?.textContent).toBe(
+            "ooh",
+        )
+        const headings = [
+            ...document.querySelectorAll(".dict-page-reading-heading"),
+        ]
+        expect(headings.map((h) => h.textContent)).toEqual([
+            "1. an egg;",
+            "2. an udder",
+        ])
+        // Phil Kelly's line answers both readings: under each, marked as
+        // possibly belonging to the other
+        expect(
+            document.querySelectorAll(".dict-page-entry-unplaced"),
+        ).toHaveLength(2)
+    })
+
+    it("drops unmatched entries to the class-grouped tail", async () => {
+        respondWith({
+            word: "voddey",
+            isSuggestionTier: false,
+            attested: true,
+            groups: [
+                {
+                    dictionary: "Cregeen",
+                    entries: [
+                        {
+                            primaryWord: "cha voddey",
+                            summary: "not long, not far",
+                            dictionaryName: "Cregeen",
+                            rootDepth: 0,
+                            partsOfSpeech: ["Adjective"],
+                            throughLemma: "foddey",
+                        },
+                        {
+                            primaryWord: "yn voddey",
+                            summary: "the dog.",
+                            dictionaryName: "Cregeen",
+                            rootDepth: 0,
+                            partsOfSpeech: ["Noun"],
+                            throughLemma: "moddey",
+                        },
+                    ],
+                },
+            ],
+            senses: [
+                {
+                    lemmaId: "foddey.a",
+                    lemma: "foddey",
+                    dictionary: "cregeen",
+                    readings: [
+                        {
+                            senseId: "foddey.a#1",
+                            gloss: "far, at a great distance",
+                            headword: "foddey",
+                        },
+                        {
+                            senseId: "foddey.a#2",
+                            gloss: "long, of time",
+                            headword: "foddey",
+                        },
+                    ],
+                },
+            ],
+        })
+        renderAt("/dictionary/voddey")
+
+        // "not long, not far" answers both foddey readings; the dog matches
+        // neither and keeps the page it had, after the named readings -
+        // headed by its own lexeme, not the mutated spelling
+        expect(await screen.findByText(/the dog/)).toBeTruthy()
+        expect(
+            [...document.querySelectorAll(".dict-page-sense-word")].map(
+                (x) => x.textContent,
+            ),
+        ).toEqual(["foddey", "moddey"])
+        const headings = [
+            ...document.querySelectorAll(".dict-page-reading-heading"),
+        ].map((h) => h.textContent)
+        expect(headings).toEqual([
+            "1. far, at a great distance",
+            "2. long, of time",
+        ])
+    })
+
     /** One word of one book, with the picker's answer as the caller likes it */
     const caag = (answering: string[]): PageFixture => ({
         word: "caag",
