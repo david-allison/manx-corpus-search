@@ -28,13 +28,23 @@ public static class AdjudicationCommon
         return LemmaTable.NormalizeForm(lemma).Replace(" ", "");
     }
 
-    /// <summary>lemma id -> display lemma, straight from the vendored table's columns</summary>
+    /// <summary>lemma id -> display lemma. The self row's, by preference: link
+    /// rows carry the spelling that reached them (ghoan names goo.n as "goan"),
+    /// and whichever the file orders first is an accident of the book</summary>
     public static Dictionary<string, string> DisplayLemmaById()
     {
         var result = new Dictionary<string, string>();
+        var bySelf = new HashSet<string>();
         foreach (var columns in TableRows())
         {
-            result.TryAdd(columns[1], columns[2]);
+            if (columns.Length > 3 && columns[3] == "self" && bySelf.Add(columns[1]))
+            {
+                result[columns[1]] = columns[2];
+            }
+            else
+            {
+                result.TryAdd(columns[1], columns[2]);
+            }
         }
         return result;
     }

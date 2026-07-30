@@ -366,4 +366,26 @@ public class LemmaTableTest
         Assert.That(table.CandidatesFor("doolish"), Is.EqualTo(new[] { "doolish.np" }));
         Assert.That(table.CandidatesFor("veg"), Is.EqualTo(new[] { "veg.x" }));
     }
+
+    /// <summary>An id's display is its self row's, however the book orders the
+    /// file: the demutated row for ghoan reaches goo.n through the variant
+    /// spelling "goan" and prints before goo's own entry, and first-row-wins
+    /// once showed kione.n as "king" this way.</summary>
+    [Test]
+    public void DisplayLemmaComesFromTheSelfRow()
+    {
+        var table = Table(
+            "ghoan\tgoo.n\tgoan\tdemutated\ts. m.\tghoan\t",
+            "goo\tgoo.n\tgoo\tself\ts. m.\tgoo\t");
+        Assert.That(table.DisplayLemmaOf("goo.n"), Is.EqualTo("goo"));
+    }
+
+    /// <summary>An id with no self row anywhere (the article yn) still displays
+    /// from whatever row names it.</summary>
+    [Test]
+    public void DisplayLemmaFallsBackWithoutASelfRow()
+    {
+        var table = Table("yn\tyn.x\tyn\tirregular\t\t\tclosed-class");
+        Assert.That(table.DisplayLemmaOf("yn.x"), Is.EqualTo("yn"));
+    }
 }

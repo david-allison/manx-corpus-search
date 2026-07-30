@@ -371,6 +371,7 @@ public class LemmaTable
         var rootListsByForm = new Dictionary<string, List<string>>();
         var lemmaIds = new HashSet<string>();
         var displayLemmaById = new Dictionary<string, string>();
+        var selfDisplayById = new Dictionary<string, string>();
         var nameTypeById = new Dictionary<string, string>();
         var phillipsViaLists = new Dictionary<string, List<string>>();
         // (form, displayLemma) links seen by rule, and those the print attests:
@@ -391,7 +392,22 @@ public class LemmaTable
                 }
                 var (form, lemmaId, displayLemma) = (columns[0], columns[1], columns[2]);
                 lemmaIds.Add(lemmaId);
-                displayLemmaById.TryAdd(lemmaId, displayLemma);
+                // an id's display is its self row's: link rows carry the spelling
+                // that reached them (ghoan names goo.n as "goan", hrog names
+                // trog), and whichever the file orders first is an accident of
+                // the book — kione.n once displayed as "king" this way
+                if (columns.Length > 3 && columns[3] == "self")
+                {
+                    if (!selfDisplayById.ContainsKey(lemmaId))
+                    {
+                        selfDisplayById[lemmaId] = displayLemma;
+                        displayLemmaById[lemmaId] = displayLemma;
+                    }
+                }
+                else
+                {
+                    displayLemmaById.TryAdd(lemmaId, displayLemma);
+                }
                 // the names supplement's pos column: "np. personal", "np. place", ...
                 if (columns.Length > 4 && columns[4].StartsWith("np."))
                 {
