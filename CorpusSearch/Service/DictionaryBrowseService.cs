@@ -85,7 +85,10 @@ public class DictionaryBrowseService(
                 printed is { Count: > 0 }
                     ? printed.Where(x => x.Letter == letter).Select(x => x.Word)
                     : headwords.Where(x => DictionaryBrowse.LetterOf(x) == letter),
-                vocabulary.IsAttested)
+                vocabulary.IsAttested,
+                // filing chose these words, so spelling may disagree with the
+                // page ('myr-chaagh' among the caagh words): chapter by the run
+                letter: printed is { Count: > 0 } ? letter : null)
             .ToList();
         return page;
     }
