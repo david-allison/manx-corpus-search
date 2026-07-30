@@ -9,6 +9,14 @@ using NUnit.Framework;
 namespace CorpusSearch.Test.LemmaAdjudication;
 
 /// <summary>
+/// DEPRECATED - the bootstrap that minted the first inventory. The build
+/// lives in cregeen-nvh now (tools/Senses.fs, `make senses`, from c80b6f4),
+/// where the curation rides as sidecars: senses.nvh (hand rows) and
+/// sense-exclusions.nvh (content-keyed, replacing this tool's post-hoc
+/// senseId exclusion). Do not ship this tool's output; it stays only as
+/// the behavioural spec (the tests below) until one clean regeneration
+/// cycle retires it.
+///
 /// Mints the Cregeen sense inventory (DESIGN-disambiguation.md Phase 4):
 /// one row per discriminable printed sense, senseId = lemmaId#n with n in
 /// book order, entryPath = the printed headword the sense belongs to.
