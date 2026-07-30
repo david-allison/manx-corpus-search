@@ -49,6 +49,23 @@ public interface ISearchDictionary
     IReadOnlyList<string> Headwords { get; }
 }
 
+/// <summary>
+/// A dictionary whose data names the letter each printed entry files under:
+/// the browse takes the book's own filing instead of deriving it from
+/// spelling, so 'e hardjyn' sits in A beside ardjyn, as the book prints it.
+/// </summary>
+public interface IPrintedIndexDictionary
+{
+    /// <summary>Every printed entry in the book's order with its filing
+    /// letter; empty when the data predates the printed-identity fields</summary>
+    IReadOnlyList<PrintedHeadword> PrintedHeadwords { get; }
+}
+
+/// <summary>One printed entry of a book's index</summary>
+/// <param name="Word">the headword as printed, particle and all</param>
+/// <param name="Letter">the letter it files under, lower case</param>
+public sealed record PrintedHeadword(string Word, char Letter);
+
 /// <summary>When a query is made, provide a short summary of the result</summary>
 public class DictionarySummary
 {

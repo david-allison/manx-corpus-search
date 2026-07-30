@@ -12,7 +12,7 @@ using Newtonsoft.Json;
 namespace CorpusSearch.Service.Dictionaries;
 
 public class CregeenDictionaryService(ISet<string> allWords, IList<CregeenEntry> entries)
-    : ISearchDictionary, IQuotingDictionary
+    : ISearchDictionary, IQuotingDictionary, IPrintedIndexDictionary
 {
     /// <summary>The letters of Cregeen's printed index: no X or Z, which head no
     /// words of the book's, and no ç, which files under c (see
@@ -139,13 +139,41 @@ public class CregeenDictionaryService(ISet<string> allWords, IList<CregeenEntry>
 
     public IEnumerable<string> AllWords => allWords;
 
-    /// <summary>The printed headwords, top-level entries only and in the file's
-    /// order, which is Cregeen's own: the browse keeps the book's order (see
-    /// <see cref="DictionaryBrowse.Chapters"/>). Built once: GetSummaries
-    /// re-flattens the tree per call (see the PERF note below), and the index
-    /// must not pay that.</summary>
-    public IReadOnlyList<string> Headwords { get; } =
-        entries.Select(x => x.Words.FirstOrDefault()).OfType<string>().ToList();
+    /// <summary>The book's index, built once: every node carrying its printed
+    /// identity (<see cref="CregeenEntry.Headword"/>), depth-first, which is
+    /// the print's own sequence; each filed under the letter the data names,
+    /// or its spelling's where the data is silent. Older data files carry no
+    /// identity fields, and the index falls back to the family heads the
+    /// top level holds — the pre-2026 browse.</summary>
+    private readonly (IReadOnlyList<PrintedHeadword> Printed, IReadOnlyList<string> Words) index =
+        BuildIndex(entries);
+
+    private static (IReadOnlyList<PrintedHeadword>, IReadOnlyList<string>) BuildIndex(
+        IList<CregeenEntry> entries)
+    {
+        var printed = entries.SelectMany(x => x.ChildrenRecursive)
+            .Where(x => x.Headword != null)
+            .Select(x => new PrintedHeadword(
+                x.Headword!,
+                x.Letter is { Length: > 0 } letter
+                    ? char.ToLowerInvariant(letter[0])
+                    : DictionaryBrowse.LetterOf(x.Headword!)))
+            .ToList();
+        var words = printed.Count > 0
+            ? printed.Select(x => x.Word).ToList()
+            : entries.Select(x => x.Words.FirstOrDefault()).OfType<string>().ToList();
+        return (printed, words);
+    }
+
+    /// <summary>Every printed entry in the book's order, with the letter the
+    /// book files it under: 'e hardjyn' in A beside ardjyn, as printed</summary>
+    public IReadOnlyList<PrintedHeadword> PrintedHeadwords => index.Printed;
+
+    /// <summary>The printed headwords, in the book's order (see
+    /// <see cref="DictionaryBrowse.Chapters"/>): what the browse lists and
+    /// the walk steps through. Built once: GetSummaries re-flattens the tree
+    /// per call (see the PERF note below), and the index must not pay that.</summary>
+    public IReadOnlyList<string> Headwords => index.Words;
 
     /// <summary>Every entry's decoded text (never the basic gloss, which drops
     /// the quotations): the reverse verse lookup's input</summary>

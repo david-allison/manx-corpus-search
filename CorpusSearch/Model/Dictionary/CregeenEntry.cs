@@ -21,6 +21,21 @@ public class CregeenEntry
     public required string HeadingHtml { get; set; }
     public List<CregeenEntry>? Children { get; set; }
 
+    /// <summary>The printed headword this node stands for, particle and all:
+    /// the entry's identity, where <see cref="Words"/> is its search bag.
+    /// Null on data files older than the field</summary>
+    public string? Headword { get; set; }
+    /// <summary>The grammar words the book sets in italic before the bold
+    /// headword ("e hardjyn": "e")</summary>
+    public string? Particle { get; set; }
+    /// <summary>The letter section the book files the entry under, which for
+    /// a mutated head is not its spelling's ("e hardjyn" files under A,
+    /// beside ardjyn)</summary>
+    public string? Letter { get; set; }
+    /// <summary>The radical's initial, on entries whose own spelling files
+    /// away from it</summary>
+    public string? RadicalInitial { get; set; }
+
     public List<CregeenEntry> SafeChildren => Children ?? [];
 
     public List<CregeenEntry> ChildrenRecursive => new[] { this }.Concat(SafeChildren.SelectMany(x => x.ChildrenRecursive)).ToList();
