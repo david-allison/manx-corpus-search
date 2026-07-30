@@ -161,6 +161,6 @@ public class DictionaryBrowseTest
     [Test]
     public void ALetterWithNoHeadwordsHasNoChapters()
     {
-        Assert.That(DictionaryBrowse.Chapters([]), Is.Empty);
+        Assert.That(DictionaryBrowse.Chapters((string[]) []), Is.Empty);
     }
 }

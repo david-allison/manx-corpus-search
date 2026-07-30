@@ -30,7 +30,7 @@ test("the browse opens a letter in chapters, and can hide the never-said", async
     const greyed = page.locator(".dict-browse-words a.dict-unattested")
     const before = await greyed.count()
     expect(before).toBeGreaterThan(0)
-    await page.locator(".dict-browse-filter input").check()
+    await page.getByRole("checkbox", { name: "Hide unattested words" }).check()
     await expect(greyed).toHaveCount(0)
 })
 

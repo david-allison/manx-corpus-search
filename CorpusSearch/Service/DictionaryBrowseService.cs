@@ -53,10 +53,11 @@ public class DictionaryBrowseService(
         }
 
         var headwords = dictionary.Headwords;
-        // a book whose data names each entry's filing letter files by it:
-        // 'aa-aase' sits in A where the book prints it, and a family's words
-        // keep their printed run. Other dictionaries file by spelling, as before
-        var printed = (dictionary as IPrintedIndexDictionary)?.PrintedHeadwords;
+        // a book printed as families shows the book's shape: heads under the
+        // letter the book files them, members under their heads —
+        // 'anchasherick' under 'casherick', and only casherick a word of C's.
+        // Other dictionaries file every word by spelling, as before
+        var printed = (dictionary as IPrintedIndexDictionary)?.PrintedFamilies;
         var letters = printed is { Count: > 0 }
             ? printed.Select(x => x.Letter).Where(c => c != '\0').Distinct().Order().ToList()
             : DictionaryBrowse.LettersOf(headwords);
@@ -80,15 +81,17 @@ public class DictionaryBrowseService(
         var letter = asked.Length > 0 && letters.Contains(asked[0]) ? asked[0] : letters[0];
 
         page.Letter = char.ToUpperInvariant(letter).ToString();
-        page.Chapters = DictionaryBrowse
-            .Chapters(
-                printed is { Count: > 0 }
-                    ? printed.Where(x => x.Letter == letter).Select(x => x.Word)
-                    : headwords.Where(x => DictionaryBrowse.LetterOf(x) == letter),
-                vocabulary.IsAttested,
-                // filing chose these words, so spelling may disagree with the
-                // page ('myr-chaagh' among the caagh words): chapter by the run
-                letter: printed is { Count: > 0 } ? letter : null)
+        page.Chapters = (printed is { Count: > 0 }
+                ? DictionaryBrowse.Chapters(
+                    printed.Where(x => x.Letter == letter)
+                        .Select(x => (x.Word, (IReadOnlyList<string>?)x.Members)),
+                    vocabulary.IsAttested,
+                    // filing chose the heads, so a spelling may disagree with
+                    // the page: such a head chapters with the run it sits in
+                    letter: letter)
+                : DictionaryBrowse.Chapters(
+                    headwords.Where(x => DictionaryBrowse.LetterOf(x) == letter),
+                    vocabulary.IsAttested))
             .ToList();
         return page;
     }

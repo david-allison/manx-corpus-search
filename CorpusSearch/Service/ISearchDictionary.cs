@@ -50,21 +50,25 @@ public interface ISearchDictionary
 }
 
 /// <summary>
-/// A dictionary whose data names the letter each printed entry files under:
-/// the browse takes the book's own filing instead of deriving it from
-/// spelling, so 'e hardjyn' sits in A beside ardjyn, as the book prints it.
+/// A dictionary printed as families: a head entry files under a letter, and
+/// its derivatives ride with it wherever their own spelling would sort —
+/// 'anchasherick' is under 'casherick', and casherick is under C. The browse
+/// shows the book's shape: heads under their letters, members under their
+/// heads, never a member as a letter's own word.
 /// </summary>
 public interface IPrintedIndexDictionary
 {
-    /// <summary>Every printed entry in the book's order with its filing
-    /// letter; empty when the data predates the printed-identity fields</summary>
-    IReadOnlyList<PrintedHeadword> PrintedHeadwords { get; }
+    /// <summary>Every printed family in the book's order; empty when the
+    /// data predates the printed-identity fields</summary>
+    IReadOnlyList<PrintedFamily> PrintedFamilies { get; }
 }
 
-/// <summary>One printed entry of a book's index</summary>
-/// <param name="Word">the headword as printed, particle and all</param>
-/// <param name="Letter">the letter it files under, lower case</param>
-public sealed record PrintedHeadword(string Word, char Letter);
+/// <summary>One family of a book's index</summary>
+/// <param name="Word">the head entry's headword, as printed</param>
+/// <param name="Letter">the letter the family files under, lower case</param>
+/// <param name="Members">the family's own entries in printed order, the head
+/// aside: the words that ride under it, however they are spelled</param>
+public sealed record PrintedFamily(string Word, char Letter, IReadOnlyList<string> Members);
 
 /// <summary>When a query is made, provide a short summary of the result</summary>
 public class DictionarySummary

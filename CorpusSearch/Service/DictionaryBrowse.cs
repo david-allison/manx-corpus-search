@@ -95,16 +95,28 @@ public static class DictionaryBrowse
     /// corpus never says ("cregeen"): the lemma index's voucher for its greyed
     /// rows. Only asked about the greyed — an attested word needs none.</param>
     /// <param name="letter">the page's letter, when the book's filing rather
-    /// than spelling chose the words: a word filed away from its own initial
+    /// than spelling chose the words: a head filed away from its own initial
     /// ('myr-chaagh', printed among the caagh words) rides in the chapter of
     /// the words around it, instead of opening a one-word chapter named for a
     /// letter this page does not own</param>
     public static IReadOnlyList<BrowseChapter> Chapters(
         IEnumerable<string> headwords, Func<string, bool>? attested = null,
+        Func<string, string?>? sourceOf = null, char? letter = null) =>
+        Chapters(
+            headwords.Select(x => (x, (IReadOnlyList<string>?)null)),
+            attested, sourceOf, letter);
+
+    /// <summary>As <see cref="Chapters(IEnumerable{string},Func{string,bool},Func{string,string},char?)"/>,
+    /// for a book printed as families: each head brings its members, carried
+    /// under it — 'anchasherick' under 'casherick' — never as the letter's
+    /// own words. Chapters and their keys follow the heads alone.</summary>
+    public static IReadOnlyList<BrowseChapter> Chapters(
+        IEnumerable<(string Word, IReadOnlyList<string>? Members)> families,
+        Func<string, bool>? attested = null,
         Func<string, string?>? sourceOf = null, char? letter = null)
     {
         var chapters = new List<BrowseChapter>();
-        foreach (var headword in headwords)
+        foreach (var (headword, members) in families)
         {
             var key = PrefixOf(headword, ChapterDepth).ToUpperInvariant();
             var interloper = letter != null && LetterOf(headword) != letter && chapters.Count > 0;
@@ -113,9 +125,30 @@ public static class DictionaryBrowse
                 chapters.Add(new BrowseChapter { Key = key, Words = [] });
             }
             var words = chapters[^1].Words;
-            // the same spelling twice over is one link twice over: fold it
+            var memberRows = members is { Count: > 0 }
+                ? members.Select(m =>
+                {
+                    var said = attested?.Invoke(m) ?? true;
+                    return new BrowseWord
+                    {
+                        Word = m,
+                        Attested = said,
+                        Source = said ? null : sourceOf?.Invoke(m),
+                    };
+                }).ToList()
+                : null;
+            // the same spelling twice over is one link twice over: fold it —
+            // and two same-headed families are one family to a reader, so the
+            // second's members join the row the first put up
             if (words.Count > 0 && words[^1].Word == headword)
             {
+                if (memberRows != null)
+                {
+                    var row = words[^1];
+                    row.Members ??= [];
+                    row.Members.AddRange(memberRows.Where(m =>
+                        row.Members.All(x => x.Word != m.Word)));
+                }
                 continue;
             }
             var isAttested = attested?.Invoke(headword) ?? true;
@@ -124,6 +157,7 @@ public static class DictionaryBrowse
                 Word = headword,
                 Attested = isAttested,
                 Source = isAttested ? null : sourceOf?.Invoke(headword),
+                Members = memberRows,
             });
         }
         return chapters;
@@ -154,7 +188,7 @@ public class BrowseChapter
     public required string Key { get; set; }
     /// <summary>The chapter's headwords, each spelling once: the book prints five
     /// entries 'A', but they are one link and the index shows one (see
-    /// <see cref="DictionaryBrowse.Chapters"/>)</summary>
+    /// <see cref="DictionaryBrowse"/>.Chapters)</summary>
     public required List<BrowseWord> Words { get; set; }
 }
 
@@ -173,6 +207,12 @@ public class BrowseWord
     /// where the corpus speaks for the word, and on the book indexes, whose
     /// every word is the book's own.</summary>
     public string? Source { get; set; }
+
+    /// <summary>The family's own entries, where the book prints one as a
+    /// family: 'anchasherick' rides here under 'casherick', not as a word of
+    /// C's. In printed order. Null on dictionaries that print no families,
+    /// and on heads that stand alone.</summary>
+    public List<BrowseWord>? Members { get; set; }
 }
 
 /// <summary>One entry of the browse sampler: a way into the book that is not

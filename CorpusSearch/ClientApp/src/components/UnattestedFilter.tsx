@@ -10,8 +10,13 @@ export const useHideUnattested = () =>
     )
 
 /** The words a listing shows under the filter: every chapter's words, or the
- * attested alone, empty chapters gone with their words */
-export const visibleChapters = <T extends { words: { attested: boolean }[] }>(
+ * attested alone, empty chapters gone with their words. A family head whose
+ * own spelling no text says still stands when the corpus speaks for a member
+ * riding under it — hiding casherick would hide anchasherick with it. */
+export const visibleChapters = <
+    W extends { attested: boolean; members?: W[] | null },
+    T extends { words: W[] },
+>(
     chapters: T[],
     hideUnattested: boolean,
 ): T[] =>
@@ -19,7 +24,17 @@ export const visibleChapters = <T extends { words: { attested: boolean }[] }>(
         ? chapters
               .map((chapter) => ({
                   ...chapter,
-                  words: chapter.words.filter((word) => word.attested),
+                  words: chapter.words
+                      .map((word) => ({
+                          ...word,
+                          members: word.members?.filter(
+                              (member) => member.attested,
+                          ),
+                      }))
+                      .filter(
+                          (word) =>
+                              word.attested || (word.members?.length ?? 0) > 0,
+                      ),
               }))
               .filter((chapter) => chapter.words.length > 0)
         : chapters

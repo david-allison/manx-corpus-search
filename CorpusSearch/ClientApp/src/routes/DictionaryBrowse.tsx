@@ -15,6 +15,7 @@ import {
 import { WordSearch } from "../components/WordSearch"
 import { useActiveInRow } from "../hooks/useActiveInRow"
 import { useDictionaryHead } from "../hooks/useDictionaryHead"
+import { usePersistedState } from "../hooks/usePersistedState"
 import "./DictionaryBrowse.css"
 
 const browseUrl = (dict: string, at?: string) =>
@@ -66,6 +67,14 @@ export const DictionaryBrowse = () => {
     const [page, setPage] = useState<DictionaryBrowseResponse | null>(null)
     const [failed, setFailed] = useState(false)
     const [hideUnattested, setHideUnattested] = useHideUnattested()
+    // whether a family's own entries ride visibly under their head
+    // (anchasherick under casherick), or the heads stand alone. Remembered,
+    // as the unattested filter is
+    const [showSubEntries, setShowSubEntries] = usePersistedState(
+        "dictionary.showSubEntries",
+        (stored) => stored === "true",
+        String,
+    )
 
     // a letter opens at its top: the bar that turned to it repeats at the
     // foot of a long letter, and the next should not open at its own foot
@@ -132,10 +141,36 @@ export const DictionaryBrowse = () => {
                     )}
 
                     {page.letters.length > 0 && (
-                        <UnattestedFilter
-                            hidden={hideUnattested}
-                            onChange={setHideUnattested}
-                        />
+                        <div className="dict-browse-filters">
+                            {/* only a book printed as families has sub-entries
+                                to offer (Cregeen); the toggle would be noise
+                                on the others */}
+                            {page.chapters.some((chapter) =>
+                                chapter.words.some(
+                                    (word) => (word.members?.length ?? 0) > 0,
+                                ),
+                            ) && (
+                                <label
+                                    className="dict-browse-filter"
+                                    title="Sub-entries: the words the book prints inside another word's entry"
+                                >
+                                    <input
+                                        type="checkbox"
+                                        checked={showSubEntries}
+                                        onChange={(event) =>
+                                            setShowSubEntries(
+                                                event.target.checked,
+                                            )
+                                        }
+                                    />
+                                    {" Show sub-entries"}
+                                </label>
+                            )}
+                            <UnattestedFilter
+                                hidden={hideUnattested}
+                                onChange={setHideUnattested}
+                            />
+                        </div>
                     )}
 
                     {/* no sampler here: the browse always has a letter open
@@ -163,15 +198,21 @@ export const DictionaryBrowse = () => {
                                             (entry, position) => (
                                                 <span
                                                     key={`${entry.word}-${position}`}
+                                                    className={
+                                                        showSubEntries
+                                                            ? "dict-browse-family-line"
+                                                            : undefined
+                                                    }
                                                 >
-                                                    {position > 0 && (
-                                                        <span
-                                                            className="dict-browse-sep"
-                                                            aria-hidden="true"
-                                                        >
-                                                            {" · "}
-                                                        </span>
-                                                    )}
+                                                    {!showSubEntries &&
+                                                        position > 0 && (
+                                                            <span
+                                                                className="dict-browse-sep"
+                                                                aria-hidden="true"
+                                                            >
+                                                                {" · "}
+                                                            </span>
+                                                        )}
                                                     <Link
                                                         className={
                                                             entry.attested
@@ -190,6 +231,60 @@ export const DictionaryBrowse = () => {
                                                     >
                                                         {entry.word}
                                                     </Link>
+                                                    {/* the family's own words,
+                                                        along for the ride under
+                                                        their head: anchasherick
+                                                        under casherick, never
+                                                        a word of C's */}
+                                                    {showSubEntries &&
+                                                        entry.members != null &&
+                                                        entry.members.length >
+                                                            0 && (
+                                                            <span className="dict-browse-family">
+                                                                {entry.members.map(
+                                                                    (
+                                                                        member,
+                                                                        place,
+                                                                    ) => (
+                                                                        <span
+                                                                            key={`${member.word}-${place}`}
+                                                                        >
+                                                                            {place >
+                                                                                0 && (
+                                                                                <span
+                                                                                    className="dict-browse-sep"
+                                                                                    aria-hidden="true"
+                                                                                >
+                                                                                    {
+                                                                                        " · "
+                                                                                    }
+                                                                                </span>
+                                                                            )}
+                                                                            <Link
+                                                                                className={
+                                                                                    member.attested
+                                                                                        ? undefined
+                                                                                        : "dict-unattested"
+                                                                                }
+                                                                                title={
+                                                                                    member.attested
+                                                                                        ? undefined
+                                                                                        : `${member.word}: in no text in the corpus`
+                                                                                }
+                                                                                to={dictionaryWordUrl(
+                                                                                    member.word,
+                                                                                    page.slug,
+                                                                                )}
+                                                                            >
+                                                                                {
+                                                                                    member.word
+                                                                                }
+                                                                            </Link>
+                                                                        </span>
+                                                                    ),
+                                                                )}
+                                                            </span>
+                                                        )}
                                                 </span>
                                             ),
                                         )}
