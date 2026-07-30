@@ -54,8 +54,8 @@ public class DictionaryBrowseService(
 
         var headwords = dictionary.Headwords;
         // a book whose data names each entry's filing letter files by it:
-        // 'e hardjyn' sits in A beside ardjyn, as printed, not under its
-        // spelling's E. Other dictionaries file by spelling, as before
+        // 'aa-aase' sits in A where the book prints it, and a family's words
+        // keep their printed run. Other dictionaries file by spelling, as before
         var printed = (dictionary as IPrintedIndexDictionary)?.PrintedHeadwords;
         var letters = printed is { Count: > 0 }
             ? printed.Select(x => x.Letter).Where(c => c != '\0').Distinct().Order().ToList()
