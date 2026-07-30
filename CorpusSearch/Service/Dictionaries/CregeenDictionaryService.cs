@@ -139,46 +139,59 @@ public class CregeenDictionaryService(ISet<string> allWords, IList<CregeenEntry>
 
     public IEnumerable<string> AllWords => allWords;
 
-    /// <summary>The book's index, built once: every node carrying its printed
-    /// identity (<see cref="CregeenEntry.Headword"/>), depth-first, which is
-    /// the print's own sequence; each filed under the letter the data names,
-    /// or its spelling's where the data is silent. Older data files carry no
-    /// identity fields, and the index falls back to the family heads the
-    /// top level holds — the pre-2026 browse.
+    /// <summary>The book's index, built once from the nodes carrying their
+    /// printed identity (<see cref="CregeenEntry.Headword"/>): one family per
+    /// top-level entry, filed under the letter the data names (or its
+    /// spelling's where the data is silent), its members in printed order
+    /// beneath it. 'anchasherick' rides under 'casherick'; only casherick is
+    /// C's own word. Older data files carry no identity fields, and the
+    /// index falls back to bare family heads — the pre-2026 browse.
     ///
-    /// Lexical entries only: the book also prints each word's grammar demos
-    /// ('e chah', 'nyn gaa' after 'caa'; 'daase', "s'aalin"), marked in the
-    /// data by Particle and RadicalInitial. Nearly every consonant noun has
-    /// two or three, so an index listing them drowns the words in their own
-    /// mutations and breaks the prefix bar, which chunks on runs. They stay
-    /// searchable, and their word pages stand.</summary>
-    private readonly (IReadOnlyList<PrintedHeadword> Printed, IReadOnlyList<string> Words) index =
+    /// Members are the family's lexical entries only: the book also prints
+    /// each word's grammar demos ('e chah', 'nyn gaa' after 'caa'; 'daase',
+    /// "s'aalin"), marked in the data by Particle and RadicalInitial. They
+    /// stay searchable, and their word pages stand; the index is not the
+    /// place a reader meets a paradigm.</summary>
+    private readonly (IReadOnlyList<PrintedFamily> Families, IReadOnlyList<string> Words) index =
         BuildIndex(entries);
 
-    private static (IReadOnlyList<PrintedHeadword>, IReadOnlyList<string>) BuildIndex(
+    private static (IReadOnlyList<PrintedFamily>, IReadOnlyList<string>) BuildIndex(
         IList<CregeenEntry> entries)
     {
-        var printed = entries.SelectMany(x => x.ChildrenRecursive)
-            .Where(x => x.Headword != null && x.Particle == null && x.RadicalInitial == null)
-            .Select(x => new PrintedHeadword(
+        var families = entries
+            .Where(x => x.Headword != null)
+            .Select(x => new PrintedFamily(
                 x.Headword!,
                 x.Letter is { Length: > 0 } letter
                     ? char.ToLowerInvariant(letter[0])
-                    : DictionaryBrowse.LetterOf(x.Headword!)))
+                    : DictionaryBrowse.LetterOf(x.Headword!),
+                x.ChildrenRecursive.Skip(1)
+                    .Where(c => c.Headword != null && c.Particle == null && c.RadicalInitial == null)
+                    .Select(c => c.Headword!)
+                    // a class split prints the spelling again ('aa-aase, s.m.'
+                    // then 'aa-aase, v.'): one word to a reader, as the head
+                    .Where(w => !string.Equals(w, x.Headword, StringComparison.OrdinalIgnoreCase))
+                    .Aggregate(new List<string>(), (list, w) =>
+                    {
+                        if (list.Count == 0 || !string.Equals(list[^1], w, StringComparison.OrdinalIgnoreCase))
+                        {
+                            list.Add(w);
+                        }
+                        return list;
+                    })))
             .ToList();
-        var words = printed.Count > 0
-            ? printed.Select(x => x.Word).ToList()
+        var words = families.Count > 0
+            ? families.SelectMany(f => (string[]) [f.Word, .. f.Members]).ToList()
             : entries.Select(x => x.Words.FirstOrDefault()).OfType<string>().ToList();
-        return (printed, words);
+        return (families, words);
     }
 
-    /// <summary>The book's lexical entries in the book's order, with the
-    /// letter each files under: 'aa-aase' in A beside 'aa-', where the
-    /// book prints it</summary>
-    public IReadOnlyList<PrintedHeadword> PrintedHeadwords => index.Printed;
+    /// <summary>The book's families in the book's order: heads under their
+    /// letters, members under their heads</summary>
+    public IReadOnlyList<PrintedFamily> PrintedFamilies => index.Families;
 
     /// <summary>The printed headwords, in the book's order (see
-    /// <see cref="DictionaryBrowse.Chapters"/>): what the browse lists and
+    /// <see cref="DictionaryBrowse"/>.Chapters): what the browse lists and
     /// the walk steps through. Built once: GetSummaries re-flattens the tree
     /// per call (see the PERF note below), and the index must not pay that.</summary>
     public IReadOnlyList<string> Headwords => index.Words;

@@ -103,6 +103,31 @@
     padding: 0 2px;
 }
 
+/* sub-entries shown: one family a line, the head at the margin and its own
+   words running on after it, quieter — the book's paragraph, condensed */
+.dict-browse-family-line {
+    display: block;
+}
+
+.dict-browse-family {
+    font-size: 0.85em;
+    color: var(--c-muted);
+    margin-left: 12px;
+}
+
+.dict-browse-family a {
+    color: inherit;
+}
+
+/* the toggles sit together, asides on the listing */
+.dict-browse-filters {
+    margin: 0 0 12px;
+}
+
+.dict-browse-filters .dict-browse-filter {
+    margin: 0 0 2px;
+}
+
 .dict-browse-empty {
     color: var(--c-accent);
     font-style: italic;

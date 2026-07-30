@@ -517,6 +517,11 @@ export type BrowseWord = {
      * the lemma index's voucher for its greyed rows. Absent where the corpus
      * speaks for the word, and on the book indexes. */
     source?: string | null
+    /** the family's own entries, where the book prints one as a family:
+     * 'anchasherick' rides here under 'casherick', not as a word of C's.
+     * In printed order; absent on dictionaries that print no families and
+     * on heads that stand alone */
+    members?: BrowseWord[] | null
 }
 
 /** @param at a letter ("a"), or a prefix ("aal") from a link made when a prefix
