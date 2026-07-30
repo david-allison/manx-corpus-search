@@ -31,6 +31,55 @@ public class SenseLayerTest
             "docId\tkey\tenglishHash\ttokenIndex\tform\tsenseIds\ttier\thumanVerified\n"
             + string.Join("", rows.Select(x => x + "\n"))), inventory);
 
+    /// <summary>Every vendored sense row must round-trip against the data it
+    /// points into: its lemmaId known to the table, its cregeen entryPath a
+    /// printed headword, its gloss non-empty. A cregeen-nvh edit or a table
+    /// rekey that strands a row fails here, not silently in the popup.</summary>
+    [Test]
+    public void TheVendoredInventoryRoundTrips()
+    {
+        var inventory = SenseInventory.Instance;
+        Assume.That(inventory.Count, Is.GreaterThan(0), "no vendored senses.tsv");
+        var entries = Service.Dictionaries.CregeenDictionaryService.GetEntries();
+        Assume.That(entries, Is.Not.Empty, "cregeen.json not present");
+
+        var headwords = new System.Collections.Generic.HashSet<string>(
+            System.StringComparer.OrdinalIgnoreCase);
+        void Walk(System.Collections.Generic.IEnumerable<Model.Dictionary.CregeenEntry> level)
+        {
+            foreach (var entry in level)
+            {
+                if (entry.Words.FirstOrDefault() is { } word)
+                {
+                    headwords.Add(word);
+                }
+                Walk(entry.SafeChildren);
+            }
+        }
+        Walk(entries);
+        var knownIds = LemmaAdjudication.AdjudicationCommon.DisplayLemmaById();
+
+        Assert.Multiple(() =>
+        {
+            foreach (var sense in inventory.All)
+            {
+                Assert.That(knownIds, Does.ContainKey(sense.LemmaId),
+                    $"{sense.SenseId}: lemma id unknown to the table");
+                Assert.That(sense.Gloss, Is.Not.Empty, $"{sense.SenseId}: empty gloss");
+                if (sense.Dictionary != "cregeen")
+                {
+                    continue;
+                }
+                var path = sense.EntryPath.Split(':');
+                Assert.That(path, Has.Length.EqualTo(2), $"{sense.SenseId}: malformed entryPath");
+                // set-side Contains: the set folds case (Erin/erin), and
+                // NUnit's Does.Contain would compare case-sensitively
+                Assert.That(headwords.Contains(path[1]), Is.True,
+                    $"{sense.SenseId}: entryPath names no printed entry ({sense.EntryPath})");
+            }
+        });
+    }
+
     [Test]
     public void TheInventoryKnowsItsSenses()
     {

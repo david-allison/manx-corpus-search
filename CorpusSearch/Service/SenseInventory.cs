@@ -44,6 +44,9 @@ public class SenseInventory
 
     public Sense? SenseOf(string senseId) => bySenseId.GetValueOrDefault(senseId);
 
+    /// <summary>Every vendored sense: the round-trip check walks them all</summary>
+    public IEnumerable<Sense> All => bySenseId.Values;
+
     public int Count => bySenseId.Count;
 
     /// <summary>Reads senses.tsv: senseId, lemmaId, dict, entryPath, gloss.
