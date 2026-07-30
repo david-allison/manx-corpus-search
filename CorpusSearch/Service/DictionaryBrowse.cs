@@ -94,15 +94,21 @@ public static class DictionaryBrowse
     /// <param name="sourceOf">names the file whose print attests a word the
     /// corpus never says ("cregeen"): the lemma index's voucher for its greyed
     /// rows. Only asked about the greyed — an attested word needs none.</param>
+    /// <param name="letter">the page's letter, when the book's filing rather
+    /// than spelling chose the words: a word filed away from its own initial
+    /// ('myr-chaagh', printed among the caagh words) rides in the chapter of
+    /// the words around it, instead of opening a one-word chapter named for a
+    /// letter this page does not own</param>
     public static IReadOnlyList<BrowseChapter> Chapters(
         IEnumerable<string> headwords, Func<string, bool>? attested = null,
-        Func<string, string?>? sourceOf = null)
+        Func<string, string?>? sourceOf = null, char? letter = null)
     {
         var chapters = new List<BrowseChapter>();
         foreach (var headword in headwords)
         {
             var key = PrefixOf(headword, ChapterDepth).ToUpperInvariant();
-            if (chapters.Count == 0 || chapters[^1].Key != key)
+            var interloper = letter != null && LetterOf(headword) != letter && chapters.Count > 0;
+            if (!interloper && (chapters.Count == 0 || chapters[^1].Key != key))
             {
                 chapters.Add(new BrowseChapter { Key = key, Words = [] });
             }
