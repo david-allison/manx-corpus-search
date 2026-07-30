@@ -53,7 +53,13 @@ public class DictionaryBrowseService(
         }
 
         var headwords = dictionary.Headwords;
-        var letters = DictionaryBrowse.LettersOf(headwords);
+        // a book whose data names each entry's filing letter files by it:
+        // 'e hardjyn' sits in A beside ardjyn, as printed, not under its
+        // spelling's E. Other dictionaries file by spelling, as before
+        var printed = (dictionary as IPrintedIndexDictionary)?.PrintedHeadwords;
+        var letters = printed is { Count: > 0 }
+            ? printed.Select(x => x.Letter).Where(c => c != '\0').Distinct().Order().ToList()
+            : DictionaryBrowse.LettersOf(headwords);
         var page = new DictionaryBrowsePage
         {
             Dictionary = dictionary.Identifier,
@@ -76,7 +82,9 @@ public class DictionaryBrowseService(
         page.Letter = char.ToUpperInvariant(letter).ToString();
         page.Chapters = DictionaryBrowse
             .Chapters(
-                headwords.Where(x => DictionaryBrowse.LetterOf(x) == letter),
+                printed is { Count: > 0 }
+                    ? printed.Where(x => x.Letter == letter).Select(x => x.Word)
+                    : headwords.Where(x => DictionaryBrowse.LetterOf(x) == letter),
                 vocabulary.IsAttested)
             .ToList();
         return page;
