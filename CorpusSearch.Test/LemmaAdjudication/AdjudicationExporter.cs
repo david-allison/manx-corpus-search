@@ -66,6 +66,7 @@ public class AdjudicationExporter
         var table = LemmaTable.Instance;
         var displayById = AdjudicationCommon.DisplayLemmaById();
         var glossTexts = AdjudicationCommon.LoadGlossTexts();
+        var classGlosses = AdjudicationCommon.LoadCregeenClassGlosses();
         var linkTypes = AdjudicationCommon.LinkTypesByFormId();
         Dictionary<string, string[]> overrides = string.IsNullOrEmpty(overridesPath)
             ? []
@@ -112,9 +113,14 @@ public class AdjudicationExporter
                     labels.Add(label);
                 }
                 var glossKey = LemmaTable.NormalizeForm(lemma);
-                var gloss = glossTexts.TryGetValue(glossKey, out var texts)
-                    ? string.Join("; ", texts.Take(3))
-                    : "";
+                // the entry the id names, not everything spelled like it;
+                // display-keyed glosses only where no classed entry matches
+                var idClass = id[(id.LastIndexOf('.') + 1)..];
+                var gloss = classGlosses.TryGetValue((glossKey, idClass), out var own)
+                    ? own
+                    : glossTexts.TryGetValue(glossKey, out var texts)
+                        ? string.Join("; ", texts.Take(3))
+                        : "";
                 return (object)new
                 {
                     id,

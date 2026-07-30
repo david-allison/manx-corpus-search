@@ -125,6 +125,50 @@ public static class AdjudicationCommon
         return result;
     }
 
+    /// <summary>(normalized headword core, pos class n/v/a/x) -> the definitions
+    /// of Cregeen's own entries of that spelling AND class. Display-keyed glosses
+    /// merge homographs (cramp the adjective showed the noun's "plague") and miss
+    /// lenited-headword entries entirely ("yn chooney" never surfaced for
+    /// chooney.n) - the Phase 3 pilot's dominant split cause. Classing mirrors
+    /// the table generator's identity rule: v before s before a, else x.</summary>
+    public static Dictionary<(string Core, string Class), string> LoadCregeenClassGlosses()
+    {
+        var path = Path.Combine(TestContext.CurrentContext.TestDirectory, "Resources", "cregeen.json");
+        var roots = JsonConvert.DeserializeObject<List<Model.Dictionary.CregeenEntry>>(File.ReadAllText(path)) ?? [];
+        var texts = new Dictionary<(string, string), List<string>>();
+        foreach (var entry in roots.SelectMany(x => x.ChildrenRecursive))
+        {
+            // pre-identity data files carry no Headword; the display-keyed
+            // fallback still serves them
+            if (entry.Headword is not { } head || string.IsNullOrWhiteSpace(entry.Definition))
+            {
+                continue;
+            }
+            var core = !string.IsNullOrEmpty(entry.Particle)
+                       && head.StartsWith(entry.Particle + " ", StringComparison.OrdinalIgnoreCase)
+                ? head[(entry.Particle.Length + 1)..]
+                : head;
+            // the JSON expands the printed labels (s. -> Noun); the class
+            // precedence mirrors the table generator's: v before n before a
+            var parts = entry.PartsOfSpeech ?? [];
+            var cls = parts.Contains("Verb") ? "v"
+                : parts.Contains("Noun") ? "n"
+                : parts.Contains("Adjective") ? "a"
+                : "x";
+            var key = (LemmaTable.NormalizeForm(core), cls);
+            if (!texts.TryGetValue(key, out var list))
+            {
+                texts[key] = list = [];
+            }
+            var definition = entry.Definition.Trim();
+            if (list.Count < 3 && !list.Contains(definition))
+            {
+                list.Add(definition);
+            }
+        }
+        return texts.ToDictionary(kv => kv.Key, kv => string.Join("; ", kv.Value));
+    }
+
     public static IEnumerable<string> EnglishWords(string text)
     {
         var word = new StringBuilder();
