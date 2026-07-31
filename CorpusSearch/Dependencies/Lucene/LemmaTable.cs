@@ -24,6 +24,7 @@ public class LemmaTable
     private readonly Dictionary<string, string[]> phillipsViaByForm;
     private readonly HashSet<(string Form, string DisplayLemma)> unverifiedLinks;
     private readonly Dictionary<string, LemmaLinkSet> linkSetsByDisplay;
+    private readonly Dictionary<string, string[]> derivedParentsByForm;
     // built on first use: the history view walks lemma -> forms, the reverse
     // of every other lookup
     private readonly Lazy<Dictionary<string, string[]>> formsByDisplay;
@@ -38,7 +39,8 @@ public class LemmaTable
         Dictionary<string, string> displayLemmaById, Dictionary<string, string> nameTypeById,
         Dictionary<string, string[]> phillipsViaByForm,
         HashSet<(string, string)>? unverifiedLinks = null,
-        Dictionary<string, LemmaLinkSet>? linkSetsByDisplay = null)
+        Dictionary<string, LemmaLinkSet>? linkSetsByDisplay = null,
+        Dictionary<string, string[]>? derivedParentsByForm = null)
     {
         this.candidatesByForm = candidatesByForm;
         this.displayLemmasByForm = displayLemmasByForm;
@@ -49,6 +51,7 @@ public class LemmaTable
         this.phillipsViaByForm = phillipsViaByForm;
         this.unverifiedLinks = unverifiedLinks ?? [];
         this.linkSetsByDisplay = linkSetsByDisplay ?? [];
+        this.derivedParentsByForm = derivedParentsByForm ?? [];
         AllDisplayLemmas = this.linkSetsByDisplay.Values
             .Select(x => x.Lemma)
             .Order(StringComparer.Ordinal)
@@ -136,6 +139,13 @@ public class LemmaTable
             .Where(display => lemmaIds.Any(id => displayLemmaById.GetValueOrDefault(id) == display))
             .ToList();
     }
+
+    /// <summary>The family heads the book prints <paramref name="form"/> under
+    /// ("vondeishagh" -> vondeish): the `derived` rows read upward, for the
+    /// tree's Parents line. Empty for every other form — the derived rows
+    /// feed no other lookup.</summary>
+    public IReadOnlyList<string> DerivedParentsOf(string form) =>
+        derivedParentsByForm.TryGetValue(NormalizeForm(form), out var heads) ? heads : [];
 
     /// <summary>The classical spellings a Phillips 1610 form stands for
     /// ("dwyne" -> "dooinney"), from the phillips supplement's via column:
@@ -379,6 +389,7 @@ public class LemmaTable
         var unverifiedLinks = new HashSet<(string, string)>();
         var verifiedLinks = new HashSet<(string, string)>();
         var linkSets = new Dictionary<string, MutableLinkSet>();
+        var derivedParentsLists = new Dictionary<string, List<string>>();
 
         foreach (var (reader, source) in sources)
         {
@@ -391,6 +402,7 @@ public class LemmaTable
                     continue;
                 }
                 var (form, lemmaId, displayLemma) = (columns[0], columns[1], columns[2]);
+                var linkType = columns.Length > 3 ? columns[3] : "self";
                 lemmaIds.Add(lemmaId);
                 // an id's display is its self row's: link rows carry the spelling
                 // that reached them (ghoan names goo.n as "goan", hrog names
@@ -413,24 +425,43 @@ public class LemmaTable
                 {
                     nameTypeById.TryAdd(lemmaId, columns[4]["np.".Length..].Trim());
                 }
-                if (!listsByForm.TryGetValue(form, out var candidates))
+                // a derived row is the book's word-family edge (vondeishagh
+                // prints in vondeish's paragraph): it draws a lemma-tree branch
+                // and names a parent, nothing else. The member is another
+                // lexeme's headword, not a spelling of this one, so it joins no
+                // candidate set and no root chain — searching or tapping
+                // vondeishagh must never answer with vondeish.
+                if (linkType == "derived")
                 {
-                    listsByForm[form] = candidates = [];
-                    displayListsByForm[form] = [];
+                    if (!derivedParentsLists.TryGetValue(form, out var heads))
+                    {
+                        derivedParentsLists[form] = heads = [];
+                    }
+                    if (!heads.Contains(displayLemma))
+                    {
+                        heads.Add(displayLemma);
+                    }
                 }
-                // homographs repeat the (form, lemmaId) pair across rows: one candidate each
-                if (!candidates.Contains(lemmaId))
+                else
                 {
-                    candidates.Add(lemmaId);
-                }
-                var displays = displayListsByForm[form];
-                if (!displays.Contains(displayLemma))
-                {
-                    displays.Add(displayLemma);
+                    if (!listsByForm.TryGetValue(form, out var candidates))
+                    {
+                        listsByForm[form] = candidates = [];
+                        displayListsByForm[form] = [];
+                    }
+                    // homographs repeat the (form, lemmaId) pair across rows: one candidate each
+                    if (!candidates.Contains(lemmaId))
+                    {
+                        candidates.Add(lemmaId);
+                    }
+                    var displays = displayListsByForm[form];
+                    if (!displays.Contains(displayLemma))
+                    {
+                        displays.Add(displayLemma);
+                    }
                 }
                 // paradigm links (see RootDisplayLemmasFor): not the form's own entry,
                 // not a demutation guess
-                var linkType = columns.Length > 3 ? columns[3] : "self";
                 var note = columns.Length > 6 ? columns[6] : "";
                 var unverifiedRow = IsUnverifiedRow(note);
                 // a closed-class paradigm row (ta -> bee) is the treebank's
@@ -510,7 +541,7 @@ public class LemmaTable
                         vias.Add(columns[5]);
                     }
                 }
-                if (linkType is not ("self" or "demutated"))
+                if (linkType is not ("self" or "demutated" or "derived"))
                 {
                     if (!rootListsByForm.TryGetValue(form, out var roots))
                     {
@@ -555,7 +586,8 @@ public class LemmaTable
         return new LemmaTable(candidatesByForm, displayLemmasByForm, rootDisplayLemmasByForm, lemmaIds,
             displayLemmaById, nameTypeById,
             phillipsViaLists.ToDictionary(kv => kv.Key, kv => kv.Value.ToArray()),
-            unverifiedLinks, linkSetsByDisplay);
+            unverifiedLinks, linkSetsByDisplay,
+            derivedParentsLists.ToDictionary(kv => kv.Key, kv => kv.Value.ToArray()));
     }
 
     /// <summary>Accumulates one display lemma's rows while <see cref="Load(IEnumerable{TextReader})"/> reads</summary>

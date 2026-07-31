@@ -75,7 +75,7 @@ public class LemmaIndexService(LemmaTable lemmaTable, CorpusVocabulary vocabular
     [
         "self", "inflected", "plural", "compSup", "irregular", "emphatic",
         "contraction", "variant", "mutation", "demutated", "particle",
-        "univerbated", "phillips", "prefixed", "undecided", "override", "typo",
+        "derived", "univerbated", "phillips", "prefixed", "undecided", "override", "typo",
     ];
 
     /// <summary>
@@ -121,6 +121,16 @@ public class LemmaIndexService(LemmaTable lemmaTable, CorpusVocabulary vocabular
             {
                 parents.Add(new LemmaTreeParent { Lemma = display, LinkTypes = linkTypes });
             }
+        }
+        // the family heads the book prints this lemma under, upward: the
+        // derived rows' reverse reading. Not in DisplayLemmasFor — a derived
+        // row names no reading of the form — so the derived parents are
+        // asked for by name
+        foreach (var head in lemmaTable.DerivedParentsOf(links.Lemma)
+                     .Where(h => parents.All(p => p.Lemma != h))
+                     .OrderBy(DictionaryBrowse.CollationKey, StringComparer.Ordinal))
+        {
+            parents.Add(new LemmaTreeParent { Lemma = head, LinkTypes = ["derived"] });
         }
         var prefix = lemmaTable.AllDisplayLemmas
             .Where(x => (x.EndsWith('-') || x.EndsWith('‑'))
@@ -352,9 +362,15 @@ public class LemmaIndexService(LemmaTable lemmaTable, CorpusVocabulary vocabular
         // after any particle at once, and its count answers for all of them
         // together, not for this one
         var counted = particlePhrase ?? link.Form;
+        // a derived row names another lexeme's headword: the row wears that
+        // lexeme's own spelling ('neu-vondeish'), not the form column's
+        // normalization ('neu vondeish')
+        var display = link.LinkType == "derived"
+            ? lemmaTable.LinksOf(link.Form)?.Lemma ?? link.Form
+            : link.Form;
         return new LemmaTreeForm
         {
-            Form = link.Form,
+            Form = display,
             Attestations = vocabulary.AttestationsOf(counted),
             // an unread phrase is left un-greyed, as the browse leaves one:
             // greying is a claim
