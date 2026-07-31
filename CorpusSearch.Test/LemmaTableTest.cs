@@ -367,25 +367,27 @@ public class LemmaTableTest
         Assert.That(table.CandidatesFor("veg"), Is.EqualTo(new[] { "veg.x" }));
     }
 
-    /// <summary>An id's display is its self row's, however the book orders the
-    /// file: the demutated row for ghoan reaches goo.n through the variant
-    /// spelling "goan" and prints before goo's own entry, and first-row-wins
-    /// once showed kione.n as "king" this way.</summary>
+    /// <summary>A derived row is the book's word-family edge (vondeishagh prints
+    /// in vondeish's paragraph): a tree branch and a parent, nothing else. The
+    /// member is another lexeme's headword, not a spelling of the head's, so
+    /// searching or tapping vondeishagh must never answer with vondeish</summary>
     [Test]
-    public void DisplayLemmaComesFromTheSelfRow()
+    public void ADerivedRowDrawsATreeEdgeAndNothingElse()
     {
         var table = Table(
-            "ghoan\tgoo.n\tgoan\tdemutated\ts. m.\tghoan\t",
-            "goo\tgoo.n\tgoo\tself\ts. m.\tgoo\t");
-        Assert.That(table.DisplayLemmaOf("goo.n"), Is.EqualTo("goo"));
-    }
+            "vondeish\tvondeish.n\tvondeish\tself\ts.\tvondeish\t",
+            "vondeishagh\tvondeishagh.a\tvondeishagh\tself\ta.\tvondeishagh\t",
+            "vondeishagh\tvondeish.n\tvondeish\tderived\ts.\tvondeish\t");
 
-    /// <summary>An id with no self row anywhere (the article yn) still displays
-    /// from whatever row names it.</summary>
-    [Test]
-    public void DisplayLemmaFallsBackWithoutASelfRow()
-    {
-        var table = Table("yn\tyn.x\tyn\tirregular\t\t\tclosed-class");
-        Assert.That(table.DisplayLemmaOf("yn.x"), Is.EqualTo("yn"));
+        Assert.Multiple(() =>
+        {
+            Assert.That(table.CandidatesFor("vondeishagh"), Is.EqualTo(new[] { "vondeishagh.a" }));
+            Assert.That(table.DisplayLemmasFor("vondeishagh"), Is.EqualTo(new[] { "vondeishagh" }));
+            Assert.That(table.RootDisplayLemmasFor("vondeishagh"), Is.Empty);
+            Assert.That(table.LinksOf("vondeish")!.Links.Select(x => (x.LinkType, x.Form)),
+                Does.Contain(("derived", "vondeishagh")));
+            Assert.That(table.DerivedParentsOf("vondeishagh"), Is.EqualTo(new[] { "vondeish" }));
+            Assert.That(table.DerivedParentsOf("vondeish"), Is.Empty);
+        });
     }
 }

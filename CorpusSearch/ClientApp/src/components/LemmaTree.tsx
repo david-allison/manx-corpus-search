@@ -35,6 +35,7 @@ const GROUP_LABELS: Record<string, string> = {
     mutation: "Mutations",
     demutated: "Possible mutations",
     particle: "With a particle",
+    derived: "Derived words",
     univerbated: "Written as one word",
     phillips: "Phillips (c. 1610) spellings",
     prefixed: "Written with the prefix",
@@ -70,6 +71,14 @@ const ParentLine = ({ parent }: { parent: LemmaTreeParent }) => (
         {parent.linkTypes.includes("prefixed") ? (
             <>
                 {"Written with the prefix "}
+                <Link to={lemmaTreeUrl(parent.lemma)}>{parent.lemma}</Link>
+                {" ›"}
+            </>
+        ) : parent.linkTypes.includes("derived") ? (
+            // the book's word-family edge: this word is its own lexeme,
+            // printed in the head's paragraph. Never "a form of" the head.
+            <>
+                {"Derived from "}
                 <Link to={lemmaTreeUrl(parent.lemma)}>{parent.lemma}</Link>
                 {" ›"}
             </>

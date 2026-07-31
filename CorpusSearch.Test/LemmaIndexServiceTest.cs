@@ -580,4 +580,46 @@ public class LemmaIndexServiceTest
             Assert.That(byForm["gheiney"].Attested, Is.False);
         });
     }
+
+    /// <summary>The book's word-family edge: a derived row files the member
+    /// under the head, the member's own paradigm rides along (vondeish =>
+    /// vondeishagh => s'vondeishagh), and the member's tree names the head
+    /// upward</summary>
+    [Test]
+    public void ADerivedMemberCarriesItsOwnLexemeIntoTheTree()
+    {
+        var service = Service(Table(
+            "vondeish\tvondeish.n\tvondeish\tself\ts.\tvondeish\t",
+            "vondeishyn\tvondeish.n\tvondeish\tinflected\ts.\tvondeish\t",
+            "vondeishagh\tvondeishagh.a\tvondeishagh\tself\ta.\tvondeishagh\t",
+            "s'vondeishagh\tvondeishagh.a\tvondeishagh\tinflected\ta.\ts'vondeishagh\t",
+            "vondeishagh\tvondeish.n\tvondeish\tderived\ts.\tvondeish\t"));
+
+        var tree = service.Tree("vondeish")!;
+        var member = tree.Groups.Single(g => g.LinkType == "derived").Forms.Single();
+        var memberTree = service.Tree("vondeishagh")!;
+        Assert.Multiple(() =>
+        {
+            Assert.That(member.Form, Is.EqualTo("vondeishagh"));
+            Assert.That(member.Groups!.Single(g => g.LinkType == "inflected")
+                    .Forms.Select(f => f.Form),
+                Is.EqualTo(new[] { "s'vondeishagh" }));
+            Assert.That(memberTree.Parents!.Single().Lemma, Is.EqualTo("vondeish"));
+            Assert.That(memberTree.Parents!.Single().LinkTypes, Is.EqualTo(new[] { "derived" }));
+        });
+    }
+
+    /// <summary>The form column is normalized ('neu vondeish'): a derived row
+    /// wears the member lexeme's own spelling instead</summary>
+    [Test]
+    public void ADerivedRowWearsTheMemberLexemesOwnSpelling()
+    {
+        var service = Service(Table(
+            "vondeish\tvondeish.n\tvondeish\tself\ts.\tvondeish\t",
+            "neu vondeish\tneu-vondeish.n\tneu-vondeish\tself\ts. f.\tneu-vondeish\t",
+            "neu vondeish\tvondeish.n\tvondeish\tderived\ts.\tvondeish\t"));
+
+        var derived = service.Tree("vondeish")!.Groups.Single(g => g.LinkType == "derived");
+        Assert.That(derived.Forms.Single().Form, Is.EqualTo("neu-vondeish"));
+    }
 }
