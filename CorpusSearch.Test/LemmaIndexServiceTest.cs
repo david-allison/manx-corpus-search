@@ -609,6 +609,34 @@ public class LemmaIndexServiceTest
         });
     }
 
+    /// <summary>Cregeen's entry for vac is the phrase 'dty vac' itself, so the
+    /// phrase's particle row is an undrawn echo of its own entry — and the
+    /// childless demutation guess must not be swallowed with it: it alone
+    /// says the bare form, and the phrase's print upgrades it from a guess
+    /// to a mutation. vac once vanished from mac's tree entirely.</summary>
+    [Test]
+    public void AMutationWhoseEntryIsItsPhraseStillStandsInTheTree()
+    {
+        var service = Service(Table(
+            "mac\tmac.n\tmac\tself\ts. m.\tmac\t",
+            "dty vac\tmac.n\tmac\tself\ts.\tdty vac\t",
+            "vac\tmac.n\tmac\tparticle\ts.\tdty vac\t",
+            "vac\tmac.n\tmac\tdemutated\ts. m.\tdty vac\t",
+            "dty vacs\tmac.n\tmac\tinflected\ts.\tdty vac\t"));
+
+        var phrase = service.Tree("mac")!
+            .Groups.Single(g => g.LinkType == "self")
+            .Forms.Single(f => f.Form == "dty vac");
+        Assert.Multiple(() =>
+        {
+            Assert.That(phrase.Groups!.Single(g => g.LinkType == "mutation")
+                .Forms.Single().Form, Is.EqualTo("vac"));
+            // the phrase's own row would only say the entry again: not drawn
+            Assert.That(phrase.Groups!.Select(g => g.LinkType),
+                Has.No.Member("particle"));
+        });
+    }
+
     /// <summary>The form column is normalized ('neu vondeish'): a derived row
     /// wears the member lexeme's own spelling instead</summary>
     [Test]

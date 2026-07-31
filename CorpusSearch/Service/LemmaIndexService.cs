@@ -262,8 +262,12 @@ public class LemmaIndexService(LemmaTable lemmaTable, CorpusVocabulary vocabular
             .Select(x => x.First())
             .ToList();
         // every particle link, echoes included: an undrawn phrase row still
-        // vouches for the form's mutation and still covers a childless guess
+        // vouches for the form's mutation
         var particles = all.Where(x => x.Link.LinkType == "particle").ToList();
+        // the phrase rows that will actually be drawn: one filing under its
+        // own entry ('dty vac' under Cregeen's entry 'dty vac') is not among
+        // them, and only a drawn row can cover a childless guess
+        var drawnParticles = particles.Where(x => !EchoesParent(x.Link, parentForm)).ToList();
         var rows = all
             .Where(x => x.Link.LinkType != "particle")
             .GroupBy(x => x.Link.Form)
@@ -282,29 +286,29 @@ public class LemmaIndexService(LemmaTable lemmaTable, CorpusVocabulary vocabular
                 return (Primary: links[0],
                     Also: links.Skip(1).Select(x => x.Link.LinkType).ToList());
             })
-            // a lone childless guess beside the form's particle row says
+            // a lone childless guess beside the form's drawn phrase row says
             // nothing the phrase does not: dropped. With a family to carry
-            // (gheiney holds the Phillips 'gene') it stays — the phrase
-            // cannot carry it.
+            // (gheiney holds the Phillips 'gene') it stays — and so does the
+            // guess whose only phrase row is the undrawn echo of the entry
+            // above: nothing else says the bare form (vac under Cregeen's
+            // entry 'dty vac')
             .Where(x => x.Primary.Link.LinkType != "demutated"
                         || x.Primary.ByParent[x.Primary.Link.Form].Any()
-                        || !particles.Any(p => p.Link.Form == x.Primary.Link.Form))
+                        || !drawnParticles.Any(p => p.Link.Form == x.Primary.Link.Form))
             // a mutation the book prints is not merely possible: the particle
-            // phrase ('e gheiney') attests it, so the surviving row files
-            // under Mutations — the hedge is kept for forms only the
-            // generator vouches for
+            // phrase ('e gheiney', 'dty vac') attests it, drawn or not, so
+            // the surviving row files under Mutations — the hedge is kept
+            // for forms only the generator vouches for
             .Select(x => x.Primary.Link.LinkType == "demutated"
                          && particles.Any(p => p.Link.Form == x.Primary.Link.Form)
                 ? (Primary: (Link: x.Primary.Link with { LinkType = "mutation" },
                         x.Primary.ByParent), x.Also)
                 : x)
             .ToList();
-        rows.AddRange(particles
-            // a particle row filing under its own phrase would say the entry
-            // above over again, count and all: not drawn — though it still
-            // counted above, as the mutation's voucher
-            .Where(x => !EchoesParent(x.Link, parentForm))
-            .Select(x => (Primary: x, Also: new List<string>())));
+        // an echoing particle row (its phrase is the entry above) said the
+        // entry over again, count and all: not drawn — though it counted
+        // above, as the mutation's voucher
+        rows.AddRange(drawnParticles.Select(x => (Primary: x, Also: new List<string>())));
         return rows
             .GroupBy(x => x.Primary.Link.LinkType)
             .OrderBy(g => GroupRank(g.Key))
