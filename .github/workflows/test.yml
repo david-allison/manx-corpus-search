@@ -18,7 +18,7 @@ jobs:
       run:
         working-directory: CorpusSearch/ClientApp
     steps:
-      - uses: actions/checkout@v7.0.0
+      - uses: actions/checkout@v7.0.1
       - uses: actions/setup-node@v7
         with:
           node-version: 20
@@ -36,7 +36,7 @@ jobs:
     name: Submodule Pins
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7.0.0
+      - uses: actions/checkout@v7.0.1
       - name: Pins are reachable from each upstream default branch
         run: |
           [ -f .gitmodules ] || exit 0
@@ -63,7 +63,7 @@ jobs:
     name: Unit Testing
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7.0.0
+      - uses: actions/checkout@v7.0.1
         with:
           # external/ submodules hold consumed data (e.g. the lemma table)
           submodules: true
@@ -84,7 +84,7 @@ jobs:
       run:
         working-directory: CorpusSearch/ClientApp
     steps:
-      - uses: actions/checkout@v7.0.0
+      - uses: actions/checkout@v7.0.1
         with:
           # external/ submodules hold consumed data (e.g. the lemma table)
           submodules: true
