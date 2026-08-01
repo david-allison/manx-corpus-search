@@ -67,7 +67,7 @@ jobs:
         with:
           # external/ submodules hold consumed data (e.g. the lemma table)
           submodules: true
-      - uses: actions/setup-dotnet@v5
+      - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 10.0.x
       - run: dotnet test
@@ -88,7 +88,7 @@ jobs:
         with:
           # external/ submodules hold consumed data (e.g. the lemma table)
           submodules: true
-      - uses: actions/setup-dotnet@v5
+      - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 10.0.x
       - uses: actions/setup-node@v7
