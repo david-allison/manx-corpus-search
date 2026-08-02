@@ -429,6 +429,43 @@ public class DictionaryLookupServiceTest
         Assert.That(Lookup(service, "er", context), Is.EqualTo(new[] { "er" }));
     }
 
+    /// <summary>A display's other homograph must not donate its roots to a
+    /// resolved tap: Cregeen prints a second 'goo' ("your, &amp;c. greyhound",
+    /// the nyn-goo eclipsis of coo), and a ghoo the sidecar read as "word"
+    /// still walked on into coo's greyhound entries</summary>
+    [Test]
+    public void AResolvedTapDoesNotWalkAnotherHomographsRoot()
+    {
+        var table = Lemmas(("ghoo", "ghoo"), ("ghoo", "goo"), ("ghoo", "doo"), ("goo", "coo"));
+        var books = new FakeDictionary(["goo", "doo", "coo"]);
+        const string context = "shoh yn ghoo";
+
+        var unresolved = new DictionaryLookupService([books], table, LemmaResolver.Empty);
+        Assert.That(Lookup(unresolved, "ghoo", context), Is.EqualTo(new[] { "goo", "doo", "coo" }));
+
+        var resolver = Resolver(table, sidecar: SidecarRow(context, tokenIndex: 2, "ghoo", "ghoo.x,goo.x"));
+        var service = new DictionaryLookupService([books], table, resolver);
+        Assert.That(Lookup(service, "ghoo", context), Is.EqualTo(new[] { "goo" }));
+    }
+
+    /// <summary>The resolved group carries its own paradigm roots: the walk keeps
+    /// the displays the verdict's ids name, and only those</summary>
+    [Test]
+    public void TheResolvedGroupKeepsItsOwnDeeperRoot()
+    {
+        var table = Lemmas(("gheiney", "deiney"), ("gheiney", "dooinney"), ("gheiney", "geiney"),
+            ("deiney", "dooinney"));
+        var books = new FakeDictionary(["deiney", "dooinney", "geiney"]);
+        const string context = "ny gheiney shoh";
+
+        var resolver = Resolver(table, sidecar: SidecarRow(context, tokenIndex: 1, "gheiney", "deiney.x,dooinney.x"));
+        var service = new DictionaryLookupService([books], table, resolver);
+
+        var result = Lookup(service, "gheiney", context);
+        Assert.That(result, Does.Contain("deiney").And.Contain("dooinney"));
+        Assert.That(result, Does.Not.Contain("geiney"));
+    }
+
     private static LemmaTable Names()
     {
         return LemmaTable.Load(new StringReader(
