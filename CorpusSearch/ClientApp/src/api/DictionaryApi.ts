@@ -71,13 +71,17 @@ export type DictionaryLookupResult = {
 }
 
 /**
- * The server matches phrases of up to a few words around the selection, so a
- * short window of context is enough: keep the URL bounded for long lines.
+ * The context must arrive whole: the per-line lemma resolution keys on a hash
+ * of the entire line's token stream, so a trimmed line resolves nothing and
+ * the popup falls back to every reading. The bound only guards pathological
+ * URLs — real corpus lines (long Bible verses run ~600 characters) fit well
+ * inside it. Phrase matching around the selection needs far less and is
+ * unharmed either way.
  */
 export const trimContext = (
     context: string,
     selection: string,
-    radius: number = 150,
+    radius: number = 2000,
 ): string => {
     if (context.length <= 2 * radius + selection.length) {
         return context
