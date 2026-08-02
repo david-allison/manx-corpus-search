@@ -35,7 +35,7 @@ const GROUP_LABELS: Record<string, string> = {
     mutation: "Mutations",
     demutated: "Possible mutations",
     particle: "With a particle",
-    derived: "Derived words",
+    derived: "Printed in the entry",
     univerbated: "Written as one word",
     phillips: "Phillips (c. 1610) spellings",
     prefixed: "Written with the prefix",
@@ -74,14 +74,6 @@ const ParentLine = ({ parent }: { parent: LemmaTreeParent }) => (
                 <Link to={lemmaTreeUrl(parent.lemma)}>{parent.lemma}</Link>
                 {" ›"}
             </>
-        ) : parent.linkTypes.includes("derived") ? (
-            // the book's word-family edge: this word is its own lexeme,
-            // printed in the head's paragraph. Never "a form of" the head.
-            <>
-                {"Derived from "}
-                <Link to={lemmaTreeUrl(parent.lemma)}>{parent.lemma}</Link>
-                {" ›"}
-            </>
         ) : (
             <>
                 {"A form of "}
@@ -94,6 +86,39 @@ const ParentLine = ({ parent }: { parent: LemmaTreeParent }) => (
                 {" ›"}
             </>
         )}
+    </p>
+)
+
+/** The "a form of" claims above the root. The book's word-family edges
+ * (where the book prints this word) draw as the tree's root instead: see
+ * <see cref="FamilyHeads"/>. */
+const ParentLines = ({ parents }: { parents?: LemmaTreeParent[] | null }) => (
+    <>
+        {parents
+            ?.filter((x) => !x.linkTypes.includes("derived"))
+            .map((parent) => (
+                <ParentLine parent={parent} key={parent.lemma} />
+            ))}
+    </>
+)
+
+/** The word-family heads among a lemma's parents: the entries whose
+ * paragraphs print it (camstram sits in both cammey's and stramlag's).
+ * The word is its own lexeme, so the edge claims the print location and
+ * nothing else: never derivation, never "a form of". */
+const printedUnderOf = (parents?: LemmaTreeParent[] | null) =>
+    parents?.filter((x) => x.linkTypes.includes("derived")) ?? []
+
+/** The word prints UNDER its heads, so the heads root the tree: one node,
+ * however many heads, with the word's own tree nested beneath it. */
+const FamilyHeads = ({ parents }: { parents: LemmaTreeParent[] }) => (
+    <p className="dict-lemma-root dict-lemma-root-embedded">
+        {parents.map((parent, index) => (
+            <span key={parent.lemma}>
+                {index > 0 && " · "}
+                <Link to={lemmaTreeUrl(parent.lemma)}>{parent.lemma}</Link>
+            </span>
+        ))}
     </p>
 )
 
@@ -243,12 +268,12 @@ const Count = ({
     ) : null
 
 /** One family drawn inside the word page: the same tree the lemma page
- * draws, under a root sized to head a section rather than a page */
-const EmbeddedTree = ({ tree }: { tree: LemmaTreeResponse }) => (
-    <div className="dict-lemma-embedded">
-        {tree.parents?.map((parent) => (
-            <ParentLine parent={parent} key={parent.lemma} />
-        ))}
+ * draws, under a root sized to head a section rather than a page. A word
+ * the book prints under other entries nests beneath them: the heads root
+ * the tree, since that is where the word sits on the page. */
+const EmbeddedTree = ({ tree }: { tree: LemmaTreeResponse }) => {
+    const heads = printedUnderOf(tree.parents)
+    const root = (
         <p
             className={
                 tree.attested
@@ -269,13 +294,36 @@ const EmbeddedTree = ({ tree }: { tree: LemmaTreeResponse }) => (
                 source={tree.source}
             />
         </p>
-        <TreeGroups
-            groups={tree.groups}
-            className="dict-lemma-tree"
-            ariaLabel={`Forms of ${tree.lemma}`}
-        />
-    </div>
-)
+    )
+    return (
+        <div className="dict-lemma-embedded">
+            <ParentLines parents={tree.parents} />
+            {heads.length > 0 ? (
+                <>
+                    <FamilyHeads parents={heads} />
+                    <ul
+                        className="dict-lemma-tree"
+                        aria-label={`Forms of ${tree.lemma}`}
+                    >
+                        <li>
+                            {root}
+                            <TreeGroups groups={tree.groups} />
+                        </li>
+                    </ul>
+                </>
+            ) : (
+                <>
+                    {root}
+                    <TreeGroups
+                        groups={tree.groups}
+                        className="dict-lemma-tree"
+                        ariaLabel={`Forms of ${tree.lemma}`}
+                    />
+                </>
+            )}
+        </div>
+    )
+}
 
 /** The "Word family" section ending the word page: one tree per reading, the
  * same trees the lemma pages draw. The heading waits for the trees — a
@@ -378,9 +426,12 @@ export const LemmaTree = ({ lemma }: { lemma: string }) => {
                 <>
                     {/* what the root itself hangs off, drawn above it: the
                         graph climbs both ways */}
-                    {tree.parents?.map((parent) => (
-                        <ParentLine parent={parent} key={parent.lemma} />
-                    ))}
+                    <ParentLines parents={tree.parents} />
+                    {/* the heads whose paragraphs print this word sit above
+                        it, as they do on the book's page */}
+                    {printedUnderOf(tree.parents).length > 0 && (
+                        <FamilyHeads parents={printedUnderOf(tree.parents)} />
+                    )}
 
                     {/* the root of the tree: the trunk below hangs off it */}
                     <h1
@@ -417,11 +468,12 @@ export const LemmaTree = ({ lemma }: { lemma: string }) => {
                         </span>
                     </h1>
 
-                    {tree.groups.length === 0 && (
-                        <p className="dict-browse-empty">
-                            No forms hang off this lemma.
-                        </p>
-                    )}
+                    {tree.groups.length === 0 &&
+                        printedUnderOf(tree.parents).length === 0 && (
+                            <p className="dict-browse-empty">
+                                No forms hang off this lemma.
+                            </p>
+                        )}
                     <TreeGroups
                         groups={tree.groups}
                         className="dict-lemma-tree"
