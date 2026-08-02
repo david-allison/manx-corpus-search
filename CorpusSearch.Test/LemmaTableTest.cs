@@ -59,6 +59,16 @@ public class LemmaTableTest
     }
 
     [Test]
+    public void ADerivedRowIsNoCandidate()
+    {
+        var table = Table(
+            "jaagh\tjaagh.n\tjaagh\tself\ts. f.\tjaagh\t",
+            "jaagheyder\tjaagh-1\tjaagh\tderived\ts. f.\tjaagh\t");
+
+        Assert.That(table.CandidatesFor("jaagheyder"), Is.Empty);
+    }
+
+    [Test]
     public void VocabSupplementRowsAreUnverifiedLinks()
     {
         // the vocab supplement tags every row unverified, additively beside
