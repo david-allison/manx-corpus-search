@@ -29,18 +29,42 @@ public class LemmaResolver
 
     private readonly Dictionary<string, string[]> overridesByForm;
     private readonly Dictionary<(string Key, int Index), SidecarRow> sidecarByToken;
+    private readonly Dictionary<string, string> equivalenceRoot;
 
-    public static readonly LemmaResolver Empty = new([], []);
+    public static readonly LemmaResolver Empty = new([], [], []);
 
     // read once, shared by the index-time analyzer and the popup
     private static readonly Lazy<LemmaResolver> Lazy = new(LoadVendored);
     public static LemmaResolver Instance => Lazy.Value;
 
     private LemmaResolver(Dictionary<string, string[]> overridesByForm,
-        Dictionary<(string Key, int Index), SidecarRow> sidecarByToken)
+        Dictionary<(string Key, int Index), SidecarRow> sidecarByToken,
+        Dictionary<string, string> equivalenceRoot)
     {
         this.overridesByForm = overridesByForm;
         this.sidecarByToken = sidecarByToken;
+        this.equivalenceRoot = equivalenceRoot;
+    }
+
+    /// <summary>Whether the ids are one lexeme by the equivalence layer's word:
+    /// dooys.x and dou.x carry a recorded 'same' verdict (the emphatic and its
+    /// base), where goan.a beside goo.n does not. Ids the layer never mentions
+    /// are their own lexeme.</summary>
+    public bool SameLexeme(IReadOnlyList<string> ids)
+    {
+        if (ids.Count == 0)
+        {
+            return false;
+        }
+        var root = equivalenceRoot.GetValueOrDefault(ids[0], ids[0]);
+        for (var i = 1; i < ids.Count; i++)
+        {
+            if (equivalenceRoot.GetValueOrDefault(ids[i], ids[i]) != root)
+            {
+                return false;
+            }
+        }
+        return true;
     }
 
     /// <summary>The form-level resolution of <paramref name="form"/>; null when unresolved</summary>
@@ -102,7 +126,8 @@ public class LemmaResolver
     /// non-empty subset of the table's candidates for their form are dropped: they can
     /// only mean version skew between the table and the artifacts.
     /// </summary>
-    public static LemmaResolver Load(TextReader? overrides, TextReader? sidecar, LemmaTable table)
+    public static LemmaResolver Load(TextReader? overrides, TextReader? sidecar, LemmaTable table,
+        TextReader? equivalences = null)
     {
         var dropped = 0;
 
@@ -149,13 +174,43 @@ public class LemmaResolver
             }
         }
 
+        // idA \t idB \t verdict \t note — union over the 'same' verdicts only:
+        // the equivalence layer's word for "one lexeme under several headwords"
+        var equivalenceRoot = new Dictionary<string, string>();
+        string Find(string id)
+        {
+            if (!equivalenceRoot.TryGetValue(id, out var p) || p == id)
+            {
+                return id;
+            }
+            var root = Find(p);
+            equivalenceRoot[id] = root;
+            return root;
+        }
+        foreach (var columns in Rows(equivalences, headerPrefix: "idA\t"))
+        {
+            if (columns.Length < 3 || columns[2] != "same")
+            {
+                continue;
+            }
+            var (a, b) = (Find(columns[0]), Find(columns[1]));
+            if (a != b)
+            {
+                equivalenceRoot[a] = b;
+            }
+        }
+        foreach (var id in equivalenceRoot.Keys.ToList())
+        {
+            equivalenceRoot[id] = Find(id);
+        }
+
         if (overridesByForm.Count > 0 || sidecarByToken.Count > 0 || dropped > 0)
         {
             Serilog.Log.Information(
-                "Lemma resolutions: {Overrides} form overrides, {Sidecar} sidecar rows ({Dropped} dropped as not narrowing the table's candidates)",
-                overridesByForm.Count, sidecarByToken.Count, dropped);
+                "Lemma resolutions: {Overrides} form overrides, {Sidecar} sidecar rows, {Equivalences} equivalence-linked ids ({Dropped} dropped as not narrowing the table's candidates)",
+                overridesByForm.Count, sidecarByToken.Count, equivalenceRoot.Count, dropped);
         }
-        return new LemmaResolver(overridesByForm, sidecarByToken);
+        return new LemmaResolver(overridesByForm, sidecarByToken, equivalenceRoot);
     }
 
     private static IEnumerable<string[]> Rows(TextReader? reader, string headerPrefix)
@@ -179,9 +234,10 @@ public class LemmaResolver
         // absent until the data side adopts the artifacts: candidate sets stay fully ambiguous
         using var overrides = OpenOptional("lemma.overrides.tsv");
         using var sidecar = OpenOptional("lemma.sidecar.tsv");
-        return overrides == null && sidecar == null
+        using var equivalences = OpenOptional("lemma.equivalences.seed.tsv");
+        return overrides == null && sidecar == null && equivalences == null
             ? Empty
-            : Load(overrides, sidecar, LemmaTable.Instance);
+            : Load(overrides, sidecar, LemmaTable.Instance, equivalences);
 
         static TextReader? OpenOptional(string name)
         {
