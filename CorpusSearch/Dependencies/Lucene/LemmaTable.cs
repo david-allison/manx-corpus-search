@@ -408,7 +408,7 @@ public class LemmaTable
                 // that reached them (ghoan names goo.n as "goan", hrog names
                 // trog), and whichever the file orders first is an accident of
                 // the book — kione.n once displayed as "king" this way
-                if (columns.Length > 3 && columns[3] == "self")
+                if (linkType == "self")
                 {
                     if (!selfDisplayById.ContainsKey(lemmaId))
                     {

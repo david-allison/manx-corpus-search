@@ -251,22 +251,22 @@ public class DictionaryAttestationServiceTest : QueryBase
         });
     }
 
-    /// <summary>The settled lines lead a step's sample: 'cronk' is shared with
-    /// cronk.n (the hill) and unsettled, while 'crank' can only be this word.
+    /// <summary>The settled lines lead a step's sample: 'goan' is shared with
+    /// goan.a (scarce) and unsettled, while 'goo' resolves to this word alone.
     /// A document in the known walk must not open on the occurrences its
     /// potential twin holds, however early in the text they come.</summary>
     [Test]
     public void TheSettledLinesLeadTheSample()
     {
-        AddDated("Doc", 1819, "ayns cronk Seir", "va crank ayn");
+        AddDated("Doc", 1819, "ayns goan Seir", "va goo ayn");
 
-        var found = Service().InDocument("crank", "Doc").Result!;
-        var noun = found.Groups.Single(x => x.LemmaIds.Contains("crank.n"));
+        var found = Service().InDocument("goo", "Doc").Result!;
+        var noun = found.Groups.Single(x => x.LemmaIds.Contains("goo.n"));
 
         Assert.Multiple(() =>
         {
             Assert.That(noun.Lines.Select(x => x.Manx),
-                Is.EqualTo(new[] { "va crank ayn", "ayns cronk Seir" }));
+                Is.EqualTo(new[] { "va goo ayn", "ayns goan Seir" }));
             Assert.That(noun.UncertainLineNumbers, Is.EqualTo(new[] { 2 }));
         });
     }
