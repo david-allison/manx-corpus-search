@@ -134,6 +134,17 @@ public class DictionaryLookupService(IEnumerable<ISearchDictionary> dictionarySe
                 .Select(x => (Display: x, Origin: x,
                     Unverified: lemmaTable.IsUnverifiedLink(selection, x)))
                 .ToList();
+            // a resolved tap names its lexeme group, and the group carries its
+            // own paradigm roots ('gheiney' resolves with deiney AND dooinney) -
+            // so the deeper walk stays inside the group's displays. Without
+            // this, a display's OTHER homograph donates its roots: Cregeen
+            // prints a second goo ("your, &c. greyhound", the nyn-goo eclipsis
+            // of coo), and a ghoo the sidecar already read as "word" walked on
+            // into coo's greyhound entries
+            var resolvedRootDisplays = ResolvedLemmaIds(selection, context) is { } resolvedIds
+                ? lemmaTable.DisplayLemmasFor(selection, resolvedIds)
+                    .ToHashSet(StringComparer.InvariantCultureIgnoreCase)
+                : null;
             // which sense of a root the chain means: the word classes of the
             // candidate ids that produced each display (row -> bee.v is the
             // verb 'bee', never the food)
@@ -183,6 +194,7 @@ public class DictionaryLookupService(IEnumerable<ISearchDictionary> dictionarySe
                         .Select(next => (Display: next, root.Origin,
                             Unverified: root.Unverified || lemmaTable.IsUnverifiedLink(root.Display, next))))
                     .Where(x => !seen.Contains(x.Display))
+                    .Where(x => resolvedRootDisplays == null || resolvedRootDisplays.Contains(x.Display))
                     .DistinctBy(x => x.Display, StringComparer.InvariantCultureIgnoreCase)
                     .ToList();
             }
