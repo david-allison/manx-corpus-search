@@ -86,16 +86,16 @@ public class DictionaryAttestationServiceTest : QueryBase
         Assert.That(walk.Documents.Single().Uses, Is.EqualTo(3));
     }
 
-    /// <summary>What may be asserted is what the settled field counts: 'daase'
-    /// can only be aase.v, so it is sure — while 'aase' itself could be a
-    /// lenited faase, so its use is offered, never asserted, even on the
-    /// lexeme's own page</summary>
+    /// <summary>What may be asserted is what the settled field counts: 'beg'
+    /// can only be beg.a, so it is sure — while 'veg' could as well be veg.x
+    /// or meg.n, so its use is offered, never asserted, even on the lexeme's
+    /// own page</summary>
     [Test]
     public void SureUsesCountOnlySettledReadings()
     {
-        AddDated("Doc", 1748, "Ta mee aase", "Daase eh");
+        AddDated("Doc", 1748, "Cha row veg ayn", "Ta thie beg aym");
 
-        var walked = Service().Attestations("daase").Documents.Single();
+        var walked = Service().Attestations("beg").Documents.Single();
 
         Assert.Multiple(() =>
         {
@@ -157,27 +157,27 @@ public class DictionaryAttestationServiceTest : QueryBase
         });
     }
 
-    /// <summary>'daase' carries only the verb, so the verb's group holds both
-    /// lines while the noun's holds one: each reading shows what it claims.
-    /// 'aase' is also faase.a demutated, so its line is offered after the
-    /// settled daase line, whatever order the document wrote them in.</summary>
+    /// <summary>'beg' carries only the adjective, so its group holds both
+    /// lines: each reading shows what it claims. 'veg' could as well be
+    /// veg.x or meg.n, so its line is offered after the settled beg line,
+    /// whatever order the document wrote them in.</summary>
     [Test]
     public void EveryUseInADocumentIsReturnedSettledFirst()
     {
-        AddDated("Doc", 1748, "Ta mee aase", "Cha nel eh", "Daase yn billey");
+        AddDated("Doc", 1748, "Cha row veg ayn", "Cha nel eh", "Ta thie beg aym");
 
-        var found = Service().InDocument("aase", "Doc").Result!;
-        var verb = found.Groups.Single(x => x.LemmaIds.Contains("aase.v"));
+        var found = Service().InDocument("beg", "Doc").Result!;
+        var adjective = found.Groups.Single(x => x.LemmaIds.Contains("beg.a"));
 
         Assert.Multiple(() =>
         {
             Assert.That(found.Year, Is.EqualTo(1748));
             // two uses; the line between them uses neither form, and neither is
-            // counted twice for being claimed by both the noun and the verb
+            // counted twice for being claimed by several readings
             Assert.That(found.UseCount, Is.EqualTo(2));
-            Assert.That(verb.Lines.Select(x => x.Manx),
-                Is.EqualTo(new[] { "Daase yn billey", "Ta mee aase" }));
-            Assert.That(verb.UncertainLineNumbers, Is.EqualTo(new[] { 2 }));
+            Assert.That(adjective.Lines.Select(x => x.Manx),
+                Is.EqualTo(new[] { "Ta thie beg aym", "Cha row veg ayn" }));
+            Assert.That(adjective.UncertainLineNumbers, Is.EqualTo(new[] { 2 }));
         });
     }
 

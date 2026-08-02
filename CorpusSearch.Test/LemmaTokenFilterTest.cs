@@ -27,10 +27,11 @@ public class LemmaTokenFilterTest
 
     private static string Row(string form, string lemmaId) => $"{form}\t{lemmaId}\tx\tself\tx\t{form}\t";
 
-    private static List<Token> Tokens(string text, LemmaTable table, LemmaResolver? resolver = null)
+    private static List<Token> Tokens(string text, LemmaTable table, LemmaResolver? resolver = null,
+        bool sureOnly = false)
     {
         var tokenizer = new ManxTokenizer(LuceneVersion.LUCENE_48, new StringReader(text));
-        using var stream = new LemmaTokenFilter(new ManxTokenFilter(tokenizer), table, resolver);
+        using var stream = new LemmaTokenFilter(new ManxTokenFilter(tokenizer), table, resolver, sureOnly);
         var term = stream.GetAttribute<ICharTermAttribute>();
         var posIncr = stream.GetAttribute<IPositionIncrementAttribute>();
         var offset = stream.GetAttribute<IOffsetAttribute>();
@@ -145,12 +146,14 @@ public class LemmaTokenFilterTest
 
     // ---- the resolution layers (LemmaResolver) ----
 
-    private static LemmaResolver Resolver(LemmaTable table, string? overrides = null, string? sidecar = null)
+    private static LemmaResolver Resolver(LemmaTable table, string? overrides = null, string? sidecar = null,
+        string? equivalences = null)
     {
         return LemmaResolver.Load(
             overrides == null ? null : new StringReader(overrides),
             sidecar == null ? null : new StringReader(sidecar),
-            table);
+            table,
+            equivalences == null ? null : new StringReader(equivalences));
     }
 
     /// <summary>A sidecar row for the line <paramref name="text"/> tokenizes to</summary>
@@ -226,5 +229,40 @@ public class LemmaTokenFilterTest
 
         Assert.That(Tokens("t'ayn", table, resolver).Select(x => x.Term),
             Is.EqualTo(new[] { "t'ayn", "bee.v", "ayn.x" }));
+    }
+
+    /// <summary>One lexeme may wear two printed headwords: dooys has its own
+    /// entry, and the equivalence layer's 'same' verdict says it is dou. A
+    /// reading resolved to that pair is settled — the sure field carries it
+    /// under both ids</summary>
+    [Test]
+    public void AFamilyOfHeadwordsSettlesByItsEquivalence()
+    {
+        var table = Table(
+            "dooys\tdooys.x\tdooys\tself\tp. p.\tdooys\t",
+            "dooys\tdou.x\tdou\tinflected\tp. p.\tdou\t",
+            "dooys\tdoo.v\tdoo\tinflected\tv.\tdoo\t");
+        var resolver = Resolver(table,
+            overrides: "form\tlemmaIds\tevidence\ndooys\tdooys.x,dou.x\t498/498 LLM-unanimous\n",
+            equivalences: "idA\tidB\tverdict\tnote\ndooys.x\tdou.x\tsame\tone to-me\n");
+
+        Assert.That(Tokens("dooys", table, resolver, sureOnly: true).Select(x => x.Term),
+            Is.EqualTo(new[] { "dooys.x", "dou.x" }));
+    }
+
+    /// <summary>Displays with no recorded 'same' verdict are different words: a
+    /// reading spanning them never settles, however it was narrowed — the
+    /// table's form-level root links must not stand in (goan's spelling hangs
+    /// off goo, yet goan.a 'scarce' beside goo.n is two words)</summary>
+    [Test]
+    public void AReadingAcrossLexemesNeverSettles()
+    {
+        var table = Table(
+            "goan\tgoan.a\tgoan\tself\ta.\tgoan\t",
+            "goan\tgoo.n\tgoo\tplural\ts. m.\tgoan\t",
+            "goan\tcoo.n\tcoo\tparticle\ts.\tnyn goo\t");
+        var resolver = Resolver(table, overrides: "form\tlemmaIds\tevidence\ngoan\tgoan.a,goo.n\t9/9\n");
+
+        Assert.That(Tokens("goan", table, resolver, sureOnly: true), Is.Empty);
     }
 }

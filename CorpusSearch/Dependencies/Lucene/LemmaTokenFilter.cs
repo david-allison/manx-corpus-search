@@ -26,7 +26,9 @@ namespace CorpusSearch.Dependencies.Lucene;
 ///
 /// In <paramref name="sureOnly"/> mode (the manx_lemma_sure field) only settled
 /// readings are emitted: a covered token whose resolved id set names a single
-/// display lemma. An ambiguous token (voddey: moddey or foddey), an uncovered
+/// word — one display lemma, or several the table itself hangs off one root
+/// (dooys prints its own entry AND is the em. of dou: one lexeme wearing two
+/// headwords). An ambiguous token (voddey: moddey or foddey), an uncovered
 /// token, and a clitic's parts say nothing here — the field exists so a count
 /// can be asserted rather than offered, and only serves lemma-id queries.
 /// Skipped tokens leave position holes; offsets, and so highlights, hold.
@@ -52,7 +54,18 @@ public sealed class LemmaTokenFilter(TokenStream input, LemmaTable table, LemmaR
     }
 
     /// <summary>Whether the ids leave no doubt which word this is: they all
-    /// display as one headword (jaagh.n and jaagh.v are both jaagh)</summary>
+    /// display as one headword (jaagh.n and jaagh.v are both jaagh), or the
+    /// equivalence layer records them as one lexeme (dooys.x and dou.x: the
+    /// emphatic prints its own entry, but a 'same' verdict says one word).
+    /// The display test alone cannot say that, and the table's form-level
+    /// root links must not either: goan's spelling hangs off goo, yet goan.a
+    /// 'scarce' beside goo.n is two words — only a recorded verdict settles
+    /// a reading across headwords.</summary>
+    private bool SettledReading(IReadOnlyList<string> ids)
+    {
+        return SingleDisplayLemma(ids) || resolver.SameLexeme(ids);
+    }
+
     private bool SingleDisplayLemma(IReadOnlyList<string> ids)
     {
         var display = table.DisplayLemmaOf(ids[0]);
@@ -159,7 +172,7 @@ public sealed class LemmaTokenFilter(TokenStream input, LemmaTable table, LemmaR
                 var ids = resolver.OverrideFor(token)
                           ?? resolver.SidecarFor(lineKey, i, token, includePopupTier: false)
                           ?? direct;
-                if (sureOnly && !SingleDisplayLemma(ids))
+                if (sureOnly && !SettledReading(ids))
                 {
                     continue;
                 }
