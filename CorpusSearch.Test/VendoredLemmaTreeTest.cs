@@ -107,6 +107,35 @@ public class VendoredLemmaTreeTest
             "the member's own paradigm must ride along");
     }
 
+    /// <summary>The pronoun-preposition emphatics belong to their own words
+    /// alone. Each of these spellings was once claimed by contraction lexemes
+    /// too — the apostrophe strip handed ocsyn to v'oc and s'oc, ayms to
+    /// v'aym and s'aym — so the word pages drew a family per claimant and
+    /// every count wore the shared-spelling mark. The withdrawal pass cured
+    /// them; an exporter change that re-plants a claim fails here by name.</summary>
+    [Test]
+    public void AnEmphaticBelongsToItsOwnWordAlone()
+    {
+        var table = LemmaTable.Instance;
+        if (!table.AllDisplayLemmas.Any())
+        {
+            Assert.Ignore("cregeen.tsv not vendored (manx-lemma-data submodule not initialised)");
+        }
+        Assert.Multiple(() =>
+        {
+            foreach (var (emphatic, word) in new[]
+                     {
+                         ("ocsyn", "oc"), ("ayds", "ayd"), ("ayms", "aym"),
+                         ("echeysyn", "echey"), ("euish", "eu"), ("orts", "ort"),
+                     })
+            {
+                Assert.That(table.DisplayLemmasFor(emphatic), Is.EqualTo(new[] { word }),
+                    $"{emphatic} is {word}'s alone: another claimant means a page " +
+                    "of extra family trees and a false shared-spelling mark");
+            }
+        });
+    }
+
     /// <summary>The book says v'oc is va oc, but no entry spells the expansion
     /// out, so the contraction relation could not redirect and once died
     /// silently: v'oc related to nothing but the be paradigm, and oc's page
@@ -125,6 +154,30 @@ public class VendoredLemmaTreeTest
                 .Select(p => p.Lemma),
             Is.SupersetOf(new[] { "oc", "va" }),
             "v'oc must climb to the words it fuses");
+    }
+
+    /// <summary>Everything in fys's printed family is print, not a rule's
+    /// guess. Cregeen's radical marker on the cha s'X contractions (O on cha
+    /// s'oc, for the oc embedded after the fys-contracting s') was once read
+    /// as an unprovable mutation claim, and the five marked entries' whole
+    /// paradigms wore "worked out by rule, and may be wrong" while their four
+    /// markerless siblings sat clean beside them. They went wrong together;
+    /// hold the family together.</summary>
+    [Test]
+    public void FysFamilyWearsNoRuleMadeHedge()
+    {
+        var hedged = TreeOf("fys").Groups
+            .Where(g => g.LinkType == "derived")
+            .SelectMany(g => g.Forms)
+            .SelectMany(member => Flatten(member.Groups)
+                .Select(x => x.Node)
+                .Prepend(member))
+            .Where(node => node.Unverified)
+            .Select(node => node.Form)
+            .ToList();
+        Assert.That(hedged, Is.Empty,
+            "Cregeen prints fys's family entire: no member or paradigm row " +
+            "may wear the unverified mark");
     }
 
     /// <summary>Every family edge, both ways, table-wide. One lexeme answers
