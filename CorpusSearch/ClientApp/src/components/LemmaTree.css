@@ -127,14 +127,28 @@
     font-size: 0.6em;
 }
 
-/* a lemma section's family, folded beside its entries: the summary reads
-   as the section's other headings do, wearing the fold's marker */
+/* a lemma section's family, folded beside its entries: the summary wears
+   the section headings' small caps but sized as a control, not a rule —
+   no full-width underline, the chip inline beside the words, air above
+   where the entries end */
+.dict-lemma-details {
+    margin-top: 14px;
+}
+
 .dict-lemma-details > summary {
     cursor: pointer;
+    border-bottom: none;
+    margin: 0;
+    padding-bottom: 0;
+}
+
+.dict-lemma-details > summary .attest-experimental {
+    float: none;
+    margin-left: 8px;
 }
 
 .dict-lemma-details[open] > summary {
-    margin-bottom: 4px;
+    margin-bottom: 6px;
 }
 
 a.dict-lemma-here {

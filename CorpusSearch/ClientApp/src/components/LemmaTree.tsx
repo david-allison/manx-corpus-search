@@ -313,13 +313,9 @@ const Count = ({
 const EmbeddedTree = ({
     tree,
     highlight,
-    showPos,
 }: {
     tree: LemmaTreeResponse
     highlight?: string
-    /** wear the book's class label ("v.", "pro."): homograph trees share a
-     * name, and the label is what tells them apart */
-    showPos?: boolean
 }) => {
     const heads = printedUnderOf(tree.parents)
     const here = sameWord(highlight, tree.lemma)
@@ -345,9 +341,10 @@ const EmbeddedTree = ({
             ) : (
                 <Link to={dictionaryWordUrl(tree.lemma)}>{tree.lemma}</Link>
             )}
-            {/* the book's class label, where homographs share the name:
-                'ee v.' eats, 'ee pro.' is her */}
-            {showPos && tree.pos ? (
+            {/* the book's class label, so the tree says whose family it
+                is: 'ee v.' eats, 'ee pro.' is her, and the lone tree beside
+                another reading's entries does not pose as theirs */}
+            {tree.pos ? (
                 <span className="dict-lemma-pos"> {tree.pos}</span>
             ) : null}
             <Count attestations={tree.attestations} />
@@ -472,9 +469,6 @@ const FamilyTreeList = ({
                 key={tree.lemmaId ?? tree.lemma}
                 tree={tree}
                 highlight={word}
-                // homographs alone need telling apart: the class label
-                // only where a second tree shares the name
-                showPos={trees.filter((t) => t.lemma === tree.lemma).length > 1}
             />
         ))}
     </>
@@ -591,9 +585,9 @@ export const LemmaTree = ({ lemma }: { lemma: string }) => {
                         }
                     >
                         {tree.lemma}
-                        {/* the book's class label, where homographs share
-                            the name */}
-                        {trees.length > 1 && tree.pos ? (
+                        {/* the book's class label, so the tree says whose
+                            family it is */}
+                        {tree.pos ? (
                             <span className="dict-lemma-pos"> {tree.pos}</span>
                         ) : null}
                         <Count attestations={tree.attestations} />
