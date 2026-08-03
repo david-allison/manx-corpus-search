@@ -392,21 +392,13 @@ const EmbeddedTree = ({
     )
 }
 
-/** The "Word family" section ending the word page: one tree per reading, the
- * same trees the lemma pages draw. The heading waits for the trees — a
- * reading with nothing hanging off it draws nothing, and a word whose every
- * reading is bare draws no section at all: an empty table under a heading
- * would only say the feature exists. Quiet on failure too, for the same
- * reason the page's other extras are. */
-export const WordFamily = ({
-    lemmas,
-    word,
-}: {
-    lemmas: string[]
-    /** the page's own word: marked in the trees, so the reader sees where
-     * they stand in the family */
-    word?: string
-}) => {
+/** The word page's family trees: one per lexeme of every reading, fetched
+ * once and shared — the page seats each tree under the lemma section it
+ * belongs to, and whatever no section claims ends the page. Trees with
+ * nothing hanging off them are dropped: an empty table under a heading would
+ * only say the feature exists. Quiet on failure too, for the same reason the
+ * page's other extras are. */
+export const useWordFamilyTrees = (lemmas: string[]): LemmaTreeResponse[] => {
     const [trees, setTrees] = useState<LemmaTreeResponse[]>([])
 
     useEffect(() => {
@@ -444,10 +436,62 @@ export const WordFamily = ({
         return () => abort.abort()
     }, [lemmas])
 
-    if (trees.length === 0) {
-        return null
+    return trees
+}
+
+/** The sense-section key a tree's printed class files under, the same split
+ * senseGroupsIn makes of the entries: what seats a tree beneath the section
+ * that reads about its lexeme. Null where the label constrains nothing. */
+export const senseKeyOfPos = (pos: string): string | null => {
+    const label = pos.trimStart().toLowerCase()
+    if (label.startsWith("v")) return "verb"
+    if (label.startsWith("s.") || label.startsWith("n.")) return "noun"
+    if (label.startsWith("adv")) return "particle"
+    if (label.startsWith("a")) return "adjective"
+    if (
+        label.startsWith("pro") ||
+        label.startsWith("pre") ||
+        label.startsWith("int") ||
+        label.startsWith("c")
+    ) {
+        return "particle"
     }
-    return (
+    return null
+}
+
+const FamilyTreeList = ({
+    trees,
+    word,
+}: {
+    trees: LemmaTreeResponse[]
+    word?: string
+}) => (
+    <>
+        {trees.map((tree) => (
+            <EmbeddedTree
+                key={tree.lemmaId ?? tree.lemma}
+                tree={tree}
+                highlight={word}
+                // homographs alone need telling apart: the class label
+                // only where a second tree shares the name
+                showPos={trees.filter((t) => t.lemma === tree.lemma).length > 1}
+            />
+        ))}
+    </>
+)
+
+/** The "Word family" section ending the word page: the trees no lemma
+ * section claimed. Nothing to show draws nothing. */
+export const WordFamily = ({
+    trees,
+    word,
+}: {
+    trees: LemmaTreeResponse[]
+    /** the page's own word: marked in the trees, so the reader sees where
+     * they stand in the family */
+    word?: string
+}) =>
+    trees.length === 0 ? null : (
         <section className="dict-page-group">
             <h3 className="dict-page-dictionary">
                 Word family
@@ -455,21 +499,31 @@ export const WordFamily = ({
                     experimental &amp; incomplete
                 </span>
             </h3>
-            {trees.map((tree) => (
-                <EmbeddedTree
-                    key={tree.lemmaId ?? tree.lemma}
-                    tree={tree}
-                    highlight={word}
-                    // homographs alone need telling apart: the class label
-                    // only where a second tree shares the name
-                    showPos={
-                        trees.filter((t) => t.lemma === tree.lemma).length > 1
-                    }
-                />
-            ))}
+            <FamilyTreeList trees={trees} word={word} />
         </section>
     )
-}
+
+/** A lemma section's own family, folded: the tree belongs beside the entries
+ * that read about its lexeme, but expanded it would push the next reading
+ * off the screen — the reader opens it where they want it. */
+export const WordFamilyDetails = ({
+    trees,
+    word,
+}: {
+    trees: LemmaTreeResponse[]
+    word?: string
+}) =>
+    trees.length === 0 ? null : (
+        <details className="dict-lemma-details">
+            <summary className="dict-page-dictionary">
+                Word family
+                <span className="attest-experimental">
+                    experimental &amp; incomplete
+                </span>
+            </summary>
+            <FamilyTreeList trees={trees} word={word} />
+        </details>
+    )
 
 /** The lemma page's form trees: one per lexeme answering to the name (ee the
  * verb and ee the pronoun stand apart, each wearing the book's class label),
