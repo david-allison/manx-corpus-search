@@ -449,10 +449,13 @@ export const senseKeyOfPos = (pos: string): string | null => {
     if (label.startsWith("s.") || label.startsWith("n.")) return "noun"
     if (label.startsWith("adv")) return "particle"
     if (label.startsWith("a")) return "adjective"
+    // Cregeen abbreviates the interjection "in."
+    if (label.startsWith("int") || label.startsWith("in.")) {
+        return "interjection"
+    }
     if (
         label.startsWith("pro") ||
         label.startsWith("pre") ||
-        label.startsWith("int") ||
         label.startsWith("c")
     ) {
         return "particle"
@@ -471,7 +474,14 @@ const FamilyTreeList = ({
         {trees.map((tree) => (
             <EmbeddedTree
                 key={tree.lemmaId ?? tree.lemma}
-                tree={tree}
+                // the homograph number earns its place only beside a
+                // same-named sibling: alone in its list, the superscript
+                // would point at nothing the reader can see
+                tree={
+                    trees.filter((t) => t.lemma === tree.lemma).length > 1
+                        ? tree
+                        : { ...tree, homograph: null }
+                }
                 highlight={word}
             />
         ))}

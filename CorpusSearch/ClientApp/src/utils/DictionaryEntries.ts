@@ -60,12 +60,14 @@ const SENSE_OF: Record<string, string> = {
     Adverb: "particle",
     Preposition: "particle",
     Conjunction: "particle",
-    Interjection: "particle",
+    // an interjection shares nothing with the function-word cluster: e the
+    // cry of wonder must not merge senses with e the possessive
+    Interjection: "interjection",
     Pronoun: "particle",
 }
 
 /** dictionary order, so a word's senses do not shuffle between pages */
-const SENSE_ORDER = ["noun", "verb", "adjective", "particle"]
+const SENSE_ORDER = ["noun", "verb", "adjective", "particle", "interjection"]
 
 /** The gender a printed label declares: "s. m." says masculine, "s. f. pl."
  * says feminine, "s. m. f." says both. Null when the label is silent — most
