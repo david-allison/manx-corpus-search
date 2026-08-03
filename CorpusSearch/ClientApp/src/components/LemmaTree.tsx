@@ -67,19 +67,21 @@ const PARENT_LABELS: Record<string, string> = {
 }
 
 /** The upward reading of the graph: what this lemma hangs off, drawn above
- * the root so the family can be climbed from either end. */
+ * the root so the family can be climbed from either end. The name opens the
+ * word's dictionary page — where the reader's answers are, and which draws
+ * this same family at its foot — as every downward row does. */
 const ParentLine = ({ parent }: { parent: LemmaTreeParent }) => (
     <p className="dict-lemma-parent">
         {parent.linkTypes.includes("prefixed") ? (
             <>
                 {"Written with the prefix "}
-                <Link to={lemmaTreeUrl(parent.lemma)}>{parent.lemma}</Link>
+                <Link to={dictionaryWordUrl(parent.lemma)}>{parent.lemma}</Link>
                 {" ›"}
             </>
         ) : (
             <>
                 {"A form of "}
-                <Link to={lemmaTreeUrl(parent.lemma)}>{parent.lemma}</Link>
+                <Link to={dictionaryWordUrl(parent.lemma)}>{parent.lemma}</Link>
                 <span className="dict-lemma-parent-types">
                     {`: ${parent.linkTypes
                         .map((type) => PARENT_LABELS[type] ?? type)
@@ -112,13 +114,14 @@ const printedUnderOf = (parents?: LemmaTreeParent[] | null) =>
     parents?.filter((x) => x.linkTypes.includes("derived")) ?? []
 
 /** The word prints UNDER its heads, so the heads root the tree: one node,
- * however many heads, with the word's own tree nested beneath it. */
+ * however many heads, with the word's own tree nested beneath it. A head
+ * opens its dictionary page, like every other word in the tree. */
 const FamilyHeads = ({ parents }: { parents: LemmaTreeParent[] }) => (
     <p className="dict-lemma-root dict-lemma-root-embedded">
         {parents.map((parent, index) => (
             <span key={parent.lemma}>
                 {index > 0 && " · "}
-                <Link to={lemmaTreeUrl(parent.lemma)}>{parent.lemma}</Link>
+                <Link to={dictionaryWordUrl(parent.lemma)}>{parent.lemma}</Link>
             </span>
         ))}
     </p>

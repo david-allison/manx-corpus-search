@@ -290,18 +290,17 @@ describe("lemma tree", () => {
         })
         renderAt("/dictionary/lemma/aa-ghiennaghtyn")
 
-        // a table parent reads as the reverse of the downward chips...
+        // a table parent reads as the reverse of the downward chips, and
+        // opens the word's dictionary page like every downward row...
         const parent = await screen.findByRole("link", {
             name: "giennaghtyn",
         })
-        expect(parent.getAttribute("href")).toBe(
-            "/dictionary/lemma/giennaghtyn",
-        )
+        expect(parent.getAttribute("href")).toBe("/dictionary/giennaghtyn")
         expect(screen.getByText(/inflected · plural/)).toBeTruthy()
         // ...and the spelling parent as the prefix it is written with
         expect(
             screen.getByRole("link", { name: "aa-" }).getAttribute("href"),
-        ).toBe("/dictionary/lemma/aa-")
+        ).toBe("/dictionary/aa-")
         expect(screen.getByText(/Written with the prefix/)).toBeTruthy()
     })
 
