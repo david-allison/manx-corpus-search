@@ -82,6 +82,13 @@ public class VendoredLemmaTreeTest
             "Cregeen prints cha s'ocsyn: it must not wear the rule-made hedge");
         Assert.That(emphatic.Source, Is.EqualTo("cregeen"),
             "the printed form names its book");
+        // and the same edge read upward: the member's own tree names fys as
+        // its head, though the derived row keys the printed 'cha s'oc' and
+        // the lexeme displays particle-free
+        Assert.That(TreeOf("s'oc").Parents?.Where(p => p.LinkTypes.Contains("derived"))
+                .Select(p => p.Lemma),
+            Does.Contain("fys"),
+            "s'oc must climb to fys, as the reader climbs down from it");
     }
 
     /// <summary>The book's word family, whole: vondeish => vondeishagh =>

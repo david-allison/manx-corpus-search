@@ -125,8 +125,16 @@ public class LemmaIndexService(LemmaTable lemmaTable, CorpusVocabulary vocabular
         // the family heads the book prints this lemma under, upward: the
         // derived rows' reverse reading. Not in DisplayLemmasFor — a derived
         // row names no reading of the form — so the derived parents are
-        // asked for by name
-        foreach (var head in lemmaTable.DerivedParentsOf(links.Lemma)
+        // asked for by name: the display's, and the entry headwords that
+        // name this lexeme (fys's paragraph prints the member as 'cha
+        // s'oc', while its lexeme displays particle-free as s'oc)
+        var ownNames = links.Links
+            .Where(x => x.LinkType == "self")
+            .Select(x => x.Form)
+            .Prepend(links.Lemma);
+        foreach (var head in ownNames
+                     .SelectMany(n => lemmaTable.DerivedParentsOf(n))
+                     .Distinct()
                      .Where(h => parents.All(p => p.Lemma != h))
                      .OrderBy(DictionaryBrowse.CollationKey, StringComparer.Ordinal))
         {
