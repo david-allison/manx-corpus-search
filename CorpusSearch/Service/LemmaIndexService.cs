@@ -354,10 +354,24 @@ public class LemmaIndexService(LemmaTable lemmaTable, CorpusVocabulary vocabular
             // same hop: fee's guessed 'ee' must not import the whole family of
             // *to eat* into a tree about weaving
             var own = link.LinkType == "demutated" ? null : lemmaTable.LinksOf(link.Form);
+            // a family member prints under its head by its full headword
+            // ('cha s'oc' in fys's paragraph), while its lexeme displays
+            // particle-free ('s'oc'): the name misses, and the hop goes
+            // through the form's one reading instead. One reading only —
+            // an ambiguous spelling must not import another word's family
+            if (own == null && link.LinkType == "derived")
+            {
+                var displays = lemmaTable.DisplayLemmasFor(link.Form);
+                own = displays.Count == 1 ? lemmaTable.LinksOf(displays[0]) : null;
+            }
             if (own != null)
             {
                 var ownByParent = ParentLookup(link.Form, own.Links);
-                children = children.Concat(ownByParent[link.Form].Select(x => (x, ownByParent)));
+                // the lexeme's own entry row ('cha s'oc' under s'oc) is this
+                // node said over again, not a branch of it
+                children = children.Concat(ownByParent[link.Form]
+                    .Where(x => !(x.LinkType == "self" && x.Form == link.Form))
+                    .Select(x => (x, ownByParent)));
             }
             var built = Grouped(children, expanded, link.Form);
             groups = built.Count > 0 ? built : null;

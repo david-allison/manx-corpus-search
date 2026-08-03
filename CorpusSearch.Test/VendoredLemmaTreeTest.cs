@@ -56,6 +56,26 @@ public class VendoredLemmaTreeTest
             "vac must stand in mac's tree as a mutation");
     }
 
+    /// <summary>Cregeen prints the cha s'X contractions — cha fys X, "they do
+    /// not know" — inside fys's own paragraph, and the s' is fys itself, not a
+    /// mutation. The family must root them under fys: they once sat rootless,
+    /// each its own headless tree. And the stem the strip leaves behind is
+    /// oc's paradigm, not the contraction's: bare ocsyn once answered to
+    /// three lemmas, and the word page drew three families for it.</summary>
+    [Test]
+    public void FysCarriesItsContractedNegatives()
+    {
+        var member = TreeOf("fys").Groups
+            .Single(g => g.LinkType == "derived")
+            .Forms.SingleOrDefault(f => f.Form == "cha s'oc");
+        Assert.That(member, Is.Not.Null, "cha s'oc (cha fys oc) must file under fys as derived");
+        var paradigm = Flatten(member!.Groups).Select(x => x.Form).ToList();
+        Assert.That(paradigm, Does.Contain("cha s'ocsyn"),
+            "the contraction's own emphatic must ride along");
+        Assert.That(paradigm, Does.Not.Contain("ocsyn"),
+            "the bare emphatic is oc's paradigm, not the contraction's");
+    }
+
     /// <summary>The book's word family, whole: vondeish => vondeishagh =>
     /// s'vondeishagh. The superlative once had no route from vondeish at all —
     /// dropped from the letter index as a grammar row, and the noun and its
