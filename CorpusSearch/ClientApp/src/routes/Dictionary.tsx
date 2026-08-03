@@ -65,6 +65,7 @@ const Entry = ({
     summary,
     credit,
     unplaced,
+    homograph,
     onCitationClick,
 }: {
     word: string
@@ -75,6 +76,10 @@ const Entry = ({
     /** this entry's source records no word class, so it is repeated under every
      * sense: it may belong to another one */
     unplaced?: boolean
+    /** which of the dictionary's same-headed entries this is (e¹, e²), in the
+     * book's own order: two entries both headed 'e' are otherwise told apart
+     * only by reading them whole */
+    homograph?: number
     onCitationClick: (key: string) => void
 }) => (
     <div
@@ -100,6 +105,14 @@ const Entry = ({
             {summary.rootDepth
                 ? summary.primaryWord
                 : headingFor(word, summary)}
+            {homograph != null && (
+                <sup
+                    className="dict-page-homograph"
+                    title={`The dictionary's homograph nº ${homograph.toString()} under this spelling`}
+                >
+                    {homograph}
+                </sup>
+            )}
         </strong>
         <UnverifiedMark unverified={summary.unverifiedLink} />
         <GrammarLabel
@@ -345,6 +358,30 @@ export const Dictionary = () => {
        over. Several senses each earn the word again, under a label that says
        which of them you are reading. */
     const singleSense = readingBlocks == null && senses.length === 1
+
+    /* the book's own homograph numbers: within one dictionary, entries
+       sharing a headword (Cregeen prints e the possessive AND e the
+       interjection) are told apart only by reading them whole — the
+       superscript (e¹, e²) is the printed dictionaries' own device, in the
+       book's order */
+    const homographOf = new Map<Summary, number>()
+    for (const group of page?.groups ?? []) {
+        const byWord = new Map<string, Summary[]>()
+        for (const entry of group.entries) {
+            if (entry.rootDepth || entry.nearMatchOf || entry.partOf) {
+                continue
+            }
+            const key = entry.primaryWord.toLowerCase()
+            byWord.set(key, [...(byWord.get(key) ?? []), entry])
+        }
+        for (const [, list] of byWord) {
+            if (list.length > 1) {
+                list.forEach((entry, index) =>
+                    homographOf.set(entry, index + 1),
+                )
+            }
+        }
+    }
 
     /** Whether any text actually uses the word, as the history's own scan found
      * it: the evidence, rather than the browse page's guess at it */
@@ -643,6 +680,9 @@ export const Dictionary = () => {
                                                     unplaced={reading.unplaced.includes(
                                                         summary,
                                                     )}
+                                                    homograph={homographOf.get(
+                                                        summary,
+                                                    )}
                                                     onCitationClick={
                                                         setCitationKey
                                                     }
@@ -726,6 +766,7 @@ export const Dictionary = () => {
                                             senses.length > 1 &&
                                             !summary.partsOfSpeech?.length
                                         }
+                                        homograph={homographOf.get(summary)}
                                         onCitationClick={setCitationKey}
                                         key={index}
                                     />

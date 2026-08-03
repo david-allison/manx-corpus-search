@@ -179,3 +179,11 @@ a.dict-lemma-here {
         width: 8px;
     }
 }
+
+/* the book's homograph number on a root (e¹, e²): the same device the
+   entries wear, so the reader ties the tree to its entry */
+.dict-lemma-homograph {
+    color: var(--c-muted);
+    font-weight: normal;
+    font-size: 0.55em;
+}
