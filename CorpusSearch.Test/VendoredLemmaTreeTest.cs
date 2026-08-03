@@ -127,12 +127,20 @@ public class VendoredLemmaTreeTest
                      {
                          ("ocsyn", "oc"), ("ayds", "ayd"), ("ayms", "aym"),
                          ("echeysyn", "echey"), ("euish", "eu"), ("orts", "ort"),
+                         // homed by the paradigm file, the book recording them
+                         // only inside the contractions: eeish once answered
+                         // to nine lexemes
+                         ("eeish", "ee"), ("ainyn", "ain"), ("ecish", "eck"),
                      })
             {
                 Assert.That(table.DisplayLemmasFor(emphatic), Is.EqualTo(new[] { word }),
                     $"{emphatic} is {word}'s alone: another claimant means a page " +
                     "of extra family trees and a false shared-spelling mark");
             }
+            // a suffixed form's three-letter stem (no'ins -> ins) is a
+            // fragment, not a word: never on the table at all
+            Assert.That(table.DisplayLemmasFor("ins"), Is.Empty,
+                "ins is in + -s, a word to nobody");
         });
     }
 
