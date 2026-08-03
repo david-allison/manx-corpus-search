@@ -131,7 +131,8 @@ public class LemmaIndexService(LemmaTable lemmaTable, CorpusVocabulary vocabular
         var ownNames = links.Links
             .Where(x => x.LinkType == "self")
             .Select(x => x.Form)
-            .Prepend(links.Lemma);
+            .Prepend(links.Lemma)
+            .ToList();
         foreach (var family in ownNames
                      .SelectMany(n => lemmaTable.FamilyParentsOf(n))
                      .Distinct()
@@ -144,6 +145,13 @@ public class LemmaIndexService(LemmaTable lemmaTable, CorpusVocabulary vocabular
                 Lemma = family.Key,
                 LinkTypes = family.Select(x => x.LinkType).Distinct()
                     .OrderBy(GroupRank).ToList(),
+                // the phrase a contracts edge spells out, read off the head's
+                // own row for this member: what 'contraction' alone cannot say
+                Expansion = family.Any(x => x.LinkType == "contracts")
+                    ? lemmaTable.LinksOf(family.Key)?.Links
+                        .FirstOrDefault(l => l.LinkType == "contracts"
+                                             && ownNames.Contains(l.Form) && l.Via.Length > 0)?.Via
+                    : null,
             });
         }
         var prefix = lemmaTable.AllDisplayLemmas
@@ -412,6 +420,10 @@ public class LemmaIndexService(LemmaTable lemmaTable, CorpusVocabulary vocabular
             // only the generator behind it, and names no book
             Source = link.Unverified || link.Source.Length == 0 ? null : link.Source,
             Via = particlePhrase,
+            // a contracts row carries the phrase it spells out: 'v'oc (va oc)'
+            Expansion = link.LinkType == "contracts" && link.Via.Length > 0
+                ? link.Via
+                : null,
             AlsoLinkedAs = alsoLinkedAs is { Count: > 0 } ? alsoLinkedAs.ToList() : null,
             SharedWithOtherLemmas = lemmaTable.DisplayLemmasFor(link.Form).Count > 1,
             Groups = groups,
@@ -453,6 +465,10 @@ public class LemmaTreeParent
     /// <summary>The link types read upward ("inflected", "plural"; "prefixed"
     /// for a spelling parent), in the tree's reading order</summary>
     public required List<string> LinkTypes { get; set; }
+    /// <summary>The phrase a contracts edge spells out ("va oc" above v'oc):
+    /// what the contraction actually says, which the parent's name alone
+    /// cannot. Null on every other kind of parent.</summary>
+    public string? Expansion { get; set; }
 }
 
 /// <summary>The forms hanging off a lemma by one kind of link</summary>
@@ -489,6 +505,11 @@ public class LemmaTreeForm
     /// every other link type, whose via is structure the nesting already
     /// draws.</summary>
     public string? Via { get; set; }
+
+    /// <summary>The phrase a contracts row spells out ("va oc" on v'oc under
+    /// oc): what the contraction says, beside the row rather than instead of
+    /// it. Null on every other link type.</summary>
+    public string? Expansion { get; set; }
 
     /// <summary>The other ways the same form is linked at this level
     /// ("plural" on the row 'Inflected forms' files deiney under): one row

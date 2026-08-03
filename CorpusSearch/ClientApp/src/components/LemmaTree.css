@@ -113,6 +113,18 @@
     font-size: 13px;
 }
 
+/* the page's own word, marked where the tree says it: the reader sees where
+   they stand in the family */
+.dict-lemma-here {
+    font-weight: bold;
+}
+
+a.dict-lemma-here {
+    text-decoration: none;
+    color: inherit;
+    cursor: default;
+}
+
 /* the walker's beta badge, worn in the tree's flex headings: pushed to the
    row's far edge, where the walker floats its own */
 .dict-page-word .attest-experimental {

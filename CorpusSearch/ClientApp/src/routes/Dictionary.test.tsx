@@ -932,6 +932,69 @@ describe("Dictionary page", () => {
         ).toBe("/dictionary/daase")
     })
 
+    it("marks the reader's word in the family, names the emphatics, and spells a contraction out", async () => {
+        fetchMock.mockImplementation((url) => {
+            const href = hrefOf(url)
+            const body = href.includes("/history")
+                ? { ...usedOnce, lemmas: ["v'oc"] }
+                : href.includes("/dictionaries")
+                  ? dictionaries
+                  : href.includes("/attestations")
+                    ? emptyAttestations
+                    : href.includes("/samples")
+                      ? []
+                      : href.includes("/lemma?")
+                        ? {
+                              lemma: "v'oc",
+                              attested: true,
+                              groups: [
+                                  {
+                                      linkType: "emphatic",
+                                      forms: [
+                                          {
+                                              form: "v'ocsyn",
+                                              attested: true,
+                                          },
+                                      ],
+                                  },
+                              ],
+                              parents: [
+                                  {
+                                      lemma: "oc",
+                                      linkTypes: ["contracts"],
+                                      expansion: "va oc",
+                                  },
+                              ],
+                          }
+                        : {
+                              answering: dictionaries.map((d) => d.slug),
+                              word: "v'oc",
+                              isSuggestionTier: false,
+                              attested: true,
+                              groups: [],
+                          }
+            return Promise.resolve({
+                ok: true,
+                json: () => Promise.resolve(body),
+            } as Response)
+        })
+        renderAt("/dictionary/v'oc")
+
+        expect(await screen.findByText("Word family")).toBeTruthy()
+        // the contraction's parent line says what it spells out, and its
+        // name opens the word's dictionary page
+        expect(screen.getByText(/contraction of va oc/)).toBeTruthy()
+        expect(
+            screen.getByRole("link", { name: "oc" }).getAttribute("href"),
+        ).toBe("/dictionary/oc")
+        // the em-tagged paradigm files under its own name
+        expect(screen.getByText("Emphatic forms")).toBeTruthy()
+        // the page's own word is marked in the tree; the rest is not
+        const here = document.querySelectorAll(".dict-lemma-here")
+        expect(here).toHaveLength(1)
+        expect(here[0].textContent).toContain("v'oc")
+    })
+
     it("draws no family section for a reading with nothing hanging off it", async () => {
         fetchMock.mockImplementation((url) => {
             const href = hrefOf(url)
