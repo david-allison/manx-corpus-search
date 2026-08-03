@@ -995,6 +995,59 @@ describe("Dictionary page", () => {
         expect(here[0].textContent).toContain("v'oc")
     })
 
+    it("links a family root that is not the page's own word", async () => {
+        fetchMock.mockImplementation((url) => {
+            const href = hrefOf(url)
+            const body = href.includes("/history")
+                ? { ...usedOnce, lemmas: ["oc"] }
+                : href.includes("/dictionaries")
+                  ? dictionaries
+                  : href.includes("/attestations")
+                    ? emptyAttestations
+                    : href.includes("/samples")
+                      ? []
+                      : href.includes("/lemma?")
+                        ? {
+                              lemma: "oc",
+                              attested: true,
+                              groups: [
+                                  {
+                                      linkType: "emphatic",
+                                      forms: [
+                                          { form: "ocsyn", attested: true },
+                                      ],
+                                  },
+                              ],
+                              parents: [
+                                  { lemma: "ec", linkTypes: ["derived"] },
+                              ],
+                          }
+                        : {
+                              answering: dictionaries.map((d) => d.slug),
+                              word: "ocsyn",
+                              isSuggestionTier: false,
+                              attested: true,
+                              groups: [],
+                          }
+            return Promise.resolve({
+                ok: true,
+                json: () => Promise.resolve(body),
+            } as Response)
+        })
+        renderAt("/dictionary/ocsyn")
+
+        expect(await screen.findByText("Word family")).toBeTruthy()
+        // the reader is on ocsyn's page: the root 'oc' is another word, and
+        // opens its own page like every other name in the tree
+        expect(
+            screen.getByRole("link", { name: "oc" }).getAttribute("href"),
+        ).toBe("/dictionary/oc")
+        // the here-mark sits on the page's own word, down in the tree
+        const here = document.querySelectorAll(".dict-lemma-here")
+        expect(here).toHaveLength(1)
+        expect(here[0].textContent).toBe("ocsyn")
+    })
+
     it("draws no family section for a reading with nothing hanging off it", async () => {
         fetchMock.mockImplementation((url) => {
             const href = hrefOf(url)

@@ -318,12 +318,13 @@ const EmbeddedTree = ({
     highlight?: string
 }) => {
     const heads = printedUnderOf(tree.parents)
+    const here = sameWord(highlight, tree.lemma)
     const root = (
         <p
             className={[
                 "dict-lemma-root dict-lemma-root-embedded",
                 tree.attested ? null : "dict-unattested",
-                sameWord(highlight, tree.lemma) ? "dict-lemma-here" : null,
+                here ? "dict-lemma-here" : null,
             ]
                 .filter(Boolean)
                 .join(" ")}
@@ -333,7 +334,13 @@ const EmbeddedTree = ({
                     : `${tree.lemma}: by this spelling, in no text in the corpus`
             }
         >
-            {tree.lemma}
+            {/* the root opens its word's page like every other name in the
+                tree — except the page's own word, a landmark, not a way out */}
+            {here ? (
+                tree.lemma
+            ) : (
+                <Link to={dictionaryWordUrl(tree.lemma)}>{tree.lemma}</Link>
+            )}
             <Count attestations={tree.attestations} />
             <SourceNote
                 form={tree.lemma}
