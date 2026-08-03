@@ -127,6 +127,16 @@
     font-size: 0.6em;
 }
 
+/* a lemma section's family, folded beside its entries: the summary reads
+   as the section's other headings do, wearing the fold's marker */
+.dict-lemma-details > summary {
+    cursor: pointer;
+}
+
+.dict-lemma-details[open] > summary {
+    margin-bottom: 4px;
+}
+
 a.dict-lemma-here {
     text-decoration: none;
     color: inherit;

@@ -6,6 +6,7 @@ import {
     dictionaryAttestations,
     dictionaryPage,
     DictionaryPageResponse,
+    LemmaTreeResponse,
     Summary,
 } from "../api/DictionaryApi"
 import {
@@ -42,7 +43,12 @@ import { useWordHistory } from "../hooks/useWordHistory"
 import { useDictionaryHead } from "../hooks/useDictionaryHead"
 import { AttestationWalker } from "../components/AttestationWalker"
 import { WordListCitations } from "../components/WordListCitations"
-import { WordFamily } from "../components/LemmaTree"
+import {
+    senseKeyOfPos,
+    useWordFamilyTrees,
+    WordFamily,
+    WordFamilyDetails,
+} from "../components/LemmaTree"
 import "./Dictionary.css"
 
 /** "learnmanx.com" from the source URL, for the audio credit's second line */
@@ -357,14 +363,51 @@ export const Dictionary = () => {
      * the click and the fetch */
     const heardDocs = heard != null && heard.word === word ? heard : null
 
-    /** The word's readings, each the root of a family tree: what the "Word
-     * family" section at the end of the page draws. Deduped — the history
-     * lists a reading once per source it knows it from — and memoized, so the
-     * section's fetch keys on the readings rather than on every render. */
+    /** The word's readings, each the root of a family tree. Deduped — the
+     * history lists a reading once per source it knows it from — and
+     * memoized, so the fetch keys on the readings rather than on every
+     * render. */
     const familyLemmas = useMemo(
         () => [...new Set(history?.lemmas ?? [])],
         [history],
     )
+    const familyTrees = useWordFamilyTrees(familyLemmas)
+
+    /* each family tree seated under the lemma section that reads about it: a
+       reading block claims its lexeme's tree by id, a class section by the
+       printed class ('bee v.' takes the verb's tree, 'bee s.' the food's),
+       and whatever no section claims ends the page as before. A single-sense
+       page draws no sections, so everything stays at the foot. */
+    const familyByBlock = new Map<string, LemmaTreeResponse[]>()
+    const familyBySense = new Map<string, LemmaTreeResponse[]>()
+    const seated = new Set<LemmaTreeResponse>()
+    for (const block of readingBlocks?.blocks ?? []) {
+        const claimed = familyTrees.filter(
+            (t) => t.lemmaId != null && t.lemmaId === block.lemmaId,
+        )
+        if (claimed.length > 0) {
+            familyByBlock.set(block.lemmaId, claimed)
+            claimed.forEach((t) => seated.add(t))
+        }
+    }
+    if (!singleSense) {
+        for (const sense of senses) {
+            if (!sense.key || sense.labels.length === 0) {
+                continue
+            }
+            const claimed = familyTrees.filter(
+                (t) =>
+                    !seated.has(t) &&
+                    t.pos != null &&
+                    senseKeyOfPos(t.pos) === sense.key,
+            )
+            if (claimed.length > 0) {
+                familyBySense.set(sense.key, claimed)
+                claimed.forEach((t) => seated.add(t))
+            }
+        }
+    }
+    const unseatedTrees = familyTrees.filter((t) => !seated.has(t))
 
     const header = (
         <div className="dict-page-header">
@@ -630,6 +673,14 @@ export const Dictionary = () => {
                                             ))}
                                     </>
                                 )}
+                                {/* the lexeme's own family, folded beside
+                                    the entries that read about it */}
+                                <WordFamilyDetails
+                                    trees={
+                                        familyByBlock.get(block.lemmaId) ?? []
+                                    }
+                                    word={word}
+                                />
                             </div>
                         </section>
                     ))}
@@ -703,6 +754,12 @@ export const Dictionary = () => {
                                             ))}
                                     </>
                                 )}
+                                {/* the class's lexeme families, folded beside
+                                    the entries that read about them */}
+                                <WordFamilyDetails
+                                    trees={familyBySense.get(sense.key) ?? []}
+                                    word={word}
+                                />
                             </div>
                         </section>
                     ))}
@@ -792,7 +849,7 @@ export const Dictionary = () => {
                     it, one tree per reading — the same trees the lemma pages
                     draw, brought to where the reader already is */}
                 {word && !stale && page != null && !page.isSuggestionTier && (
-                    <WordFamily lemmas={familyLemmas} word={word} />
+                    <WordFamily trees={unseatedTrees} word={word} />
                 )}
 
                 {/* A word no text says has nothing to find: the offer would promise

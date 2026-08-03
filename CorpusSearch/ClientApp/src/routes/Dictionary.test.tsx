@@ -1141,6 +1141,148 @@ describe("Dictionary page", () => {
         expect(screen.getByRole("link", { name: "ish" })).toBeTruthy()
     })
 
+    it("seats each family under the lemma section that reads about it, folded", async () => {
+        fetchMock.mockImplementation((url) => {
+            const href = hrefOf(url)
+            const body = href.includes("/history")
+                ? { ...usedOnce, lemmas: ["bee"] }
+                : href.includes("/dictionaries")
+                  ? dictionaries
+                  : href.includes("/attestations")
+                    ? emptyAttestations
+                    : href.includes("/samples")
+                      ? []
+                      : href.includes("/lemma?")
+                        ? [
+                              {
+                                  lemma: "bee",
+                                  lemmaId: "bee.v",
+                                  pos: "v.",
+                                  attested: true,
+                                  groups: [
+                                      {
+                                          linkType: "inflected",
+                                          forms: [
+                                              {
+                                                  form: "beeym",
+                                                  attested: true,
+                                              },
+                                          ],
+                                      },
+                                  ],
+                                  parents: [],
+                              },
+                              {
+                                  lemma: "bee",
+                                  lemmaId: "bee.n",
+                                  pos: "s. m.",
+                                  attested: true,
+                                  groups: [
+                                      {
+                                          linkType: "plural",
+                                          forms: [
+                                              {
+                                                  form: "beeghyn",
+                                                  attested: true,
+                                              },
+                                          ],
+                                      },
+                                  ],
+                                  parents: [],
+                              },
+                              {
+                                  lemma: "bee",
+                                  lemmaId: "bee.a",
+                                  pos: "a.",
+                                  attested: true,
+                                  groups: [
+                                      {
+                                          linkType: "mutation",
+                                          forms: [
+                                              {
+                                                  form: "vee",
+                                                  attested: true,
+                                              },
+                                          ],
+                                      },
+                                  ],
+                                  parents: [],
+                              },
+                          ]
+                        : {
+                              answering: dictionaries.map((d) => d.slug),
+                              word: "bee",
+                              isSuggestionTier: false,
+                              attested: true,
+                              groups: [
+                                  {
+                                      dictionary: "Cregeen",
+                                      entries: [
+                                          {
+                                              primaryWord: "bee",
+                                              summary: "be, will be",
+                                              dictionaryName: "Cregeen",
+                                              rootDepth: 0,
+                                              partsOfSpeech: ["Verb"],
+                                          },
+                                          {
+                                              primaryWord: "bee",
+                                              summary: "meat, food",
+                                              dictionaryName: "Cregeen",
+                                              rootDepth: 0,
+                                              partsOfSpeech: ["Noun"],
+                                          },
+                                      ],
+                                  },
+                              ],
+                          }
+            return Promise.resolve({
+                ok: true,
+                json: () => Promise.resolve(body),
+            } as Response)
+        })
+        renderAt("/dictionary/bee")
+
+        // each class section folds its own lexeme's family beside its entries
+        await screen.findByText(/be, will be/)
+        await waitFor(() =>
+            expect(
+                document.querySelectorAll("details.dict-lemma-details"),
+            ).toHaveLength(2),
+        )
+        const details = [
+            ...document.querySelectorAll("details.dict-lemma-details"),
+        ] as HTMLDetailsElement[]
+        expect(details.every((d) => !d.open)).toBe(true)
+        const verbSection = screen
+            .getByText(/be, will be/)
+            .closest(".dict-page-group")!
+        expect(
+            within(verbSection as HTMLElement).getByRole("link", {
+                name: "beeym",
+            }),
+        ).toBeTruthy()
+        const nounSection = screen
+            .getByText(/meat, food/)
+            .closest(".dict-page-group")!
+        expect(
+            within(nounSection as HTMLElement).getByRole("link", {
+                name: "beeghyn",
+            }),
+        ).toBeTruthy()
+        // the tree no section claims (a., no adjective entries) ends the page
+        const foot = [
+            ...document.querySelectorAll("h3.dict-page-dictionary"),
+        ].find((h) => h.textContent?.startsWith("Word family"))
+        expect(foot).toBeTruthy()
+        expect(
+            within(foot!.closest(".dict-page-group") as HTMLElement).getByRole(
+                "link",
+                { name: "vee" },
+            ),
+        ).toBeTruthy()
+    })
+
     it("draws no family section for a reading with nothing hanging off it", async () => {
         fetchMock.mockImplementation((url) => {
             const href = hrefOf(url)
