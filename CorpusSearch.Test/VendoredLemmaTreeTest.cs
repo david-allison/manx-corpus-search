@@ -129,8 +129,9 @@ public class VendoredLemmaTreeTest
                          ("echeysyn", "echey"), ("euish", "eu"), ("orts", "ort"),
                          // homed by the paradigm file, the book recording them
                          // only inside the contractions: eeish once answered
-                         // to nine lexemes
-                         ("eeish", "ee"), ("ainyn", "ain"), ("ecish", "eck"),
+                         // to nine lexemes. Its home is ish — the emphatic's
+                         // own entry — never ee, whose spelling also eats
+                         ("eeish", "ish"), ("ainyn", "ain"), ("ecish", "eck"),
                      })
             {
                 Assert.That(table.DisplayLemmasFor(emphatic), Is.EqualTo(new[] { word }),
