@@ -1248,7 +1248,7 @@ describe("Dictionary page", () => {
         await waitFor(() =>
             expect(
                 document.querySelectorAll("details.dict-lemma-details"),
-            ).toHaveLength(2),
+            ).toHaveLength(3),
         )
         const details = [
             ...document.querySelectorAll("details.dict-lemma-details"),
@@ -1270,17 +1270,20 @@ describe("Dictionary page", () => {
                 name: "beeghyn",
             }),
         ).toBeTruthy()
-        // the tree no section claims (a., no adjective entries) ends the page
-        const foot = [
-            ...document.querySelectorAll("h3.dict-page-dictionary"),
-        ].find((h) => h.textContent?.startsWith("Word family"))
+        // the tree no section claims (a., no adjective entries) folds at the
+        // foot like the seated ones — a footnote, not the page's second act —
+        // and wears its class, since its homograph siblings sit above
+        const foot = details.find((d) =>
+            within(d as HTMLElement).queryByRole("link", { name: "vee" }),
+        )
         expect(foot).toBeTruthy()
+        expect(within(foot! as HTMLElement).getByText("a.")).toBeTruthy()
+        // no full-size Word family heading remains: every tree found a fold
         expect(
-            within(foot!.closest(".dict-page-group") as HTMLElement).getByRole(
-                "link",
-                { name: "vee" },
+            [...document.querySelectorAll("h3.dict-page-dictionary")].some(
+                (h) => h.textContent?.startsWith("Word family"),
             ),
-        ).toBeTruthy()
+        ).toBe(false)
     })
 
     it("draws no family section for a reading with nothing hanging off it", async () => {
