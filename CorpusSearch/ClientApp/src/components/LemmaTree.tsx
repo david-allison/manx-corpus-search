@@ -313,9 +313,13 @@ const Count = ({
 const EmbeddedTree = ({
     tree,
     highlight,
+    showPos,
 }: {
     tree: LemmaTreeResponse
     highlight?: string
+    /** wear the book's class label ("v.", "pro."): homograph trees share a
+     * name, and the label is what tells them apart */
+    showPos?: boolean
 }) => {
     const heads = printedUnderOf(tree.parents)
     const here = sameWord(highlight, tree.lemma)
@@ -341,6 +345,11 @@ const EmbeddedTree = ({
             ) : (
                 <Link to={dictionaryWordUrl(tree.lemma)}>{tree.lemma}</Link>
             )}
+            {/* the book's class label, where homographs share the name:
+                'ee v.' eats, 'ee pro.' is her */}
+            {showPos && tree.pos ? (
+                <span className="dict-lemma-pos"> {tree.pos}</span>
+            ) : null}
             <Count attestations={tree.attestations} />
             <SourceNote
                 form={tree.lemma}
@@ -418,13 +427,17 @@ export const WordFamily = ({
                 if (abort.signal.aborted) {
                     return
                 }
+                // a reading may name several lexemes (ee the verb, ee the
+                // pronoun): one tree each, in the book's order, never a merge
                 setTrees(
-                    results.filter(
-                        (tree): tree is LemmaTreeResponse =>
-                            tree != null &&
-                            (tree.groups.length > 0 ||
-                                (tree.parents?.length ?? 0) > 0),
-                    ),
+                    results
+                        .filter((r): r is LemmaTreeResponse[] => r != null)
+                        .flat()
+                        .filter(
+                            (tree) =>
+                                tree.groups.length > 0 ||
+                                (tree.parents?.length ?? 0) > 0,
+                        ),
                 )
             })
             .catch((e: unknown) => console.warn(e))
@@ -443,28 +456,39 @@ export const WordFamily = ({
                 </span>
             </h3>
             {trees.map((tree) => (
-                <EmbeddedTree key={tree.lemma} tree={tree} highlight={word} />
+                <EmbeddedTree
+                    key={tree.lemmaId ?? tree.lemma}
+                    tree={tree}
+                    highlight={word}
+                    // homographs alone need telling apart: the class label
+                    // only where a second tree shares the name
+                    showPos={
+                        trees.filter((t) => t.lemma === tree.lemma).length > 1
+                    }
+                />
             ))}
         </section>
     )
 }
 
-/** One lemma's form tree: the lemma at the root, its forms grouped by how each
- * hangs off it, every guess marked and every unattested spelling greyed.
+/** The lemma page's form trees: one per lexeme answering to the name (ee the
+ * verb and ee the pronoun stand apart, each wearing the book's class label),
+ * the lemma at each root, its forms grouped by how each hangs off it, every
+ * guess marked and every unattested spelling greyed.
  *
  * One level deep on purpose: the link graph carries book-true cycles (fee
  * inflects to feeagh, feeagh pluralizes to fee), and a tree of leaves cannot
  * be walked in a circle — each form is a link to its own word page instead. */
 export const LemmaTree = ({ lemma }: { lemma: string }) => {
-    const [tree, setTree] = useState<LemmaTreeResponse | null>(null)
+    const [trees, setTrees] = useState<LemmaTreeResponse[] | null>(null)
     const [failed, setFailed] = useState(false)
 
     useEffect(() => {
-        setTree(null)
+        setTrees(null)
         setFailed(false)
         const abort = new AbortController()
         lemmaTree(lemma, abort.signal)
-            .then(setTree)
+            .then(setTrees)
             .catch((e) => {
                 if (!abort.signal.aborted) {
                     console.warn(e)
@@ -482,14 +506,14 @@ export const LemmaTree = ({ lemma }: { lemma: string }) => {
                     <Link to={lemmaIndexUrl()}>Back to the lemma index.</Link>
                 </p>
             )}
-            {!failed && tree == null && (
+            {!failed && trees == null && (
                 <div className="dict-page-loading">
                     <CircularProgress />
                 </div>
             )}
 
-            {tree != null && (
-                <>
+            {trees?.map((tree, index) => (
+                <div key={tree.lemmaId ?? tree.lemma}>
                     {/* what the root itself hangs off, drawn above it: the
                         graph climbs both ways */}
                     <ParentLines parents={tree.parents} />
@@ -513,6 +537,11 @@ export const LemmaTree = ({ lemma }: { lemma: string }) => {
                         }
                     >
                         {tree.lemma}
+                        {/* the book's class label, where homographs share
+                            the name */}
+                        {trees.length > 1 && tree.pos ? (
+                            <span className="dict-lemma-pos"> {tree.pos}</span>
+                        ) : null}
                         <Count attestations={tree.attestations} />
                         <SourceNote
                             form={tree.lemma}
@@ -528,10 +557,12 @@ export const LemmaTree = ({ lemma }: { lemma: string }) => {
                             }
                         />
                         {/* the tree is as experimental as the corpus walk,
-                            and says so the same way */}
-                        <span className="attest-experimental">
-                            experimental &amp; incomplete
-                        </span>
+                            and says so the same way — once, on the first */}
+                        {index === 0 && (
+                            <span className="attest-experimental">
+                                experimental &amp; incomplete
+                            </span>
+                        )}
                     </h1>
 
                     {tree.groups.length === 0 &&
@@ -546,13 +577,17 @@ export const LemmaTree = ({ lemma }: { lemma: string }) => {
                         ariaLabel={`Forms of ${tree.lemma}`}
                     />
 
-                    <p className="dict-lemma-note">
-                        <Link to={dictionaryWordUrl(tree.lemma)}>
-                            Read the dictionary entries for “{tree.lemma}” ›
-                        </Link>
-                    </p>
-                </>
-            )}
+                    {/* one way out, under the last tree: the word page reads
+                        every lexeme's entries at once */}
+                    {index === trees.length - 1 && (
+                        <p className="dict-lemma-note">
+                            <Link to={dictionaryWordUrl(tree.lemma)}>
+                                Read the dictionary entries for “{tree.lemma}” ›
+                            </Link>
+                        </p>
+                    )}
+                </div>
+            ))}
         </>
     )
 }

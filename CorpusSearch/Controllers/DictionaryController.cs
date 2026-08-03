@@ -159,14 +159,16 @@ public class DictionaryController(
     }
 
     /// <summary>
-    /// One lemma's form tree: the forms the tables link to it, grouped by link
-    /// type, each marked for corpus attestation and unverified links.
+    /// The form trees of every lexeme answering to the lemma, in the book's
+    /// order — the spelling ee heads the verb and the pronoun, two trees:
+    /// the forms the tables link to each, grouped by link type, each marked
+    /// for corpus attestation and unverified links.
     /// </summary>
     [HttpGet("lemma")]
-    public ActionResult<LemmaTreePage> Lemma([FromQuery] string lemma)
+    public ActionResult<List<LemmaTreePage>> Lemma([FromQuery] string lemma)
     {
-        var page = lemmaIndexService.Tree(lemma);
-        return page == null ? new NotFoundResult() : page;
+        var pages = lemmaIndexService.Trees(lemma);
+        return pages.Count == 0 ? new NotFoundResult() : pages;
     }
 
     /// <summary>

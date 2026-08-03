@@ -59,11 +59,9 @@ public class LemmaIndexService(LemmaTable lemmaTable, CorpusVocabulary vocabular
                 vocabulary.IsAttested,
                 // a lemma no text uses still stands in a book: name it, as
                 // the tree names it, or the grey reads as a phantom
-                lemma => lemmaTable.LinksOf(lemma) is
-                         { SelfUnverified: false } links
-                         && links.SelfSource.Length > 0
-                    ? links.SelfSource
-                    : null)
+                lemma => lemmaTable.LinkSetsFor(lemma)
+                    .FirstOrDefault(s => !s.SelfUnverified && s.SelfSource.Length > 0)
+                    ?.SelfSource)
             .ToList();
         return page;
     }
@@ -79,39 +77,40 @@ public class LemmaIndexService(LemmaTable lemmaTable, CorpusVocabulary vocabular
     ];
 
     /// <summary>
-    /// One lemma's form tree, full depth: every form the tables link to it,
-    /// grouped by link type, each marked for whether the corpus says it and
-    /// whether the link rests on a rule or hand-assertion alone. A form nests
-    /// what hangs off *it*: the rows deriving through it (via — 'pyaghyn'
-    /// inflects the variant 'pyagh', not peiagh itself), and — where the form
-    /// heads a lexeme of its own — that lexeme's whole tree ('deiney' under
-    /// dooinney carries 'e gheiney'). Each form is expanded once: the link
-    /// graph carries book-true cycles (fee inflects to feeagh, feeagh
-    /// pluralizes to fee; see LemmaLinkCycleTest), so the second meeting is a
-    /// leaf rather than a circle. Null when the tables name no such lemma.
+    /// One lemma tree per LEXEME answering to the name, in the book's order:
+    /// the spelling ee heads the verb and the pronoun, and the reader gets two
+    /// trees, never a merge. Each is the form tree, full depth: every form the
+    /// tables link to the lexeme, grouped by link type, each marked for
+    /// whether the corpus says it and whether the link rests on a rule or
+    /// hand-assertion alone. A form nests what hangs off *it*: the rows
+    /// deriving through it (via — 'pyaghyn' inflects the variant 'pyagh', not
+    /// peiagh itself), and — where the form heads one lexeme of its own —
+    /// that lexeme's whole tree ('deiney' under dooinney carries 'e
+    /// gheiney'). Each form is expanded once per tree: the link graph carries
+    /// book-true cycles (fee inflects to feeagh, feeagh pluralizes to fee;
+    /// see LemmaLinkCycleTest), so the second meeting is a leaf rather than a
+    /// circle. Empty when the tables name no such lemma.
     /// </summary>
-    public LemmaTreePage? Tree(string lemma)
+    public List<LemmaTreePage> Trees(string lemma)
     {
-        var links = lemmaTable.LinksOf(lemma);
-        if (links == null)
+        var sets = lemmaTable.LinkSetsFor(lemma);
+        if (sets.Count == 0)
         {
-            return null;
+            return [];
         }
-        var rootKey = LemmaTable.NormalizeForm(links.Lemma);
-        var expanded = new HashSet<string> { rootKey };
-        var byParent = ParentLookup(rootKey, links.Links);
-        var groups = Grouped(
-            byParent[rootKey].Select(x => (x, byParent)),
-            expanded, links.Lemma);
-        // upward: the reverse reading of every link some other tree draws
-        // downward, so the graph can be climbed from either end — deiney says
-        // it inflects dooinney, aa-ghiennaghtyn that it is written with aa-
-        var parents = new List<LemmaTreeParent>();
-        foreach (var display in lemmaTable.DisplayLemmasFor(links.Lemma)
+        var name = sets[0].Lemma;
+        var rootKey = LemmaTable.NormalizeForm(name);
+        // upward, at the spelling's level — shared by every homograph: the
+        // reverse reading of every link some other tree draws downward, so
+        // the graph can be climbed from either end — deiney says it inflects
+        // dooinney, aa-ghiennaghtyn that it is written with aa-
+        var nameParents = new List<LemmaTreeParent>();
+        foreach (var display in lemmaTable.DisplayLemmasFor(name)
                      .Where(x => LemmaTable.NormalizeForm(x) != rootKey)
                      .OrderBy(DictionaryBrowse.CollationKey, StringComparer.Ordinal))
         {
-            var linkTypes = lemmaTable.LinksOf(display)?.Links
+            var linkTypes = lemmaTable.LinkSetsFor(display)
+                .SelectMany(s => s.Links)
                 .Where(x => x.Form == rootKey)
                 .Select(x => x.LinkType)
                 .Distinct()
@@ -119,19 +118,40 @@ public class LemmaIndexService(LemmaTable lemmaTable, CorpusVocabulary vocabular
                 .ToList();
             if (linkTypes is { Count: > 0 })
             {
-                parents.Add(new LemmaTreeParent { Lemma = display, LinkTypes = linkTypes });
+                nameParents.Add(new LemmaTreeParent { Lemma = display, LinkTypes = linkTypes });
             }
         }
-        // the family heads this lemma hangs under, upward: the derived and
+        var prefix = lemmaTable.AllDisplayLemmas
+            .Where(x => (x.EndsWith('-') || x.EndsWith('‑'))
+                        && name.Length > x.Length
+                        && name.StartsWith(x, StringComparison.OrdinalIgnoreCase))
+            .OrderByDescending(x => x.Length)
+            .FirstOrDefault();
+
+        return sets.Select(set => Page(set, name, rootKey, nameParents, prefix)).ToList();
+    }
+
+    /// <summary>One lexeme's page: its own links, its own parents (the
+    /// spelling's, then its entries'), its own expansion walk</summary>
+    private LemmaTreePage Page(LemmaLinkSet set, string name, string rootKey,
+        List<LemmaTreeParent> nameParents, string? prefix)
+    {
+        var expanded = new HashSet<string> { rootKey };
+        var byParent = ParentLookup(rootKey, set.Links);
+        var groups = Grouped(
+            byParent[rootKey].Select(x => (x, byParent)),
+            expanded, name);
+        var parents = new List<LemmaTreeParent>(nameParents);
+        // the family heads this lexeme hangs under, upward: the derived and
         // contracts rows' reverse reading. Not in DisplayLemmasFor — those
         // rows name no reading of the form — so the family parents are
         // asked for by name: the display's, and the entry headwords that
         // name this lexeme (fys's paragraph prints the member as 'cha
         // s'oc', while its lexeme displays particle-free as s'oc)
-        var ownNames = links.Links
+        var ownNames = set.Links
             .Where(x => x.LinkType == "self")
             .Select(x => x.Form)
-            .Prepend(links.Lemma)
+            .Prepend(name)
             .ToList();
         foreach (var family in ownNames
                      .SelectMany(n => lemmaTable.FamilyParentsOf(n))
@@ -148,18 +168,13 @@ public class LemmaIndexService(LemmaTable lemmaTable, CorpusVocabulary vocabular
                 // the phrase a contracts edge spells out, read off the head's
                 // own row for this member: what 'contraction' alone cannot say
                 Expansion = family.Any(x => x.LinkType == "contracts")
-                    ? lemmaTable.LinksOf(family.Key)?.Links
+                    ? lemmaTable.LinkSetsFor(family.Key)
+                        .SelectMany(s => s.Links)
                         .FirstOrDefault(l => l.LinkType == "contracts"
                                              && ownNames.Contains(l.Form) && l.Via.Length > 0)?.Via
                     : null,
             });
         }
-        var prefix = lemmaTable.AllDisplayLemmas
-            .Where(x => (x.EndsWith('-') || x.EndsWith('‑'))
-                        && links.Lemma.Length > x.Length
-                        && links.Lemma.StartsWith(x, StringComparison.OrdinalIgnoreCase))
-            .OrderByDescending(x => x.Length)
-            .FirstOrDefault();
         if (prefix != null)
         {
             parents.Add(new LemmaTreeParent { Lemma = prefix, LinkTypes = ["prefixed"] });
@@ -172,23 +187,23 @@ public class LemmaIndexService(LemmaTable lemmaTable, CorpusVocabulary vocabular
         // first, its spellings being the display ones and its rows carrying
         // the source. Only hyphen-spelled compounds are claimed, and
         // suffixes go without: nothing is spelled '*-ys'.
-        if (links.Lemma.EndsWith('-') || links.Lemma.EndsWith('‑'))
+        if (name.EndsWith('-') || name.EndsWith('‑'))
         {
             var family = lemmaTable.AllDisplayLemmas.Select(x => (Form: x, Table: true))
                 .Concat((dictionaryServices ?? [])
                     .Where(d => d.QueryLanguages.Contains("gv"))
                     .SelectMany(d => d.AllWords)
-                    .Concat(vocabulary.TermsStartingWith(links.Lemma))
+                    .Concat(vocabulary.TermsStartingWith(name))
                     // fewest capitals first, so a word the corpus says in
                     // lowercase outranks the same word as Kelly shouts it
                     .OrderBy(t => t.Count(char.IsUpper))
                     .ThenBy(t => t, StringComparer.Ordinal)
                     .Select(x => (Form: x, Table: false)))
-                .Where(x => x.Form.Length > links.Lemma.Length
+                .Where(x => x.Form.Length > name.Length
                             // a phrase's opening word may carry the prefix, but
                             // the phrase is no compound: the word alone is family
                             && !x.Form.Contains(' ')
-                            && x.Form.StartsWith(links.Lemma, StringComparison.OrdinalIgnoreCase))
+                            && x.Form.StartsWith(name, StringComparison.OrdinalIgnoreCase))
                 .GroupBy(x => x.Form.ToLowerInvariant())
                 .Select(g => (
                     // the table's spelling stands where it has one; a word only
@@ -207,10 +222,9 @@ public class LemmaIndexService(LemmaTable lemmaTable, CorpusVocabulary vocabular
                     Unverified = !x.Table,
                     // each table member is its own printed entry: a greyed
                     // one still says whose book records it
-                    Source = lemmaTable.LinksOf(x.Form) is { SelfUnverified: false } own
-                             && own.SelfSource.Length > 0
-                        ? own.SelfSource
-                        : null,
+                    Source = lemmaTable.LinkSetsFor(x.Form)
+                        .FirstOrDefault(s => !s.SelfUnverified && s.SelfSource.Length > 0)
+                        ?.SelfSource,
                     SharedWithOtherLemmas = lemmaTable.DisplayLemmasFor(x.Form).Count > 1,
                 })
                 .ToList();
@@ -221,13 +235,15 @@ public class LemmaIndexService(LemmaTable lemmaTable, CorpusVocabulary vocabular
         }
         return new LemmaTreePage
         {
-            Lemma = links.Lemma,
-            Attestations = vocabulary.AttestationsOf(links.Lemma),
-            Attested = (vocabulary.AttestationsOf(links.Lemma) ?? 1) > 0,
-            Unverified = links.SelfUnverified,
-            Source = links.SelfUnverified || links.SelfSource.Length == 0
+            Lemma = name,
+            LemmaId = set.LemmaId,
+            Pos = set.Pos.Length > 0 ? set.Pos : null,
+            Attestations = vocabulary.AttestationsOf(name),
+            Attested = (vocabulary.AttestationsOf(name) ?? 1) > 0,
+            Unverified = set.SelfUnverified,
+            Source = set.SelfUnverified || set.SelfSource.Length == 0
                 ? null
-                : links.SelfSource,
+                : set.SelfSource,
             Parents = parents.Count > 0 ? parents : null,
             Groups = groups,
         };
@@ -370,21 +386,30 @@ public class LemmaIndexService(LemmaTable lemmaTable, CorpusVocabulary vocabular
         {
             // the rows of the enclosing lemma that derive through this form...
             var children = byParent[link.Form].Select(x => (x, byParent));
-            // ...and, where the form heads a lexeme of its own, that lexeme's
-            // tree, its rows parented among themselves by their own vias. Never
-            // through a demutation guess — as RootDisplayLemmasFor refuses the
-            // same hop: fee's guessed 'ee' must not import the whole family of
-            // *to eat* into a tree about weaving
-            var own = link.LinkType == "demutated" ? null : lemmaTable.LinksOf(link.Form);
+            // ...and, where the form heads ONE lexeme of its own, that
+            // lexeme's tree, its rows parented among themselves by their own
+            // vias. One lexeme only — a homograph name (ee the verb, ee the
+            // pronoun) cannot say which family to import, so it imports
+            // neither. Never through a demutation guess — as
+            // RootDisplayLemmasFor refuses the same hop: fee's guessed 'ee'
+            // must not import the whole family of *to eat* into a tree about
+            // weaving
+            var ownSets = link.LinkType == "demutated"
+                ? []
+                : lemmaTable.LinkSetsFor(link.Form);
+            var own = ownSets.Count == 1 ? ownSets[0] : null;
             // a family member prints under its head by its full headword
             // ('cha s'oc' in fys's paragraph), while its lexeme displays
             // particle-free ('s'oc'): the name misses, and the hop goes
             // through the form's one reading instead. One reading only —
             // an ambiguous spelling must not import another word's family
-            if (own == null && link.LinkType == "derived")
+            if (ownSets.Count == 0 && link.LinkType == "derived")
             {
                 var displays = lemmaTable.DisplayLemmasFor(link.Form);
-                own = displays.Count == 1 ? lemmaTable.LinksOf(displays[0]) : null;
+                var readingSets = displays.Count == 1
+                    ? lemmaTable.LinkSetsFor(displays[0])
+                    : [];
+                own = readingSets.Count == 1 ? readingSets[0] : null;
             }
             if (own != null)
             {
@@ -406,7 +431,7 @@ public class LemmaIndexService(LemmaTable lemmaTable, CorpusVocabulary vocabular
         // lexeme's own spelling ('neu-vondeish'), not the form column's
         // normalization ('neu vondeish')
         var display = link.LinkType == "derived"
-            ? lemmaTable.LinksOf(link.Form)?.Lemma ?? link.Form
+            ? lemmaTable.LinkSetsFor(link.Form).FirstOrDefault()?.Lemma ?? link.Form
             : link.Form;
         return new LemmaTreeForm
         {
@@ -436,6 +461,12 @@ public class LemmaTreePage
 {
     /// <summary>As the `lemma` column spells it ("aa-aase", "Aachummey")</summary>
     public required string Lemma { get; set; }
+    /// <summary>The lexeme's id ("ee.v", "ee.x"): what tells homograph pages
+    /// apart, where the spelling alone cannot</summary>
+    public string? LemmaId { get; set; }
+    /// <summary>The printed class of the lexeme's entry ("v.", "pro."): the
+    /// reader's label for a homograph tree. Null where the book gives none.</summary>
+    public string? Pos { get; set; }
     /// <summary>How often the corpus says the lemma by its own spelling; null
     /// while not yet known (see <see cref="CorpusVocabulary.AttestationsOf"/>)</summary>
     public long? Attestations { get; set; }

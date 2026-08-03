@@ -898,19 +898,24 @@ describe("Dictionary page", () => {
                     : href.includes("/samples")
                       ? []
                       : href.includes("/lemma?")
-                        ? {
-                              lemma: "aase",
-                              attested: true,
-                              groups: [
-                                  {
-                                      linkType: "inflected",
-                                      forms: [
-                                          { form: "daase", attested: true },
-                                      ],
-                                  },
-                              ],
-                              parents: [],
-                          }
+                        ? [
+                              {
+                                  lemma: "aase",
+                                  attested: true,
+                                  groups: [
+                                      {
+                                          linkType: "inflected",
+                                          forms: [
+                                              {
+                                                  form: "daase",
+                                                  attested: true,
+                                              },
+                                          ],
+                                      },
+                                  ],
+                                  parents: [],
+                              },
+                          ]
                         : {
                               answering: dictionaries.map((d) => d.slug),
                               word: "aase",
@@ -944,28 +949,30 @@ describe("Dictionary page", () => {
                     : href.includes("/samples")
                       ? []
                       : href.includes("/lemma?")
-                        ? {
-                              lemma: "v'oc",
-                              attested: true,
-                              groups: [
-                                  {
-                                      linkType: "emphatic",
-                                      forms: [
-                                          {
-                                              form: "v'ocsyn",
-                                              attested: true,
-                                          },
-                                      ],
-                                  },
-                              ],
-                              parents: [
-                                  {
-                                      lemma: "oc",
-                                      linkTypes: ["contracts"],
-                                      expansion: "va oc",
-                                  },
-                              ],
-                          }
+                        ? [
+                              {
+                                  lemma: "v'oc",
+                                  attested: true,
+                                  groups: [
+                                      {
+                                          linkType: "emphatic",
+                                          forms: [
+                                              {
+                                                  form: "v'ocsyn",
+                                                  attested: true,
+                                              },
+                                          ],
+                                      },
+                                  ],
+                                  parents: [
+                                      {
+                                          lemma: "oc",
+                                          linkTypes: ["contracts"],
+                                          expansion: "va oc",
+                                      },
+                                  ],
+                              },
+                          ]
                         : {
                               answering: dictionaries.map((d) => d.slug),
                               word: "v'oc",
@@ -1007,21 +1014,29 @@ describe("Dictionary page", () => {
                     : href.includes("/samples")
                       ? []
                       : href.includes("/lemma?")
-                        ? {
-                              lemma: "oc",
-                              attested: true,
-                              groups: [
-                                  {
-                                      linkType: "emphatic",
-                                      forms: [
-                                          { form: "ocsyn", attested: true },
-                                      ],
-                                  },
-                              ],
-                              parents: [
-                                  { lemma: "ec", linkTypes: ["derived"] },
-                              ],
-                          }
+                        ? [
+                              {
+                                  lemma: "oc",
+                                  attested: true,
+                                  groups: [
+                                      {
+                                          linkType: "emphatic",
+                                          forms: [
+                                              {
+                                                  form: "ocsyn",
+                                                  attested: true,
+                                              },
+                                          ],
+                                      },
+                                  ],
+                                  parents: [
+                                      {
+                                          lemma: "ec",
+                                          linkTypes: ["derived"],
+                                      },
+                                  ],
+                              },
+                          ]
                         : {
                               answering: dictionaries.map((d) => d.slug),
                               word: "ocsyn",
@@ -1048,6 +1063,84 @@ describe("Dictionary page", () => {
         expect(here[0].textContent).toBe("ocsyn")
     })
 
+    it("draws homograph lexemes apart, each wearing its class", async () => {
+        fetchMock.mockImplementation((url) => {
+            const href = hrefOf(url)
+            const body = href.includes("/history")
+                ? { ...usedOnce, lemmas: ["ee"] }
+                : href.includes("/dictionaries")
+                  ? dictionaries
+                  : href.includes("/attestations")
+                    ? emptyAttestations
+                    : href.includes("/samples")
+                      ? []
+                      : href.includes("/lemma?")
+                        ? [
+                              {
+                                  lemma: "ee",
+                                  lemmaId: "ee.v",
+                                  pos: "v.",
+                                  attested: true,
+                                  groups: [
+                                      {
+                                          linkType: "inflected",
+                                          forms: [
+                                              {
+                                                  form: "eeym",
+                                                  attested: true,
+                                              },
+                                          ],
+                                      },
+                                  ],
+                                  parents: [],
+                              },
+                              {
+                                  lemma: "ee",
+                                  lemmaId: "ee.x",
+                                  pos: "pro.",
+                                  attested: true,
+                                  groups: [
+                                      {
+                                          linkType: "emphatic",
+                                          forms: [
+                                              {
+                                                  form: "ish",
+                                                  attested: true,
+                                              },
+                                          ],
+                                      },
+                                  ],
+                                  parents: [],
+                              },
+                          ]
+                        : {
+                              answering: dictionaries.map((d) => d.slug),
+                              word: "ee",
+                              isSuggestionTier: false,
+                              attested: true,
+                              groups: [],
+                          }
+            return Promise.resolve({
+                ok: true,
+                json: () => Promise.resolve(body),
+            } as Response)
+        })
+        renderAt("/dictionary/ee")
+
+        expect(await screen.findByText("Word family")).toBeTruthy()
+        // the verb and the pronoun stand apart: two trees, never a merge,
+        // each root wearing the book's class label
+        expect(document.querySelectorAll(".dict-lemma-embedded")).toHaveLength(
+            2,
+        )
+        const labels = [...document.querySelectorAll(".dict-lemma-pos")].map(
+            (x) => x.textContent?.trim(),
+        )
+        expect(labels).toEqual(["v.", "pro."])
+        expect(screen.getByRole("link", { name: "eeym" })).toBeTruthy()
+        expect(screen.getByRole("link", { name: "ish" })).toBeTruthy()
+    })
+
     it("draws no family section for a reading with nothing hanging off it", async () => {
         fetchMock.mockImplementation((url) => {
             const href = hrefOf(url)
@@ -1060,12 +1153,14 @@ describe("Dictionary page", () => {
                     : href.includes("/samples")
                       ? []
                       : href.includes("/lemma?")
-                        ? {
-                              lemma: "aase",
-                              attested: true,
-                              groups: [],
-                              parents: [],
-                          }
+                        ? [
+                              {
+                                  lemma: "aase",
+                                  attested: true,
+                                  groups: [],
+                                  parents: [],
+                              },
+                          ]
                         : {
                               answering: dictionaries.map((d) => d.slug),
                               word: "aase",

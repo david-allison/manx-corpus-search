@@ -7,6 +7,19 @@ using NUnit.Framework;
 
 namespace CorpusSearch.Test;
 
+/// <summary>The single-lexeme conveniences the fixtures speak in: a fixture
+/// name answers for one lexeme, and a second would be the fixture's own bug —
+/// Single throws it loudly. The vendored sweep, which walks real homographs,
+/// uses <see cref="LemmaIndexService.Trees"/> itself.</summary>
+internal static class SingleLexemeExtensions
+{
+    public static LemmaTreePage? Tree(this LemmaIndexService service, string lemma) =>
+        service.Trees(lemma).SingleOrDefault();
+
+    public static LemmaLinkSet? LinksOf(this LemmaTable table, string name) =>
+        table.LinkSetsFor(name).SingleOrDefault();
+}
+
 /// <summary>
 /// The lemma index: every lemma the tables link a form to, one letter at a time,
 /// and one lemma's form tree.

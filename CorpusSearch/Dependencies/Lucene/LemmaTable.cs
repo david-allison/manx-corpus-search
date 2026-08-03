@@ -23,7 +23,10 @@ public class LemmaTable
     private readonly Dictionary<string, string> nameTypeById;
     private readonly Dictionary<string, string[]> phillipsViaByForm;
     private readonly HashSet<(string Form, string DisplayLemma)> unverifiedLinks;
-    private readonly Dictionary<string, LemmaLinkSet> linkSetsByDisplay;
+    private readonly Dictionary<string, LemmaLinkSet> linkSetsById;
+    // one name, every lexeme spelled with it, in the order the file gives
+    // (the book's): ee answers for the verb and the pronoun apart
+    private readonly Dictionary<string, LemmaLinkSet[]> linkSetsByName;
     private readonly Dictionary<string, (string Head, string LinkType)[]> familyParentsByForm;
     // built on first use: the history view walks lemma -> forms, the reverse
     // of every other lookup
@@ -39,7 +42,7 @@ public class LemmaTable
         Dictionary<string, string> displayLemmaById, Dictionary<string, string> nameTypeById,
         Dictionary<string, string[]> phillipsViaByForm,
         HashSet<(string, string)>? unverifiedLinks = null,
-        Dictionary<string, LemmaLinkSet>? linkSetsByDisplay = null,
+        Dictionary<string, LemmaLinkSet>? linkSetsById = null,
         Dictionary<string, (string Head, string LinkType)[]>? familyParentsByForm = null)
     {
         this.candidatesByForm = candidatesByForm;
@@ -50,10 +53,14 @@ public class LemmaTable
         this.nameTypeById = nameTypeById;
         this.phillipsViaByForm = phillipsViaByForm;
         this.unverifiedLinks = unverifiedLinks ?? [];
-        this.linkSetsByDisplay = linkSetsByDisplay ?? [];
+        this.linkSetsById = linkSetsById ?? [];
         this.familyParentsByForm = familyParentsByForm ?? [];
-        AllDisplayLemmas = this.linkSetsByDisplay.Values
+        linkSetsByName = this.linkSetsById.Values
+            .GroupBy(x => NormalizeForm(x.Lemma))
+            .ToDictionary(g => g.Key, g => g.ToArray());
+        AllDisplayLemmas = this.linkSetsById.Values
             .Select(x => x.Lemma)
+            .Distinct()
             .Order(StringComparer.Ordinal)
             .ToArray();
         formsByDisplay = new Lazy<Dictionary<string, string[]>>(() =>
@@ -79,14 +86,16 @@ public class LemmaTable
     public IReadOnlyList<string> AllDisplayLemmas { get; }
 
     /// <summary>
-    /// The forms the tables link to <paramref name="displayLemma"/> (normalized
-    /// here) and how — the lemma tree's data. Rows linking the lemma's own
-    /// spelling to itself draw no branch: their standing surfaces as
-    /// <see cref="LemmaLinkSet.SelfUnverified"/> instead. Null when the tables
-    /// name no such lemma.
+    /// The lexemes answering to <paramref name="name"/> (normalized here), each
+    /// with the forms the tables link to it and how — the lemma trees' data,
+    /// one set per lexeme: the spelling ee answers for the verb and the pronoun,
+    /// and their families must not merge. In the file's (the book's) order.
+    /// Rows linking a lemma's own spelling to itself draw no branch: their
+    /// standing surfaces as <see cref="LemmaLinkSet.SelfUnverified"/> instead.
+    /// Empty when the tables name no such lemma.
     /// </summary>
-    public LemmaLinkSet? LinksOf(string displayLemma) =>
-        linkSetsByDisplay.TryGetValue(NormalizeForm(displayLemma), out var links) ? links : null;
+    public IReadOnlyList<LemmaLinkSet> LinkSetsFor(string name) =>
+        linkSetsByName.TryGetValue(NormalizeForm(name), out var sets) ? sets : [];
 
     /// <summary>The lemma ids of <paramref name="form"/> (normalized here); empty when unknown</summary>
     public IReadOnlyList<string> CandidatesFor(string form)
@@ -100,7 +109,7 @@ public class LemmaTable
     /// rides after any particle at once, and its count answers for all of
     /// them together</summary>
     public IEnumerable<string> ParticlePhrases =>
-        linkSetsByDisplay.Values
+        linkSetsById.Values
             .SelectMany(x => x.Links)
             .Where(x => x.LinkType == "particle" && x.Via.Contains(' '))
             .Select(x => x.Via);
@@ -483,9 +492,18 @@ public class LemmaTable
                 if (linkType != "univerbated" && !HasNoteTag(note, "collapsed"))
                 {
                     var displayKey = NormalizeForm(displayLemma);
-                    if (!linkSets.TryGetValue(displayKey, out var linkSet))
+                    // one set per LEXEME, not per spelling: the display 'ee'
+                    // answers for the verb and the pronoun, and their
+                    // families must not merge
+                    if (!linkSets.TryGetValue(lemmaId, out var linkSet))
                     {
-                        linkSets[displayKey] = linkSet = new MutableLinkSet { Lemma = displayLemma };
+                        linkSets[lemmaId] = linkSet = new MutableLinkSet { Lemma = displayLemma };
+                    }
+                    // the printed class labels the lexeme (homograph trees
+                    // wear it): the self row's word, like the display
+                    if (linkType == "self" && linkSet.Pos.Length == 0 && columns.Length > 4)
+                    {
+                        linkSet.Pos = columns[4].Trim();
                     }
                     if (form == displayKey)
                     {
@@ -573,11 +591,18 @@ public class LemmaTable
             rootDisplayLemmasByForm[form] = [.. roots];
         }
         unverifiedLinks.ExceptWith(verifiedLinks);
-        var linkSetsByDisplay = linkSets.ToDictionary(
+        var linkSetsById = linkSets.ToDictionary(
             kv => kv.Key,
             kv => new LemmaLinkSet
             {
-                Lemma = kv.Value.Lemma,
+                LemmaId = kv.Key,
+                // the id's display is its self row's (see displayLemmaById):
+                // the set may have been opened by a link row carrying the
+                // spelling that reached it (ghoan names goo.n as "goan")
+                Lemma = displayLemmaById.TryGetValue(kv.Key, out var display)
+                    ? display
+                    : kv.Value.Lemma,
+                Pos = kv.Value.Pos,
                 SelfUnverified = kv.Value.SelfSeen && !kv.Value.SelfVerifiedSeen,
                 SelfSource = kv.Value.SelfSource,
                 Links = kv.Value.Links
@@ -589,14 +614,15 @@ public class LemmaTable
         return new LemmaTable(candidatesByForm, displayLemmasByForm, rootDisplayLemmasByForm, lemmaIds,
             displayLemmaById, nameTypeById,
             phillipsViaLists.ToDictionary(kv => kv.Key, kv => kv.Value.ToArray()),
-            unverifiedLinks, linkSetsByDisplay,
+            unverifiedLinks, linkSetsById,
             familyParentsLists.ToDictionary(kv => kv.Key, kv => kv.Value.ToArray()));
     }
 
-    /// <summary>Accumulates one display lemma's rows while <see cref="Load(IEnumerable{TextReader})"/> reads</summary>
+    /// <summary>Accumulates one lexeme's rows while <see cref="Load(IEnumerable{TextReader})"/> reads</summary>
     private sealed class MutableLinkSet
     {
         public required string Lemma { get; init; }
+        public string Pos = "";
         public bool SelfSeen;
         public bool SelfVerifiedSeen;
         public string SelfSource = "";
@@ -640,12 +666,22 @@ public class LemmaTable
     }
 }
 
-/// <summary>Everything the tables hang off one display lemma: the lemma tree's data</summary>
+/// <summary>Everything the tables hang off one lexeme: one lemma tree's data.
+/// A spelling may head several lexemes (ee the verb, ee the pronoun): one set
+/// each, never merged.</summary>
 public sealed class LemmaLinkSet
 {
+    /// <summary>The lexeme's id ("ee.v", "ee.x"): what tells homographs apart</summary>
+    public required string LemmaId { get; init; }
+
     /// <summary>The lemma as the `lemma` column spells it ("aa-aase", "Aachummey"):
     /// the form-keyed lookups fold this, the tree displays it</summary>
     public required string Lemma { get; init; }
+
+    /// <summary>The printed class of the lexeme's own entry ("v.", "pro."):
+    /// what a reader tells homograph trees apart by; "" when the book gives
+    /// none</summary>
+    public string Pos { get; init; } = "";
 
     /// <summary>The lemma's own row rests on a hand-assertion or a rule alone
     /// (the vocab supplement's 'peiagh'): the root itself is a guess, not print</summary>

@@ -185,7 +185,7 @@ describe("lemma index", () => {
 
 describe("lemma tree", () => {
     it("draws a branch per link type, under the reader's name for it", async () => {
-        respondWith(tree)
+        respondWith([tree])
         renderAt("/dictionary/lemma/peiagh")
 
         expect(
@@ -205,7 +205,7 @@ describe("lemma tree", () => {
     })
 
     it("marks the guesses and greys the unattested, separately", async () => {
-        respondWith(tree)
+        respondWith([tree])
         renderAt("/dictionary/lemma/peiagh")
 
         // peiaghyn: unverified and unattested; pheiagh: unverified but said
@@ -220,7 +220,7 @@ describe("lemma tree", () => {
     })
 
     it("nests what hangs off a form inside its node, to full depth", async () => {
-        respondWith(tree)
+        respondWith([tree])
         renderAt("/dictionary/lemma/peiagh")
 
         const nested = await screen.findByRole("link", { name: "pyaghyn" })
@@ -232,7 +232,7 @@ describe("lemma tree", () => {
     })
 
     it("counts each node's attestations, silent at 0 and unknown", async () => {
-        respondWith(tree)
+        respondWith([tree])
         renderAt("/dictionary/lemma/peiagh")
 
         // the root's count, pheiagh's and nested pyaghyn's; peiaghyn is a
@@ -245,23 +245,25 @@ describe("lemma tree", () => {
     })
 
     it("marks a form whose spelling another word also uses", async () => {
-        respondWith({
-            ...tree,
-            groups: [
-                {
-                    linkType: "mutation",
-                    forms: [
-                        {
-                            form: "pheiagh",
-                            attestations: 2,
-                            attested: true,
-                            unverified: false,
-                            sharedWithOtherLemmas: true,
-                        },
-                    ],
-                },
-            ],
-        })
+        respondWith([
+            {
+                ...tree,
+                groups: [
+                    {
+                        linkType: "mutation",
+                        forms: [
+                            {
+                                form: "pheiagh",
+                                attestations: 2,
+                                attested: true,
+                                unverified: false,
+                                sharedWithOtherLemmas: true,
+                            },
+                        ],
+                    },
+                ],
+            },
+        ])
         renderAt("/dictionary/lemma/peiagh")
 
         // the * rides the count: the count is of the spelling, and some of it
@@ -280,14 +282,19 @@ describe("lemma tree", () => {
     })
 
     it("reads back up: the root names what it hangs off", async () => {
-        respondWith({
-            ...tree,
-            lemma: "aa-ghiennaghtyn",
-            parents: [
-                { lemma: "giennaghtyn", linkTypes: ["inflected", "plural"] },
-                { lemma: "aa-", linkTypes: ["prefixed"] },
-            ],
-        })
+        respondWith([
+            {
+                ...tree,
+                lemma: "aa-ghiennaghtyn",
+                parents: [
+                    {
+                        lemma: "giennaghtyn",
+                        linkTypes: ["inflected", "plural"],
+                    },
+                    { lemma: "aa-", linkTypes: ["prefixed"] },
+                ],
+            },
+        ])
         renderAt("/dictionary/lemma/aa-ghiennaghtyn")
 
         // a table parent reads as the reverse of the downward chips, and
@@ -305,7 +312,7 @@ describe("lemma tree", () => {
     })
 
     it("names the book behind a form no text uses", async () => {
-        respondWith(tree)
+        respondWith([tree])
         renderAt("/dictionary/lemma/peiagh")
 
         // pyee: greyed, but Cregeen prints it and the note says so.
