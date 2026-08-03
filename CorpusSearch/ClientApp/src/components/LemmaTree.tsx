@@ -460,6 +460,12 @@ export const senseKeyOfPos = (pos: string): string | null => {
     ) {
         return "particle"
     }
+    // Cregeen's one-letter p: doubled ("p. p.") it is his prepositional
+    // pronoun, alone ("p.") pronominal — the function-word cluster either
+    // way. Matched whole, so "pt." (participle) and "pl." claim nothing.
+    if (/^p[.,]?( ?p\.?)?$/.test(label.trimEnd())) {
+        return "particle"
+    }
     return null
 }
 
