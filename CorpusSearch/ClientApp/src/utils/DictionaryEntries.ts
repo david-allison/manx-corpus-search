@@ -330,13 +330,16 @@ export const readingGroupsIn = (
     const unmatched: Summary[] = []
     for (const entry of own) {
         const words = contentWords(entry.summary)
-        const overlaps = readings.map((reading) =>
-            reading.allowed != null &&
-            entry.partsOfSpeech?.length &&
-            !entry.partsOfSpeech.some((c) => reading.allowed!.includes(c))
+        const overlaps = readings.map((reading) => {
+            const allowed = reading.allowed
+            const conflicting =
+                allowed != null &&
+                entry.partsOfSpeech?.length &&
+                !entry.partsOfSpeech.some((c) => allowed.includes(c))
+            return conflicting
                 ? 0
-                : [...reading.words].filter((w) => words.has(w)).length,
-        )
+                : [...reading.words].filter((w) => words.has(w)).length
+        })
         const best = Math.max(...overlaps)
         if (best === 0) {
             unmatched.push(entry)
