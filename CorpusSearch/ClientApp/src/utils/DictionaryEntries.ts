@@ -254,6 +254,15 @@ const contentWords = (text: string): Set<string> =>
  * closed-class x carries no label a reader is owed. */
 const LABEL_OF_ID: Record<string, string> = { n: "n.", v: "v.", a: "a." }
 
+/** The word classes a lemma id's suffix admits into its readings. The
+ * a-class spans the books' adjective/adverb blur; x and the explicit ids
+ * admit anything. */
+const CLASSES_OF_ID: Record<string, string[]> = {
+    v: ["Verb"],
+    n: ["Noun"],
+    a: ["Adjective", "Adverb"],
+}
+
 /** One lemma id's readings, headed the dictionary.com way: the headword and
  * its class, then the numbered senses, each gathering the entries of every
  * book beneath the reading it defines */
@@ -306,6 +315,12 @@ export const readingGroupsIn = (
             key: reading.senseId,
             heading: `${index + 1}. ${reading.gloss}`,
             words: contentWords(reading.gloss),
+            // the classes the block's lemma admits (eab.v is the verb):
+            // an entry declaring another class is another lexeme's, however
+            // many words its gloss shares — Cregeen's noun 'an attempt,
+            // effort, or push' must not file under the verb's readings
+            allowed:
+                CLASSES_OF_ID[block.lemmaId.split(".").pop() ?? ""] ?? null,
             entries: [] as Summary[],
             unplaced: [] as Summary[],
         })),
@@ -315,8 +330,12 @@ export const readingGroupsIn = (
     const unmatched: Summary[] = []
     for (const entry of own) {
         const words = contentWords(entry.summary)
-        const overlaps = readings.map(
-            (reading) => [...reading.words].filter((w) => words.has(w)).length,
+        const overlaps = readings.map((reading) =>
+            reading.allowed != null &&
+            entry.partsOfSpeech?.length &&
+            !entry.partsOfSpeech.some((c) => reading.allowed!.includes(c))
+                ? 0
+                : [...reading.words].filter((w) => words.has(w)).length,
         )
         const best = Math.max(...overlaps)
         if (best === 0) {

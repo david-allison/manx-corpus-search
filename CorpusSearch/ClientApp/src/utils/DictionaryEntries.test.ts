@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest"
 import {
     corpusSearchUrl,
     declaredClassesIn,
+    readingGroupsIn,
     rootsBySense,
     senseGroupsIn,
 } from "./DictionaryEntries"
@@ -69,6 +70,49 @@ describe("declaredClassesIn", () => {
                 page([entry({ partsOfSpeech: ["Noun", "Verb"] })]),
             ),
         ).toEqual(["Noun", "Verb"])
+    })
+})
+
+describe("readingGroupsIn", () => {
+    it("keeps another class's entry out of a block, however well its gloss matches", () => {
+        // the real eab: the inventory names the VERB's readings, and Cregeen's
+        // noun ('an attempt, effort, or push') shares its every content word —
+        // it must fall to the tail as its own noun section, not vanish into
+        // the verb's block
+        const groups = readingGroupsIn({
+            ...page([
+                entry({
+                    primaryWord: "eab",
+                    summary: "attempt, &c.;",
+                    partsOfSpeech: ["Verb"],
+                }),
+                entry({
+                    primaryWord: "eab",
+                    summary: "an attempt, effort, or push",
+                    partsOfSpeech: ["Noun"],
+                }),
+            ]),
+            senses: [
+                {
+                    lemmaId: "eab.v",
+                    lemma: "eab",
+                    dictionary: "cregeen",
+                    readings: [
+                        {
+                            senseId: "eab.v#1",
+                            gloss: "attempt, &c.;",
+                            headword: "eab",
+                        },
+                    ],
+                },
+            ],
+        })!
+
+        expect(groups.blocks[0].readings[0].entries).toHaveLength(1)
+        expect(groups.blocks[0].readings[0].entries[0].partsOfSpeech).toEqual([
+            "Verb",
+        ])
+        expect(groups.tail.map((g) => g.key)).toEqual(["noun"])
     })
 })
 
