@@ -127,4 +127,26 @@ public class CregeenDictionaryServiceTest
             Assert.That(moir.Summary, Does.StartWith("mother"));
         });
     }
+
+    /// <summary>The book heads both entries 'eab or eabb*' — the starred
+    /// spelling is the stem the suffixes join to — but the classic export
+    /// once merged the bare eabb entry into the adjacent verb group alone,
+    /// and a search for eabb never found the noun.</summary>
+    [Test]
+    public void TheStarredSpellingAnswersForBothEabs()
+    {
+        var service = CregeenDictionaryService.Init(
+            Microsoft.Extensions.Logging.Abstractions.NullLogger<CregeenDictionaryService>.Instance);
+        Assume.That(service.AllWords, Is.Not.Empty, "cregeen.json not present");
+
+        var labels = service.GetSummaries("eabb", basic: true)
+            .Select(x => x.GrammarLabel)
+            .ToList();
+        Assert.Multiple(() =>
+        {
+            Assert.That(labels, Does.Contain("s. m."),
+                "the noun prints 'eab or eabb*' and must answer for the starred spelling");
+            Assert.That(labels, Does.Contain("v."));
+        });
+    }
 }
