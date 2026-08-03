@@ -396,8 +396,30 @@ public class LemmaTableTest
             Assert.That(table.RootDisplayLemmasFor("vondeishagh"), Is.Empty);
             Assert.That(table.LinksOf("vondeish")!.Links.Select(x => (x.LinkType, x.Form)),
                 Does.Contain(("derived", "vondeishagh")));
-            Assert.That(table.DerivedParentsOf("vondeishagh"), Is.EqualTo(new[] { "vondeish" }));
-            Assert.That(table.DerivedParentsOf("vondeish"), Is.Empty);
+            Assert.That(table.FamilyParentsOf("vondeishagh"),
+                Is.EqualTo(new[] { ("vondeish", "derived") }));
+            Assert.That(table.FamilyParentsOf("vondeish"), Is.Empty);
+        });
+    }
+
+    /// <summary>A contracts row names the words a contraction fuses (the book
+    /// says v'oc is va oc): a tree branch and a parent each way, nothing
+    /// else — v'oc is its own lexeme, not a spelling of oc's</summary>
+    [Test]
+    public void AContractsRowDrawsATreeEdgeAndNothingElse()
+    {
+        var table = Table(
+            "oc\toc.x\toc\tself\tpro.\toc\t",
+            "v'oc\tv'oc.x\tv'oc\tself\tp.\tv'oc\t",
+            "v'oc\toc.x\toc\tcontracts\tpro.\tva oc\t");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(table.CandidatesFor("v'oc"), Is.EqualTo(new[] { "v'oc.x" }));
+            Assert.That(table.DisplayLemmasFor("v'oc"), Is.EqualTo(new[] { "v'oc" }));
+            Assert.That(table.LinksOf("oc")!.Links.Select(x => (x.LinkType, x.Form)),
+                Does.Contain(("contracts", "v'oc")));
+            Assert.That(table.FamilyParentsOf("v'oc"), Is.EqualTo(new[] { ("oc", "contracts") }));
         });
     }
 }

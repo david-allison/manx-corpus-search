@@ -24,7 +24,7 @@ public class LemmaTable
     private readonly Dictionary<string, string[]> phillipsViaByForm;
     private readonly HashSet<(string Form, string DisplayLemma)> unverifiedLinks;
     private readonly Dictionary<string, LemmaLinkSet> linkSetsByDisplay;
-    private readonly Dictionary<string, string[]> derivedParentsByForm;
+    private readonly Dictionary<string, (string Head, string LinkType)[]> familyParentsByForm;
     // built on first use: the history view walks lemma -> forms, the reverse
     // of every other lookup
     private readonly Lazy<Dictionary<string, string[]>> formsByDisplay;
@@ -40,7 +40,7 @@ public class LemmaTable
         Dictionary<string, string[]> phillipsViaByForm,
         HashSet<(string, string)>? unverifiedLinks = null,
         Dictionary<string, LemmaLinkSet>? linkSetsByDisplay = null,
-        Dictionary<string, string[]>? derivedParentsByForm = null)
+        Dictionary<string, (string Head, string LinkType)[]>? familyParentsByForm = null)
     {
         this.candidatesByForm = candidatesByForm;
         this.displayLemmasByForm = displayLemmasByForm;
@@ -51,7 +51,7 @@ public class LemmaTable
         this.phillipsViaByForm = phillipsViaByForm;
         this.unverifiedLinks = unverifiedLinks ?? [];
         this.linkSetsByDisplay = linkSetsByDisplay ?? [];
-        this.derivedParentsByForm = derivedParentsByForm ?? [];
+        this.familyParentsByForm = familyParentsByForm ?? [];
         AllDisplayLemmas = this.linkSetsByDisplay.Values
             .Select(x => x.Lemma)
             .Order(StringComparer.Ordinal)
@@ -140,12 +140,13 @@ public class LemmaTable
             .ToList();
     }
 
-    /// <summary>The family heads the book prints <paramref name="form"/> under
-    /// ("vondeishagh" -> vondeish): the `derived` rows read upward, for the
-    /// tree's Parents line. Empty for every other form — the derived rows
-    /// feed no other lookup.</summary>
-    public IReadOnlyList<string> DerivedParentsOf(string form) =>
-        derivedParentsByForm.TryGetValue(NormalizeForm(form), out var heads) ? heads : [];
+    /// <summary>The family heads <paramref name="form"/> hangs under, with how:
+    /// the paragraph that prints it ("vondeishagh" -> vondeish, `derived`) and
+    /// the words its contraction fuses ("v'oc" -> oc, `contracts`). The rows
+    /// read upward, for the tree's Parents line. Empty for every other form —
+    /// these rows feed no other lookup.</summary>
+    public IReadOnlyList<(string Head, string LinkType)> FamilyParentsOf(string form) =>
+        familyParentsByForm.TryGetValue(NormalizeForm(form), out var heads) ? heads : [];
 
     /// <summary>The classical spellings a Phillips 1610 form stands for
     /// ("dwyne" -> "dooinney"), from the phillips supplement's via column:
@@ -389,7 +390,7 @@ public class LemmaTable
         var unverifiedLinks = new HashSet<(string, string)>();
         var verifiedLinks = new HashSet<(string, string)>();
         var linkSets = new Dictionary<string, MutableLinkSet>();
-        var derivedParentsLists = new Dictionary<string, List<string>>();
+        var familyParentsLists = new Dictionary<string, List<(string Head, string LinkType)>>();
 
         foreach (var (reader, source) in sources)
         {
@@ -426,20 +427,22 @@ public class LemmaTable
                     nameTypeById.TryAdd(lemmaId, columns[4]["np.".Length..].Trim());
                 }
                 // a derived row is the book's word-family edge (vondeishagh
-                // prints in vondeish's paragraph): it draws a lemma-tree branch
-                // and names a parent, nothing else. The member is another
-                // lexeme's headword, not a spelling of this one, so it joins no
-                // candidate set and no root chain — searching or tapping
-                // vondeishagh must never answer with vondeish.
-                if (linkType == "derived")
+                // prints in vondeish's paragraph), and a contracts row the
+                // words a contraction fuses (v'oc is va oc): each draws a
+                // lemma-tree branch and names a parent, nothing else. The
+                // member is another lexeme's headword, not a spelling of this
+                // one, so it joins no candidate set and no root chain —
+                // searching or tapping vondeishagh must never answer with
+                // vondeish, nor v'oc with oc.
+                if (linkType is "derived" or "contracts")
                 {
-                    if (!derivedParentsLists.TryGetValue(form, out var heads))
+                    if (!familyParentsLists.TryGetValue(form, out var heads))
                     {
-                        derivedParentsLists[form] = heads = [];
+                        familyParentsLists[form] = heads = [];
                     }
-                    if (!heads.Contains(displayLemma))
+                    if (!heads.Contains((displayLemma, linkType)))
                     {
-                        heads.Add(displayLemma);
+                        heads.Add((displayLemma, linkType));
                     }
                 }
                 else
@@ -587,7 +590,7 @@ public class LemmaTable
             displayLemmaById, nameTypeById,
             phillipsViaLists.ToDictionary(kv => kv.Key, kv => kv.Value.ToArray()),
             unverifiedLinks, linkSetsByDisplay,
-            derivedParentsLists.ToDictionary(kv => kv.Key, kv => kv.Value.ToArray()));
+            familyParentsLists.ToDictionary(kv => kv.Key, kv => kv.Value.ToArray()));
     }
 
     /// <summary>Accumulates one display lemma's rows while <see cref="Load(IEnumerable{TextReader})"/> reads</summary>
