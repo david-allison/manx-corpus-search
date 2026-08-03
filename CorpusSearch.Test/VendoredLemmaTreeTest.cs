@@ -220,6 +220,34 @@ public class VendoredLemmaTreeTest
         });
     }
 
+    /// <summary>Cregeen prints two entries headed e — the interjection of
+    /// wonder and the possessive his-and-hers — and for years they minted one
+    /// merged lexeme (in. and pro. share the id class), whose chimera tree
+    /// wore the interjection's class and the possessive's page. Explicit ids
+    /// split them, and each tree wears the book's homograph number, tying
+    /// tree e¹ to entry e¹.</summary>
+    [Test]
+    public void TheTwoEsOfCregeenStandApartAndWearTheirNumbers()
+    {
+        var table = LemmaTable.Instance;
+        if (!table.AllDisplayLemmas.Any())
+        {
+            Assert.Ignore("cregeen.tsv not vendored (manx-lemma-data submodule not initialised)");
+        }
+        var trees = new LemmaIndexService(table, new CorpusVocabulary(table)).Trees("e");
+        Assert.Multiple(() =>
+        {
+            Assert.That(trees.Select(t => (t.LemmaId, t.Homograph, t.Pos)),
+                Is.EqualTo(new[] { ("e-1", (int?)1, "in."), ("e-2", (int?)2, "pro.") }),
+                "the interjection first and the possessive second, as the book prints them");
+            Assert.That(Flatten(trees[0].Groups).Select(x => x.Form),
+                Does.Contain("eh"),
+                "eh and eshyn are the interjection's printed spellings, not the possessive's");
+            Assert.That(Flatten(trees[1].Groups).Select(x => x.Form),
+                Does.Not.Contain("eh"));
+        });
+    }
+
     /// <summary>Every family edge, both ways, table-wide. One lexeme answers
     /// to three names — the printed member headword ('cha s'oc', what the
     /// derived rows key), the display lemma ('s'oc', what pages and trees

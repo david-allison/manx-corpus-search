@@ -128,7 +128,16 @@ public class LemmaIndexService(LemmaTable lemmaTable, CorpusVocabulary vocabular
             .OrderByDescending(x => x.Length)
             .FirstOrDefault();
 
-        return sets.Select(set => Page(set, name, rootKey, nameParents, prefix)).ToList();
+        return sets
+            .Select((set, index) =>
+            {
+                var page = Page(set, name, rootKey, nameParents, prefix);
+                // the book's homograph number, where one spelling heads
+                // several lexemes: the reader ties tree e¹ to entry e¹
+                page.Homograph = sets.Count > 1 ? index + 1 : null;
+                return page;
+            })
+            .ToList();
     }
 
     /// <summary>One lexeme's page: its own links, its own parents (the
@@ -467,6 +476,9 @@ public class LemmaTreePage
     /// <summary>The printed class of the lexeme's entry ("v.", "pro."): the
     /// reader's label for a homograph tree. Null where the book gives none.</summary>
     public string? Pos { get; set; }
+    /// <summary>Which of the spelling's lexemes this is (e¹, e²), in the
+    /// book's order. Null where the name heads one lexeme alone.</summary>
+    public int? Homograph { get; set; }
     /// <summary>How often the corpus says the lemma by its own spelling; null
     /// while not yet known (see <see cref="CorpusVocabulary.AttestationsOf"/>)</summary>
     public long? Attestations { get; set; }

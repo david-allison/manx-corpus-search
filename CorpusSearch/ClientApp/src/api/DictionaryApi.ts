@@ -601,6 +601,9 @@ export type LemmaTreeResponse = {
     /** the printed class of the lexeme's entry ("v.", "pro."): the reader's
      * label for a homograph tree; absent where the book gives none */
     pos?: string | null
+    /** which of the spelling's lexemes this is (e¹, e²), in the book's
+     * order; absent where the name heads one lexeme alone */
+    homograph?: number | null
     /** how often the corpus says the lemma by its own spelling; null while
      * not yet known */
     attestations?: number | null

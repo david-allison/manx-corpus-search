@@ -341,6 +341,10 @@ const EmbeddedTree = ({
             ) : (
                 <Link to={dictionaryWordUrl(tree.lemma)}>{tree.lemma}</Link>
             )}
+            {/* the book's homograph number, tying tree e¹ to entry e¹ */}
+            {tree.homograph != null && (
+                <sup className="dict-lemma-homograph">{tree.homograph}</sup>
+            )}
             {/* the book's class label, so the tree says whose family it
                 is: 'ee v.' eats, 'ee pro.' is her, and the lone tree beside
                 another reading's entries does not pose as theirs */}
@@ -585,6 +589,11 @@ export const LemmaTree = ({ lemma }: { lemma: string }) => {
                         }
                     >
                         {tree.lemma}
+                        {tree.homograph != null && (
+                            <sup className="dict-lemma-homograph">
+                                {tree.homograph}
+                            </sup>
+                        )}
                         {/* the book's class label, so the tree says whose
                             family it is */}
                         {tree.pos ? (

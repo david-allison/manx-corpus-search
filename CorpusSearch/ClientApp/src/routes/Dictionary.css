@@ -229,6 +229,15 @@ h4.dict-page-dictionary {
     font-size: 0.9em;
 }
 
+/* the book's homograph number (e¹, e²): the printed dictionaries' own
+   device for two entries under one headword */
+.dict-page-homograph {
+    color: var(--c-muted);
+    font-weight: normal;
+    font-size: 0.7em;
+    margin-left: 1px;
+}
+
 /* the Phillips 1610 bridge: the looked-up spelling belongs to the
    manuscript era, the entries below to the classical word */
 .dict-page-bridge {
