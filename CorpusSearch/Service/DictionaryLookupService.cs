@@ -129,10 +129,18 @@ public class DictionaryLookupService(IEnumerable<ISearchDictionary> dictionarySe
             // guess, so the flag sticks for the rest of the walk
             // Origin is the first hop, carried through the deeper ones: every
             // entry of a chain answers to the reading that opened it
+            // which sense of a root the chain means: at the first hop, the
+            // word classes of the candidate ids that produced each display
+            // (row -> bee.v is the verb 'bee', never the food); at deeper
+            // hops, the printed class of the lexeme whose links carried the
+            // chain there (ish hangs off ee the pronoun, so the eating ee
+            // stays out of eeish's page)
+            var expectedPos = ExpectedPosByDisplay(selection, context);
             var frontier = ResolvedDisplayLemmas(selection, context)
                 .Where(x => !seen.Contains(x))
                 .Select(x => (Display: x, Origin: x,
-                    Unverified: lemmaTable.IsUnverifiedLink(selection, x)))
+                    Unverified: lemmaTable.IsUnverifiedLink(selection, x),
+                    Expected: expectedPos.TryGetValue(x, out var e) ? e : null))
                 .ToList();
             // a resolved tap names its lexeme group, and the group carries its
             // own paradigm roots ('gheiney' resolves with deiney AND dooinney) -
@@ -145,17 +153,13 @@ public class DictionaryLookupService(IEnumerable<ISearchDictionary> dictionarySe
                 ? lemmaTable.DisplayLemmasFor(selection, resolvedIds)
                     .ToHashSet(StringComparer.InvariantCultureIgnoreCase)
                 : null;
-            // which sense of a root the chain means: the word classes of the
-            // candidate ids that produced each display (row -> bee.v is the
-            // verb 'bee', never the food)
-            var expectedPos = ExpectedPosByDisplay(selection, context);
             for (var depth = 1; frontier.Count > 0 && depth <= 3; depth++)
             {
                 seen.UnionWith(frontier.Select(x => x.Display));
-                foreach (var (display, origin, unverified) in frontier)
+                foreach (var (display, origin, unverified, itemExpected) in frontier)
                 {
                     var summaries = GetSummaries([display]);
-                    if (depth == 1 && expectedPos.TryGetValue(display, out var expected))
+                    if (itemExpected is { } expected)
                     {
                         // Phil Kelly merges homograph senses into one gloss list
                         // ('bee': food and be together): when the chain knows which
@@ -188,14 +192,24 @@ public class DictionaryLookupService(IEnumerable<ISearchDictionary> dictionarySe
                     }
                 }
                 // deeper hops follow paradigm links only: a mutation guess is a
-                // candidate reading of the selection, not a root of the root
+                // candidate reading of the selection, not a root of the root.
+                // Each hop's expectation is the printed class of the lexeme(s)
+                // whose links carry it; two paths to one display union theirs,
+                // and any unconstrained path unconstrains the display
                 frontier = frontier
                     .SelectMany(root => lemmaTable.RootDisplayLemmasFor(root.Display)
                         .Select(next => (Display: next, root.Origin,
-                            Unverified: root.Unverified || lemmaTable.IsUnverifiedLink(root.Display, next))))
+                            Unverified: root.Unverified || lemmaTable.IsUnverifiedLink(root.Display, next),
+                            Expected: ExpectedFromLink(next, root.Display))))
                     .Where(x => !seen.Contains(x.Display))
                     .Where(x => resolvedRootDisplays == null || resolvedRootDisplays.Contains(x.Display))
-                    .DistinctBy(x => x.Display, StringComparer.InvariantCultureIgnoreCase)
+                    .GroupBy(x => x.Display, StringComparer.InvariantCultureIgnoreCase)
+                    .Select(g => g.Aggregate((a, b) =>
+                        (a.Display, a.Origin, a.Unverified && b.Unverified,
+                            Expected: a.Expected == null || b.Expected == null
+                                ? null
+                                : new HashSet<string>(a.Expected.Concat(b.Expected),
+                                    StringComparer.InvariantCultureIgnoreCase))))
                     .ToList();
             }
         }
@@ -760,6 +774,58 @@ public class DictionaryLookupService(IEnumerable<ISearchDictionary> dictionarySe
         return allowedIds == null
             ? lemmaTable.DisplayLemmasFor(selection)
             : lemmaTable.DisplayLemmasFor(selection, allowedIds);
+    }
+
+    /// <summary>The word classes a deeper root hop means: the printed class of
+    /// each lexeme of <paramref name="nextDisplay"/> whose own links carry
+    /// <paramref name="viaForm"/> — ish hangs off ee the pronoun ("pro."), so
+    /// the hop expects Pronoun and the eating homograph's entries stay out.
+    /// Null (unconstrained) when any linking lexeme's class is unknown, or
+    /// none can be told.</summary>
+    private HashSet<string>? ExpectedFromLink(string nextDisplay, string viaForm)
+    {
+        var formKey = LemmaTable.NormalizeForm(viaForm);
+        HashSet<string>? expected = null;
+        var anyLinking = false;
+        foreach (var set in lemmaTable.LinkSetsFor(nextDisplay))
+        {
+            if (!set.Links.Any(l => l.LinkType != "demutated" && l.Form == formKey))
+            {
+                continue;
+            }
+            anyLinking = true;
+            var pos = ExpectedFromPrinted(set.Pos);
+            if (pos == null)
+            {
+                return null;
+            }
+            (expected ??= new HashSet<string>(StringComparer.InvariantCultureIgnoreCase))
+                .UnionWith(pos);
+        }
+        return anyLinking ? expected : null;
+    }
+
+    /// <summary>The table's printed class ("pro.", "s. m.") in the
+    /// dictionaries' part-of-speech vocabulary; null where the label
+    /// constrains nothing (the closed-class "p." contractions, "" —
+    /// the filter must not guess)</summary>
+    private static string[]? ExpectedFromPrinted(string pos)
+    {
+        var label = pos.TrimStart();
+        return label switch
+        {
+            _ when label.StartsWith("v", StringComparison.OrdinalIgnoreCase) => ["Verb"],
+            _ when label.StartsWith("s.", StringComparison.OrdinalIgnoreCase)
+                   || label.StartsWith("n.", StringComparison.OrdinalIgnoreCase) => ["Noun"],
+            // one printed family mixes "a." and "adv." (see ExpectedPosByDisplay)
+            _ when label.StartsWith("adv", StringComparison.OrdinalIgnoreCase)
+                   || label.StartsWith("a.", StringComparison.OrdinalIgnoreCase) =>
+                ["Adjective", "Adverb"],
+            _ when label.StartsWith("pro", StringComparison.OrdinalIgnoreCase) => ["Pronoun"],
+            _ when label.StartsWith("pre", StringComparison.OrdinalIgnoreCase) => ["Preposition"],
+            _ when label.StartsWith("int", StringComparison.OrdinalIgnoreCase) => ["Interjection"],
+            _ => null,
+        };
     }
 
     /// <summary>display lemma -> the word classes of the candidate ids behind it

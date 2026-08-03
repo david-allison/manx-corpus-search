@@ -23,6 +23,45 @@ public class DictionaryLookupServiceTest
         return service.Lookup("gv", selection, context).Select(x => x.PrimaryWord).ToList();
     }
 
+    /// <summary>The root chain rides the printed classes of the real data:
+    /// eeish climbs ish to ee the PRONOUN, and the eating homograph's entries
+    /// — and the MOOADAGH/EE transcription artifact Kelly answers 'ee' with —
+    /// stay off her page. It once served "s. eating, feeding" and "a. bulky,
+    /// large" between the pronouns. The unfiltered chains still climb whole:
+    /// gheiney reaches dooinney.</summary>
+    [Test]
+    public void TheRootChainStaysInsideItsLexeme()
+    {
+        var cregeen = CorpusSearch.Service.Dictionaries.CregeenDictionaryService.Init(
+            Microsoft.Extensions.Logging.Abstractions.NullLogger<CorpusSearch.Service.Dictionaries.CregeenDictionaryService>.Instance);
+        var kelly = CorpusSearch.Service.Dictionaries.KellyManxToEnglishDictionaryService.Init(
+            Microsoft.Extensions.Logging.Abstractions.NullLogger<CorpusSearch.Service.Dictionaries.KellyManxToEnglishDictionaryService>.Instance);
+        Assume.That(cregeen.AllWords, Is.Not.Empty, "cregeen.json not present");
+        Assume.That(kelly.AllWords, Is.Not.Empty, "kellym2e.json not present");
+        if (!LemmaTable.Instance.AllDisplayLemmas.Any())
+        {
+            Assert.Ignore("cregeen.tsv not vendored (manx-lemma-data submodule not initialised)");
+        }
+        var service = new DictionaryLookupService(
+            [cregeen, kelly], LemmaTable.Instance, LemmaResolver.Instance);
+
+        var entries = service.Lookup("gv", "eeish");
+        Assert.Multiple(() =>
+        {
+            Assert.That(entries, Is.Not.Empty);
+            Assert.That(entries.Select(x => x.PrimaryWord),
+                Does.Not.Contain("MOOADAGH"), "the 'MOOADAGH, EE' artifact must not answer for her");
+            Assert.That(entries.Where(x => x.PartsOfSpeech != null)
+                    .SelectMany(x => x.PartsOfSpeech!),
+                Has.None.AnyOf("Verb", "Noun"),
+                "eeish is the pronoun's: nothing on her page may eat");
+        });
+
+        var control = service.Lookup("gv", "gheiney");
+        Assert.That(control.Select(x => x.PrimaryWord.ToLowerInvariant()),
+            Does.Contain("dooinney"), "the ordinary chain must still climb whole");
+    }
+
     /// <summary>The page names the readings the inventory has: the popup picks
     /// among them in context, and here the reader sees the fork itself</summary>
     [Test]
