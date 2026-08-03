@@ -619,6 +619,9 @@ export type LemmaTreeParent = {
     /** the link types read upward ("inflected", "plural"; "prefixed" for a
      * spelling parent) */
     linkTypes: string[]
+    /** the phrase a contracts edge spells out ("va oc" above v'oc); absent on
+     * every other kind of parent */
+    expansion?: string | null
 }
 
 export type LemmaTreeGroup = {
@@ -648,6 +651,9 @@ export type LemmaTreeForm = {
      * row itself, and what `attestations` counts — the bare form's count
      * answers for every particle at once. Absent on every other link type. */
     via?: string | null
+    /** the phrase a contracts row spells out ("va oc" on v'oc): drawn beside
+     * the row, not instead of it. Absent on every other link type. */
+    expansion?: string | null
     /** the other ways the same form is linked at this level ("plural" on the
      * row 'Inflected forms' files deiney under): one row however many links,
      * the best-ranked drawing it and the rest named here */

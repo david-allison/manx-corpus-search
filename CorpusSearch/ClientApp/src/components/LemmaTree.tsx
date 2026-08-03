@@ -47,6 +47,12 @@ const FORM_UNVERIFIED_TITLE =
     "Unverified: no dictionary records this form under this lemma. It was " +
     "worked out by rule or asserted by hand, and may be wrong"
 
+/** Whether two spellings are the same word to a reader: the page's word may
+ * differ from the table's form only in case and apostrophe style */
+const sameWord = (a: string | undefined, b: string) =>
+    a != null &&
+    a.toLowerCase().replace(/’/g, "'") === b.toLowerCase().replace(/’/g, "'")
+
 /** How a link type reads climbing UP the tree, where the chips above read
  * down: 'deiney — inflected · plural of dooinney'. Raw type for the rest. */
 const PARENT_LABELS: Record<string, string> = {
@@ -86,6 +92,9 @@ const ParentLine = ({ parent }: { parent: LemmaTreeParent }) => (
                     {`: ${parent.linkTypes
                         .map((type) => PARENT_LABELS[type] ?? type)
                         .join(" · ")}`}
+                    {/* the phrase the contraction spells out: 'contraction
+                        of va oc', not a bare 'contraction' */}
+                    {parent.expansion ? ` of ${parent.expansion}` : ""}
                 </span>
                 {" ›"}
             </>
@@ -170,10 +179,14 @@ const TreeGroups = ({
     groups,
     className,
     ariaLabel,
+    highlight,
 }: {
     groups: LemmaTreeGroup[]
     className?: string
     ariaLabel?: string
+    /** the page's own word, marked where the tree says it: the reader sees
+     * where they stand in the family */
+    highlight?: string
 }) => (
     <ul className={className} aria-label={ariaLabel}>
         {groups.map((group) => (
@@ -182,62 +195,83 @@ const TreeGroups = ({
                     {GROUP_LABELS[group.linkType] ?? group.linkType}
                 </span>
                 <ul>
-                    {group.forms.map((form) => (
-                        <li key={form.form}>
-                            {/* a particle row is the phrase itself ('e
+                    {group.forms.map((form) => {
+                        const here = sameWord(highlight, form.via ?? form.form)
+                        return (
+                            <li key={form.form}>
+                                {/* a particle row is the phrase itself ('e
                                 gheiney'), counted as the phrase: the bare
                                 form's count answers for every particle at
                                 once, and 'With a particle' alone never says
                                 which. The link still opens the form's page. */}
-                            <Link
-                                className={
-                                    form.attested
-                                        ? undefined
-                                        : "dict-unattested"
-                                }
-                                title={
-                                    form.via
-                                        ? `The form ${form.form}, after its particle${form.attested ? "" : "; in no text in the corpus"}`
-                                        : form.attested
-                                          ? undefined
-                                          : `${form.form}: by this spelling, in no text in the corpus`
-                                }
-                                to={dictionaryWordUrl(form.form)}
-                            >
-                                {form.via ?? form.form}
-                            </Link>
-                            {/* only the form rows can carry the shared mark:
-                                the response does not say it of the root */}
-                            <Count
-                                attestations={form.attestations}
-                                shared={form.sharedWithOtherLemmas}
-                            />
-                            {/* the other ways the same form is linked: one
-                                row, however many links the tables hold */}
-                            {form.alsoLinkedAs?.length ? (
-                                <span className="dict-lemma-also">
-                                    {` · also ${form.alsoLinkedAs
-                                        .map(
-                                            (type) =>
-                                                PARENT_LABELS[type] ?? type,
-                                        )
-                                        .join(" · ")}`}
-                                </span>
-                            ) : null}
-                            <SourceNote
-                                form={form.form}
-                                attested={form.attested}
-                                source={form.source}
-                            />
-                            <UnverifiedMark
-                                unverified={form.unverified}
-                                title={FORM_UNVERIFIED_TITLE}
-                            />
-                            {form.groups?.length ? (
-                                <TreeGroups groups={form.groups} />
-                            ) : null}
-                        </li>
-                    ))}
+                                <Link
+                                    className={
+                                        [
+                                            form.attested
+                                                ? null
+                                                : "dict-unattested",
+                                            here ? "dict-lemma-here" : null,
+                                        ]
+                                            .filter(Boolean)
+                                            .join(" ") || undefined
+                                    }
+                                    aria-current={here ? "true" : undefined}
+                                    title={
+                                        form.via
+                                            ? `The form ${form.form}, after its particle${form.attested ? "" : "; in no text in the corpus"}`
+                                            : form.attested
+                                              ? undefined
+                                              : `${form.form}: by this spelling, in no text in the corpus`
+                                    }
+                                    to={dictionaryWordUrl(form.form)}
+                                >
+                                    {form.via ?? form.form}
+                                </Link>
+                                {/* only the form rows can carry the shared
+                                    mark: the response does not say it of the
+                                    root */}
+                                <Count
+                                    attestations={form.attestations}
+                                    shared={form.sharedWithOtherLemmas}
+                                />
+                                {/* the phrase a contraction spells out:
+                                    'v'oc (va oc)' */}
+                                {form.expansion ? (
+                                    <span className="dict-lemma-also">
+                                        {` (${form.expansion})`}
+                                    </span>
+                                ) : null}
+                                {/* the other ways the same form is linked:
+                                    one row, however many links the tables
+                                    hold */}
+                                {form.alsoLinkedAs?.length ? (
+                                    <span className="dict-lemma-also">
+                                        {` · also ${form.alsoLinkedAs
+                                            .map(
+                                                (type) =>
+                                                    PARENT_LABELS[type] ?? type,
+                                            )
+                                            .join(" · ")}`}
+                                    </span>
+                                ) : null}
+                                <SourceNote
+                                    form={form.form}
+                                    attested={form.attested}
+                                    source={form.source}
+                                />
+                                <UnverifiedMark
+                                    unverified={form.unverified}
+                                    title={FORM_UNVERIFIED_TITLE}
+                                />
+                                {form.groups?.length ? (
+                                    <TreeGroups
+                                        groups={form.groups}
+                                        highlight={highlight}
+                                    />
+                                ) : null}
+                            </li>
+                        )
+                    })}
                 </ul>
             </li>
         ))}
@@ -276,15 +310,23 @@ const Count = ({
  * draws, under a root sized to head a section rather than a page. A word
  * the book prints under other entries nests beneath them: the heads root
  * the tree, since that is where the word sits on the page. */
-const EmbeddedTree = ({ tree }: { tree: LemmaTreeResponse }) => {
+const EmbeddedTree = ({
+    tree,
+    highlight,
+}: {
+    tree: LemmaTreeResponse
+    highlight?: string
+}) => {
     const heads = printedUnderOf(tree.parents)
     const root = (
         <p
-            className={
-                tree.attested
-                    ? "dict-lemma-root dict-lemma-root-embedded"
-                    : "dict-lemma-root dict-lemma-root-embedded dict-unattested"
-            }
+            className={[
+                "dict-lemma-root dict-lemma-root-embedded",
+                tree.attested ? null : "dict-unattested",
+                sameWord(highlight, tree.lemma) ? "dict-lemma-here" : null,
+            ]
+                .filter(Boolean)
+                .join(" ")}
             title={
                 tree.attested
                     ? undefined
@@ -312,7 +354,10 @@ const EmbeddedTree = ({ tree }: { tree: LemmaTreeResponse }) => {
                     >
                         <li>
                             {root}
-                            <TreeGroups groups={tree.groups} />
+                            <TreeGroups
+                                groups={tree.groups}
+                                highlight={highlight}
+                            />
                         </li>
                     </ul>
                 </>
@@ -323,6 +368,7 @@ const EmbeddedTree = ({ tree }: { tree: LemmaTreeResponse }) => {
                         groups={tree.groups}
                         className="dict-lemma-tree"
                         ariaLabel={`Forms of ${tree.lemma}`}
+                        highlight={highlight}
                     />
                 </>
             )}
@@ -336,7 +382,15 @@ const EmbeddedTree = ({ tree }: { tree: LemmaTreeResponse }) => {
  * reading is bare draws no section at all: an empty table under a heading
  * would only say the feature exists. Quiet on failure too, for the same
  * reason the page's other extras are. */
-export const WordFamily = ({ lemmas }: { lemmas: string[] }) => {
+export const WordFamily = ({
+    lemmas,
+    word,
+}: {
+    lemmas: string[]
+    /** the page's own word: marked in the trees, so the reader sees where
+     * they stand in the family */
+    word?: string
+}) => {
     const [trees, setTrees] = useState<LemmaTreeResponse[]>([])
 
     useEffect(() => {
@@ -382,7 +436,7 @@ export const WordFamily = ({ lemmas }: { lemmas: string[] }) => {
                 </span>
             </h3>
             {trees.map((tree) => (
-                <EmbeddedTree key={tree.lemma} tree={tree} />
+                <EmbeddedTree key={tree.lemma} tree={tree} highlight={word} />
             ))}
         </section>
     )

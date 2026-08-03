@@ -792,7 +792,7 @@ export const Dictionary = () => {
                     it, one tree per reading — the same trees the lemma pages
                     draw, brought to where the reader already is */}
                 {word && !stale && page != null && !page.isSuggestionTier && (
-                    <WordFamily lemmas={familyLemmas} />
+                    <WordFamily lemmas={familyLemmas} word={word} />
                 )}
 
                 {/* A word no text says has nothing to find: the offer would promise
