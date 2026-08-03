@@ -106,4 +106,98 @@ public class VendoredLemmaTreeTest
             Does.Contain("s'vondeishagh"),
             "the member's own paradigm must ride along");
     }
+
+    /// <summary>The book says v'oc is va oc, but no entry spells the expansion
+    /// out, so the contraction relation could not redirect and once died
+    /// silently: v'oc related to nothing but the be paradigm, and oc's page
+    /// never mentioned it. The contraction hangs under each word it fuses,
+    /// and climbs back to both.</summary>
+    [Test]
+    public void VocHangsUnderOcAsItsContraction()
+    {
+        Assert.That(TreeOf("oc").Groups
+                .Single(g => g.LinkType == "contracts")
+                .Forms.Select(f => f.Form),
+            Does.Contain("v'oc"),
+            "v'oc (va oc) must hang under oc as a contraction");
+        Assert.That(TreeOf("v'oc").Parents?
+                .Where(p => p.LinkTypes.Contains("contracts"))
+                .Select(p => p.Lemma),
+            Is.SupersetOf(new[] { "oc", "va" }),
+            "v'oc must climb to the words it fuses");
+    }
+
+    /// <summary>Every family edge, both ways, table-wide. One lexeme answers
+    /// to three names — the printed member headword ('cha s'oc', what the
+    /// derived rows key), the display lemma ('s'oc', what pages and trees
+    /// key), and the lemma id — and a consumer that asks by the wrong one
+    /// breaks a single direction silently: fys once listed cha s'oc while
+    /// s'oc's own page climbed nowhere. This sweep holds the plumbing
+    /// symmetric — the head's tree names the member, some page the member
+    /// form names climbs back — and leaves the truth of any given edge to
+    /// the pins above: an edge wrong in both directions passes here.</summary>
+    [Test]
+    public void EveryFamilyEdgeClimbsBothWays()
+    {
+        var table = LemmaTable.Instance;
+        if (!table.AllDisplayLemmas.Any())
+        {
+            Assert.Ignore("cregeen.tsv not vendored (manx-lemma-data submodule not initialised)");
+        }
+        var service = new LemmaIndexService(table, new CorpusVocabulary(table));
+        var headTrees = new Dictionary<string, LemmaTreePage?>();
+        var oneWay = new List<string>();
+        var edges = 0;
+        foreach (var form in table.AllForms)
+        {
+            var heads = table.FamilyParentsOf(form);
+            if (heads.Count == 0)
+            {
+                continue;
+            }
+            // the pages the member form names: its own lexeme(s) — the
+            // display spelled like it, or one whose entry headword it is.
+            // A display it merely inflects has no business climbing.
+            var pages = table.DisplayLemmasFor(form)
+                .Where(display => LemmaTable.NormalizeForm(display) == form
+                                  || table.LinksOf(display)?.Links
+                                      .Any(l => l.LinkType == "self" && l.Form == form) == true)
+                .Select(service.Tree)
+                .Where(t => t != null)
+                .ToList();
+            foreach (var (head, linkType) in heads)
+            {
+                edges++;
+                // downward: the member stands somewhere in the head's tree
+                // with the family link riding — as its own row, as a merged
+                // row the edge rides on ('gaccan (+derived)' under accan's
+                // self group), or nested beneath the head's printed headword
+                // ('as adsyn' under 'as ad' inside ad's tree)
+                if (!headTrees.TryGetValue(head, out var headTree))
+                {
+                    headTrees[head] = headTree = service.Tree(head);
+                }
+                var listed = headTree != null && Flatten(headTree.Groups)
+                    .Any(x => LemmaTable.NormalizeForm(x.Form) == form
+                              && (x.LinkType == linkType
+                                  || x.Node.AlsoLinkedAs?.Contains(linkType) == true));
+                if (!listed)
+                {
+                    oneWay.Add($"'{form}' hangs under {head} as {linkType}, but {head}'s tree does not list it");
+                }
+                // upward: some page the member names climbs to the head — by
+                // any label, since a head already climbed to as a paradigm
+                // parent folds the family reading into that line
+                if (!pages.Any(t => t!.Parents?.Any(p => p.Lemma == head) == true))
+                {
+                    oneWay.Add($"'{form}' hangs under {head} as {linkType}, but no page of its own climbs to it");
+                }
+            }
+        }
+        Assert.That(oneWay, Is.Empty,
+            $"{oneWay.Count} one-way family edges; first: {oneWay.FirstOrDefault()}");
+        // the sweep must actually sweep: a data-path break would otherwise
+        // pass it vacuously
+        Assert.That(edges, Is.GreaterThan(1000), "the derived rows have gone missing");
+    }
 }

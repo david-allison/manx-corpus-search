@@ -74,7 +74,7 @@ public class LemmaIndexService(LemmaTable lemmaTable, CorpusVocabulary vocabular
     private static readonly string[] GroupOrder =
     [
         "self", "inflected", "plural", "compSup", "irregular", "emphatic",
-        "contraction", "variant", "mutation", "demutated", "particle",
+        "contraction", "contracts", "variant", "mutation", "demutated", "particle",
         "derived", "univerbated", "phillips", "prefixed", "undecided", "override", "typo",
     ];
 
@@ -122,9 +122,9 @@ public class LemmaIndexService(LemmaTable lemmaTable, CorpusVocabulary vocabular
                 parents.Add(new LemmaTreeParent { Lemma = display, LinkTypes = linkTypes });
             }
         }
-        // the family heads the book prints this lemma under, upward: the
-        // derived rows' reverse reading. Not in DisplayLemmasFor — a derived
-        // row names no reading of the form — so the derived parents are
+        // the family heads this lemma hangs under, upward: the derived and
+        // contracts rows' reverse reading. Not in DisplayLemmasFor — those
+        // rows name no reading of the form — so the family parents are
         // asked for by name: the display's, and the entry headwords that
         // name this lexeme (fys's paragraph prints the member as 'cha
         // s'oc', while its lexeme displays particle-free as s'oc)
@@ -132,13 +132,19 @@ public class LemmaIndexService(LemmaTable lemmaTable, CorpusVocabulary vocabular
             .Where(x => x.LinkType == "self")
             .Select(x => x.Form)
             .Prepend(links.Lemma);
-        foreach (var head in ownNames
-                     .SelectMany(n => lemmaTable.DerivedParentsOf(n))
+        foreach (var family in ownNames
+                     .SelectMany(n => lemmaTable.FamilyParentsOf(n))
                      .Distinct()
-                     .Where(h => parents.All(p => p.Lemma != h))
-                     .OrderBy(DictionaryBrowse.CollationKey, StringComparer.Ordinal))
+                     .Where(x => parents.All(p => p.Lemma != x.Head))
+                     .GroupBy(x => x.Head)
+                     .OrderBy(g => DictionaryBrowse.CollationKey(g.Key), StringComparer.Ordinal))
         {
-            parents.Add(new LemmaTreeParent { Lemma = head, LinkTypes = ["derived"] });
+            parents.Add(new LemmaTreeParent
+            {
+                Lemma = family.Key,
+                LinkTypes = family.Select(x => x.LinkType).Distinct()
+                    .OrderBy(GroupRank).ToList(),
+            });
         }
         var prefix = lemmaTable.AllDisplayLemmas
             .Where(x => (x.EndsWith('-') || x.EndsWith('‑'))
