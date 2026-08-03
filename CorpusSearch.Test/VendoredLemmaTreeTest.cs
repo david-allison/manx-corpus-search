@@ -248,6 +248,39 @@ public class VendoredLemmaTreeTest
         });
     }
 
+    /// <summary>The book prints 'eab or eabb*' over the noun AND the verb —
+    /// the starred spelling, per Cregeen's introduction, is the stem the
+    /// suffixes join to — but the variant fold keeps one canonical
+    /// (document-first, the noun), and the verb whose -agh forms are built
+    /// on eabb once never claimed it. A folded spelling reaches every
+    /// same-family homograph of its home.</summary>
+    [Test]
+    public void TheStarredSpellingBelongsToBothEabs()
+    {
+        var table = LemmaTable.Instance;
+        if (!table.AllDisplayLemmas.Any())
+        {
+            Assert.Ignore("cregeen.tsv not vendored (manx-lemma-data submodule not initialised)");
+        }
+        var trees = new LemmaIndexService(table, new CorpusVocabulary(table)).Trees("eab");
+        var noun = trees.Single(t => t.LemmaId == "eab.n");
+        var verb = trees.Single(t => t.LemmaId == "eab.v");
+        Assert.Multiple(() =>
+        {
+            Assert.That(noun.Groups.SingleOrDefault(g => g.LinkType == "variant")?
+                    .Forms.Select(f => f.Form) ?? [],
+                Does.Contain("eabb"),
+                "the noun keeps its printed alternative");
+            Assert.That(verb.Groups.SingleOrDefault(g => g.LinkType == "variant")?
+                    .Forms.Select(f => f.Form) ?? [],
+                Does.Contain("eabb"),
+                "eabb is the stem the verb's -agh forms join to: the verb claims it");
+            Assert.That(Flatten(verb.Groups).Select(x => x.Form),
+                Does.Contain("eabbagh"),
+                "and the suffixed forms are built on it");
+        });
+    }
+
     /// <summary>Every family edge, both ways, table-wide. One lexeme answers
     /// to three names — the printed member headword ('cha s'oc', what the
     /// derived rows key), the display lemma ('s'oc', what pages and trees
