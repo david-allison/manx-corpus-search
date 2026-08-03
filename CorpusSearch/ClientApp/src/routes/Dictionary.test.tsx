@@ -1248,7 +1248,7 @@ describe("Dictionary page", () => {
         await waitFor(() =>
             expect(
                 document.querySelectorAll("details.dict-lemma-details"),
-            ).toHaveLength(3),
+            ).toHaveLength(2),
         )
         const details = [
             ...document.querySelectorAll("details.dict-lemma-details"),
@@ -1270,20 +1270,21 @@ describe("Dictionary page", () => {
                 name: "beeghyn",
             }),
         ).toBeTruthy()
-        // the tree no section claims (a., no adjective entries) folds at the
-        // foot like the seated ones — a footnote, not the page's second act —
-        // and wears its class, since its homograph siblings sit above
-        const foot = details.find((d) =>
-            within(d as HTMLElement).queryByRole("link", { name: "vee" }),
-        )
+        // the tree no section claims (a., no adjective entries) ends the
+        // page under the open Word family heading: the foot is the end of
+        // the reading, and nothing follows it to crowd out
+        const foot = [
+            ...document.querySelectorAll("h3.dict-page-dictionary"),
+        ].find((h) => h.textContent?.startsWith("Word family"))
         expect(foot).toBeTruthy()
-        expect(within(foot! as HTMLElement).getByText("a.")).toBeTruthy()
-        // no full-size Word family heading remains: every tree found a fold
+        const footSection = foot!.closest(".dict-page-group") as HTMLElement
         expect(
-            [...document.querySelectorAll("h3.dict-page-dictionary")].some(
-                (h) => h.textContent?.startsWith("Word family"),
-            ),
-        ).toBe(false)
+            within(footSection).getByRole("link", { name: "vee" }),
+        ).toBeTruthy()
+        // it wears its class, but no homograph number: alone in its list,
+        // the superscript would point at nothing the reader can see
+        expect(within(footSection).getByText("a.")).toBeTruthy()
+        expect(footSection.querySelector(".dict-lemma-homograph")).toBeNull()
     })
 
     it("draws no family section for a reading with nothing hanging off it", async () => {

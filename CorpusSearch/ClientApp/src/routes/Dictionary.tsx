@@ -889,18 +889,13 @@ export const Dictionary = () => {
                     to the corpus: every form the corpus search groups with
                     it, one tree per reading — the same trees the lemma pages
                     draw, brought to where the reader already is */}
-                {word &&
-                    !stale &&
-                    page != null &&
-                    !page.isSuggestionTier &&
-                    (seated.size > 0 ? (
-                        /* the sections above carry their own families: the
-                           leftover folds like them, a footnote rather than
-                           the page's second act */
-                        <WordFamilyDetails trees={unseatedTrees} word={word} />
-                    ) : (
-                        <WordFamily trees={unseatedTrees} word={word} />
-                    ))}
+                {/* the page's foot is the end of the reading: nothing
+                    follows it to crowd out, so the leftover family stands
+                    open — only the mid-page folds, seated among the
+                    entries, earn their collapse */}
+                {word && !stale && page != null && !page.isSuggestionTier && (
+                    <WordFamily trees={unseatedTrees} word={word} />
+                )}
 
                 {/* A word no text says has nothing to find: the offer would promise
                 evidence the corpus does not hold. Asked of the history, which
