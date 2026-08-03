@@ -271,6 +271,46 @@ public class DictionaryAttestationServiceTest : QueryBase
         });
     }
 
+    /// <summary>A row holding both kinds serves two steps, and the potential one
+    /// samples the offered occurrences alone: with two settled 'beg' lines to
+    /// lead, the settled-first sample would crowd the shared 'veg' line out
+    /// entirely, leaving the potential step promising a use and showing none</summary>
+    [Test]
+    public void ThePotentialSampleHoldsTheOfferedLines()
+    {
+        AddDated("Doc", 1748,
+            "Ta thie beg aym", "Beg dy liooar", "Cha row veg ayn");
+
+        var offered = Service().InDocument("beg", "Doc", potential: true).Result!
+            .Groups.Single(x => x.LemmaIds.Contains("beg.a"));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(offered.Lines.Select(x => x.Manx),
+                Is.EqualTo(new[] { "Cha row veg ayn" }));
+            // every offered line wears the mark, and it names the other word
+            Assert.That(offered.UncertainLineNumbers, Is.EqualTo(new[] { 4 }));
+            Assert.That(offered.SharedWith, Does.Contain("veg"));
+            // the row's counts are the whole row's either way: the client
+            // derives each step's own from the pair
+            Assert.That(offered.Count, Is.EqualTo(3));
+            Assert.That(offered.SureCount, Is.EqualTo(2));
+        });
+    }
+
+    /// <summary>...and a row settled everywhere has nothing to offer: its
+    /// potential sample is empty rather than a repeat of the known step's</summary>
+    [Test]
+    public void ARowSettledEverywhereOffersNoLines()
+    {
+        AddDated("Doc", 1748, "Ta thie beg aym");
+
+        var group = Service().InDocument("beg", "Doc", potential: true).Result!
+            .Groups.Single();
+
+        Assert.That(group.Lines, Is.Empty);
+    }
+
     /// <summary>A transcript may carry its clock on some lines and not others,
     /// and only the word's own lines can answer for it: Skeealyn Vannin Disk 1
     /// Track 2 is timed, but its one use of 'geddyn' is not, and the audio

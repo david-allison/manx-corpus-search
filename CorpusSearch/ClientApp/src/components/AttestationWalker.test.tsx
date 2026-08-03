@@ -556,11 +556,44 @@ describe("AttestationWalker", () => {
 
         expect(screen.getByText("Coyrle Sodjey")).toBeTruthy()
         expect(document.querySelector(".attest-step-uncertain")).toBeNull()
+        // the tab wears the offer's *: a kind of evidence, not a reading's name
         expect(
             screen
-                .getByRole("link", { name: "potential ×1" })
+                .getByRole("link", { name: /potential ×1/ })
                 .getAttribute("href"),
         ).toBe("/dictionary/aase?potential=1")
+    })
+
+    it("makes the reading a way back out of the potential tab", async () => {
+        respondWithDocuments([
+            {
+                ident: "Psalms1610",
+                title: "Psalms",
+                year: 1610,
+                uses: 9,
+                sureUses: 0,
+            },
+            {
+                ident: "Coyrle",
+                title: "Coyrle Sodjey",
+                year: 1707,
+                uses: 3,
+                sureUses: 3,
+            },
+        ])
+        renderWalker("aase", "?potential=1")
+        // the tab's summary is hedged whole: everything it steps is an offer
+        const summary = await screen.findByText(/possibly 1 text, 1610/)
+        expect(summary.querySelector("abbr")).toBeTruthy()
+
+        // the potential tab is the caption now — the only caption — and the
+        // reading is a link again: the way back to the known walk
+        const active = document.querySelectorAll(".attest-tab-active")
+        expect(active).toHaveLength(1)
+        expect(active[0].textContent).toContain("potential ×1")
+        expect(
+            screen.getByRole("link", { name: "aase" }).getAttribute("href"),
+        ).toBe("/dictionary/aase?reading=aase")
     })
 
     it("offers rather than asserts the potential walk's steps", async () => {
@@ -667,6 +700,64 @@ describe("AttestationWalker", () => {
         // the potential step: the offered row, the remainder counted
         expect(screen.getByText(/· 168 uses/)).toBeTruthy()
         expect(screen.queryByText("Daase")).toBeNull()
+    })
+
+    /** The bug this per-line split fixed: Thomaase y Perkin uses moghrey three
+     * times, two settled — one row holding both kinds. Filtering rows by
+     * "nothing settled" left its potential step promising a use and showing a
+     * blank; the step now asks for the offered sample and counts the rest. */
+    it("shows a mixed row's offered uses on its potential step", async () => {
+        const offered = withGroups(3, [
+            {
+                count: 3,
+                sureCount: 2,
+                lines: [
+                    {
+                        manx: "Moghrey Jedoonee va shen",
+                        english: "",
+                        manxHighlights: [{ start: 0, end: 7 }],
+                        csvLineNumber: 31,
+                    },
+                ],
+                uncertainLineNumbers: [31],
+            },
+        ])
+        fetchMock.mockImplementation((url) =>
+            Promise.resolve({
+                ok: true,
+                json: () =>
+                    Promise.resolve(
+                        hrefOf(url).includes("/attestations/")
+                            ? offered
+                            : {
+                                  ...walk,
+                                  documents: [
+                                      {
+                                          ident: "Psalms1610",
+                                          title: "Psalms",
+                                          year: 1610,
+                                          uses: 3,
+                                          sureUses: 2,
+                                      },
+                                  ],
+                              },
+                    ),
+            } as Response),
+        )
+        renderWalker("aase", "?potential=1")
+        await screen.findByText("Moghrey")
+
+        // the step asks for the potential walk's own sample: a settled-first
+        // one could come back without the offered line at all
+        const stepCall = fetchMock.mock.calls
+            .map(([u]) => hrefOf(u))
+            .find((u) => u.includes("/attestations/Psalms1610"))
+        expect(stepCall).toContain("potential=true")
+        // the row and the step agree: the one offered use, not all three
+        expect(document.querySelector(".attest-group-count")?.textContent).toBe(
+            " ×1",
+        )
+        expect(screen.getByText(/· 1 use/)).toBeTruthy()
     })
 
     it("keeps one walk when nothing is settled", async () => {

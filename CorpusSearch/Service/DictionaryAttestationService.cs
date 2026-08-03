@@ -289,7 +289,12 @@ public class DictionaryAttestationService(
     /// document does not attest it.</summary>
     /// <param name="lemma">optional display lemma: one reading's uses, matching the
     /// walk tab the step was opened from</param>
-    public async Task<AttestationLines?> InDocument(string word, string ident, string? lemma = null)
+    /// <param name="potential">sample the offered occurrences instead: the potential
+    /// walk steps a document for its unsettled uses, and a settled-first sample
+    /// could show it none of them (the Bible's four cronkal lines would crowd out
+    /// the one cronk hill the step exists for)</param>
+    public async Task<AttestationLines?> InDocument(
+        string word, string ident, string? lemma = null, bool potential = false)
     {
         var matched = ReadingsIn(word, ident, lemma);
         if (matched.Count == 0)
@@ -329,8 +334,12 @@ public class DictionaryAttestationService(
                     // the settled lines lead the sample: a step in the known
                     // walk must not open on the shared-spelling occurrences
                     // its potential twin holds (the Bible's "cronk Seir"
-                    // hills come long before its cronkal knocking)
+                    // hills come long before its cronkal knocking). The
+                    // potential step samples only those occurrences' lines: a
+                    // row settled everywhere has nothing to offer there.
                     var lines = row.First().Result.Lines
+                        .Where(line => !potential
+                                       || Occurrences(line).Any(o => !sure.Contains(o)))
                         .OrderBy(line => Occurrences(line).Any(o => !sure.Contains(o)) ? 1 : 0)
                         .ThenBy(line => line.CsvLineNumber)
                         .Take(MaxLinesPerLemma)

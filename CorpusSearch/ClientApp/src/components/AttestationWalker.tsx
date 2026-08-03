@@ -167,12 +167,18 @@ const classLabelFor = (
  * what would otherwise look like the same quote printed twice. */
 const LemmaGroup = ({
     group,
+    count,
     classes,
     ident,
     audio,
     onPlay,
 }: {
     group: AttestationLemmaGroup
+    /** the uses the open tab claims of the row: the known walk counts the
+     * settled ones and the potential walk the offered remainder, so the row
+     * agrees with the step header above it (the Bible's moghrey is ×2 on the
+     * known step and ×1 on its potential twin, never ×3 on either) */
+    count: number
     classes: string | null
     ident: string
     /** the step is a recording: every line is a way to hearing it, even one
@@ -189,7 +195,7 @@ const LemmaGroup = ({
                     <span className="attest-group-class">{` ${classes}`}</span>
                 )}
                 <span className="attest-group-count">
-                    {` ×${group.count.toLocaleString()}`}
+                    {` ×${count.toLocaleString()}`}
                 </span>
             </p>
             <div className="attest-group-lines">
@@ -225,12 +231,12 @@ const LemmaGroup = ({
                         }
                     />
                 ))}
-                {group.count > group.lines.length && (
+                {count > group.lines.length && (
                     <p className="attest-more">
                         <Link
                             to={`/docs/${ident}?q=${encodeURIComponent(group.lemma)}`}
                         >
-                            {`All ${plural(group.count, "use", "uses")} in this text ›`}
+                            {`All ${plural(count, "use", "uses")} in this text ›`}
                         </Link>
                     </p>
                 )}
@@ -249,19 +255,26 @@ const LemmaGroup = ({
 const WalkSummary = ({
     documents,
     audioTab,
+    offered,
 }: {
     documents: AttestationDocument[]
     audioTab: boolean
+    /** the potential tab's summary: every text here is an offer, however many
+     * settled uses of the other kind those texts also hold */
+    offered?: boolean
 }) => {
     const [one, many] = audioTab
         ? ["recording", "recordings"]
         : ["text", "texts"]
-    const sure = documents.filter((d) => d.sureUses != null && d.sureUses > 0)
+    const sure = offered
+        ? []
+        : documents.filter((d) => d.sureUses != null && d.sureUses > 0)
     // hedging is only owed where the walk knows the difference: some document
     // sent a sure count, and not every document earned one
     const hedged =
-        documents.some((d) => d.sureUses != null) &&
-        sure.length < documents.length
+        offered ||
+        (documents.some((d) => d.sureUses != null) &&
+            sure.length < documents.length)
     const claimed = hedged && sure.length > 0 ? sure : documents
     return (
         <p className="attest-summary">
@@ -335,7 +348,14 @@ export const AttestationWalker = ({
         word: string
         reading: string | null
     } | null>(null)
-    const [lines, setLines] = useState<AttestationLinesResponse | null>(null)
+    // the step's uses together with which walk asked for them: the known and
+    // potential tabs sample the same document differently, so the response
+    // alone cannot say whose it is
+    const [fetched, setFetched] = useState<{
+        lines: AttestationLinesResponse
+        potential: boolean
+    } | null>(null)
+    const lines = fetched?.lines ?? null
     // a tapped use's listening popup: the recording, and the line it opens at
     const [heard, setHeard] = useState<{
         doc: { ident: string; title: string; year?: number | null }
@@ -441,7 +461,7 @@ export const AttestationWalker = ({
     useEffect(() => {
         // shut: the uses are not worth fetching until they would be shown
         if (currentIdent == null || !open) {
-            setLines(null)
+            setFetched(null)
             return
         }
         // the step is still the last word's: its documents are not this word's,
@@ -459,22 +479,26 @@ export const AttestationWalker = ({
             word,
             currentIdent,
             walkLemma ?? undefined,
+            potentialTab,
             abort.signal,
         )
-            .then(setLines)
+            .then((response) =>
+                setFetched({ lines: response, potential: potentialTab }),
+            )
             .catch((e) => {
                 if (!abort.signal.aborted) console.warn(e)
             })
         return () => abort.abort()
-    }, [word, currentIdent, open, walked, walkLemma])
+    }, [word, currentIdent, open, walked, walkLemma, potentialTab])
 
-    // the uses on screen belong to the step we are on, and to its tab's
-    // reading, only once they arrive
+    // the uses on screen belong to the step we are on, to its tab's reading,
+    // and to its tab's kind of sample, only once they arrive
     const fresh =
         walked &&
         lines != null &&
         lines.ident === currentIdent &&
-        (lines.lemma ?? null) === (walk?.lemma ?? null)
+        (lines.lemma ?? null) === (walk?.lemma ?? null) &&
+        fetched?.potential === potentialTab
 
     useLayoutEffect(() => {
         const height = body.current?.getBoundingClientRect().height ?? 0
@@ -587,9 +611,10 @@ export const AttestationWalker = ({
                     aria-label="Readings and recordings of this word"
                 >
                     {tabs.map((lemma) =>
-                        // with the audio tab open, the active reading is the
-                        // way back to its whole walk rather than a caption
-                        lemma === activeTab && !audioTab ? (
+                        // with the audio or potential tab open, the active
+                        // reading is the way back to its whole walk rather
+                        // than a caption
+                        lemma === activeTab && !audioTab && !potentialTab ? (
                             <span
                                 key={lemma}
                                 className="attest-tab attest-tab-active"
@@ -630,8 +655,10 @@ export const AttestationWalker = ({
                                 {`🔊 audio${audioDocs.length > 1 ? ` ×${audioDocs.length.toLocaleString()}` : ""}`}
                             </Link>
                         ))}
-                    {/* the texts holding the word only as shared spellings,
-                        stepped apart: offered, never asserted */}
+                    {/* the texts holding the word as shared spellings, stepped
+                        apart: offered, never asserted. The tab wears the same
+                        * every offer on the page wears — it is what says this
+                        is a kind of evidence, not another reading's name */}
                     {splitWalk &&
                         (potentialTab ? (
                             <span
@@ -639,6 +666,7 @@ export const AttestationWalker = ({
                                 aria-current="true"
                             >
                                 {`potential ×${potentialDocs.length.toLocaleString()}`}
+                                <SharedMark title={OFFERED_TITLE} />
                             </span>
                         ) : (
                             <Link
@@ -648,6 +676,7 @@ export const AttestationWalker = ({
                                 replace
                             >
                                 {`potential ×${potentialDocs.length.toLocaleString()}`}
+                                <SharedMark title={OFFERED_TITLE} />
                             </Link>
                         ))}
                     {/* the reading's whole family, drawn on the lemma page:
@@ -671,9 +700,10 @@ export const AttestationWalker = ({
 
             {!hasWalk ? null : (
                 <>
-                    {/* the summary reads the whole walk, not the open tab's
-                        half: the headline keeps its "possibly from" offer
-                        while the known matches are what is stepped */}
+                    {/* the known walk's summary reads the whole walk, "possibly
+                        from" offer and all; the potential tab's reads its own
+                        texts, and is hedged whole — everything it steps is an
+                        offer, whatever else those texts hold */}
                     <WalkSummary
                         documents={
                             audioTab
@@ -683,6 +713,7 @@ export const AttestationWalker = ({
                                   : walk.documents
                         }
                         audioTab={audioTab}
+                        offered={potentialTab}
                     />
 
                     <div
@@ -784,16 +815,17 @@ export const AttestationWalker = ({
                             // of the section holds, so the arrows stay put
                             <div className={fresh ? undefined : "attest-stale"}>
                                 {/* each tab shows its own kind: the known walk
-                                    the settled rows, the potential tab the rows
-                                    with nothing settled — the Bible's cronk
-                                    hills belong under potential, never under
-                                    crank's known step */}
+                                    the rows with settled uses, the potential
+                                    tab the rows with offered ones — the Bible's
+                                    cronk hills belong under potential, never
+                                    under crank's known step. A row holding both
+                                    kinds shows in both, counting its own. */}
                                 {lines.groups
                                     .filter((group) =>
                                         !splitWalk || audioTab
                                             ? true
                                             : potentialTab
-                                              ? group.sureCount === 0
+                                              ? group.count > group.sureCount
                                               : group.sureCount > 0,
                                     )
                                     .map((group) => (
@@ -806,6 +838,14 @@ export const AttestationWalker = ({
                                                 group.lemma
                                             }`}
                                             group={group}
+                                            count={
+                                                splitWalk && !audioTab
+                                                    ? potentialTab
+                                                        ? group.count -
+                                                          group.sureCount
+                                                        : group.sureCount
+                                                    : group.count
+                                            }
                                             classes={classLabelFor(
                                                 group,
                                                 lines.groups,

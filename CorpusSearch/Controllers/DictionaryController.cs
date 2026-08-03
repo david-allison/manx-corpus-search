@@ -112,11 +112,14 @@ public class DictionaryController(
     /// </summary>
     /// <param name="lemma">optional display lemma: one reading's uses, matching
     /// the tab the step was opened from</param>
+    /// <param name="potential">sample the offered occurrences instead, for a step
+    /// of the potential walk</param>
     [HttpGet("attestations/{ident}")]
     public async Task<ActionResult<AttestationLines>> AttestationsInDocument(
-        string ident, [FromQuery] string word, [FromQuery] string? lemma = null)
+        string ident, [FromQuery] string word, [FromQuery] string? lemma = null,
+        [FromQuery] bool potential = false)
     {
-        var lines = await attestationService.InDocument(word, ident, lemma);
+        var lines = await attestationService.InDocument(word, ident, lemma, potential);
         return lines == null ? new NotFoundResult() : lines;
     }
 

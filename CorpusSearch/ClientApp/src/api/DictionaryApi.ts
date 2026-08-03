@@ -449,16 +449,22 @@ export const dictionaryAttestations = async (
 }
 
 /** @param lemma optional display lemma: one reading's uses, matching the tab
- * the step was opened from */
+ * the step was opened from
+ * @param potential sample the offered occurrences instead, for a step of the
+ * potential walk: a settled-first sample could show it none of them */
 export const dictionaryAttestationLines = async (
     word: string,
     ident: string,
     lemma?: string,
+    potential?: boolean,
     signal?: AbortSignal,
 ): Promise<AttestationLinesResponse> => {
     const params = new URLSearchParams({ word })
     if (lemma) {
         params.set("lemma", lemma)
+    }
+    if (potential) {
+        params.set("potential", "true")
     }
     const response = await fetch(
         `/api/Dictionary/attestations/${encodeURIComponent(ident)}?${params.toString()}`,

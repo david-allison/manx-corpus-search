@@ -102,7 +102,9 @@ export const AudioAttestationModal = ({
             return
         }
         const abort = new AbortController()
-        dictionaryAttestationLines(word, ident, undefined, abort.signal)
+        // the whole recording's lines, never the potential sample: the popup
+        // plays what is said, and the arrows leaf through every use
+        dictionaryAttestationLines(word, ident, undefined, false, abort.signal)
             .then((response) => setLines(spokenLines(response)))
             .catch((e) => {
                 if (!abort.signal.aborted) console.warn(e)
