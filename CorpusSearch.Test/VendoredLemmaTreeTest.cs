@@ -189,6 +189,37 @@ public class VendoredLemmaTreeTest
             "may wear the unverified mark");
     }
 
+    /// <summary>The spelling ee heads two lexemes — the verb 'eat' and the
+    /// pronoun 'she' — and for years they drew as one tree: eating futures
+    /// beside her emphatics, and eeish's page said 'eating'. One tree per
+    /// lexeme now, each wearing the book's own class label.</summary>
+    [Test]
+    public void TheVerbAndThePronounEeStandApart()
+    {
+        var table = LemmaTable.Instance;
+        if (!table.AllDisplayLemmas.Any())
+        {
+            Assert.Ignore("cregeen.tsv not vendored (manx-lemma-data submodule not initialised)");
+        }
+        var trees = new LemmaIndexService(table, new CorpusVocabulary(table)).Trees("ee");
+        Assert.That(trees.Select(t => t.LemmaId), Is.EquivalentTo(new[] { "ee.v", "ee.x" }),
+            "ee names the verb and the pronoun: two trees, never a merge");
+        var verb = trees.Single(t => t.LemmaId == "ee.v");
+        var pronoun = trees.Single(t => t.LemmaId == "ee.x");
+        Assert.Multiple(() =>
+        {
+            Assert.That(verb.Pos, Is.EqualTo("v."));
+            Assert.That(Flatten(verb.Groups).Select(x => x.Form), Does.Contain("eeym"),
+                "the verb keeps its futures");
+            Assert.That(Flatten(verb.Groups).Select(x => x.Form), Does.Not.Contain("ish"),
+                "and no emphatic pronouns");
+            Assert.That(Flatten(pronoun.Groups).Select(x => x.Form), Does.Contain("ish"),
+                "the pronoun keeps its emphatic");
+            Assert.That(Flatten(pronoun.Groups).Select(x => x.Form), Does.Not.Contain("eeym"),
+                "and does not eat");
+        });
+    }
+
     /// <summary>Every family edge, both ways, table-wide. One lexeme answers
     /// to three names — the printed member headword ('cha s'oc', what the
     /// derived rows key), the display lemma ('s'oc', what pages and trees
@@ -207,7 +238,7 @@ public class VendoredLemmaTreeTest
             Assert.Ignore("cregeen.tsv not vendored (manx-lemma-data submodule not initialised)");
         }
         var service = new LemmaIndexService(table, new CorpusVocabulary(table));
-        var headTrees = new Dictionary<string, LemmaTreePage?>();
+        var headTrees = new Dictionary<string, List<LemmaTreePage>>();
         var oneWay = new List<string>();
         var edges = 0;
         foreach (var form in table.AllForms)
@@ -219,27 +250,30 @@ public class VendoredLemmaTreeTest
             }
             // the pages the member form names: its own lexeme(s) — the
             // display spelled like it, or one whose entry headword it is.
-            // A display it merely inflects has no business climbing.
+            // A display it merely inflects has no business climbing. Every
+            // homograph page of a naming display counts: the reader lands
+            // on them all.
             var pages = table.DisplayLemmasFor(form)
                 .Where(display => LemmaTable.NormalizeForm(display) == form
-                                  || table.LinksOf(display)?.Links
-                                      .Any(l => l.LinkType == "self" && l.Form == form) == true)
-                .Select(service.Tree)
-                .Where(t => t != null)
+                                  || table.LinkSetsFor(display)
+                                      .SelectMany(s => s.Links)
+                                      .Any(l => l.LinkType == "self" && l.Form == form))
+                .SelectMany(service.Trees)
                 .ToList();
             foreach (var (head, linkType) in heads)
             {
                 edges++;
-                // downward: the member stands somewhere in the head's tree
-                // with the family link riding — as its own row, as a merged
-                // row the edge rides on ('gaccan (+derived)' under accan's
-                // self group), or nested beneath the head's printed headword
-                // ('as adsyn' under 'as ad' inside ad's tree)
-                if (!headTrees.TryGetValue(head, out var headTree))
+                // downward: the member stands somewhere in one of the head's
+                // trees with the family link riding — as its own row, as a
+                // merged row the edge rides on ('gaccan (+derived)' under
+                // accan's self group), or nested beneath the head's printed
+                // headword ('as adsyn' under 'as ad' inside ad's tree)
+                if (!headTrees.TryGetValue(head, out var headPages))
                 {
-                    headTrees[head] = headTree = service.Tree(head);
+                    headTrees[head] = headPages = service.Trees(head);
                 }
-                var listed = headTree != null && Flatten(headTree.Groups)
+                var listed = headPages
+                    .SelectMany(t => Flatten(t.Groups))
                     .Any(x => LemmaTable.NormalizeForm(x.Form) == form
                               && (x.LinkType == linkType
                                   || x.Node.AlsoLinkedAs?.Contains(linkType) == true));
@@ -250,7 +284,7 @@ public class VendoredLemmaTreeTest
                 // upward: some page the member names climbs to the head — by
                 // any label, since a head already climbed to as a paradigm
                 // parent folds the family reading into that line
-                if (!pages.Any(t => t!.Parents?.Any(p => p.Lemma == head) == true))
+                if (!pages.Any(t => t.Parents?.Any(p => p.Lemma == head) == true))
                 {
                     oneWay.Add($"'{form}' hangs under {head} as {linkType}, but no page of its own climbs to it");
                 }

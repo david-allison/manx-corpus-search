@@ -119,6 +119,14 @@
     font-weight: bold;
 }
 
+/* the book's class label on a homograph root: 'ee v.' eats, 'ee pro.' is
+   her */
+.dict-lemma-pos {
+    color: var(--c-muted);
+    font-style: italic;
+    font-size: 0.6em;
+}
+
 a.dict-lemma-here {
     text-decoration: none;
     color: inherit;

@@ -589,11 +589,18 @@ export const lemmaIndex = async (
     return (await response.json()) as DictionaryBrowseResponse
 }
 
-/** One lemma's form tree: the forms the lemma tables link to it, grouped by
- * how each hangs off it */
+/** One LEXEME's form tree: the forms the lemma tables link to it, grouped by
+ * how each hangs off it. A spelling may head several lexemes (ee the verb,
+ * ee the pronoun): the endpoint answers with one tree each, in the book's
+ * order, never a merge. */
 export type LemmaTreeResponse = {
     /** as the tables spell it ("aa-aase", "Aachummey") */
     lemma: string
+    /** the lexeme's id ("ee.v", "ee.x"): what tells homograph trees apart */
+    lemmaId?: string | null
+    /** the printed class of the lexeme's entry ("v.", "pro."): the reader's
+     * label for a homograph tree; absent where the book gives none */
+    pos?: string | null
     /** how often the corpus says the lemma by its own spelling; null while
      * not yet known */
     attestations?: number | null
@@ -672,7 +679,7 @@ export type LemmaTreeForm = {
 export const lemmaTree = async (
     lemma: string,
     signal?: AbortSignal,
-): Promise<LemmaTreeResponse> => {
+): Promise<LemmaTreeResponse[]> => {
     const params = new URLSearchParams({ lemma })
     const response = await fetch(`/api/Dictionary/lemma?${params.toString()}`, {
         signal,
@@ -680,7 +687,7 @@ export const lemmaTree = async (
     if (!response.ok) {
         throw new Error(`lemma tree failed: ${response.status}`)
     }
-    return (await response.json()) as LemmaTreeResponse
+    return (await response.json()) as LemmaTreeResponse[]
 }
 
 /** One entry of the browse sampler: a way into the book that is not the
