@@ -109,9 +109,14 @@ public class LemmaIndexService(LemmaTable lemmaTable, CorpusVocabulary vocabular
                      .Where(x => LemmaTable.NormalizeForm(x) != rootKey)
                      .OrderBy(DictionaryBrowse.CollationKey, StringComparer.Ordinal))
         {
+            // a demutation guess and an entry override say the spelling can
+            // also read as that lexeme, never that this one hangs under it:
+            // kione's paragraph seats ching the genitive, and çhing the sick
+            // must not climb into kione through a spelling they merely share
             var linkTypes = lemmaTable.LinkSetsFor(display)
                 .SelectMany(s => s.Links)
-                .Where(x => x.Form == rootKey)
+                .Where(x => x.Form == rootKey
+                            && x.LinkType is not ("demutated" or "override"))
                 .Select(x => x.LinkType)
                 .Distinct()
                 .OrderBy(GroupRank)

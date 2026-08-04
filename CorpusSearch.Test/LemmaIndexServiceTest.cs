@@ -529,6 +529,29 @@ public class LemmaIndexServiceTest
         });
     }
 
+    /// <summary>A demutation guess or an entry override says the spelling can
+    /// also read as that lexeme — never that this one hangs under it: kione's
+    /// paragraph seats ching the genitive, and çhing the sick keeps no root
+    /// above it for a spelling they merely share. kione's own tree still
+    /// carries the entry downward</summary>
+    [Test]
+    public void AHomographClimbsNoTreeThroughASharedSpelling()
+    {
+        var service = Service(Table(
+            "kione\tkione.n\tkione\tself\ts. m.\tkione\t",
+            "ching\tkione.n\tking\tdemutated\ts. m.\tçhing\t",
+            "ching\tkione.n\tkione\toverride\ts. m.\tching\t",
+            "ching\tching.a\tçhing\tself\ta.\tçhing\t"));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(service.Tree("çhing")!.Parents, Is.Null);
+            Assert.That(service.Tree("kione")!.Groups
+                    .SelectMany(g => g.Forms).Select(f => f.Form),
+                Does.Contain("ching"));
+        });
+    }
+
     /// <summary>A form Cregeen prints but no text uses can say so: the source
     /// rides the node — and only an attested link's, since a guess has nothing
     /// but the generator behind it</summary>
