@@ -660,6 +660,45 @@ public class DictionaryLookupServiceTest
         });
     }
 
+    /// <summary>The words bag brings Cregeen's s'accryssagh entry to
+    /// accryssagh's page, where it is about the form, not the page's word:
+    /// stamped so the client can seat it beneath the lexeme's entries — the
+    /// downward mirror of RootDepth. The reverse arrival stays plain: a
+    /// form's page leads with its lemma's entry, and the form's own page
+    /// leads with its own.</summary>
+    [Test]
+    public void AFormsOwnEntryIsStampedOnItsLemmasPage()
+    {
+        var table = LemmaTable.Load(new StringReader(
+            "form\tlemmaId\tlemma\tlinkType\n"
+            + "accryssagh\taccryssagh.a\taccryssagh\tself\n"
+            + "accryssagh\taccryssagh.n\taccryssagh\tself\n"
+            + "s'accryssagh\taccryssagh.a\taccryssagh\tinflected\n"
+            + "accryssee\taccryssagh.n\taccryssagh\tinflected\n"));
+        var service = new DictionaryLookupService([new FakeDictionary(
+            ["accryssagh", "accryssee"], ["s'accryssagh", "accryssagh"])],
+            table, LemmaResolver.Empty);
+
+        var onLemmasPage = service.Lookup("gv", "accryssagh")
+            .ToDictionary(x => x.PrimaryWord, x => x.FormOf);
+        var onFormsPage = service.Lookup("gv", "accryssee")
+            .Where(x => x.RootDepth == 0)
+            .ToDictionary(x => x.PrimaryWord, x => x.FormOf);
+        var onItsOwnPage = service.Lookup("gv", "s'accryssagh")
+            .Where(x => x.RootDepth == 0)
+            .ToDictionary(x => x.PrimaryWord, x => x.FormOf);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(onLemmasPage["accryssagh"], Is.Null);
+            Assert.That(onLemmasPage["s'accryssagh"], Is.EqualTo("accryssagh"));
+            Assert.That(onFormsPage["accryssagh"], Is.Null,
+                "a form's page leads with its lemma's entry, plainly");
+            Assert.That(onItsOwnPage["s'accryssagh"], Is.Null,
+                "the form's own page is the one place the entry is the answer");
+        });
+    }
+
     /// <summary>The id vocabulary cannot say adverb — Cregeen's foddey "adv."
     /// and its child cha voddey "a." mint one .a id — so an a-class root keeps
     /// its adverb entries: demanding Adjective alone let the "remote, distant,

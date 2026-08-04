@@ -88,18 +88,30 @@ const Entry = ({
         className={[
             "dict-page-entry",
             summary.rootDepth ? "dict-page-root-entry" : "",
+            summary.formOf ? "dict-page-root-entry dict-page-form-entry" : "",
             unplaced ? "dict-page-entry-unplaced" : "",
         ]
             .filter(Boolean)
             .join(" ")}
         style={
-            summary.rootDepth
-                ? { marginLeft: 20 * summary.rootDepth }
+            summary.rootDepth || summary.formOf
+                ? { marginLeft: 20 * (summary.rootDepth || 1) }
                 : undefined
         }
     >
         {summary.rootDepth ? (
             <span className="dict-page-root-connector" aria-label="root form">
+                {"↳ "}
+            </span>
+        ) : summary.formOf ? (
+            /* the downward mirror of the root chain: the book's own entry
+               for a form of the page's word, seated beneath the lexeme's
+               entries so it never poses as one of them */
+            <span
+                className="dict-page-root-connector"
+                aria-label="form entry"
+                title={`The book's own entry for a form of ${summary.formOf}`}
+            >
                 {"↳ "}
             </span>
         ) : null}
