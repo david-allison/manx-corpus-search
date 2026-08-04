@@ -52,6 +52,16 @@ public class DictionaryHistoryService(
         var truncated = Math.Max(0, forms.Count - MaxForms);
         forms = forms.Take(MaxForms).ToList();
 
+        // the table's forms are folded — hyphens to spaces — and the corpus
+        // prints what it likes: 'thie veaghee' is said by the Acts' 'thie-
+        // veaghee', so a form is scanned for every spelling that folds to it.
+        // Never for an affix: its query is 'aa-*', whose hyphen is the very
+        // thing being asked about — split from its wildcard, the pieces would
+        // match the bare word beside anything at all.
+        var options = Affix.Is(word)
+            ? SearchOptions.Default
+            : SearchOptions.Default with { IgnoreHyphens = true };
+
         var attested = new List<HistoryForm>();
         // the timeline counts documents, not occurrences: the Bible is by far
         // the largest work and would otherwise dominate every graph
@@ -60,7 +70,7 @@ public class DictionaryHistoryService(
         {
             try
             {
-                var scanned = ScanForm(query, form);
+                var scanned = ScanForm(query, form, options);
                 if (scanned != null)
                 {
                     attested.Add(scanned.Value.Form);
@@ -146,8 +156,21 @@ public class DictionaryHistoryService(
         {
             forms = [LemmaTable.NormalizeForm(word)];
         }
+        // hyphen-agnostic scanning makes spellings differing only in their
+        // joins one query: 'thieveaghee' asks nothing 'thie veaghee' does not,
+        // and scanning both would count the Acts' one 'thie-veaghee' twice.
+        // One scan per join-blind key, through its most split spelling — the
+        // one whose regroupings cover the joined ones.
+        forms = forms
+            .GroupBy(form => LemmaTable.NormalizeForm(form).Replace(" ", ""))
+            .Select(joined => joined.OrderByDescending(WordCount).First())
+            .Order()
+            .ToList();
         return forms.Select(form => (form, form)).ToList();
     }
+
+    private static int WordCount(string form) =>
+        form.Split([' ', '-'], StringSplitOptions.RemoveEmptyEntries).Length;
 
     /// <summary>The cognates a definition cites: "(Ir. bile; S.G. bil.)" ->
     /// "Ir. bile; S.G. bil."</summary>
@@ -176,10 +199,12 @@ public class DictionaryHistoryService(
     /// <param name="query">what the corpus is asked. Usually the spelling itself;
     /// for an affix, the words carrying it, which is not a spelling</param>
     /// <param name="form">the spelling the uses belong to, as the page prints it</param>
+    /// <param name="options">how strictly the corpus is asked: hyphen-agnostic
+    /// for a folded form, literal for an affix query</param>
     private (HistoryForm Form, List<(string Ident, int Year)> DatedDocs)? ScanForm(
-        string query, string form)
+        string query, string form, SearchOptions options)
     {
-        var scan = searcher.Scan(query);
+        var scan = searcher.Scan(query, options);
         if (scan.NumberOfMatches == 0)
         {
             return null;

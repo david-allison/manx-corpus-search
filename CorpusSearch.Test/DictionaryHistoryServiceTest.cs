@@ -131,4 +131,23 @@ public class DictionaryHistoryScanTest : QueryBase
 
         Assert.That(history.TraditionalCount, Is.EqualTo(1));
     }
+
+    /// <summary>A form stands for every spelling that folds to it: Cregeen prints
+    /// 'thie veaghee' and the Acts say 'thie-veaghee', one token the strict scan
+    /// heard nothing of — the page listed the attestation while its timeline
+    /// stood empty</summary>
+    [Test]
+    public void AFoldedFormIsScannedThroughItsHyphenatedSpelling()
+    {
+        Add("Acts-1944", 1944, "yn thie-veaghee shoh");
+
+        var history = Service().History("gv", "thie veaghee");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(history.RevivedCount, Is.EqualTo(1));
+            Assert.That(history.Earliest!.EarliestYear, Is.EqualTo(1944));
+            Assert.That(history.Decades.Single().Decade, Is.EqualTo(1940));
+        });
+    }
 }
