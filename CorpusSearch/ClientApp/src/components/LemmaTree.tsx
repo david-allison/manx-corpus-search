@@ -98,7 +98,17 @@ const PARENT_LABELS: Record<string, string> = {
  * this same family at its foot — as every downward row does. */
 const ParentLine = ({ parent }: { parent: LemmaTreeParent }) => (
     <p className="dict-lemma-parent">
-        {parent.linkTypes.includes("prefixed") ? (
+        {parent.member != null ? (
+            <>
+                {/* a family edge riding a member phrase: 'dy aalin' prints
+                    under dy, and the tree's own word (the adjective's
+                    spelling) does not, so the claim names the phrase */}
+                {parent.member}
+                {" is printed under "}
+                <Link to={dictionaryWordUrl(parent.lemma)}>{parent.lemma}</Link>
+                {" ›"}
+            </>
+        ) : parent.linkTypes.includes("prefixed") ? (
             <>
                 {"Written with the prefix "}
                 <Link to={dictionaryWordUrl(parent.lemma)}>{parent.lemma}</Link>
@@ -124,11 +134,14 @@ const ParentLine = ({ parent }: { parent: LemmaTreeParent }) => (
 
 /** The "a form of" claims above the root. The book's word-family edges
  * (where the book prints this word) draw as the tree's root instead: see
- * <see cref="FamilyHeads"/>. */
+ * <see cref="FamilyHeads"/> — except one riding a member phrase, whose
+ * line says the phrase prints there rather than seating the word. */
 const ParentLines = ({ parents }: { parents?: LemmaTreeParent[] | null }) => (
     <>
         {parents
-            ?.filter((x) => !x.linkTypes.includes("derived"))
+            ?.filter(
+                (x) => !x.linkTypes.includes("derived") || x.member != null,
+            )
             .map((parent) => (
                 <ParentLine parent={parent} key={parent.lemma} />
             ))}
@@ -138,9 +151,14 @@ const ParentLines = ({ parents }: { parents?: LemmaTreeParent[] | null }) => (
 /** The word-family heads among a lemma's parents: the entries whose
  * paragraphs print it (camstram sits in both cammey's and stramlag's).
  * The word is its own lexeme, so the edge claims the print location and
- * nothing else: never derivation, never "a form of". */
+ * nothing else: never derivation, never "a form of". A head reached only
+ * through a member phrase makes no claim about the word itself — the
+ * book prints 'dy aalin' under dy, never the bare aalin, which is the
+ * adjective's word — and roots nothing: its line rides above instead. */
 const printedUnderOf = (parents?: LemmaTreeParent[] | null) =>
-    parents?.filter((x) => x.linkTypes.includes("derived")) ?? []
+    parents?.filter(
+        (x) => x.linkTypes.includes("derived") && x.member == null,
+    ) ?? []
 
 /** The word prints UNDER its heads, so the heads root the tree: one node,
  * however many heads, with the word's own tree nested beneath it. A head

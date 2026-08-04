@@ -281,6 +281,32 @@ public class VendoredLemmaTreeTest
         });
     }
 
+    /// <summary>Cregeen prints dy-aalin among dy's few sample adverbs, and
+    /// the adverb lexeme displays particle-free as aalin — the adjective's
+    /// own word. The aalin page once rooted that word beneath dy, as though
+    /// the book filed the adjective there; the head carries the phrase
+    /// instead, and only the phrase may be said to print under dy.</summary>
+    [Test]
+    public void TheAdverbAalinDoesNotSeatTheAdjectiveUnderDy()
+    {
+        var table = LemmaTable.Instance;
+        if (!table.AllDisplayLemmas.Any())
+        {
+            Assert.Ignore("cregeen.tsv not vendored (manx-lemma-data submodule not initialised)");
+        }
+        var trees = new LemmaIndexService(table, new CorpusVocabulary(table)).Trees("aalin");
+        var adverb = trees.Single(t => t.LemmaId == "aalin.x");
+        var head = adverb.Parents!.Single(p => p.LinkTypes.Contains("derived"));
+        Assert.Multiple(() =>
+        {
+            Assert.That(head.Lemma, Is.EqualTo("dy"));
+            Assert.That(head.Member, Is.EqualTo("dy aalin"),
+                "the phrase prints under dy; bare aalin is the adjective's word");
+            Assert.That(trees.Single(t => t.LemmaId == "aalin.a").Parents, Is.Null,
+                "the adjective's own tree climbs nowhere");
+        });
+    }
+
     /// <summary>Every family edge, both ways, table-wide. One lexeme answers
     /// to three names — the printed member headword ('cha s'oc', what the
     /// derived rows key), the display lemma ('s'oc', what pages and trees

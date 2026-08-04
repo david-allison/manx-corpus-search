@@ -686,4 +686,40 @@ public class LemmaIndexServiceTest
         var derived = service.Tree("vondeish")!.Groups.Single(g => g.LinkType == "derived");
         Assert.That(derived.Forms.Single().Form, Is.EqualTo("neu-vondeish"));
     }
+
+    /// <summary>Cregeen prints dy-aalin among dy's sample adverbs, and the
+    /// adverb lexeme displays particle-free as 'aalin' — the adjective's own
+    /// word, which no row of the adverb's says. The family head must carry
+    /// the phrase the paragraph prints, or aalin's page seats the adjective
+    /// beneath dy. The word that IS a form of its lexeme (s'oc, reached
+    /// inside 'cha s'oc') keeps its bare head, as camstram does.</summary>
+    [Test]
+    public void AFamilyHeadReachedOnlyThroughAPhraseCarriesThePhrase()
+    {
+        var service = Service(Table(
+            "aalin\taalin.a\taalin\tself\ta.\taalin\t",
+            "dy aalin\taalin.x\taalin\tself\tadv.\tdy-aalin\t",
+            "dy\tdy.x\tdy\tself\tpart.\tdy\t",
+            "dy aalin\tdy.x\tdy\tderived\tpart.\tdy\t",
+            "fys\tfys.n\tfys\tself\ts. m.\tfys\t",
+            "cha s'oc\ts'oc.x\ts'oc\tself\tp.\tcha s'oc\t",
+            "s'oc\ts'oc.x\ts'oc\tparticle\tp.\tcha s'oc\t",
+            "cha s'oc\tfys.n\tfys\tderived\ts. m.\tfys\t"));
+
+        var trees = service.Trees("aalin");
+        var adverb = trees.Single(t => t.LemmaId == "aalin.x");
+        var head = adverb.Parents!.Single();
+        Assert.Multiple(() =>
+        {
+            Assert.That(head.Lemma, Is.EqualTo("dy"));
+            Assert.That(head.LinkTypes, Is.EqualTo(new[] { "derived" }));
+            Assert.That(head.Member, Is.EqualTo("dy aalin"),
+                "the phrase prints under dy; the bare aalin is the adjective's word");
+            // the adjective's own tree climbs nowhere
+            Assert.That(trees.Single(t => t.LemmaId == "aalin.a").Parents, Is.Null);
+            // s'oc is a form of its lexeme (the particle row): fys stays a
+            // bare head, rooting the tree as the book's page does
+            Assert.That(service.Tree("s'oc")!.Parents!.Single().Member, Is.Null);
+        });
+    }
 }
