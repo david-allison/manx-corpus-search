@@ -15,6 +15,11 @@ public static class DocumentLinePreparer
 {
     public static void Prepare(Document document, List<DocumentLine> lines)
     {
+        if (document.NotesCitations)
+        {
+            NotesCitationDates.Apply(document, lines);
+        }
+
         var defaultLanguage = NormalizeLanguage(document.ManxColumnLanguage) ?? DocumentLine.ManxLanguageCode;
         var speakerCode = BuildSpeakerCodeRegex(document.InlineSpeakerCodes);
         var referenceFormats = BuildReferenceRegexes(document.InlineReferences);

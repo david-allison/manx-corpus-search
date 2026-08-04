@@ -137,12 +137,13 @@ public class DocumentLinePreparerTest
         const string json = """
             {"name": "n", "ident": "i", "translated": "Rob Teare 2021",
              "inlineSpeakerCodes": ["NM", "Q"], "manxColumnLanguage": "mixed",
-             "referenceBook": "Matthew"}
+             "referenceBook": "Matthew", "notesCitations": true}
             """;
         var document = JsonConvert.DeserializeObject<OpenSourceDocument>(json)!;
         Assert.That(document.InlineSpeakerCodes, Is.EqualTo(new[] { "NM", "Q" }));
         Assert.That(document.ManxColumnLanguage, Is.EqualTo("mixed"));
         Assert.That(document.ReferenceBook, Is.EqualTo("Matthew"));
+        Assert.That(document.NotesCitations, Is.True);
         // the new fields bind to properties, not the extension data shown to users
         Assert.That(document.ExtensionData.Keys, Is.EquivalentTo(new[] { "translated" }));
     }

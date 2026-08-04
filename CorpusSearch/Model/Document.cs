@@ -77,6 +77,15 @@ public abstract class Document : IDocument
     /// </summary>
     public string? ManxColumnLanguage { get; set; }
 
+    /// <summary>
+    /// The collection is fragments from many sources (Brooillagh), each line's
+    /// Notes cell citing its real source and date ("[M.H., 05/05/1858]"). Lines
+    /// date from their citations at load time - a line without one belongs to the
+    /// last cited fragment - and the collection's own date range becomes the span
+    /// of its lines. See <see cref="NotesCitationDates"/>.
+    /// </summary>
+    public bool NotesCitations { get; set; }
+
     [JsonExtensionData]
     public IDictionary<string, object> ExtensionData { get; set; } = new Dictionary<string, object>();
 
