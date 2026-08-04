@@ -272,7 +272,53 @@ public class DictionaryLookupService(IEnumerable<ISearchDictionary> dictionarySe
         }
         StampSenseNotes(selection, context, deduplicated);
         StampThroughLemmas(selection, deduplicated);
+        StampFormEntries(selection, deduplicated);
         return deduplicated;
+    }
+
+    /// <summary>Marks the book's own entries for the selection's forms: the
+    /// words bag brings Cregeen's s'accryssagh entry to accryssagh's page,
+    /// where it is about the form, not the page's word — the downward mirror
+    /// of <see cref="DictionarySummary.RootDepth"/>, which already keeps the
+    /// upward chain from posing as entries for the selection. Stamped only
+    /// where the selection is a shared lexeme's display lemma and the entry's
+    /// headword a mere form of it. The reverse arrival stays plain (a form's
+    /// page leads with its lemma's entry), as does an entry whose printed
+    /// heading names the selection outright (Kelly's 'EEN, YN').</summary>
+    private void StampFormEntries(string selection, List<DictionarySummary> summaries)
+    {
+        var form = LemmaTable.NormalizeForm(selection);
+        var selectionIds = lemmaTable.CandidatesFor(form);
+        if (selectionIds.Count == 0)
+        {
+            return;
+        }
+        foreach (var summary in summaries.Where(x =>
+                     x.RootDepth == 0 && x.NearMatchOf == null && x.PartOf == null))
+        {
+            var word = LemmaTable.NormalizeForm(summary.PrimaryWord);
+            if (word == form
+                || (summary.Words ?? []).Any(x => LemmaTable.NormalizeForm(x) == form))
+            {
+                continue;
+            }
+            var shared = lemmaTable.CandidatesFor(word).Intersect(selectionIds).ToList();
+            // headed by a shared lexeme's own display, the entry is the
+            // lexeme's, however the page reached it
+            if (shared.Count == 0 || shared.Any(id =>
+                    LemmaTable.NormalizeForm(lemmaTable.DisplayLemmaOf(id) ?? "") == word))
+            {
+                continue;
+            }
+            // both mere forms of a third display: neither owns the page, and
+            // the guess is not made
+            var rootId = shared.FirstOrDefault(id =>
+                LemmaTable.NormalizeForm(lemmaTable.DisplayLemmaOf(id) ?? "") == form);
+            if (rootId != null)
+            {
+                summary.FormOf = lemmaTable.DisplayLemmaOf(rootId);
+            }
+        }
     }
 
     /// <summary>Which reading of the selection each own entry files it under:

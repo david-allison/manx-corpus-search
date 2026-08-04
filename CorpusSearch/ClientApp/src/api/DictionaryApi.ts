@@ -60,6 +60,12 @@ export type Summary = {
      * carries the reading that opened it. The thread that lets each sense
      * own its Built-from. Null where the table cannot name one reading. */
     throughLemma?: string | null
+    /** the display lemma whose form this entry is headed by, set on the
+     * lemma's own page: Cregeen prints s'accryssagh as its own headword, and
+     * its entry reaches accryssagh's page — about the form, not the page's
+     * word, so it seats beneath the lexeme's entries rather than among
+     * them. The downward mirror of rootDepth. */
+    formOf?: string | null
 }
 export type DictionaryResponse = Summary[]
 

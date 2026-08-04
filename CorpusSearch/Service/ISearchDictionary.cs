@@ -145,6 +145,15 @@ public class DictionarySummary
     /// exactly one reading.</summary>
     public string? ThroughLemma { get; set; }
 
+    /// <summary>The display lemma whose form this entry is headed by, set on
+    /// the lemma's own page: Cregeen prints s'accryssagh as its own headword,
+    /// and the words bag brings that entry to accryssagh's page — where it is
+    /// about the form, not the page's word, so the client seats it beneath
+    /// the lexeme's entries rather than among them. The reverse arrival
+    /// stays plain: a form's page leads with its lemma's entry
+    /// (<see cref="DictionaryLookupService.StampFormEntries"/>).</summary>
+    public string? FormOf { get; set; }
+
     /// <summary>The printed grammar label of the entry ("s. m.", "s. f.",
     /// "v."): word class and gender as the dictionary abbreviates them, for
     /// display beside the headword with the expansion on hover</summary>

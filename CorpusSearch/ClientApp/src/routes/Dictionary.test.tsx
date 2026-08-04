@@ -1570,6 +1570,58 @@ describe("Dictionary page", () => {
             2,
         )
     })
+    it("seats the book's entry for a form beneath its lexeme's, marked", async () => {
+        respondWith({
+            word: "accryssagh",
+            isSuggestionTier: false,
+            attested: true,
+            groups: [
+                {
+                    dictionary: "Cregeen",
+                    entries: [
+                        {
+                            primaryWord: "accryssagh",
+                            summary: "hungry, being hungered",
+                            dictionaryName: "Cregeen",
+                            rootDepth: 0,
+                            partsOfSpeech: ["Adjective"],
+                            grammarLabel: "a.",
+                        },
+                        {
+                            primaryWord: "s'accryssagh",
+                            summary: "how hungry, &c.",
+                            dictionaryName: "Cregeen",
+                            rootDepth: 0,
+                            partsOfSpeech: ["Adjective"],
+                            grammarLabel: "a.",
+                            formOf: "accryssagh",
+                        },
+                    ],
+                },
+            ],
+        })
+        renderAt("/dictionary/accryssagh")
+
+        // the form's entry indents beneath the lexeme's own, wearing the
+        // downward connector: it is the book's entry for s'accryssagh, and
+        // it must not pose as an entry for the page's word
+        await screen.findByText(/how hungry/)
+        const formEntry = screen
+            .getByText(/how hungry/)
+            .closest(".dict-page-entry")!
+        expect(formEntry.classList.contains("dict-page-form-entry")).toBe(true)
+        expect(
+            within(formEntry as HTMLElement)
+                .getByLabelText("form entry")
+                .getAttribute("title"),
+        ).toContain("a form of accryssagh")
+        // the lexeme's own entry stays plain
+        const own = screen
+            .getByText(/hungry, being hungered/)
+            .closest(".dict-page-entry")!
+        expect(own.classList.contains("dict-page-form-entry")).toBe(false)
+        expect(own.querySelector(".dict-page-root-connector")).toBeNull()
+    })
 
     it("draws no family section for a reading with nothing hanging off it", async () => {
         fetchMock.mockImplementation((url) => {
