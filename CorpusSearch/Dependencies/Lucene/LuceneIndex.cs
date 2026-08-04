@@ -170,8 +170,10 @@ public class LuceneIndex(IndexWriter indexWriter)
 
             AddField(DOCUMENT_ORIGINAL_ENGLISH, line.EnglishOriginal);
             AddField(DOCUMENT_ORIGINAL_MANX, line.ManxOriginal);
-            AddField(DOCUMENT_CREATED_START, document.CreatedCircaStart?.ToString());
-            AddField(DOCUMENT_CREATED_END, document.CreatedCircaEnd?.ToString());
+            // a line of a fragments collection carries its own date (NotesCitationDates):
+            // it attests its words in its citation's year, not the collection's span
+            AddField(DOCUMENT_CREATED_START, (line.Date ?? document.CreatedCircaStart)?.ToString());
+            AddField(DOCUMENT_CREATED_END, (line.Date ?? document.CreatedCircaEnd)?.ToString());
             AddField(DOCUMENT_NOTES, line.Notes);
             AddField(DOCUMENT_PAGE, line.Page.ToString());
             AddField(DOCUMENT_SPEAKER, line.Speaker);
@@ -221,14 +223,57 @@ public class LuceneIndex(IndexWriter indexWriter)
     }
 
     /// <summary>
-    /// docId -> (document ident, line number) for the whole index, so <see cref="Scan"/> can
-    /// group matched lines into corpus documents without loading each line's stored document
+    /// docId -> (document ident, line number, dates) for the whole index, so <see cref="Scan"/>
+    /// can group matched lines into corpus documents without loading each line's stored document
     /// (the dominant cost when a common word matches tens of thousands of lines).
     /// </summary>
-    private sealed class DocumentLookup(Ident[] idents, int[] lineNumbers)
+    private sealed class DocumentLookup(Ident[] idents, int[] lineNumbers, long[] startTicks, long[] endTicks)
     {
-        /// <summary>The corpus document ident and CsvLineNumber of the line with this docId</summary>
-        public (Ident Ident, int LineNumber) Get(DocId docId) => (idents[docId], lineNumbers[docId]);
+        /// <summary>The corpus document ident, CsvLineNumber and created dates of the line
+        /// with this docId. The dates are per line: a fragments collection's lines carry
+        /// their citations' dates, everything else its document's.</summary>
+        public (Ident Ident, int LineNumber, DateTime? Start, DateTime? End) Get(DocId docId) =>
+            (idents[docId], lineNumbers[docId], FromTicks(startTicks[docId]), FromTicks(endTicks[docId]));
+
+        // 0 = the line has no date: DateTime.MinValue.Ticks, unused by real dates
+        private static DateTime? FromTicks(long ticks) => ticks == 0 ? null : new DateTime(ticks);
+    }
+
+    /// <summary>
+    /// One corpus document's matched lines, folded as <see cref="Scan"/> meets them:
+    /// the match count, the date span of the matched lines, and the sample - the
+    /// earliest-dated line, ties broken by line number. For a document whose lines
+    /// all share its date the sample is simply the first match in the file, as before.
+    /// </summary>
+    private sealed class DocumentAggregate
+    {
+        public DocId SampleDocId { get; private set; }
+        private int sampleLineNumber = int.MaxValue;
+        // undated lines compare as MaxValue: any dated line makes a better sample
+        private DateTime sampleDate = DateTime.MaxValue;
+        public int Count { get; private set; }
+        public DateTime? StartDate { get; private set; }
+        public DateTime? EndDate { get; private set; }
+
+        public void Merge(DocId docId, int lineNumber, DateTime? startDate, DateTime? endDate, int count)
+        {
+            Count += count;
+            var date = startDate ?? DateTime.MaxValue;
+            if (date < sampleDate || date == sampleDate && lineNumber < sampleLineNumber)
+            {
+                SampleDocId = docId;
+                sampleLineNumber = lineNumber;
+                sampleDate = date;
+            }
+            if (startDate != null && (StartDate == null || startDate < StartDate))
+            {
+                StartDate = startDate;
+            }
+            if (endDate != null && (EndDate == null || endDate > EndDate))
+            {
+                EndDate = endDate;
+            }
+        }
     }
 
     private DocumentLookup? _documentLookup;
@@ -237,9 +282,12 @@ public class LuceneIndex(IndexWriter indexWriter)
     {
         var idents = new Ident[reader.MaxDoc];
         var lineNumbers = new int[reader.MaxDoc];
+        var startTicks = new long[reader.MaxDoc];
+        var endTicks = new long[reader.MaxDoc];
         // one shared string instance per document: ~800 idents across ~100k lines
         var identPool = new Dictionary<Ident, Ident>();
-        var fields = new HashSet<string> { DOCUMENT_IDENT, DOCUMENT_LINE_NUMBER };
+        var fields = new HashSet<string>
+            { DOCUMENT_IDENT, DOCUMENT_LINE_NUMBER, DOCUMENT_CREATED_START, DOCUMENT_CREATED_END };
         for (DocId docId = 0; docId < reader.MaxDoc; docId++)
         {
             var document = reader.Document(docId, fields);
@@ -255,9 +303,11 @@ public class LuceneIndex(IndexWriter indexWriter)
             }
             idents[docId] = ident;
             lineNumbers[docId] = document.GetInt32(DOCUMENT_LINE_NUMBER) ?? -1;
+            startTicks[docId] = document.GetDateTime(DOCUMENT_CREATED_START)?.Ticks ?? 0;
+            endTicks[docId] = document.GetDateTime(DOCUMENT_CREATED_END)?.Ticks ?? 0;
         }
 
-        return new DocumentLookup(idents, lineNumbers);
+        return new DocumentLookup(idents, lineNumbers, startTicks, endTicks);
     }
 
 
@@ -493,15 +543,17 @@ public class LuceneIndex(IndexWriter indexWriter)
         }
 
         // Group the matched lines into distinct Corpus Documents via the docId lookup. The
-        // sample is the first line by line number: docID order is merge-dependent, so it
-        // cannot be relied on (#303)
-        var corpusDocuments = new Dictionary<Ident, (DocId SampleDocId, int SampleLineNumber, int Count)>();
+        // sample is the earliest-dated matched line, ties broken by line number - one and
+        // the same for a document whose lines share its date, but a fragments collection's
+        // earliest evidence may sit anywhere in the file. docID order is merge-dependent,
+        // so it cannot be relied on (#303)
+        var corpusDocuments = new Dictionary<Ident, DocumentAggregate>();
         // the matched lines by corpus document, kept only when the timing
         // question will be asked of them: a big scan matches too many to hold
         var matchedLines = checkTranscriptTimings ? new Dictionary<Ident, List<DocId>>() : null;
         foreach (var docId in distinctDocuments.Concat(referenceCounts.Keys))
         {
-            var (ident, lineNumber) = lookup.Get(docId);
+            var (ident, lineNumber, startDate, endDate) = lookup.Get(docId);
             if (matchedLines != null)
             {
                 if (!matchedLines.TryGetValue(ident, out var lines))
@@ -515,16 +567,11 @@ public class LuceneIndex(IndexWriter indexWriter)
                 : CountsDistinctPositions(spanQuery.Field)
                     ? spanCollection.GetDistinctCount(docId)
                     : spanCollection.GetCount(docId);
-            if (corpusDocuments.TryGetValue(ident, out var existing))
+            if (!corpusDocuments.TryGetValue(ident, out var aggregate))
             {
-                corpusDocuments[ident] = lineNumber < existing.SampleLineNumber
-                    ? (docId, lineNumber, existing.Count + count)
-                    : (existing.SampleDocId, existing.SampleLineNumber, existing.Count + count);
+                corpusDocuments[ident] = aggregate = new DocumentAggregate();
             }
-            else
-            {
-                corpusDocuments[ident] = (docId, lineNumber, count);
-            }
+            aggregate.Merge(docId, lineNumber, startDate, endDate, count);
         }
 
         // The sample displayed on the Home page is always the Manx text: only highlight it when Manx was searched
@@ -535,12 +582,10 @@ public class LuceneIndex(IndexWriter indexWriter)
 
         var samples = corpusDocuments.Select(kvp =>
         {
-            var (sampleDocId, _, count) = kvp.Value;
+            var aggregate = kvp.Value;
+            var sampleDocId = aggregate.SampleDocId;
             // only the sample line's stored document is loaded: one per corpus document
             var doc = reader.Document(sampleDocId);
-
-            DateTime? startDate = doc.GetDateTime(DOCUMENT_CREATED_START);
-            DateTime? endDate = doc.GetDateTime(DOCUMENT_CREATED_END);
 
             var sample = doc.RequireString(DOCUMENT_REAL_MANX);
             var name = doc.RequireString(DOCUMENT_NAME);
@@ -552,10 +597,12 @@ public class LuceneIndex(IndexWriter indexWriter)
                 Sample = sample,
                 SampleHighlights = ComputeHighlights(reader, sampleDocId, spanQuery.Field, sample,
                     highlightTokenSpans.GetValueOrDefault(sampleDocId)),
-                EndDate = endDate,
-                StartDate = startDate,
+                // the span of the *matched* lines: a whole-document date for most
+                // documents, the matched fragments' for a citations collection
+                EndDate = aggregate.EndDate,
+                StartDate = aggregate.StartDate,
                 Timed = TimedOrNull(reader, name, matchedLines?[kvp.Key]),
-                Count = count
+                Count = aggregate.Count
             };
         });
 

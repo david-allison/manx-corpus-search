@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
@@ -58,6 +59,14 @@ public class DocumentLine
     /// at load time the collection default (the manifest field of the same name, else
     /// "gv") replaces an absent value.</summary>
     public string? Language { get; set; }
+
+    /// <summary>The line's own date, where it has one apart from its document's: in
+    /// a fragments collection (<see cref="NotesCitationDates"/>) each line dates
+    /// from its note's citation. Indexed per line (a Brooillagh line attests its
+    /// word in 1858, not when the collection was typed up); not serialized - the
+    /// note itself shows the reader the citation.</summary>
+    [JsonIgnore]
+    public DateTime? Date { get; set; }
 
     /// <summary>Value of <see cref="Language"/> meaning the Manx column is really Manx</summary>
     public const string ManxLanguageCode = "gv";
