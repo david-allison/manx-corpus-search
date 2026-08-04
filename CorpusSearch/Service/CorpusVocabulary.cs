@@ -146,7 +146,11 @@ public class CorpusVocabulary(LemmaTable lemmaTable)
     /// corpus, and only met a word at a time until that lands: 'aachummey eddin'
     /// is not said by a text saying 'aachummey' in one place and 'eddin' in
     /// another, and claiming so left a browse index un-greying 4,444 phrases on
-    /// one page whose word pages then had nothing to show.
+    /// one page whose word pages then had nothing to show. But a phrase the
+    /// corpus says as one hyphenated token is said: 'thie veaghee' by the Acts'
+    /// 'thie-veaghee', found through the fold <see cref="AttestationsOf"/>
+    /// counts with — leaving it grey put the word page at odds with its own
+    /// attestation list.
     ///
     /// The lemma hop is what saves a headword the corpus only ever writes
     /// mutated: 'yaagh' is 'jaagh' after a lenition, and a text that says the one
@@ -172,9 +176,18 @@ public class CorpusVocabulary(LemmaTable lemmaTable)
         var words = Words(word);
         if (words.Length > 1)
         {
-            // the corpus is read for a phrase, never guessed at: no lemma hop
-            // either — a phrase's mutations are not a paradigm the table holds,
-            // and the word page's own scan is as literal as this
+            // a spaced headword is said by a hyphenated token too: Cregeen's
+            // 'thie veaghee' is what the Acts say as 'thie-veaghee', and the
+            // count table has already folded the corpus the lemma table's way
+            // to know so — the same fold that answers AttestationsOf
+            if (formAttestations.GetValueOrDefault(LemmaTable.NormalizeForm(word)) > 0)
+            {
+                return true;
+            }
+            // otherwise the corpus is read for the phrase, never guessed at:
+            // no lemma hop either — a phrase's mutations are not a paradigm
+            // the table holds, and the word page's own scan is as literal as
+            // this
             return attestedPhrases == null
                 ? null
                 : attestedPhrases.GetValueOrDefault(string.Join(' ', words)) > 0;

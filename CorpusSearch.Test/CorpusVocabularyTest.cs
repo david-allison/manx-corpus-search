@@ -156,6 +156,25 @@ public class CorpusVocabularyTest
         });
     }
 
+    /// <summary>A spaced headword is said by a hyphenated token: Cregeen prints
+    /// 'thie veaghee' and the Acts say 'thie-veaghee', which is the same saying —
+    /// <see cref="ASpacedFormIsCountedByItsHyphenatedTokens"/> counts it, and the
+    /// word page must not grey what its own attestation list finds</summary>
+    [Test]
+    public void ASpacedHeadwordIsAttestedByItsHyphenatedToken()
+    {
+        var vocabulary = Loaded("thie-veaghee");
+
+        Assert.Multiple(() =>
+        {
+            // the fold answers without waiting for the phrase scan
+            Assert.That(vocabulary.Attestation("thie veaghee"), Is.True);
+            // and the scan landing empty does not talk it back out
+            vocabulary.ScanPhrases(["thie veaghee"], ["yn thie-veaghee shoh"]);
+            Assert.That(vocabulary.IsAttested("thie veaghee"), Is.True);
+        });
+    }
+
     /// <summary>The phrase must be met whole and in order, not merely word by word
     /// within one line</summary>
     [Test]
