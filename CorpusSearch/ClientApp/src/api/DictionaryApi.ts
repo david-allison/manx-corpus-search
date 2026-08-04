@@ -644,6 +644,12 @@ export type LemmaTreeParent = {
     /** the phrase a contracts edge spells out ("va oc" above v'oc); absent on
      * every other kind of parent */
     expansion?: string | null
+    /** the member headword a family edge rides through, where the tree's own
+     * word is no form of the lexeme ('dy aalin' between the adverb displayed
+     * aalin and its head dy): the phrase prints under the head, and the tree
+     * must not seat the word itself there; absent where the word's own
+     * spelling prints under the head */
+    member?: string | null
 }
 
 export type LemmaTreeGroup = {

@@ -167,8 +167,16 @@ public class LemmaIndexService(LemmaTable lemmaTable, CorpusVocabulary vocabular
             .Select(x => x.Form)
             .Prepend(name)
             .ToList();
+        // whether the tree's own word is a form of this lexeme at all: the
+        // adverb Cregeen heads 'dy-aalin' displays particle-free as aalin
+        // (the lemma convention), but that spelling is the adjective's word —
+        // no row of the adverb's says it. A head reached through such a
+        // lexeme's phrase must carry the phrase, or the page seats the
+        // adjective beneath dy
+        var rootIsOwnForm = lemmaTable.CandidatesFor(rootKey).Contains(set.LemmaId);
         foreach (var family in ownNames
-                     .SelectMany(n => lemmaTable.FamilyParentsOf(n))
+                     .SelectMany(n => lemmaTable.FamilyParentsOf(n)
+                         .Select(x => (x.Head, x.LinkType, Member: n)))
                      .Distinct()
                      .Where(x => parents.All(p => p.Lemma != x.Head))
                      .GroupBy(x => x.Head)
@@ -179,6 +187,10 @@ public class LemmaIndexService(LemmaTable lemmaTable, CorpusVocabulary vocabular
                 Lemma = family.Key,
                 LinkTypes = family.Select(x => x.LinkType).Distinct()
                     .OrderBy(GroupRank).ToList(),
+                // the member headword the paragraph actually prints, where
+                // that is the edge's only truth: s'oc (a form of its lexeme,
+                // inside 'cha s'oc') still roots under fys bare
+                Member = rootIsOwnForm ? null : family.First().Member,
                 // the phrase a contracts edge spells out, read off the head's
                 // own row for this member: what 'contraction' alone cannot say
                 Expansion = family.Any(x => x.LinkType == "contracts")
@@ -513,6 +525,14 @@ public class LemmaTreeParent
     /// <summary>The link types read upward ("inflected", "plural"; "prefixed"
     /// for a spelling parent), in the tree's reading order</summary>
     public required List<string> LinkTypes { get; set; }
+    /// <summary>The member headword a family edge rides through, where the
+    /// tree's own word is no form of the lexeme: 'dy aalin' between the
+    /// adverb displayed aalin and its head dy. What prints under dy is the
+    /// phrase — the bare spelling is the adjective's word — so the client
+    /// says the phrase rather than seating the word beneath the head. Null
+    /// where the word itself prints there (camstram in cammey's paragraph;
+    /// s'oc, a form of its lexeme inside 'cha s'oc', in fys's).</summary>
+    public string? Member { get; set; }
     /// <summary>The phrase a contracts edge spells out ("va oc" above v'oc):
     /// what the contraction actually says, which the parent's name alone
     /// cannot. Null on every other kind of parent.</summary>

@@ -311,6 +311,53 @@ describe("lemma tree", () => {
         expect(screen.getByText(/Written with the prefix/)).toBeTruthy()
     })
 
+    /* Cregeen prints dy-aalin among dy's sample adverbs, and the adverb
+     * lexeme displays particle-free as aalin — the adjective's own word.
+     * The page once rooted that word beneath dy as though the book filed
+     * the adjective there; a member-carrying head says the phrase prints
+     * under it instead, and roots nothing. */
+    it("says a phrase prints under its head, without seating the word there", async () => {
+        respondWith([
+            {
+                ...tree,
+                lemma: "aalin",
+                groups: [
+                    {
+                        linkType: "self",
+                        forms: [
+                            {
+                                form: "dy aalin",
+                                attestations: 5,
+                                attested: true,
+                                unverified: false,
+                                sharedWithOtherLemmas: false,
+                            },
+                        ],
+                    },
+                ],
+                parents: [
+                    {
+                        lemma: "dy",
+                        linkTypes: ["derived"],
+                        member: "dy aalin",
+                    },
+                ],
+            },
+        ])
+        renderAt("/dictionary/lemma/aalin")
+
+        // the line names the phrase and climbs to the head...
+        expect(
+            await screen.findByText(/dy aalin is printed under/),
+        ).toBeTruthy()
+        expect(
+            screen.getByRole("link", { name: "dy" }).getAttribute("href"),
+        ).toBe("/dictionary/dy")
+        // ...and no head roots the tree: the page's word is not what the
+        // book prints under dy
+        expect(document.querySelector(".dict-lemma-root-embedded")).toBeNull()
+    })
+
     it("names the book behind a form no text uses", async () => {
         respondWith([tree])
         renderAt("/dictionary/lemma/peiagh")
