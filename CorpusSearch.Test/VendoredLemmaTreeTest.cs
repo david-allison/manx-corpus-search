@@ -281,23 +281,26 @@ public class VendoredLemmaTreeTest
         });
     }
 
-    /// <summary>The demutation sweep reads thaa — Cregeen's verb, welding —
+    /// <summary>The demutation sweep read thaa — Cregeen's verb, welding —
     /// as saa with its s eclipsed, and aeg's tree once listed thaa as a
     /// clean, Cregeen-credited mutation (and thaa's page said it was built
-    /// from aeg). The guess may stand, hedged: only the generator vouches
-    /// for it, and the row must say so. theihll keeps its clean row — the
-    /// book itself prints theihll in seihll's paragraph.</summary>
+    /// from aeg). The guess is now vetoed at the source (cregeen-nvh
+    /// link-exclusions.nvh, the link-plausibility campaign's worked
+    /// example): the row must stay out of the table. theihll keeps its
+    /// clean row — the book itself prints theihll in seihll's paragraph,
+    /// and a print-attested pair must not fall with the guesses.</summary>
     [Test]
-    public void TheWeldingThaaIsNoCleanMutationOfAeg()
+    public void TheWeldingThaaIsNoMutationOfAeg()
     {
         var thaa = Flatten(TreeOf("aeg").Groups)
-            .Single(x => x is { LinkType: "demutated", Form: "thaa" }).Node;
+            .Where(x => x.Form == "thaa")
+            .ToList();
         var theihll = Flatten(TreeOf("seihll").Groups)
             .Single(x => x.Form == "theihll").Node;
         Assert.Multiple(() =>
         {
-            Assert.That(thaa.Unverified, Is.True,
-                "only the rule reads thaa as saa: the row wears the hedge");
+            Assert.That(thaa, Is.Empty,
+                "thaa is vetoed in link-exclusions.nvh: aeg's tree must not say the welding verb");
             Assert.That(theihll.Unverified, Is.False,
                 "seihll's paragraph prints theihll: the book attests the pair");
         });

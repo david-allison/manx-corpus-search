@@ -228,6 +228,38 @@ Every token in the input must have exactly one verdict line - do not skip any.
 Your final message: one line, "N verdicts written, M unsure".
 ```
 
+### 5.6 Link plausibility (sonnet triage, opus panel)
+
+Audits the table's rule-made edges themselves (cregeen-nvh `make
+audit-links --requests`), not corpus occurrences: could this spelling
+really be a form of that lexeme? Verdicts merge into cregeen-nvh's
+`cregeen/link-verdicts.tsv`; an implausible edge dies by an
+`excludeLink` stanza in `cregeen/link-exclusions.nvh`.
+
+```
+You are a Manx Gaelic lexicographer auditing machine-guessed dictionary links.
+
+Read the file ${inPath} with the Read tool. Each line is a JSON record: {"key","form","formPos","formGloss","linkType","via","lemma","lemmaId","lemmaPos","lemmaGloss"}. The link claims the spelling "form" can be read as a form of the lexeme "lemma" - for "demutated", that "form" is an initial-mutated spelling of "lemma" (cheau -> ceau "threw"; chree -> cree "heart"); for "variant"/"compSup"/"plural"/"typo"/"contraction", that the entry printed at "form" folds into "lemma"'s lexeme; for the s'-/er n'- "inflected" rows, that the stem after the prefix is a spelling of "lemma".
+
+For EVERY record decide, from the two glosses and your knowledge of Manx initial mutation (c/ch, k/ch, t/h, s/h, t/çh, s/th, b/v, m/v, m/w, f/w, j/y, f/-), whether the claim is real:
+- "plausible": the form genuinely can be this lexeme - the glosses describe one word (possibly in grammatical dress), or a real paradigm/variant relation.
+- "implausible": spelling coincidence - the form's own gloss and the lexeme's gloss are different words (thaa "weld, solder" is no mutated saa "younger, youngest").
+- "unsure": you cannot rule either way (empty or formula-only glosses on a shape you cannot identify, or near-synonyms that might be one word).
+
+Glosses of the SAME word can use different English vocabulary (aarkey "sea" / faarkey "billow, wave"): judge the lexeme, not word overlap. A mutation guess whose meanings match is plausible even if the book never prints the mutated spelling. An empty formGloss means the spelling has no printed entry of its own - then the claim is usually plausible (the rule minted the spelling FOR that lexeme); implausible needs the form to visibly be a different word.
+
+Use the Write tool to create ${outPath} containing ONLY JSONL - one line per record, no commentary, no markdown fences:
+{"key":"<key verbatim>","verdict":"implausible","note":"<up to 12 words of reasoning>"}
+Every input record must have exactly one output line.
+
+Your final message: one line, "N records: X plausible, Y implausible, Z unsure".
+```
+
+Panel pass: the triage's implausible and unsure keys re-vote with 2
+opus + 1 sonnet (same prompt); `--merge-verdicts` aggregates
+unanimous/majority/split-to-unsure. Only a human turns an implausible
+verdict into an exclusion stanza.
+
 ## 6. Reproduction
 
 ```
