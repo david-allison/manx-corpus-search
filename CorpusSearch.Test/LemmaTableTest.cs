@@ -242,6 +242,44 @@ public class LemmaTableTest
             Is.EqualTo(new[] { new LemmaLink("mutation", "pheiagh", false) }));
     }
 
+    /// <summary>A demutation guess is the generator's own: its noteless row
+    /// says only that the radical exists (thaa strips to saa, which Cregeen
+    /// prints), never that the reading is right — thaa is the book's own
+    /// verb, welding, and no page reads it as young. The pair is rule-made
+    /// unless print attests it: the particle phrase 'dty vac' vouches for
+    /// vac under mac, and the paragraph printing cheau in ceau's entry (a
+    /// derived row) vouches the same way.</summary>
+    [Test]
+    public void ADemutationGuessIsARuleMadeLinkUnlessPrintAttestsIt()
+    {
+        var table = Table(
+            "thaa\tthaa.v\tthaa\tself\tv.\tthaa\t",
+            "thaa\taeg.a\tsaa\tdemutated\ta.\tthaa\t",
+            "vac\tmac.n\tmac\tparticle\ts.\tdty vac\t",
+            "vac\tmac.n\tmac\tdemutated\ts. m.\tdty vac\t",
+            "cheau\tcheau.v\tcheau\tself\tv.\tcheau\t",
+            "cheau\tceau.v\tceau\tdemutated\tv.\tcheau\t",
+            "cheau\tceau.v\tceau\tderived\tv.\tceau\t");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(table.IsUnverifiedLink("thaa", "saa"), Is.True,
+                "only the rule reaches saa from thaa");
+            Assert.That(table.IsUnverifiedLink("vac", "mac"), Is.False,
+                "the printed 'dty vac' attests the pair");
+            Assert.That(table.IsUnverifiedLink("cheau", "ceau"), Is.False,
+                "ceau's paragraph prints cheau: the book attests the pair");
+            // and the tree's own rows say the same: the bare guess wears the
+            // hedge, the corroborated one does not
+            Assert.That(table.LinksOf("saa")!.Links
+                    .Single(l => l is { LinkType: "demutated", Form: "thaa" }).Unverified,
+                Is.True);
+            Assert.That(table.LinksOf("ceau")!.Links
+                    .Single(l => l is { LinkType: "demutated", Form: "cheau" }).Unverified,
+                Is.False);
+        });
+    }
+
     /// <summary>The lookup folds ('Aa-Aase' -> 'aa aase'), the answer keeps the
     /// printed spelling</summary>
     [Test]

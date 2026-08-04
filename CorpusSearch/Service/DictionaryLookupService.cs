@@ -497,7 +497,10 @@ public class DictionaryLookupService(IEnumerable<ISearchDictionary> dictionarySe
     /// context: when the word is a headword itself, demutation guesses stay
     /// in the tap popup - where the surrounding line makes 'ass, or maybe
     /// lenited fass' worth offering - and off the ass page. Paradigm roots
-    /// (smessey -> olk) are not guesses and stay.</summary>
+    /// (smessey -> olk) are not guesses and stay. A chain that OPENED with a
+    /// guess is the guess however deep it walks: thaa's guessed saa is saa's
+    /// comparative reading of aeg two hops on, and dropping saa's entry while
+    /// aeg's arrived said thaa was built from aeg.</summary>
     private List<DictionarySummary> WithoutDemutationGuesses(string word, List<DictionarySummary> summaries)
     {
         var displays = lemmaTable.DisplayLemmasFor(word);
@@ -513,7 +516,9 @@ public class DictionaryLookupService(IEnumerable<ISearchDictionary> dictionarySe
             .Where(d => d != self && !paradigmRoots.Contains(d))
             .ToHashSet();
         return summaries
-            .Where(x => x.RootDepth == 0 || !guesses.Contains(LemmaTable.NormalizeForm(x.PrimaryWord)))
+            .Where(x => x.RootDepth == 0
+                        || (!guesses.Contains(LemmaTable.NormalizeForm(x.PrimaryWord))
+                            && !guesses.Contains(LemmaTable.NormalizeForm(x.ThroughLemma ?? ""))))
             .ToList();
     }
 

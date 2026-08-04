@@ -1114,6 +1114,29 @@ public class DictionaryLookupServiceTest
             Does.Contain("fow"));
     }
 
+    /// <summary>A chain that opened with a demutation guess is the guess
+    /// however deep it walks: thaa (weld) is guessed as saa, saa's paradigm
+    /// reaches aeg (young), and thaa's page once dropped saa's entry while
+    /// printing aeg's under "Built from" — the guess it refused to show,
+    /// two hops on and wearing a young face</summary>
+    [Test]
+    public void PageDropsTheChainAGuessOpensNotJustTheGuess()
+    {
+        var table = LemmaTable.Load(new StringReader(
+            "form\tlemmaId\tlemma\tlinkType\tpos\tvia\tnote\n" +
+            "thaa\tthaa.v\tthaa\tself\tv.\tthaa\t\n" +
+            "thaa\taeg.a\tsaa\tdemutated\ta.\tthaa\t\n" +
+            "aeg\taeg.a\taeg\tself\ta.\taeg\t\n" +
+            "saa\taeg.a\taeg\tcompSup\ta.\tsaa\t\n"));
+        var service = new DictionaryLookupService([new FakeDictionary("thaa", "saa", "aeg")],
+            table, LemmaResolver.Empty);
+
+        var page = service.Page("gv", "thaa");
+        Assert.That(page.Groups.SelectMany(g => g.Entries).Select(x => x.PrimaryWord),
+            Is.EqualTo(new[] { "thaa" }),
+            "neither the guessed saa nor the aeg its paradigm reaches may stand on thaa's page");
+    }
+
     [Test]
     public void PageMarksTheSuggestionTier()
     {

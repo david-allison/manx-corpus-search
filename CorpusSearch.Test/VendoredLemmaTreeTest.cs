@@ -281,6 +281,28 @@ public class VendoredLemmaTreeTest
         });
     }
 
+    /// <summary>The demutation sweep reads thaa — Cregeen's verb, welding —
+    /// as saa with its s eclipsed, and aeg's tree once listed thaa as a
+    /// clean, Cregeen-credited mutation (and thaa's page said it was built
+    /// from aeg). The guess may stand, hedged: only the generator vouches
+    /// for it, and the row must say so. theihll keeps its clean row — the
+    /// book itself prints theihll in seihll's paragraph.</summary>
+    [Test]
+    public void TheWeldingThaaIsNoCleanMutationOfAeg()
+    {
+        var thaa = Flatten(TreeOf("aeg").Groups)
+            .Single(x => x is { LinkType: "demutated", Form: "thaa" }).Node;
+        var theihll = Flatten(TreeOf("seihll").Groups)
+            .Single(x => x.Form == "theihll").Node;
+        Assert.Multiple(() =>
+        {
+            Assert.That(thaa.Unverified, Is.True,
+                "only the rule reads thaa as saa: the row wears the hedge");
+            Assert.That(theihll.Unverified, Is.False,
+                "seihll's paragraph prints theihll: the book attests the pair");
+        });
+    }
+
     /// <summary>Cregeen prints dy-aalin among dy's few sample adverbs, and
     /// the adverb lexeme displays particle-free as aalin — the adjective's
     /// own word. The aalin page once rooted that word beneath dy, as though

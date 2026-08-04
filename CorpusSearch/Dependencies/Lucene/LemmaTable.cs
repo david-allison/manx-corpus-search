@@ -189,8 +189,9 @@ public class LemmaTable
     /// <summary>
     /// Whether the table reaches <paramref name="displayLemma"/> from
     /// <paramref name="form"/> only by rule, with no dictionary page attesting
-    /// the link: a generated mutation ('Vonaco' under Monaco), an unvalidated
-    /// demutation, a univerbation or a particle strip (see
+    /// the link: a generated mutation ('Vonaco' under Monaco), a demutation
+    /// guess (thaa read as saa — the guess's inventory check says only that
+    /// the radical exists), a univerbation or a particle strip (see
     /// <see cref="IsUnverifiedRow"/>). A pair the print attests anywhere is
     /// verified, however many rules also produce it.
     /// </summary>
@@ -541,11 +542,12 @@ public class LemmaTable
                                 // the source is the attestation's: a verified
                                 // row's file names the link's book, however
                                 // many rules from elsewhere also produce it
-                                soFar.Unverified && !unverifiedRow ? rowSource : soFar.Source);
+                                soFar.Unverified && !unverifiedRow ? rowSource : soFar.Source,
+                                soFar.Display);
                         }
                         else
                         {
-                            linkSet.Links[linkKey] = (unverifiedRow, viaKey, rowSource);
+                            linkSet.Links[linkKey] = (unverifiedRow, viaKey, rowSource, displayLemma);
                         }
                     }
                 }
@@ -574,6 +576,23 @@ public class LemmaTable
                     }
                     (unverifiedRow ? unverifiedLinks : verifiedLinks)
                         .Add((form, displayLemma));
+                }
+                // an unmarked-lenition guess (thaa "might be" saa with its s
+                // eclipsed): the generator emits it noteless — its inventory
+                // check only says the radical exists, never that the reading
+                // is right — so the pair is reached by rule alone unless a
+                // verified row of another type attests it (the ExceptWith
+                // below: vac after the printed 'dty vac')
+                else if (linkType == "demutated")
+                {
+                    unverifiedLinks.Add((form, displayLemma));
+                }
+                // the paragraph prints the member outright ('cheau' in ceau's
+                // entry): the book attests the pair, and a demutation guess
+                // it corroborates is no bare rule product
+                else if (linkType == "derived" && !unverifiedRow)
+                {
+                    verifiedLinks.Add((form, displayLemma));
                 }
             }
         }
@@ -607,7 +626,13 @@ public class LemmaTable
                 SelfSource = kv.Value.SelfSource,
                 Links = kv.Value.Links
                     .Select(link => new LemmaLink(
-                        link.Key.LinkType, link.Key.Form, link.Value.Unverified,
+                        link.Key.LinkType, link.Key.Form,
+                        // a demutated link wears the pair's standing: a rule
+                        // guess (thaa under aeg — greyed, and no book takes
+                        // the credit) unless print attests the pair
+                        link.Value.Unverified
+                        || (link.Key.LinkType == "demutated"
+                            && unverifiedLinks.Contains((link.Key.Form, link.Value.Display))),
                         link.Value.Via, link.Value.Source))
                     .ToArray(),
             });
@@ -626,7 +651,7 @@ public class LemmaTable
         public bool SelfSeen;
         public bool SelfVerifiedSeen;
         public string SelfSource = "";
-        public Dictionary<(string LinkType, string Form), (bool Unverified, string Via, string Source)> Links { get; } = [];
+        public Dictionary<(string LinkType, string Form), (bool Unverified, string Via, string Source, string Display)> Links { get; } = [];
     }
 
     private static LemmaTable LoadVendored()
