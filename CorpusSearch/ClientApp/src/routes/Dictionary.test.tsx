@@ -1281,10 +1281,294 @@ describe("Dictionary page", () => {
         expect(
             within(footSection).getByRole("link", { name: "vee" }),
         ).toBeTruthy()
-        // it wears its class, but no homograph number: alone in its list,
-        // the superscript would point at nothing the reader can see
+        // it wears its class, and no homograph number: the server sent
+        // none for these lexemes, and the page invents none
         expect(within(footSection).getByText("a.")).toBeTruthy()
         expect(footSection.querySelector(".dict-lemma-homograph")).toBeNull()
+    })
+
+    it("numbers each seated tree as the entries beside it are numbered", async () => {
+        fetchMock.mockImplementation((url) => {
+            const href = hrefOf(url)
+            const body = href.includes("/history")
+                ? { ...usedOnce, lemmas: ["accryssagh"] }
+                : href.includes("/dictionaries")
+                  ? dictionaries
+                  : href.includes("/attestations")
+                    ? emptyAttestations
+                    : href.includes("/samples")
+                      ? []
+                      : href.includes("/lemma?")
+                        ? [
+                              {
+                                  lemma: "accryssagh",
+                                  lemmaId: "accryssagh.a",
+                                  pos: "a.",
+                                  homograph: 1,
+                                  attested: true,
+                                  groups: [
+                                      {
+                                          linkType: "inflected",
+                                          forms: [
+                                              {
+                                                  form: "s'accryssagh",
+                                                  attested: false,
+                                              },
+                                          ],
+                                      },
+                                  ],
+                                  parents: [],
+                              },
+                              {
+                                  lemma: "accryssagh",
+                                  lemmaId: "accryssagh.n",
+                                  pos: "s. m.",
+                                  homograph: 2,
+                                  attested: true,
+                                  groups: [
+                                      {
+                                          linkType: "inflected",
+                                          forms: [
+                                              {
+                                                  form: "accryssee",
+                                                  attested: true,
+                                              },
+                                          ],
+                                      },
+                                  ],
+                                  parents: [],
+                              },
+                          ]
+                        : {
+                              answering: dictionaries.map((d) => d.slug),
+                              word: "accryssagh",
+                              isSuggestionTier: false,
+                              attested: true,
+                              groups: [
+                                  {
+                                      dictionary: "Cregeen",
+                                      entries: [
+                                          {
+                                              primaryWord: "accryssagh",
+                                              summary: "hungry, being hungered",
+                                              dictionaryName: "Cregeen",
+                                              rootDepth: 0,
+                                              partsOfSpeech: ["Adjective"],
+                                              grammarLabel: "a.",
+                                          },
+                                          {
+                                              primaryWord: "accryssagh",
+                                              summary: "a hungry person",
+                                              dictionaryName: "Cregeen",
+                                              rootDepth: 0,
+                                              partsOfSpeech: ["Noun"],
+                                              grammarLabel: "s. m.",
+                                          },
+                                      ],
+                                  },
+                              ],
+                          }
+            return Promise.resolve({
+                ok: true,
+                json: () => Promise.resolve(body),
+            } as Response)
+        })
+        renderAt("/dictionary/accryssagh")
+
+        // the entries print the book's own device: accryssagh¹, accryssagh²
+        await screen.findByText(/a hungry person/)
+        await waitFor(() =>
+            expect(
+                document.querySelectorAll("details.dict-lemma-details"),
+            ).toHaveLength(2),
+        )
+        // ...and each seated tree answers to its entry by the same number:
+        // this page is where the numbers land, one entry beside each tree
+        const adjSection = screen
+            .getByText(/hungry, being hungered/)
+            .closest(".dict-page-group") as HTMLElement
+        expect(
+            adjSection.querySelector(".dict-lemma-homograph")?.textContent,
+        ).toBe("1")
+        const nounSection = screen
+            .getByText(/a hungry person/)
+            .closest(".dict-page-group") as HTMLElement
+        expect(
+            nounSection.querySelector(".dict-lemma-homograph")?.textContent,
+        ).toBe("2")
+    })
+
+    it("strips the trees' numbers on a form's page, where no entry wears one", async () => {
+        fetchMock.mockImplementation((url) => {
+            const href = hrefOf(url)
+            const body = href.includes("/history")
+                ? { ...usedOnce, lemmas: ["accryssagh"] }
+                : href.includes("/dictionaries")
+                  ? dictionaries
+                  : href.includes("/attestations")
+                    ? emptyAttestations
+                    : href.includes("/samples")
+                      ? []
+                      : href.includes("/lemma?")
+                        ? [
+                              {
+                                  lemma: "accryssagh",
+                                  lemmaId: "accryssagh.a",
+                                  pos: "a.",
+                                  homograph: 1,
+                                  attested: true,
+                                  groups: [
+                                      {
+                                          linkType: "inflected",
+                                          forms: [
+                                              {
+                                                  form: "s'accryssagh",
+                                                  attested: false,
+                                              },
+                                          ],
+                                      },
+                                  ],
+                                  parents: [],
+                              },
+                              {
+                                  lemma: "accryssagh",
+                                  lemmaId: "accryssagh.n",
+                                  pos: "s. m.",
+                                  homograph: 2,
+                                  attested: true,
+                                  groups: [
+                                      {
+                                          linkType: "inflected",
+                                          forms: [
+                                              {
+                                                  form: "accryssee",
+                                                  attested: true,
+                                              },
+                                          ],
+                                      },
+                                  ],
+                                  parents: [],
+                              },
+                          ]
+                        : {
+                              answering: dictionaries.map((d) => d.slug),
+                              word: "accryssee",
+                              isSuggestionTier: false,
+                              attested: true,
+                              groups: [
+                                  {
+                                      dictionary: "Cregeen",
+                                      entries: [
+                                          {
+                                              primaryWord: "accryssagh",
+                                              summary: "a hungry person",
+                                              dictionaryName: "Cregeen",
+                                              rootDepth: 0,
+                                              partsOfSpeech: ["Noun"],
+                                              grammarLabel: "s. m.",
+                                          },
+                                      ],
+                                  },
+                              ],
+                          }
+            return Promise.resolve({
+                ok: true,
+                json: () => Promise.resolve(body),
+            } as Response)
+        })
+        renderAt("/dictionary/accryssee")
+
+        expect(await screen.findByText("Word family")).toBeTruthy()
+        // only the noun's tree ends the form's page: accryssee stands in
+        // it, where the adjective's family — s'accryssagh, s'accryssee —
+        // reads about a lexeme this page never mentions
+        expect(document.querySelectorAll(".dict-lemma-embedded")).toHaveLength(
+            1,
+        )
+        expect(screen.queryByRole("link", { name: "s'accryssagh" })).toBeNull()
+        const labels = [...document.querySelectorAll(".dict-lemma-pos")].map(
+            (x) => x.textContent?.trim(),
+        )
+        expect(labels).toEqual(["s. m."])
+        // the reader's word is marked where the tree says it
+        expect(
+            document.querySelector(".dict-lemma-here")?.textContent,
+        ).toContain("accryssee")
+        // ...and the lone tree wears no homograph number: the only entry
+        // here wears none, so a superscript would point at nothing
+        expect(document.querySelector(".dict-lemma-homograph")).toBeNull()
+    })
+
+    it("keeps the whole family for a word the tables place in no tree", async () => {
+        fetchMock.mockImplementation((url) => {
+            const href = hrefOf(url)
+            const body = href.includes("/history")
+                ? { ...usedOnce, lemmas: ["accryssagh"] }
+                : href.includes("/dictionaries")
+                  ? dictionaries
+                  : href.includes("/attestations")
+                    ? emptyAttestations
+                    : href.includes("/samples")
+                      ? []
+                      : href.includes("/lemma?")
+                        ? [
+                              {
+                                  lemma: "accryssagh",
+                                  lemmaId: "accryssagh.a",
+                                  pos: "a.",
+                                  attested: true,
+                                  groups: [
+                                      {
+                                          linkType: "inflected",
+                                          forms: [
+                                              {
+                                                  form: "s'accryssagh",
+                                                  attested: false,
+                                              },
+                                          ],
+                                      },
+                                  ],
+                                  parents: [],
+                              },
+                              {
+                                  lemma: "accryssagh",
+                                  lemmaId: "accryssagh.n",
+                                  pos: "s. m.",
+                                  attested: true,
+                                  groups: [
+                                      {
+                                          linkType: "inflected",
+                                          forms: [
+                                              {
+                                                  form: "accryssee",
+                                                  attested: true,
+                                              },
+                                          ],
+                                      },
+                                  ],
+                                  parents: [],
+                              },
+                          ]
+                        : {
+                              answering: dictionaries.map((d) => d.slug),
+                              word: "accryssyd",
+                              isSuggestionTier: false,
+                              attested: true,
+                              groups: [],
+                          }
+            return Promise.resolve({
+                ok: true,
+                json: () => Promise.resolve(body),
+            } as Response)
+        })
+        renderAt("/dictionary/accryssyd")
+
+        expect(await screen.findByText("Word family")).toBeTruthy()
+        // the word stands in neither tree, and the name-level claim is all
+        // that is known of it: the whole family, rather than none
+        expect(document.querySelectorAll(".dict-lemma-embedded")).toHaveLength(
+            2,
+        )
     })
 
     it("draws no family section for a reading with nothing hanging off it", async () => {
