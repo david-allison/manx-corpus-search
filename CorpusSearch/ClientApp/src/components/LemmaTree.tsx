@@ -47,11 +47,31 @@ const FORM_UNVERIFIED_TITLE =
     "Unverified: no dictionary records this form under this lemma. It was " +
     "worked out by rule or asserted by hand, and may be wrong"
 
+/** A spelling as a reader reads it: case and apostrophe style folded, the
+ * two ways one word arrives spelled differently */
+export const readerSpelling = (s: string) => s.toLowerCase().replace(/’/g, "'")
+
 /** Whether two spellings are the same word to a reader: the page's word may
  * differ from the table's form only in case and apostrophe style */
 const sameWord = (a: string | undefined, b: string) =>
-    a != null &&
-    a.toLowerCase().replace(/’/g, "'") === b.toLowerCase().replace(/’/g, "'")
+    a != null && readerSpelling(a) === readerSpelling(b)
+
+const groupsCarry = (word: string, groups: LemmaTreeGroup[]): boolean =>
+    groups.some((group) =>
+        group.forms.some(
+            (form) =>
+                sameWord(word, form.via ?? form.form) ||
+                sameWord(word, form.form) ||
+                (form.groups != null && groupsCarry(word, form.groups)),
+        ),
+    )
+
+/** Whether the word stands anywhere in the tree — at its root or among the
+ * forms, however deep: where the here-mark would land. What a form's page
+ * asks before drawing a tree, since a family the word is no part of reads
+ * about another word. */
+export const wordStandsIn = (word: string, tree: LemmaTreeResponse): boolean =>
+    sameWord(word, tree.lemma) || groupsCarry(word, tree.groups)
 
 /** How a link type reads climbing UP the tree, where the chips above read
  * down: 'deiney — inflected · plural of dooinney'. Raw type for the rest. */
@@ -480,14 +500,7 @@ const FamilyTreeList = ({
         {trees.map((tree) => (
             <EmbeddedTree
                 key={tree.lemmaId ?? tree.lemma}
-                // the homograph number earns its place only beside a
-                // same-named sibling: alone in its list, the superscript
-                // would point at nothing the reader can see
-                tree={
-                    trees.filter((t) => t.lemma === tree.lemma).length > 1
-                        ? tree
-                        : { ...tree, homograph: null }
-                }
+                tree={tree}
                 highlight={word}
             />
         ))}

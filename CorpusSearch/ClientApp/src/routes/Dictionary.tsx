@@ -44,10 +44,12 @@ import { useDictionaryHead } from "../hooks/useDictionaryHead"
 import { AttestationWalker } from "../components/AttestationWalker"
 import { WordListCitations } from "../components/WordListCitations"
 import {
+    readerSpelling,
     senseKeyOfPos,
     useWordFamilyTrees,
     WordFamily,
     WordFamilyDetails,
+    wordStandsIn,
 } from "../components/LemmaTree"
 import "./Dictionary.css"
 
@@ -408,7 +410,35 @@ export const Dictionary = () => {
         () => [...new Set(history?.lemmas ?? [])],
         [history],
     )
-    const familyTrees = useWordFamilyTrees(familyLemmas)
+    /* a tree's superscript ties it to the entry wearing the same number:
+       kept only where this page's entries are numbered under the tree's own
+       headword (accryssagh's page prints accryssagh¹ and accryssagh², and
+       each tree answers to its entry). A form's page reads one lexeme's
+       entry, unnumbered — there the number would point at nothing, and the
+       class labels tell the trees apart. */
+    const numberedHeadwords = new Set(
+        [...homographOf.keys()].map((entry) =>
+            readerSpelling(entry.primaryWord),
+        ),
+    )
+    const namedTrees = useWordFamilyTrees(familyLemmas)
+    /* the page draws the trees its word stands in: accryssee hangs off
+       accryssagh the noun, and the adjective's family — s'accryssagh,
+       s'accryssee — reads about a lexeme this page never mentions. The
+       lemma's own page keeps every homograph's tree, being the root of each;
+       and a word the tables place in none keeps the whole family rather
+       than none, the name being all that is known of it. */
+    const inhabited =
+        word == null
+            ? namedTrees
+            : namedTrees.filter((tree) => wordStandsIn(word, tree))
+    const familyTrees = (inhabited.length > 0 ? inhabited : namedTrees).map(
+        (tree) =>
+            tree.homograph == null ||
+            numberedHeadwords.has(readerSpelling(tree.lemma))
+                ? tree
+                : { ...tree, homograph: null },
+    )
 
     /* each family tree seated under the lemma section that reads about it: a
        reading block claims its lexeme's tree by id, a class section by the
