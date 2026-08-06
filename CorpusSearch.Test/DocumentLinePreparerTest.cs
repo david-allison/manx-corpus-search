@@ -172,6 +172,31 @@ public class DocumentLinePreparerTest
         }
     }
 
+    /// <summary>The CSV contract of a fragments collection: each row carries its
+    /// Date cell (read into the line date) and its Source cell (the publication,
+    /// acronyms expanded)</summary>
+    [Test]
+    public void DateAndSourceAreReadFromTheirCsvColumns()
+    {
+        var path = Path.GetTempFileName();
+        try
+        {
+            File.WriteAllText(path,
+                "English,Manx,Notes,Date,Source\n" +
+                "parson,saggyrt,\"[1] IoME, Sat, Sep 21, 1901; Page: 3\",21/09/1901,Isle of Man Examiner\n" +
+                "honey,mill,,21/09/1901,Isle of Man Examiner\n");
+
+            var lines = CsvHelperUtils.LoadCsv(path);
+
+            Assert.That(lines.Select(x => x.DateCell), Is.All.EqualTo("21/09/1901"));
+            Assert.That(lines.Select(x => x.Source), Is.All.EqualTo("Isle of Man Examiner"));
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
     /// <summary>[MS 1 Thessalonians 2.16] Text... - the citation becomes line
     /// metadata and leaves the Manx token stream</summary>
     [Test]

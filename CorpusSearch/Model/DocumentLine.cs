@@ -68,6 +68,11 @@ public class DocumentLine
     [JsonIgnore]
     public string? DateCell { get; set; }
 
+    /// <summary>The publication or work the row's fragment came from ("Mona's
+    /// Herald"), acronyms expanded: the `Source` cell of a fragments collection.
+    /// Serialized, so a client can show per-line provenance. Nullable.</summary>
+    public string? Source { get; set; }
+
     /// <summary>The line's own date, where it has one apart from its document's: in
     /// a fragments collection (<see cref="NotesCitationDates"/>) each line dates
     /// from its Date cell, or - in data predating the column - from its note's
