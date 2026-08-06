@@ -19,6 +19,7 @@ public class DocumentLineMap : ClassMap<DocumentLine>
         // "Language" header would not say which column it describes
         Map(m => m.Language).Name("ManxColumnLanguage").Optional();
         Map(m => m.DateCell).Name("Date").Optional();
+        Map(m => m.Source).Optional();
         Map(m => m.CsvLineNumber).Convert(args => args.Row.Parser.RawRow);
         Map(m => m.ManxOriginal).Convert(args =>
         {
