@@ -8,10 +8,12 @@ using NUnit.Framework;
 namespace CorpusSearch.Test;
 
 /// <summary>
-/// The fragments-collection contract (Brooillagh): each line's Notes cell cites its
-/// real source and date, lines without a citation belong to the last cited fragment,
-/// and the collection's own date range is the span of its lines - so an 1858
-/// newspaper quotation never attests its words in the year the file was typed up.
+/// The fragments-collection contract (Brooillagh, Manx Notes &amp; Queries): each
+/// line's Date cell dates it - "21/09/1901" day first, or a bare "1869" book year -
+/// with the Notes citation read in data predating the column, lines with neither
+/// belonging to the last dated fragment, and the collection's own date range the
+/// span of its lines - so an 1858 newspaper quotation never attests its words in
+/// the year the file was typed up.
 /// </summary>
 [TestFixture]
 public class NotesCitationDatesTest
@@ -26,6 +28,19 @@ public class NotesCitationDatesTest
     [TestCase("[9/3/1878]", "1878-03-09")] // single-digit day and month
     [TestCase("M.S. 07/09/1889]", "1889-09-07")] // missing opening bracket
     public void ACitationsFullDateParses(string note, string expected)
+    {
+        Assert.That(NotesCitationDates.Parse(note), Is.EqualTo(DateTime.Parse(expected)));
+    }
+
+    // the real formats of Manx Notes & Quieries (and Brooillagh's month-name
+    // citations), each as its transcriber wrote it
+    [TestCase("[1] IoME, Sat, Sep 21, 1901; Page: 3", "1901-09-21")]
+    [TestCase("[19] IoME, Sat, Dec 14 1901; P: 6", "1901-12-14")] // the comma slipped
+    [TestCase("[THE NEW LANDlNG PIER  (Messrs Cowle): M.H., , July 03, 1872]", "1872-07-03")]
+    [TestCase("[COMPLETION OF THE BATTERY PIER. (The Isle of Man Harbour Commissioners): M.H., , September 03, 1879]", "1879-09-03")]
+    [TestCase("Flyer [MNH F71/MAT 35816] 30th & 31st October 1912.]", "1912-10-31")] // day first
+    [TestCase("[IoME, Sat, Apr 12, 1902; P: 6, Sat, Apr 26, 1902; P:", "1902-04-26")] // the last citation wins
+    public void AMonthNameCitationParses(string note, string expected)
     {
         Assert.That(NotesCitationDates.Parse(note), Is.EqualTo(DateTime.Parse(expected)));
     }
@@ -75,17 +90,30 @@ public class NotesCitationDatesTest
         Assert.That(NotesCitationDates.Parse("[Manx Society Vol. 1211]"), Is.Null);
     }
 
+    /// <summary>A year mid-prose is an aside about the line, not its citation:
+    /// "the 1904 reprint" must not re-date a fragment published in 1901. Only a
+    /// year closing the note (a book citation) dates the line.</summary>
+    [Test]
+    public void AProseYearIsNotACitation()
+    {
+        Assert.That(NotesCitationDates.Parse(
+            "[12] er shleeu] 'whetted'. In the 1904 reprint this was changed to [er leeu]."),
+            Is.Null);
+    }
+
     // unreadable citations: a day/month fragment with no valid full date. Parsing
     // must not guess; the data repo's lint fails on these instead
     [TestCase("[M.H., 31/02/1858]")] // no such calendar day
     [TestCase("[M.H., 99/9/1858]")] // no such day at all
     [TestCase("[M.H., 05/13]")] // no year
+    [TestCase("[IoME, Sat, Sep 31, 1901; Page: 3")] // no such calendar day, month-name style
     public void AnUnreadableCitationIsFlaggedForTheLint(string note)
     {
         Assert.That(NotesCitationDates.LooksDatedButUnparsed(note), Is.True, note);
     }
 
     [TestCase("[M.H., 05/05/1858]")]
+    [TestCase("[1] IoME, Sat, Sep 21, 1901; Page: 3")]
     [TestCase("[Mona Miscellany; 1869]")]
     [TestCase("[likely meaning]")]
     [TestCase("")]
@@ -95,6 +123,30 @@ public class NotesCitationDatesTest
         Assert.That(NotesCitationDates.LooksDatedButUnparsed(note), Is.False, note ?? "<null>");
     }
 
+    // The explicit Date cell's schema: day-first like the citations, or a bare
+    // year where that is all a book fragment has
+    [TestCase("21/09/1901", "1901-09-21")]
+    [TestCase("5/2/1901", "1901-02-05")] // single digits as Excel writes them
+    [TestCase(" 21/09/1901 ", "1901-09-21")]
+    [TestCase("1869", "1869-01-01")]
+    public void AnExplicitDateCellParses(string cell, string expected)
+    {
+        Assert.That(NotesCitationDates.ParseExplicitDate(cell), Is.EqualTo(DateTime.Parse(expected)));
+    }
+
+    [TestCase(null)]
+    [TestCase("")]
+    [TestCase("   ")]
+    [TestCase("1901-09-21")] // not the schema: Excel rewrites ISO dates on save
+    [TestCase("09/21/1901")] // month-first: a mangled cell must not misdate the line
+    [TestCase("31/02/1904")] // no such calendar day
+    [TestCase("190")] // no such year
+    [TestCase("Sep 21, 1901")] // citations belong in Notes
+    public void AnUnreadableDateCellIsNull(string? cell)
+    {
+        Assert.That(NotesCitationDates.ParseExplicitDate(cell), Is.Null);
+    }
+
     private static OpenSourceDocument FragmentsManifest() => new()
     {
         Name = "doc",
@@ -102,7 +154,8 @@ public class NotesCitationDatesTest
         NotesCitations = true,
     };
 
-    private static DocumentLine Line(string? note) => new() { Manx = "ta", English = "is", Notes = note };
+    private static DocumentLine Line(string? note, string? dateCell = null) =>
+        new() { Manx = "ta", English = "is", Notes = note, DateCell = dateCell };
 
     [Test]
     public void UncitedLinesBelongToTheLastCitedFragment()
@@ -137,6 +190,47 @@ public class NotesCitationDatesTest
 
         Assert.That(lines[0].Date, Is.Null);
         Assert.That(lines[1].Date, Is.EqualTo(new DateTime(1858, 5, 5)));
+    }
+
+    /// <summary>The explicit Date cell is authoritative; the citation only dates
+    /// rows in data predating the column</summary>
+    [Test]
+    public void TheDateCellOutranksTheCitation()
+    {
+        var lines = new List<DocumentLine>
+        {
+            Line("[1] IoME, Sat, Sep 21, 1901; Page: 3", dateCell: "22/09/1901"),
+            Line("[3] IoME, Sat, Sep 28, 1901; Page: 3", dateCell: ""),
+            Line(null, dateCell: "09/21/1901"), // mangled: falls through to inheritance
+            Line(null, dateCell: "1869"),
+        };
+
+        DocumentLinePreparer.Prepare(FragmentsManifest(), lines);
+
+        Assert.That(lines.Select(x => x.Date), Is.EqualTo(new DateTime?[]
+        {
+            new DateTime(1901, 9, 22),
+            new DateTime(1901, 9, 28), // a blank cell falls back to the citation
+            new DateTime(1901, 9, 28),
+            new DateTime(1869, 1, 1), // a year-only book fragment
+        }));
+    }
+
+    /// <summary>A collection dated by its cells needs no citations at all</summary>
+    [Test]
+    public void DateCellsAloneDateTheCollection()
+    {
+        var document = FragmentsManifest();
+        var lines = new List<DocumentLine>
+        {
+            Line(null, dateCell: "21/09/1901"),
+            Line(null, dateCell: "14/05/1904"),
+        };
+
+        DocumentLinePreparer.Prepare(document, lines);
+
+        Assert.That(document.CreatedCircaStart, Is.EqualTo(new DateTime(1901, 9, 21)));
+        Assert.That(document.CreatedCircaEnd, Is.EqualTo(new DateTime(1904, 5, 14)));
     }
 
     /// <summary>The collection spans its fragments - and the file need not be

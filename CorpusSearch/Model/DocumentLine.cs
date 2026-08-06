@@ -60,11 +60,20 @@ public class DocumentLine
     /// "gv") replaces an absent value.</summary>
     public string? Language { get; set; }
 
+    /// <summary>The row's `Date` cell as written: "21/09/1901" (day first), or a
+    /// bare "1869" where only the year is known (a book fragment). The
+    /// authoritative line date of a fragments collection;
+    /// <see cref="NotesCitationDates"/> reads it into <see cref="Date"/> at load
+    /// time.</summary>
+    [JsonIgnore]
+    public string? DateCell { get; set; }
+
     /// <summary>The line's own date, where it has one apart from its document's: in
     /// a fragments collection (<see cref="NotesCitationDates"/>) each line dates
-    /// from its note's citation. Indexed per line (a Brooillagh line attests its
-    /// word in 1858, not when the collection was typed up); not serialized - the
-    /// note itself shows the reader the citation.</summary>
+    /// from its Date cell, or - in data predating the column - from its note's
+    /// citation. Indexed per line (a Brooillagh line attests its word in 1858, not
+    /// when the collection was typed up); not serialized - the note itself shows
+    /// the reader the citation.</summary>
     [JsonIgnore]
     public DateTime? Date { get; set; }
 
