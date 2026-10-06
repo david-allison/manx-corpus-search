@@ -54,6 +54,7 @@ export const NavMenu = (props: { onRefreshState: () => void }) => {
                             </Link>
                             <a href="/Dictionary/Cregeen">Dictionary</a>
                             <a href="/Browse">Browse All</a>
+                            <a href="https://speech.gaelg.im">Speech</a>
                         </>
                     )}
                     <a
