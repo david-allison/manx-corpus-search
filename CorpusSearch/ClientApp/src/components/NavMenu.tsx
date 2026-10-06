@@ -46,15 +46,20 @@ export const NavMenu = (props: { onRefreshState: () => void }) => {
                             {/*Not a NavLink as we want to replace*/}
                             <Link
                                 replace
-                                className="active"
+                                className={
+                                    location.pathname == "/"
+                                        ? "active"
+                                        : undefined
+                                }
                                 onClick={onGoHome}
                                 to="/"
                             >
-                                Home
+                                Text
                             </Link>
+                            {/* the speech corpus is its own site, with the same nav */}
+                            <a href="https://speech.gaelg.im/speech">Speech</a>
                             <a href="/Dictionary/Cregeen">Dictionary</a>
                             <a href="/Browse">Browse All</a>
-                            <a href="https://speech.gaelg.im">Speech</a>
                         </>
                     )}
                     <a
