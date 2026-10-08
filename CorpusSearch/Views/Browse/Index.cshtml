@@ -28,6 +28,11 @@
     <h1 class="page-title">Full Document Listing</h1>
 
     <div class="browse-controls">
+        @* the speech corpus is its own site, with the same toggle *@
+        <div class="seg-control">
+            <a href="/Browse" class="active">Text</a>
+            <a href="https://speech.gaelg.im/browse/">Speech</a>
+        </div>
         <div class="browse-count">@documents.Count.ToString("N0") documents</div>
         <div class="browse-order">
             <span class="browse-order-label">Order by</span>

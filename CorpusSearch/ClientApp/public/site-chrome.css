@@ -266,8 +266,10 @@ input, button, select {
     }
 
     .site-nav {
-        gap: 16px;
+        gap: 4px 14px;
         font-size: 13.5px;
+        /* six links (Text, Speech, ..., Translations) outgrow a phone's width */
+        flex-wrap: wrap;
     }
 
     .page-main {

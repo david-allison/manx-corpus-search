@@ -106,6 +106,25 @@
     text-align: right;
 }
 
+/* the Text | Speech toggle: links styled as the segmented control's buttons */
+.seg-control a {
+    white-space: nowrap;
+    padding: 5px 14px;
+    font-size: 13px;
+    text-decoration: none;
+    color: var(--c-secondary);
+}
+
+.seg-control a + a {
+    border-left: 1px solid var(--c-border-card);
+}
+
+.seg-control a.active {
+    background: var(--c-slate);
+    color: var(--c-surface);
+    font-weight: 600;
+}
+
 /* ============ Cregeen's Dictionary ============ */
 .dict-search {
     width: 100%;
