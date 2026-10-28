@@ -1,34 +1,47 @@
 using System;
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
+using CorpusSearch.Dependencies.CsvHelper;
+using CsvHelper;
 
 namespace CorpusSearch.Model;
 
-public class DocumentLine
+[CsvRecord]
+public partial class DocumentLine
 {
     public string? English { get; set; }
     public string? Manx { get; set; }
+    [CsvColumn(Optional = true)]
     public int? Page { get; set; }
+    [CsvColumn(Optional = true)]
     public string? Notes { get; set; }
 
     /// <summary>Ranges of <see cref="Manx"/> which matched the query. Null unless Manx was searched.</summary>
+    [CsvIgnore]
     public IReadOnlyList<HighlightRange>? ManxHighlights { get; set; }
 
     /// <summary>Ranges of <see cref="English"/> which matched the query. Null unless English was searched.</summary>
+    [CsvIgnore]
     public IReadOnlyList<HighlightRange>? EnglishHighlights { get; set; }
 
+    [CsvColumn("Manx Original", Optional = true), CsvConverter(typeof(OriginalTextConverter))]
     public string? ManxOriginal { get; set; }
+    [CsvColumn("English Original", Optional = true), CsvConverter(typeof(OriginalTextConverter))]
     public string? EnglishOriginal { get; set; }
 
+    [CsvColumn(Optional = true)]
     public double? SubStart { get; set; }
+    [CsvColumn(Optional = true)]
     public double? SubEnd { get; set; }
 
     /// <summary>The name of the speaker in a transcription. Nullable</summary>
+    [CsvColumn(Optional = true)]
     public string? Speaker { get; set; }
 
     /// <summary>The line's verse/chapter reference ("MS 1 Thessalonians 2.16",
     /// "CAB. II."): metadata like <see cref="Speaker"/>, kept out of the Manx
     /// token stream but searchable through its own index field</summary>
+    [CsvColumn(Optional = true)]
     public string? Reference { get; set; }
 
     /// <summary>Canonical "book.chapter[.verse]" key derived from
@@ -36,6 +49,7 @@ public class DocumentLine
     /// heading row): the cross-version identity of the verse, shared by every
     /// translation of it. Null when the reference doesn't resolve to the canon.
     /// See <see cref="ReferenceResolver"/>.</summary>
+    [CsvIgnore]
     public string? CanonicalReference { get; set; }
 
     /// <summary><see cref="Manx"/> with mid-text scripture citations removed
@@ -44,6 +58,7 @@ public class DocumentLine
     /// Null when the line has none; display and search text are untouched.
     /// See <see cref="VerseCitations.Strip"/>.</summary>
     [JsonIgnore]
+    [CsvIgnore]
     public string? StatsManx { get; set; }
 
     /// <summary><see cref="NormalizedManx"/> over <see cref="StatsManx"/>: the
@@ -52,12 +67,14 @@ public class DocumentLine
     public string NormalizedStatsManx =>
         StatsManx == null ? NormalizedManx : " " + NormalizeManx(StatsManx) + " ";
 
+    [CsvIgnore]
     public long? MatchesInLine { get; set; }
 
     /// <summary>The language of the Manx column: "gv" unless the row is untranslated
     /// English/Latin/mixed matter. Read from the sparse `ManxColumnLanguage` CSV column;
     /// at load time the collection default (the manifest field of the same name, else
     /// "gv") replaces an absent value.</summary>
+    [CsvColumn("ManxColumnLanguage", Optional = true)]
     public string? Language { get; set; }
 
     /// <summary>The row's `Date` cell as written: "21/09/1901" (day first), or a
@@ -66,11 +83,13 @@ public class DocumentLine
     /// <see cref="NotesCitationDates"/> reads it into <see cref="Date"/> at load
     /// time.</summary>
     [JsonIgnore]
+    [CsvColumn("Date", Optional = true)]
     public string? DateCell { get; set; }
 
     /// <summary>The publication or work the row's fragment came from ("Mona's
     /// Herald"), acronyms expanded: the `Source` cell of a fragments collection.
     /// Serialized, so a client can show per-line provenance. Nullable.</summary>
+    [CsvColumn(Optional = true)]
     public string? Source { get; set; }
 
     /// <summary>The line's own date, where it has one apart from its document's: in
@@ -80,6 +99,7 @@ public class DocumentLine
     /// when the collection was typed up); not serialized - the note itself shows
     /// the reader the citation.</summary>
     [JsonIgnore]
+    [CsvIgnore]
     public DateTime? Date { get; set; }
 
     /// <summary>Value of <see cref="Language"/> meaning the Manx column is really Manx</summary>
@@ -119,6 +139,7 @@ public class DocumentLine
     public string NormalizedManxCased => " " + NormalizeManx(Manx ?? "", preserveCase: true) + " ";
 
     /// <summary>The Line Number in the CSV</summary>
+    [CsvIgnore]
     public int CsvLineNumber { get; set; }
 
     // Trim: punctuation is replaced with spaces, so "jee." would otherwise become "jee " and never

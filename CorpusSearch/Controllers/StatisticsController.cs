@@ -2,13 +2,14 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using CorpusSearch.Service;
+using CsvHelper;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 
 namespace CorpusSearch.Controllers;
 
 [Route("api/[controller]")]
-public class StatisticsController : Controller
+public partial class StatisticsController : Controller
 {
     private static long _documentCount;
     private static long _manxWordCount;
@@ -47,7 +48,8 @@ public class StatisticsController : Controller
         logger.LogInformation("{TotalManxTerms} in {TotalDocuments} documents", databaseCount.totalManxTerms, databaseCount.totalDocuments);
     }
     
-    record TermFrequency
+    [CsvRecord]
+    internal partial record TermFrequency
     {
         public required string Term { get; init; }
         public long Frequency { get; init; }

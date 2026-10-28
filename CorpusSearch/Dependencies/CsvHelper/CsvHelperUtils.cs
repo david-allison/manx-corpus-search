@@ -1,9 +1,6 @@
-﻿using CorpusSearch.Model;
+using CorpusSearch.Model;
 using CsvHelper;
 using System.Collections.Generic;
-using System.Globalization;
-using System.IO;
-using System.Linq;
 
 namespace CorpusSearch.Dependencies.CsvHelper;
 
@@ -11,12 +8,37 @@ public class CsvHelperUtils
 {
     public static List<DocumentLine> LoadCsv(string path)
     {
-        using (var reader = new StreamReader(path))
-        using (var csv = new CsvReader(reader, CultureInfo.InvariantCulture))
+        using var csv = CsvReader.FromFile(path, new CsvReaderOptions
         {
-            csv.Context.RegisterClassMap<DocumentLineMap>();
-            List<DocumentLine> results = csv.GetRecords<DocumentLine>().ToList();
-            return results;
+            Separator = ',',
+            TrackLineNumbers = true,
+            MalformedData = CsvMalformedDataHandling.Throw,
+            MissingField = CsvMissingFieldHandling.Throw,
+        });
+        var results = new List<DocumentLine>();
+        while (csv.Read())
+        {
+            var line = csv.GetRecord<DocumentLine>();
+            line.CsvLineNumber = EndLineNumber(csv);
+            results.Add(line);
         }
+        return results;
+    }
+
+    private static int EndLineNumber(CsvReader reader)
+    {
+        // v33's RawRow was the last physical line of a record, including any
+        // quoted newlines. Existing links and line ranges use those numbers.
+        var lineNumber = reader.LineNumber;
+        byte previous = 0;
+        foreach (var value in reader.RawRecord)
+        {
+            if (value == '\r' || (value == '\n' && previous != '\r'))
+            {
+                lineNumber++;
+            }
+            previous = value;
+        }
+        return checked((int)lineNumber);
     }
 }
