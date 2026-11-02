@@ -1,5 +1,5 @@
 import { MouseEvent as ReactMouseEvent, ReactNode, useState } from "react"
-import Highlighter from "react-highlight-words"
+import Highlighter, { type Chunk } from "react-highlight-words"
 import { diffChars, diffWordsWithSpace } from "diff"
 import { HighlightRange } from "../api/SearchApi"
 import { SearchWorkResult } from "../api/SearchWorkApi"
@@ -30,19 +30,21 @@ const isEditorial = (part: string) => /^\[[^\][\d][^\][]{0,40}\]$/.test(part)
  * //   "cre def" (segmentStart 4, length 7)
  * // a server range of {start: 4, end: 7} ("cre") only affects the second segment:
  * segmentChunks([{ start: 4, end: 7 }], 0, 3) // => []
- * segmentChunks([{ start: 4, end: 7 }], 4, 7) // => [{ start: 0, end: 3 }]
+ * segmentChunks([{ start: 4, end: 7 }], 4, 7) // => [{ start: 0, end: 3, searchIndex: -1 }]
  */
 export function segmentChunks(
     highlights: HighlightRange[],
     segmentStart: number,
     segmentLength: number,
-): { start: number; end: number }[] {
+): Chunk[] {
     const segmentEnd = segmentStart + segmentLength
     return highlights
         .filter((x) => x.start < segmentEnd && x.end > segmentStart)
         .map((x) => ({
             start: Math.max(x.start - segmentStart, 0),
             end: Math.min(x.end - segmentStart, segmentLength),
+            // Server ranges have no corresponding entry in searchWords.
+            searchIndex: -1,
         }))
 }
 
