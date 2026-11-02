@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
-import { cleanup, render, screen } from "@testing-library/react"
+import { cleanup, render, screen, waitFor } from "@testing-library/react"
 import { MemoryRouter, Route, Routes } from "react-router-dom"
 import { Dictionary } from "./Dictionary"
 import { DictionaryLookupModal } from "../components/DictionaryLookupModal"
@@ -131,7 +131,9 @@ const showPage = async (fixture: Fixture) => {
             </Routes>
         </MemoryRouter>,
     )
-    await screen.findByText(new RegExp(fixture.word, "i"))
+    await waitFor(() =>
+        expect(screen.queryAllByRole("progressbar")).toHaveLength(0),
+    )
 }
 
 /** Renders the tap popup from the same fixture */
@@ -150,7 +152,9 @@ const showTap = async (fixture: Fixture) => {
             />
         </MemoryRouter>,
     )
-    await screen.findByText(new RegExp(fixture.word, "i"))
+    await waitFor(() =>
+        expect(screen.queryAllByRole("progressbar")).toHaveLength(0),
+    )
 }
 
 const surfaces: [string, (f: Fixture) => Promise<void>][] = [

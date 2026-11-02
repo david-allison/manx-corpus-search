@@ -966,7 +966,7 @@ describe("segmentChunks", () => {
     it("shifts ranges into segment-local offsets", () => {
         // "abc\ncre def": segment 2 starts at offset 4
         expect(segmentChunks([{ start: 4, end: 7 }], 4, 7)).toEqual([
-            { start: 0, end: 3 },
+            { start: 0, end: 3, searchIndex: -1 },
         ])
     })
 
@@ -976,10 +976,10 @@ describe("segmentChunks", () => {
 
     it("clips ranges crossing the segment boundary", () => {
         expect(segmentChunks([{ start: 2, end: 6 }], 0, 3)).toEqual([
-            { start: 2, end: 3 },
+            { start: 2, end: 3, searchIndex: -1 },
         ])
         expect(segmentChunks([{ start: 2, end: 6 }], 4, 3)).toEqual([
-            { start: 0, end: 2 },
+            { start: 0, end: 2, searchIndex: -1 },
         ])
     })
 })
