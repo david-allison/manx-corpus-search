@@ -1,3 +1,10 @@
+> [!IMPORTANT]
+> The corpus is currently unavailable.
+> The server is end-of-life, and there are unpatched security vulnerabilities for it.
+> 
+> I'll get it back when I have time. December at the latest.
+> -- David
+
 # manx-corpus-search
 
 A corpus search for primarily bilingual manx to english texts.
